@@ -1,0 +1,407 @@
+{
+  "version": 1,
+  "kind": "service-flow",
+  "title": "shopfront architecture",
+  "grounded": {
+    "graphId": "shopfront",
+    "repoPath": "/home/user/codeforge/packages/analyzer/test/fixtures/shopfront",
+    "scopeNodeIds": [
+      "svc:edge",
+      "svc:inventory",
+      "svc:notifications",
+      "svc:gateway",
+      "svc:invoices",
+      "svc:orders",
+      "svc:payments",
+      "ds:postgres",
+      "svc:shipping",
+      "topic:order.created",
+      "ds:redis"
+    ],
+    "origin": "scan"
+  },
+  "theme": "structural",
+  "nodes": [
+    {
+      "id": "svc:edge",
+      "label": "Edge service",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:edge:1",
+      "detail": {
+        "whatItIs": "Edge service",
+        "whatItDoes": "default",
+        "parts": [
+          "default.conf"
+        ],
+        "talksTo": [
+          "gateway"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "svc:inventory",
+      "label": "Inventory service",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:inventory:1",
+      "detail": {
+        "whatItIs": "Inventory service",
+        "whatItDoes": "server",
+        "parts": [
+          "server.py"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "svc:notifications",
+      "label": "Notifications service",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:notifications:1",
+      "detail": {
+        "whatItIs": "Notifications service",
+        "whatItDoes": "worker",
+        "parts": [
+          "worker.py"
+        ],
+        "talksTo": [
+          "order.created"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "svc:gateway",
+      "label": "Gateway",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:gateway:1",
+      "detail": {
+        "whatItIs": "Gateway",
+        "whatItDoes": "index · http · invoices · 3 more",
+        "parts": [
+          "http.ts",
+          "index.ts",
+          "invoices.ts",
+          "orders.ts",
+          "payments.ts",
+          "shipments.ts"
+        ],
+        "talksTo": [
+          "invoices",
+          "orders",
+          "payments",
+          "shipping"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "svc:invoices",
+      "label": "Invoices service",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:invoices:1",
+      "detail": {
+        "whatItIs": "Invoices service",
+        "whatItDoes": "InvoiceController · PaymentClient · application",
+        "parts": [
+          "application.properties",
+          "InvoiceController.java",
+          "PaymentClient.java"
+        ],
+        "talksTo": [
+          "payments",
+          "postgres"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "svc:orders",
+      "label": "Orders service",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:orders:1",
+      "detail": {
+        "whatItIs": "Orders service",
+        "whatItDoes": "db · events · inventory_client · 4 more",
+        "parts": [
+          "db.py",
+          "events.py",
+          "inventory_client.py",
+          "main.py",
+          "models.py",
+          "payments_client.py",
+          "routes.py"
+        ],
+        "talksTo": [
+          "inventory",
+          "order.created",
+          "payments",
+          "postgres"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "svc:payments",
+      "label": "Payments service",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:payments:1",
+      "detail": {
+        "whatItIs": "Payments service",
+        "whatItDoes": "db · index · stripe",
+        "parts": [
+          "db.js",
+          "index.js",
+          "stripe.js"
+        ],
+        "talksTo": [
+          "postgres"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "ds:postgres",
+      "label": "Postgres database",
+      "kind": "datastore",
+      "role": "participant",
+      "detail": {
+        "whatItIs": "Postgres database",
+        "whatItDoes": "A database that stores information."
+      },
+      "primary": true
+    },
+    {
+      "id": "svc:shipping",
+      "label": "Shipping service",
+      "kind": "service",
+      "role": "participant",
+      "evidenceRef": "scan:shipping:1",
+      "detail": {
+        "whatItIs": "Shipping service",
+        "whatItDoes": "main · subscriber",
+        "parts": [
+          "main.go",
+          "subscriber.go"
+        ],
+        "talksTo": [
+          "order.created",
+          "postgres"
+        ]
+      },
+      "primary": true
+    },
+    {
+      "id": "topic:order.created",
+      "label": "Order Created messages",
+      "kind": "topic",
+      "role": "participant",
+      "detail": {
+        "whatItIs": "Order Created messages",
+        "whatItDoes": "A stream of \"order.created\" messages."
+      },
+      "primary": true
+    },
+    {
+      "id": "ds:redis",
+      "label": "Redis (cache & message queue)",
+      "kind": "datastore",
+      "role": "participant",
+      "detail": {
+        "whatItIs": "Redis (cache & message queue)",
+        "whatItDoes": "Fast storage that also passes messages between services.",
+        "parts": [
+          "order.created"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e:svc-edge-svc-gateway-http-0",
+      "from": "svc:edge",
+      "to": "svc:gateway",
+      "family": "http",
+      "label": "/api/",
+      "evidenceRef": "scan:edge/default.conf:5"
+    },
+    {
+      "id": "e:svc-notifications-topic-order-created-queue_consume-1",
+      "from": "svc:notifications",
+      "to": "topic:order.created",
+      "family": "queue",
+      "label": "consume order.created",
+      "evidenceRef": "scan:notifications/worker.py:11"
+    },
+    {
+      "id": "e:svc-gateway-svc-invoices-http-2",
+      "from": "svc:gateway",
+      "to": "svc:invoices",
+      "family": "http",
+      "label": "GET /invoices/*",
+      "evidenceRef": "scan:gateway/src/routes/invoices.ts:9"
+    },
+    {
+      "id": "e:svc-gateway-svc-orders-http-3",
+      "from": "svc:gateway",
+      "to": "svc:orders",
+      "family": "http",
+      "label": "GET /orders/*, POST /orders",
+      "evidenceRef": "scan:gateway/src/routes/orders.ts:9"
+    },
+    {
+      "id": "e:svc-gateway-svc-payments-http-4",
+      "from": "svc:gateway",
+      "to": "svc:payments",
+      "family": "http",
+      "label": "GET /payments/*",
+      "evidenceRef": "scan:gateway/src/routes/payments.ts:6"
+    },
+    {
+      "id": "e:svc-gateway-svc-shipping-http-5",
+      "from": "svc:gateway",
+      "to": "svc:shipping",
+      "family": "http",
+      "label": "GET /shipments/*",
+      "evidenceRef": "scan:gateway/src/routes/shipments.ts:9"
+    },
+    {
+      "id": "e:svc-invoices-svc-payments-http-6",
+      "from": "svc:invoices",
+      "to": "svc:payments",
+      "family": "http",
+      "label": "POST /charge",
+      "evidenceRef": "scan:invoices/src/main/java/shop/invoices/PaymentClient.java:18"
+    },
+    {
+      "id": "e:svc-invoices-ds-postgres-db_access-7",
+      "from": "svc:invoices",
+      "to": "ds:postgres",
+      "family": "db",
+      "label": "db, read invoices",
+      "evidenceRef": "scan:invoices/src/main/java/shop/invoices/InvoiceController.java:24"
+    },
+    {
+      "id": "e:svc-orders-svc-inventory-grpc-8",
+      "from": "svc:orders",
+      "to": "svc:inventory",
+      "family": "grpc",
+      "label": "grpc",
+      "evidenceRef": "scan:orders/app/inventory_client.py:8"
+    },
+    {
+      "id": "e:svc-orders-svc-payments-http-9",
+      "from": "svc:orders",
+      "to": "svc:payments",
+      "family": "http",
+      "label": "POST /charge",
+      "evidenceRef": "scan:orders/app/payments_client.py:10"
+    },
+    {
+      "id": "e:svc-orders-ds-postgres-db_access-10",
+      "from": "svc:orders",
+      "to": "ds:postgres",
+      "family": "db",
+      "label": "db, read orders, table orders, write orders",
+      "evidenceRef": "scan:orders/app/db.py:11"
+    },
+    {
+      "id": "e:svc-orders-topic-order-created-queue_publish-11",
+      "from": "svc:orders",
+      "to": "topic:order.created",
+      "family": "queue",
+      "label": "publish order.created",
+      "evidenceRef": "scan:orders/app/events.py:10"
+    },
+    {
+      "id": "e:svc-payments-ds-postgres-db_access-12",
+      "from": "svc:payments",
+      "to": "ds:postgres",
+      "family": "db",
+      "label": "read orders, read payments, write payments",
+      "evidenceRef": "scan:payments/src/db.js:6"
+    },
+    {
+      "id": "e:svc-shipping-ds-postgres-db_access-13",
+      "from": "svc:shipping",
+      "to": "ds:postgres",
+      "family": "db",
+      "label": "db, read shipments, write shipments",
+      "evidenceRef": "scan:shipping/main.go:24"
+    },
+    {
+      "id": "e:svc-shipping-topic-order-created-queue_consume-14",
+      "from": "svc:shipping",
+      "to": "topic:order.created",
+      "family": "queue",
+      "label": "consume order.created",
+      "evidenceRef": "scan:shipping/subscriber.go:23"
+    }
+  ],
+  "primaryNodeIds": [
+    "svc:edge",
+    "svc:inventory",
+    "svc:notifications",
+    "svc:gateway",
+    "svc:invoices",
+    "svc:orders",
+    "svc:payments",
+    "ds:postgres",
+    "svc:shipping",
+    "topic:order.created"
+  ],
+  "flows": [
+    {
+      "id": "flow:main",
+      "label": "Main flow",
+      "nodeIds": [
+        "svc:edge",
+        "svc:inventory",
+        "svc:notifications",
+        "svc:gateway",
+        "svc:invoices",
+        "svc:orders",
+        "svc:payments",
+        "ds:postgres",
+        "svc:shipping",
+        "topic:order.created",
+        "ds:redis"
+      ],
+      "edgeIds": [
+        "e:svc-edge-svc-gateway-http-0",
+        "e:svc-notifications-topic-order-created-queue_consume-1",
+        "e:svc-gateway-svc-invoices-http-2",
+        "e:svc-gateway-svc-orders-http-3",
+        "e:svc-gateway-svc-payments-http-4",
+        "e:svc-gateway-svc-shipping-http-5",
+        "e:svc-invoices-svc-payments-http-6",
+        "e:svc-invoices-ds-postgres-db_access-7",
+        "e:svc-orders-svc-inventory-grpc-8",
+        "e:svc-orders-svc-payments-http-9",
+        "e:svc-orders-ds-postgres-db_access-10",
+        "e:svc-orders-topic-order-created-queue_publish-11",
+        "e:svc-payments-ds-postgres-db_access-12",
+        "e:svc-shipping-ds-postgres-db_access-13",
+        "e:svc-shipping-topic-order-created-queue_consume-14"
+      ]
+    }
+  ],
+  "layout": {
+    "engine": "layered-flow",
+    "direction": "LR"
+  },
+  "meta": {
+    "createdAt": "2026-08-18T10:27:28.699Z",
+    "generator": "@sequence/export@0.1.0"
+  },
+  "projections": {
+    "mermaid": "flowchart TD\n    subgraph Services\n        edge[\"edge\"]\n        inventory[\"inventory\"]\n        notifications[\"notifications\"]\n        gateway[\"gateway\"]\n        invoices[\"invoices\"]\n        orders[\"orders\"]\n        payments[\"payments\"]\n        shipping[\"shipping\"]\n    end\n    subgraph Datastores\n        postgres[(\"postgres\")]\n    end\n    subgraph Topics\n        topic_order_created{{\"topic:order.created\"}}\n    end\n    edge -->|/api/| gateway\n    notifications -->|consume order.created| topic_order_created\n    gateway -->|GET /invoices/*| invoices\n    gateway -->|GET /orders/*, POST /orders| orders\n    gateway -->|GET /payments/*| payments\n    gateway -->|GET /shipments/*| shipping\n    invoices -->|POST /charge| payments\n    invoices -->|db, read invoices| postgres\n    orders -->|grpc| inventory\n    orders -->|POST /charge| payments\n    orders -->|db, read orders, table orders, write orders| postgres\n    orders -->|publish order.created| topic_order_created\n    payments -->|read orders, read payments, write payments| postgres\n    shipping -->|db, read shipments, write shipments| postgres\n    shipping -->|consume order.created| topic_order_created\n    linkStyle 0 stroke:#2f6fdb,stroke-width:2px;\n    linkStyle 1 stroke:#d98a2b,stroke-width:2px;\n    linkStyle 2 stroke:#2f6fdb,stroke-width:2px;\n    linkStyle 3 stroke:#2f6fdb,stroke-width:2px;\n    linkStyle 4 stroke:#2f6fdb,stroke-width:2px;\n    linkStyle 5 stroke:#2f6fdb,stroke-width:2px;\n    linkStyle 6 stroke:#2f6fdb,stroke-width:2px;\n    linkStyle 7 stroke:#2e9e5b,stroke-width:2px;\n    linkStyle 8 stroke:#7b53c9,stroke-width:2px;\n    linkStyle 9 stroke:#2f6fdb,stroke-width:2px;\n    linkStyle 10 stroke:#2e9e5b,stroke-width:2px;\n    linkStyle 11 stroke:#d98a2b,stroke-width:2px;\n    linkStyle 12 stroke:#2e9e5b,stroke-width:2px;\n    linkStyle 13 stroke:#2e9e5b,stroke-width:2px;\n    linkStyle 14 stroke:#d98a2b,stroke-width:2px;\n"
+  }
+}

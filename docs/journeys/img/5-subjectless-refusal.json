@@ -1,0 +1,12 @@
+{
+  "startedAt": "2026-09-06T12:12:31.597Z",
+  "builtAt": "2026-09-06T12:11:47.053Z",
+  "session": "session-6773",
+  "checks": {
+    "names what is missing": true,
+    "says no file was named": true,
+    "says nothing points at the repo": true,
+    "remedy 1 — name a file": true,
+    "remedy 2 — say it is this repo": true
+  }
+}

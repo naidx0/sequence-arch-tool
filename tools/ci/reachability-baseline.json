@@ -1,0 +1,453 @@
+{
+  "$comment": [
+    "THE ACCEPTED DEAD ACTIONS, EACH WITH THE REASON IT IS STILL HERE.",
+    "",
+    "An action declared in a reducer union, handled by a case, and dispatched by no",
+    "production code is a feature the product cannot reach. Every entry below is one",
+    "of those, and every entry must say why it is tolerated.",
+    "",
+    "This is a RATCHET, not a mute. tools/ci/reachability.test.mjs fails on an orphan",
+    "that is not listed here, AND on a listed entry that has since been wired - because",
+    "an entry that stopped firing is an entry somebody should delete.",
+    "",
+    "Adding a row here is a decision. Write the reason for the next reader, not for the",
+    "test."
+  ],
+  "accepted": [
+    {
+      "action": "canvas/pan",
+      "declaredIn": "canvas/canvasReduce.ts",
+      "reason": "The pure camera arm. The board is @xyflow, which owns its own viewport and reports every move back as a whole viewport (Board.tsx -> onMove -> canvas/viewport), so no real camera change ever arrives as a delta. Kept because canvasReduce is deliberately written to be droppable into the store as one case block and the camera vocabulary is the model's. It becomes a gap the day the board needs a move the library does not originate."
+    },
+    {
+      "action": "canvas/zoom-at",
+      "declaredIn": "canvas/canvasReduce.ts",
+      "reason": "Same as canvas/pan - superseded by canvas/viewport, which the library originates."
+    },
+    {
+      "action": "doc/delete-edge",
+      "declaredIn": "canvas/docEdit.ts",
+      "reason": "A node can be deleted by gesture and an edge cannot: BoardMenu targets nodes only, so the edge arm has no way in. RECORDED, NOT BUILT, and the reason is scope rather than difficulty - ReactFlow already exposes onEdgeContextMenu, so the work is widening BoardMenuTarget from a node shape into a union and giving the menu a second arm. That touches a sheeted surface with nine rendered tests for one small gesture, and it was ranked below the search surface and the local-first fix in the same pass. It is the cheapest remaining orphan and should be the next one taken."
+    },
+    {
+      "action": "repo/failed",
+      "declaredIn": "state/store.ts",
+      "reason": "BootSurface owns the pre-attach failure ladder inside its own hook and hands the store only the SETTLED outcome, so the store failure arm never fires from boot. The rail Retry rescan path restores previous graphs via repo/loaded + repo/stale rather than repo/failed. Recorded until an owner ruling deletes the arm or wires a true scan-failure surface."
+    },
+    {
+      "action": "shell/theme",
+      "declaredIn": "state/store.ts",
+      "reason": "DELIBERATELY DEAD, and it must stay that way. GRAPHITE-DECISIONS Decision 1 defers light and says not to tune light values; Graphite law 5 requires both themes at equal quality. Shipping a control that can select 'light' would ship an untuned theme. The state, reducer, persistence and data-theme stamp are all built and waiting on a ruling."
+    },
+    {
+      "action": "turn/edit",
+      "declaredIn": "state/store.ts",
+      "reason": "Owner seat-walk 2026-08-25 removed the rewrite control on sent user bubbles (no edit affordance on the prompt box). The reducer arm still rewrites history if something dispatched it; connect.tsx no longer does. Kept until an owner ruling deletes the arm or restores a different rewrite door."
+    }
+  ],
+  "routes": [
+    {
+      "route": "/api/acp/run-node",
+      "verdict": "DEAD",
+      "reason": "Deleting it would break its analyzer endpoint tests but no production caller; web2 starts ACP work through /api/program/run, whose buildProgramExecutors() calls createAcpExecutor() directly."
+    },
+    {
+      "route": "/api/ask",
+      "verdict": "DEAD",
+      "reason": "Deleting it would break the buffered-handler tests but no production caller: web2's ASK_STREAM_ROUTE is /api/ask/stream, and askCli.ts calls runAskPipeline() directly."
+    },
+    {
+      "route": "/api/attachments",
+      "verdict": "DEAD",
+      "reason": "The only caller of listAttachments. Singular upload, retrieval and ask-time reads all continue without it; this is HTTP listing nobody lists."
+    },
+    {
+      "route": "/api/board",
+      "verdict": "GAP",
+      "reason": "The Sequence-native Task Board document, complete and served, with no surface reading or writing it."
+    },
+    {
+      "route": "/api/build",
+      "verdict": "BY DESIGN",
+      "reason": "The staleness endpoint. It reports startedAt/builtAt so a running server can say what code it is executing; it is read by tools/ci/check-running-build.mjs and tools/ci/restart-if-stale.mjs, never by the web client, and giving it a surface would put a build timestamp in front of a user who has no use for one."
+    },
+    {
+      "route": "/api/ddl",
+      "verdict": "GAP",
+      "reason": "Its own error sentence \u2014 \"create one on the Design board first\" \u2014 names the Design-board SQL preview surface that does not exist."
+    },
+    {
+      "route": "/api/design-suggest",
+      "verdict": "GAP",
+      "reason": "The web describe-to-blocks path. MCP's designSuggestTool calls generateText directly and would survive this route being deleted."
+    },
+    {
+      "route": "/api/explain",
+      "verdict": "GAP",
+      "reason": "The AI-grouped explanation cli.ts assigns to the running app. The CLI and MCP build explanations directly."
+    },
+    {
+      "route": "/api/generate",
+      "verdict": "BY DESIGN",
+      "reason": "cli.ts advertises POST /api/generate as part of the JSON API served by `sequence --repo`."
+    },
+    {
+      "route": "/api/git/branch",
+      "verdict": "GAP",
+      "reason": "P12 calls these \"the app doing the git\" and no client does any of it."
+    },
+    {
+      "route": "/api/git/worktree",
+      "verdict": "GAP",
+      "reason": "Worktree creation and removal for the P12 handoff surface \u2014 neither the CLI nor the desktop shell calls it."
+    },
+    {
+      "route": "/api/github",
+      "verdict": "GAP",
+      "reason": "A local Settings connection for a redacted GitHub token, reached by nothing."
+    },
+    {
+      "route": "/api/github/",
+      "verdict": "PREFIX",
+      "reason": "Appears only in isSensitivePath() as the authorization prefix over the GitHub child routes. Not a handler."
+    },
+    {
+      "route": "/api/github/clone",
+      "verdict": "GAP",
+      "reason": "Shaped deliberately to land the web client in an attached workspace \u2014 an unbuilt GitHub import."
+    },
+    {
+      "route": "/api/github/repos",
+      "verdict": "GAP",
+      "reason": "Repositories for a GitHub account picker that was never drawn."
+    },
+    {
+      "route": "/api/harness",
+      "verdict": "PREFIX",
+      "reason": "No handler at this exact path; the string exists only to secure the harness family."
+    },
+    {
+      "route": "/api/harness/",
+      "verdict": "PREFIX",
+      "reason": "The startsWith authorization guard for the harness routes. Not a handler."
+    },
+    {
+      "route": "/api/harness/distill-skills",
+      "verdict": "DEAD",
+      "reason": "The only HTTP trigger for trajectory-to-skill distillation, invoked by nothing."
+    },
+    {
+      "route": "/api/harness/refine",
+      "verdict": "GAP",
+      "reason": "Phase 4 assigns proposal listing to a board Accept/Deny surface with no web caller."
+    },
+    {
+      "route": "/api/harness/refine/",
+      "verdict": "GAP",
+      "reason": "The real accept / deny / rollback family for that same missing surface \u2014 a route family, not merely an authorization prefix."
+    },
+    {
+      "route": "/api/harness/refine/plan",
+      "verdict": "GAP",
+      "reason": "planRefineFromTrajectories creates the proposal the documented board review flow should present. Nothing requests it."
+    },
+    {
+      "route": "/api/mcp/call",
+      "verdict": "GAP",
+      "reason": "Configured MCP tools callable from the home screen. packages/mcp is a separate stdio server and never calls this."
+    },
+    {
+      "route": "/api/mcp/tools",
+      "verdict": "GAP",
+      "reason": "The home-screen MCP tool picker. The shipped MCP server registers its own TOOLS array directly."
+    },
+    {
+      "route": "/api/me",
+      "verdict": "GAP",
+      "reason": "Session state and the providers \"the UI may offer\". No UI asks."
+    },
+    {
+      "route": "/api/policies",
+      "verdict": "DEAD",
+      "reason": "`sequence policy` calls readPolicies directly, so this is HTTP policy listing only \u2014 CLI enforcement is unaffected by its absence."
+    },
+    {
+      "route": "/api/program",
+      "verdict": "PREFIX",
+      "reason": "No handler exists at this exact path; isSensitivePath() uses it only as the authorization prefix for /api/program/* routes."
+    },
+    {
+      "route": "/api/program/run-log",
+      "verdict": "DEAD",
+      "reason": "cli.ts runs programs through runProgramFile and never calls this; it is HTTP access to .sequence/runs/results.tsv and nothing else."
+    },
+    {
+      "route": "/api/program/strategy",
+      "verdict": "DEAD",
+      "reason": "HTTP reading of .sequence/program.md, requested by nobody."
+    },
+    {
+      "route": "/api/prompt-file",
+      "verdict": "BY DESIGN",
+      "reason": "cli.ts advertises POST /api/prompt-file as part of the same JSON API."
+    },
+    {
+      "route": "/api/research",
+      "verdict": "DEAD",
+      "reason": "askCli research mode calls runAskPipeline directly; this standalone gateway serves external HTTP callers only."
+    },
+    {
+      "route": "/api/trajectory",
+      "verdict": "DEAD",
+      "reason": "Ask handlers call writeTrajectory directly. This client-finalisation endpoint serves external clients only."
+    },
+    {
+      "route": "/api/trajectory/",
+      "verdict": "DEAD",
+      "reason": "The only HTTP reader of individual trajectory documents; refinement reads storage directly."
+    },
+    {
+      "route": "/api/tree",
+      "verdict": "BY DESIGN",
+      "reason": "cli.ts advertises GET /api/tree as part of the JSON API served by `sequence --repo`."
+    },
+    {
+      "route": "/api/usage",
+      "verdict": "GAP",
+      "reason": "Monthly usage and the soft-cap nudge, \"so the UI can show\" them. Nothing shows them."
+    }
+  ],
+  "vocabulary": {
+    "$comment": [
+      "THE EXACT VOCABULARY THE SCANNER CAN SEE, ANCHORED BY NAME.",
+      "",
+      "A floor cannot catch a SHRINK. Bounding the count at \"> 50\" let a refactor to a generic",
+      "action type hide five document actions while the total stayed at 82 - comfortably green,",
+      "and every hidden action would then have had to be deleted from the baseline as \"no longer",
+      "an orphan\". The route arm died the same way.",
+      "",
+      "So the inventory is checked in by NAME. A name that disappears is reported as missing, and",
+      "updating this list is a deliberate act with a diff somebody reads.",
+      "",
+      "Regenerate: delete a section, run `node --test tools/ci/reachability.test.mjs`, and the",
+      "failure prints the live scan."
+    ],
+    "actions": [
+      "apply/done",
+      "apply/failed",
+      "apply/start",
+      "boot/settled",
+      "canvas/annotate",
+      "canvas/clear",
+      "canvas/dim",
+      "canvas/fit",
+      "canvas/flow",
+      "canvas/flow-clear",
+      "canvas/flow-cursor",
+      "canvas/flow-focus",
+      "canvas/frame",
+      "canvas/layout",
+      "canvas/pan",
+      "canvas/position",
+      "canvas/proposal",
+      "canvas/proposal-clear",
+      "canvas/reset",
+      "canvas/select",
+      "canvas/viewport",
+      "canvas/zoom-at",
+      "canvas/zoom-reset",
+      "canvas/zoom-step",
+      "comment/add",
+      "comment/cancel",
+      "comment/open",
+      "comment/sent",
+      "composer/ask-surface",
+      "composer/attachment-add",
+      "composer/attachment-remove",
+      "composer/attachments-clear",
+      "composer/chip-add",
+      "composer/chip-remove",
+      "composer/context-window",
+      "composer/draft",
+      "composer/focus",
+      "composer/mention",
+      "composer/mention-move",
+      "composer/model",
+      "composer/permission",
+      "composer/permission-enabled",
+      "composer/teach",
+      "composer/teach-known",
+      "composer/toolbelt",
+      "diff/failed",
+      "diff/loaded",
+      "diff/loading",
+      "diff/set",
+      "doc/add-edge",
+      "doc/add-node",
+      "doc/base",
+      "doc/delete-edge",
+      "doc/delete-node",
+      "doc/patch-node",
+      "doc/rebase",
+      "doc/rename-node",
+      "doc/reset",
+      "doc/set-layout-direction",
+      "doc/undo",
+      "file/decide",
+      "file/stage",
+      "file/toggle",
+      "git/committed",
+      "git/failed",
+      "git/loading",
+      "git/status",
+      "message/draft",
+      "net/clear",
+      "net/failed",
+      "proposal/apply-finished",
+      "proposal/file-decide",
+      "proposal/load",
+      "rail/explain",
+      "rail/reveal",
+      "repo/detached",
+      "repo/failed",
+      "repo/loaded",
+      "repo/scan-progress",
+      "repo/scanning",
+      "repo/stale",
+      "scope/set",
+      "session/canvas-hydrated",
+      "session/git-branch",
+      "session/hydrated",
+      "session/hydrating",
+      "session/index",
+      "shell/dragging",
+      "shell/frame",
+      "shell/overlay",
+      "shell/pane-reset",
+      "shell/pane-toggle",
+      "shell/pane-width",
+      "shell/theme",
+      "topology/clear",
+      "trust/loaded",
+      "trust/review",
+      "turn/edit",
+      "turn/event",
+      "turn/queue",
+      "turn/send",
+      "turn/stopped",
+      "turn/stopping",
+      "turn/unqueue",
+      "wb/add",
+      "wb/clear",
+      "wb/delete",
+      "wb/move",
+      "wb/text"
+    ],
+    "streamEvents": [
+      "advisor",
+      "canvas:block",
+      "canvas:story",
+      "chart:proposal",
+      "command:log",
+      "delta",
+      "edit:proposal",
+      "error",
+      "file:done",
+      "file:read",
+      "intent:done",
+      "intent:start",
+      "lookup:located",
+      "provider:done",
+      "provider:start",
+      "result",
+      "step:done",
+      "step:start",
+      "teach:step",
+      "tool:done",
+      "tool:start",
+      "topology:proposal",
+      "trajectory:start",
+      "usage"
+    ],
+    "routes": [
+      "exact /api/acp/agents",
+      "exact /api/acp/available",
+      "exact /api/acp/run-node",
+      "exact /api/ai-config",
+      "exact /api/annotate",
+      "exact /api/ask",
+      "exact /api/ask/events",
+      "exact /api/ask/stream",
+      "exact /api/attach",
+      "exact /api/attachment",
+      "exact /api/attachments",
+      "exact /api/auto-approve",
+      "exact /api/board",
+      "exact /api/browse",
+      "exact /api/build",
+      "exact /api/canvas-doc",
+      "exact /api/chat-memory",
+      "exact /api/checkpoint",
+      "exact /api/checkpoint/plan",
+      "exact /api/checkpoint/restore",
+      "exact /api/checkpoints",
+      "exact /api/ddl",
+      "exact /api/design-suggest",
+      "exact /api/detach",
+      "exact /api/explain",
+      "exact /api/file",
+      "exact /api/functions",
+      "exact /api/generate",
+      "exact /api/git/branch",
+      "exact /api/git/commit",
+      "exact /api/git/diff",
+      "exact /api/git/discard",
+      "exact /api/git/revisions",
+      "exact /api/git/status",
+      "exact /api/git/worktree",
+      "exact /api/git/worktrees",
+      "exact /api/github",
+      "exact /api/github/clone",
+      "exact /api/github/repos",
+      "exact /api/harness",
+      "exact /api/harness/distill-skills",
+      "exact /api/harness/refine",
+      "exact /api/harness/refine/plan",
+      "exact /api/hooks",
+      "exact /api/mcp",
+      "exact /api/mcp/call",
+      "exact /api/mcp/tools",
+      "exact /api/me",
+      "exact /api/net-fetch",
+      "exact /api/permissions",
+      "exact /api/plugins",
+      "exact /api/policies",
+      "exact /api/program",
+      "exact /api/program/run",
+      "exact /api/program/run-log",
+      "exact /api/program/runs",
+      "exact /api/program/strategy",
+      "exact /api/prompt-file",
+      "exact /api/recent",
+      "exact /api/repo-trust",
+      "exact /api/research",
+      "exact /api/scan",
+      "exact /api/search",
+      "exact /api/sessions",
+      "exact /api/sessions/active",
+      "exact /api/status",
+      "exact /api/trajectory",
+      "exact /api/tree",
+      "exact /api/usage",
+      "prefix /api/",
+      "prefix /api/ask/",
+      "prefix /api/github/",
+      "prefix /api/harness/",
+      "prefix /api/harness/refine/",
+      "prefix /api/program/",
+      "prefix /api/program/runs/",
+      "prefix /api/sessions/",
+      "prefix /api/trajectory/"
+    ]
+  }
+}

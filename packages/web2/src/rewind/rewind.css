@@ -1,0 +1,94 @@
+/* ── REWIND ──────────────────────────────────────────────────────────────
+   UNSHEETED, exactly like settings. No Graphite page draws an undo list, so
+   nothing here invents a visual language: every value is a token the
+   substrate already owns, and every control sits on a rung the control ladder
+   already defines (sheet 10). Selection is carried by edge and weight, never
+   by hue alone (sheet 12.5), and this panel draws no colour the rail does
+   not — law 1, never more hues than claims. */
+.rewind-scope {
+  display: flex; flex-direction: column; gap: var(--sp-12);
+  padding: var(--sp-16);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+}
+.rewind-scope .rewind-title {
+  margin: 0; font-size: var(--t-14); line-height: var(--lh-14); color: var(--ink-1);
+}
+.rewind-scope .rewind-section {
+  display: flex; flex-direction: column; gap: var(--sp-8);
+}
+.rewind-scope .rewind-note {
+  margin: 0; font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-3);
+}
+.rewind-scope .rewind-headline {
+  margin: 0; font-size: var(--t-12); line-height: var(--lh-12); color: var(--ink-1);
+}
+.rewind-scope .rewind-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+}
+.rewind-scope .rewind-row {
+  width: 100%;
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-8);
+  box-sizing: border-box;
+  padding: var(--sp-6) var(--sp-10);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+.rewind-scope .rewind-row:hover { background-color: var(--surface-2); }
+/* SELECTED IS AN EDGE AND A WEIGHT, not a hue — the row still has to read as
+   selected to a reader who cannot tell the two greys apart. */
+.rewind-scope .rewind-row[data-selected='true'] {
+  border-color: var(--edge);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+.rewind-scope .rewind-row-label {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rewind-scope .rewind-row-meta {
+  flex: 0 0 auto;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rewind-scope .rewind-scopes { display: flex; gap: var(--sp-4); }
+.rewind-scope .rewind-scope-btn {
+  height: var(--control-h);
+  box-sizing: border-box;
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  cursor: pointer;
+}
+.rewind-scope .rewind-scope-btn[data-selected='true'] {
+  border-color: var(--edge);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+.rewind-scope .rewind-lines {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-3);
+  /* Bounded, and it SCROLLS: a plan naming four hundred files must not push
+     the Restore button off the panel. The legibility gate checks exactly
+     this — every scrollable region has to actually scroll. */
+  max-height: calc(var(--row-h) * 6);
+  overflow-y: auto;
+}
+.rewind-scope .rewind-actions {
+  display: flex; align-items: center; gap: var(--sp-8);
+}

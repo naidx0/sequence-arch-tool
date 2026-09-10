@@ -1,0 +1,552 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   ITEM 2.4 — THE BOOT SURFACE AND THE ATTACH DIALOG
+   ══════════════════════════════════════════════════════════════════════════
+
+   HUE BUDGET FOR THIS SHEET: ONE.
+     --wont, on the `fault` tone only — the single attach outcome where
+     something on the far side actually broke (a scan that threw).
+   Everything else on this surface is ink, surface and edge. An engine that is
+   not running is the local-first case working as designed; a folder above the
+   browse boundary is a boundary doing its job. Graphite law 1: every hue on
+   screen is a claim about the world, and there are never more hues than there
+   are claims. Counting the budget in the header is the enforcement mechanism
+   the book itself uses.
+
+   WHAT IS TRANSCRIBED, AND FROM WHERE. This surface is UNSHEETED — the attach
+   dialog is one of the eleven surfaces §5.6 of the plan lists as uncovered by
+   the book. Three things are therefore lifted from the frozen book rather than
+   invented, and the rest is designed here and said so:
+     · the empty box —
+       docs/brand/graphite/pages/08-board-density-and-overflow.html §08.5:
+       `1px dashed var(--edge-strong)`, `--r-14`, `--sp-20` padding, column,
+       `--sp-8` gaps, on `--surface-1`, and NOT ONE OF THE THREE IS COLOURED.
+     · its three parts, in order — what is not here, why it is not here, one
+       thing to do about it. The second is the one that gets dropped.
+     · the control ladder — `--control-h` 28, `--icon-btn` 26, rows on
+       `--row-h-thread` 28. Compact is the only density (Graphite law 3);
+       airy is a defect.
+
+   THE PREFIXES ARE `startup-` AND `attach-`, NOT `boot-`. `src/styles/boot.css`
+   already owns `.boot`, `.boot-row`, `.boot-chip` and a dozen more for the Wave
+   0 token smoke surface. Two sheets in one document with one prefix between
+   them is a collision that presents as a layout bug in whichever surface loads
+   second, and the fix is a name, not a specificity war.
+
+   THIS SHEET IS IMPORTED BY ITS COMPONENT, NOT BY App.tsx's ordered block.
+   App.tsx is item 2.3's file. When the shell lands, this import moves into that
+   block with a line saying what it raises off what — see the handback.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── The lane's local primitives ───────────────────────────────────────────
+   Transcribed from the book's own `.btn` and `.i` specimens (_core.html:832
+   and :619 in docs/brand/graphite/). They are LANE-LOCAL and temporary:
+   item 2.5 builds the shared `components/` primitives, and these three rules
+   are deleted in favour of them. They are not a second design — they are the
+   same numbers, sitting in the only directory this lane may write to. */
+.startup-btn {
+  appearance: none;
+  font-family: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  line-height: 1;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-10);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.startup-btn:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+  border-color: var(--edge-strong);
+}
+.startup-btn:active { background: var(--state-press); }
+.startup-btn[disabled] {
+  color: var(--ink-4);
+  border-color: var(--edge-faint);
+  background: transparent;
+  cursor: not-allowed;
+}
+/* `.solid` is a BUDGET, not a style: one per surface, on the action the product
+   is asking the reader to commit to. On this surface that action is Open a
+   repository, and there is never a second one visible at the same time. */
+.startup-btn.solid {
+  background: var(--accent-solid);
+  border-color: transparent;
+  color: var(--accent-on-solid);
+  font-weight: var(--fw-solid);
+}
+.startup-btn.solid:hover { background: var(--accent-solid-hover); }
+.startup-btn.solid:active { background: var(--accent-solid-press); }
+.startup-btn.sm {
+  height: 24px;
+  font-size: var(--t-11);
+  padding: 0 var(--sp-8);
+}
+
+.startup-i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.startup-i.sz-12 { width: 12px; height: 12px; }
+.startup-i.sz-20 { width: 20px; height: 20px; }
+
+/* ── The boot surface ─────────────────────────────────────────────────────
+   It fills whatever the shell gives it and centres one box. The box is the
+   size of what it is talking about, never a lid over the pane: sheet 08.5's
+   "The state this replaces" note names an opaque sheet pinned over the whole
+   canvas as the thing that reads as a crash. */
+.startup {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  /* SCROLLS RATHER THAN CLIPS, and the centring below is why it has to.
+     A flex child centred with `align-items: center` is centred even when it is
+     TALLER than its container — which puts its top edge at a negative offset,
+     outside the scrollable region, where no scrollbar can reach it. Measured on
+     the real page at 1280x800 before this was fixed: the empty box was 211px
+     tall in a 48px pane and its title rendered at y = 0 with its icon at
+     y = -32, i.e. off the top of the screen with no way to bring it back. The
+     three-pane shell makes a short canvas pane ordinary rather than exotic, so
+     this is the common case, not the corner one.
+     `margin: auto` on the child does the same centring through free space, and
+     when there is no free space the auto margins resolve to zero and the box
+     starts at the top edge where scrolling can reach it. */
+  overflow: auto;
+  padding: var(--sp-24);
+  background: var(--bg-base);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+
+/* The `.empty` box, transcribed. */
+.startup-empty {
+  /* The centring. See the note on .startup above — this is not a shorthand for
+     `align-items: center`, it is the version of it that can be scrolled to. */
+  margin: auto;
+  border: 1px dashed var(--edge-strong);
+  border-radius: var(--r-14);
+  padding: var(--sp-20);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  align-items: flex-start;
+  background: var(--surface-1);
+  max-width: var(--menu-w);
+}
+
+/* Part one: what is not here. */
+.startup-title {
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  margin: 0;
+}
+
+/* Part two: why it is not here. The part that gets dropped. */
+.startup-why {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  margin: 0;
+}
+
+/* ── THE --ink-4 RULING FOR THIS SHEET ─────────────────────────────────────
+   --ink-4 IS NOT A TEXT COLOUR HERE. It measures 2.41:1 against --surface-2
+   and 2.56:1 against --surface-1 in dark — against a 4.5:1 floor for text and
+   a 3:1 floor for a glyph. Both numbers were measured twice and agree: once in
+   Chrome on the real page at 1280x800, and once through the token resolver in
+   contrast.test.tsx, which is the lock.
+
+   It shipped here on four rules — the section labels, the recents path, the
+   crumb separator and the two reported-detail lines — on the reasoning that
+   each is "secondary". Secondary is a reason to make something quieter than
+   its neighbour, not a reason to make it unreadable, and every one of those
+   five carries something a user is expected to actually read: which list they
+   are looking at, which folder a recent entry points to, and the machine's own
+   words about a failure.
+
+   --ink-4 keeps exactly one use on this surface, and it is the one the
+   standard itself exempts: a DISABLED control, where low contrast is the
+   meaning rather than a defect (WCAG 1.4.3 excludes inactive components).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The reported words — a quotation from a machine, so mono, one step down from
+   the sans beside it (the ramp's rule), and never coloured. It is evidence,
+   and evidence is not a verdict. */
+.startup-detail,
+.attach-failure-detail {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The glyph is the KIND OF ABSENCE and is never coloured — sheet 08.5's
+   caption states it outright: "an empty state is not a verdict". */
+.startup-glyph { color: var(--ink-3); }
+
+/* The one tone that spends the budget. It colours the GLYPH only: the body
+   text of a fault still has to be read, and ink is what reads. */
+.startup[data-tone='fault'] .startup-glyph { color: var(--wont); }
+
+/* The machine-readable outcome. Present for the e2e tier, inaudible to a
+   screen reader, and never a substitute for the sentence beside it. */
+.startup-state {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The attached / static-graph strip. Counts are mono and tabular — a number
+   the eye compares must not jump columns between renders. */
+.startup-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-12);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-variant-numeric: var(--num);
+  color: var(--ink-3);
+}
+.startup-repo {
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+}
+
+/* ── The attach dialog ────────────────────────────────────────────────────
+   A panel, not a lid: --r-14, --e3, on --surface-2. It is mounted, never
+   hidden behind display:none — routes.ts records the accessibility reason. */
+.attach {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  width: min(560px, 100%);
+  max-height: 100%;
+  padding: var(--sp-16);
+  background: var(--surface-2);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-14);
+  box-shadow: var(--e3);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-2);
+}
+
+.attach-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}
+.attach-h {
+  margin: 0;
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+/* The boundary, stated. A user who does not know the jail exists reads a
+   disabled up-control as a bug. */
+.attach-callout {
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  background: var(--surface-1);
+  border: 1px solid var(--edge-faint);
+  border-radius: var(--r-8);
+  padding: var(--sp-6) var(--sp-8);
+}
+.attach-callout code {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-2);
+}
+
+.attach-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-height: var(--control-h);
+}
+
+/* Decision 5 — the typed door. One 28px input on the control ladder; the path
+   is a machine string, so the VALUE is mono while the placeholder stays the
+   ordinary quiet ink. No new hue: focus takes the same accent ring every
+   focused control on this surface takes. */
+.attach-pathrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+}
+.attach-path-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+}
+.attach-path-input::placeholder {
+  color: var(--ink-3);
+  font-family: inherit;
+}
+.attach-path-input:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 1px;
+}
+.attach-path-input[disabled] { color: var(--ink-4); cursor: progress; }
+
+.attach-iconbtn {
+  appearance: none;
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink-3);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-8);
+  cursor: pointer;
+}
+.attach-iconbtn:hover { background: var(--state-hover); color: var(--ink-1); }
+.attach-iconbtn[disabled] { color: var(--ink-4); border-color: var(--edge-faint); cursor: not-allowed; }
+
+/* The native picker. `margin-left: auto` parks it at the END of the bar: the
+   folder browser is the path EVERY build has, so the desktop-only shortcut must
+   not sit where it displaces the crumbs. Text, no glyph — the folder mark
+   already means "a browsable row" three rows below, and reusing it on an action
+   would make one icon mean two things. 28px, the control height from law 3. */
+.attach-native {
+  appearance: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-8);
+  font: inherit;
+  font-size: var(--t-11);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.attach-native:hover { background: var(--state-hover); color: var(--ink-1); }
+.attach-native[disabled] { color: var(--ink-4); border-color: var(--edge-faint); cursor: progress; }
+
+/* Crumbs. The separator is drawn, not typed, so a folder named with a slash
+   cannot forge one. */
+.attach-crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+.attach-crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.attach-crumb {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0 var(--sp-4);
+  height: 20px;
+  border-radius: var(--r-4);
+  color: var(--ink-3);
+  font: inherit;
+  cursor: pointer;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attach-crumb:hover { background: var(--state-hover); color: var(--ink-1); }
+.attach-crumb[aria-current='true'] { color: var(--ink-1); }
+.attach-crumb-sep {
+  width: 10px;
+  height: 10px;
+  color: var(--ink-3);
+  flex: 0 0 auto;
+}
+
+.attach-legend {
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  text-transform: none;
+  margin: 0;
+}
+
+/* The lists. 28px rows — the thread rung. A scroll box that is not scrollable
+   is a list that has been starved of rows; this one is capped in pixels so it
+   scrolls the moment there is more than fits. */
+.attach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attach-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-height: var(--row-h-thread);
+}
+
+/* The primary control IS the row: one row, one commitment. The chevron beside
+   it descends instead, and is a separate target. */
+.attach-open {
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--row-h-thread);
+  padding: 0 var(--sp-8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-8);
+  color: var(--ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.attach-open:hover { background: var(--state-hover); color: var(--ink-1); border-color: var(--edge-faint); }
+.attach-open[disabled] { color: var(--ink-4); cursor: progress; }
+.attach-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attach-path {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+/* The scannable tag. A PILL, because --r-full means "this is a state or a
+   label" and never "this is an interactive container". Uncoloured: it reports
+   a marker file on disk, which is a hint about what a scan will find, not a
+   verdict about the folder. */
+.attach-tag {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 var(--sp-6);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-full);
+  font-size: var(--t-10);
+  line-height: 1;
+  color: var(--ink-3);
+  background: var(--surface-1);
+}
+
+/* ── Failures ─────────────────────────────────────────────────────────────
+   Three tones, one hue. `note` and `plain` are ink on a hairline; `fault`
+   moves the glyph and the rule to --wont and stops there. */
+.attach-failure {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: flex-start;
+  padding: var(--sp-8) var(--sp-10);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-1);
+}
+.attach-failure[data-tone='fault'] { border-color: var(--wont-edge); background: var(--wont-wash); }
+.attach-failure[data-tone='fault'] .attach-failure-glyph { color: var(--wont); }
+.attach-failure-glyph { color: var(--ink-3); margin-top: 1px; }
+.attach-failure-body { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+.attach-failure-title {
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+}
+.attach-failure-why {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+.attach-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  padding-top: var(--sp-4);
+}
+
+/* The dialog's own scrim, for when the boot lane hosts it standalone. The
+   shell owns overlays from 2.3 onward and this rule retires with that. */
+.attach-scrim {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  /* Same rule as .startup, same reason: a dialog taller than the window must
+     scroll to its own top edge rather than be centred past it. */
+  overflow: auto;
+  padding: var(--sp-24);
+  background: var(--scrim);
+  z-index: 10;
+}

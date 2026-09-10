@@ -1,0 +1,47 @@
+{
+  "name": "sequence",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Interactive infinite-canvas map of your system architecture, inferred from static code alone",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "sequence": "packages/analyzer/dist/cli.js"
+  },
+  "countingGate": { "script": "test:ci" },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:ci": "node --test tools/ci/*.test.mjs",
+    "gate:count": "node tools/ci/counting-gate.mjs",
+    "push": "node tools/ci/push-if-green.mjs",
+    "restart:app": "node tools/ci/restart-if-stale.mjs",
+    "check:running": "node tools/ci/check-running-build.mjs",
+    "nightly:health": "node tools/ci/nightly-health.mjs --since 24h",
+    "test:e2e": "pnpm --filter @sequence/web2 test:e2e",
+    "grade": "node packages/analyzer/dist/eval/grade.js",
+    "qa:smoke": "node tools/qa-loop/run.mjs --tier smoke",
+    "qa:full": "node tools/qa-loop/run.mjs --tier full",
+    "qa:test": "node --test \"tools/qa-loop/test/*.test.mjs\"",
+    "lora:test": "node --test \"tools/lora/test/*.test.mjs\"",
+    "lora": "node tools/lora/run.mjs",
+    "scan": "node packages/analyzer/dist/cli.js scan",
+    "serve": "node packages/analyzer/dist/cli.js serve",
+    "app": "node packages/analyzer/dist/cli.js app",
+    "start": "node packages/analyzer/dist/cli.js",
+    "desktop": "pnpm --filter @sequence/desktop dev",
+    "desktop:dist": "pnpm --filter @sequence/desktop dist",
+    "desktop:smoke": "node tools/desktop-smoke.mjs",
+    "desktop:smoke:packaged": "node tools/desktop-smoke.mjs --packaged"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "electron",
+      "node-pty"
+    ]
+  }
+}

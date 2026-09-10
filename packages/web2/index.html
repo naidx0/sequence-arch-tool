@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      THE FIRST PAINT IS DARK, AND IT COSTS NO HEX LITERAL TO SAY SO.
+      color-scheme tells the browser which way to paint the canvas before a
+      single stylesheet has arrived, so there is no white flash ahead of
+      tokens/graphite.css. Naming a background colour here instead would put a
+      hex outside the token file and start the exact drift item 0.6 exists to
+      stop. Dark leads because GRAPHITE-DECISIONS.md Decision 1 defers light.
+    -->
+    <meta name="color-scheme" content="dark light" />
+
+    <!--
+      NO WEBFONT CDN LINK, AND THIS COMMENT IS THE REASON IT WILL NOT COME BACK.
+
+      The Graphite book links Google Fonts at _core.html:148-150 because a sheet
+      has to open by double-clicking it. The book says in the same breath that
+      the APP must not: "a local-first product that blocks first paint on a CDN
+      contradicts itself." CLAUDE.md's non-negotiable says it from the other
+      end — the app boots and delivers its core with no network.
+
+      Instrument Sans and JetBrains Mono are @import-ed from node_modules at the
+      top of src/tokens/graphite.css and emitted into the bundle by Vite. There
+      is nothing to fetch. test/boot.test.ts asserts zero references to
+      fonts.googleapis.com and fonts.gstatic.com anywhere in the booted
+      document, and it will fail the moment a <link> like the book's is pasted
+      in here.
+    -->
+
+    <title>Sequence</title>
+
+    <script>
+      /*
+       * PRE-PAINT THEME. Runs before the body exists so the attribute is set
+       * on the first frame rather than swapped on the second — a theme that
+       * corrects itself after paint is a flash, and a flash reads as a bug.
+       *
+       * Light is DEFERRED, not waived (GRAPHITE-DECISIONS.md Decision 1), so
+       * dark is the default and the only value a stored preference can
+       * currently choose is the one already on the element. The branch is here
+       * anyway, because the token layer is written in Graphite's three-state
+       * shape from day 0 and finishing light later must be a fill-in rather
+       * than a re-architecture. The same is true of this script.
+       *
+       * Wrapped in try/catch: localStorage throws outright in a sandboxed
+       * frame and when site data is blocked, and a theme preference is never
+       * worth taking the whole app down for.
+       */
+      try {
+        var stored = localStorage.getItem('seq.theme');
+        if (stored === 'light' || stored === 'dark') {
+          document.documentElement.setAttribute('data-theme', stored);
+        }
+      } catch (_) {
+        /* no storage — the markup default stands */
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

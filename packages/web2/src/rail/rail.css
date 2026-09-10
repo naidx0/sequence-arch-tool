@@ -1,0 +1,783 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE INDEX RAIL — rows, filter, coverage, flow, node detail
+   packages/web2/src/rail/rail.css                        items 4.1 – 4.5
+
+   Transcribed from docs/brand/graphite/pages/11-the-functions-rail.html and
+   its substrate docs/brand/graphite/_core.html. Every geometry below is the
+   sheet's own spec list, not a re-derivation of it.
+
+   ── THE SPEC LIST, 11.1, COPIED SO A REVIEWER CAN CHECK IT WITHOUT THE BOOK ─
+       Scroller padding   .pane-scroll · --sp-8
+       Card head          .railhead    · 24px
+       File row           .folder      · --row-h        30px
+       Function row       .thread      · --row-h-thread 28px
+       Indent, one level  .threads     · --sp-16
+       Icon slot          .i-14        · gap --sp-8
+       Row radius         --r-10
+       Search field       .input.sm    · 24px · --t-11 · --r-8
+
+   ── HUE BUDGET FOR THIS SHEET: TWO TOKENS. ────────────────────────────────
+   Sheet 11.8, rule 2: "No hue for a category. Height, indent, icon and type
+   family tell the rows apart. The only colours this rail may draw are the
+   accent on the playing row and a verdict word on a claim the scan could not
+   confirm."
+
+       --accent    the inset rule on the PLAYING row, and nothing else
+       --unknown   "Not traced", and the coverage badge's mark
+
+   Selection is NOT in that budget and must not be: 11.4 is explicit that
+   "selection is where the keyboard is, and is neutral; playing is what the
+   canvas is currently showing, and is the one place in this rail the accent
+   appears." Render this rail in greyscale and no row becomes ambiguous, because
+   height, indent, icon and type family carry every category and every coloured
+   state also carries a word.
+
+   ── THE ONE THING THAT IS NOT THE SUBSTRATE'S ─────────────────────────────
+   11.4 raises a handback: ".thread.sel paints --state-selected and nothing
+   else. The playing state adds an inset --w-rule bar in --accent, drawn here
+   inline. It should become part of the class." It is a class here —
+   `[data-playing]` — so "playing" is one decision made once rather than a
+   shadow retyped at every call site. The book still needs its own edit; this
+   sheet does not wait for it and does not pre-empt it either.
+
+   ── NO HEX AND NO px FONT-SIZE ────────────────────────────────────────────
+   tokens/graphite.css is the only file allowed to declare either, and
+   test/firewall.test.ts fails the build if this sheet grows one. Every colour
+   and every size below is a var(). Raw pixel LENGTHS that the book writes as
+   literals (the 24px card head, the 24px field) are written as arithmetic on
+   the space ramp so they move when the ramp does.
+
+   ── SCOPING ───────────────────────────────────────────────────────────────
+   Every selector sits under `.rail-scope`, which the exported root carries, so
+   this lane cannot collide with the shell sheet, the board sheet or the chat
+   sheet over a name the substrate also uses. The class names are prefixed
+   `rail-` for the same reason `chat.css` namespaces the book's own names.
+
+   ── WHERE THIS FILE IS IMPORTED: NOWHERE YET, AND THAT IS THE HANDBACK ─────
+   `app/App.tsx` owns one ordered style block and argues the order of every
+   sheet in it — "a sheet whose position cannot be argued does not go in". This
+   lane may not edit that file. The rail sheet belongs AFTER shell.css (it sizes
+   itself to the column the frame gives it) and beside chat.css (both are
+   surfaces inside the frame); the line to add is:
+
+       import '../rail/rail.css';
+
+   directly after the chat.css line. Until it is added, the rail renders
+   unstyled in the app and fully styled in `specimen.html`, which imports it
+   directly — so the rendered tier still measures the real cascade.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the icon rung ────────────────────────────────────────────────────────
+   _core.html:619-623. Three sizes, one stroke weight, currentColor. Lives here
+   only until the shared components/Icon.tsx of the plan's §5 skeleton exists;
+   see the handback in RailIcon.tsx. */
+.rail-scope .i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rail-scope .i-14 { width: 14px; height: 14px; }
+.rail-scope .i-12 { width: 12px; height: 12px; }
+
+.rail-scope .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+}
+
+/* ── 11.1 the column ─────────────────────────────────────────────────────
+   The `.pane` chassis, minus the header the shell already draws. `min-height:0`
+   on the scroller is the flexbox rule without which `overflow:auto` on a flex
+   child never scrolls — it grows instead, and the whole column scrolls with the
+   page. That is the defect the legibility gate exists to catch. */
+.rail-scope.rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  background-color: var(--surface-1);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+
+/* ── 11.5 the field, above the scroller so it never scrolls away ────────── */
+.rail-scope .rail-top {
+  flex: 0 0 auto;
+  padding: var(--sp-6) var(--sp-8) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+
+.rail-scope .rail-inputwrap {
+  position: relative;
+  display: block;
+}
+
+/* The wrapper reserves the same 14px icon slot the rows use, "so the search
+   glyph sits on the rail's one vertical alignment". */
+.rail-scope .rail-inputicon {
+  position: absolute;
+  left: var(--sp-8);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+.rail-scope .rail-input {
+  width: 100%;
+  /* 24px — the compact field rung, written off the space ramp rather than as a
+     literal so it moves when the ramp does. */
+  height: var(--sp-24);
+  box-sizing: border-box;
+  padding: 0 var(--sp-24) 0 var(--sp-32);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  appearance: none;
+}
+.rail-scope .rail-input::placeholder { color: var(--ink-3); }
+.rail-scope .rail-input::-webkit-search-cancel-button { display: none; }
+
+/* The double ring — --bg-base then --accent — never removed. */
+.rail-scope .rail-input:focus-visible,
+.rail-scope .rail-row:focus-visible,
+.rail-scope .rail-iconbtn:focus-visible,
+.rail-scope .rail-scopebtn:focus-visible,
+.rail-scope .rail-retry:focus-visible,
+.rail-scope .rail-scrub:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.rail-scope .rail-inputclear {
+  position: absolute;
+  right: var(--sp-2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* 11.5's result head, and 11.7's two status strips. Both are .railhead: 24px,
+   mono, 10px, uppercase, tracked. */
+.rail-scope .rail-matches,
+.rail-scope .rail-status {
+  margin: 0;
+  min-height: var(--sp-24);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.rail-scope .rail-status[data-status='reading'] { color: var(--st-active); }
+.rail-scope .rail-status[data-status='stale'] { color: var(--st-stalled); }
+
+.rail-scope .rail-dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: var(--r-full);
+  background-color: currentColor;
+  flex: 0 0 auto;
+}
+/* A pulse, not a skeleton. 11.7: "While a scan is running the rail does not
+   draw a skeleton. A grey bar where a row will be is a shape the engine has not
+   measured, and this book does not draw numbers or rows it does not have." */
+.rail-scope .rail-pulse { animation: railpulse 1.8s var(--ease) infinite; }
+@keyframes railpulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-scope .rail-pulse { animation: none; }
+}
+
+.rail-scope .rail-retry {
+  margin-left: auto;
+  height: var(--icon-btn);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+.rail-scope .rail-retry:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+/* ── the scroller — the only thing in the column that scrolls ───────────── */
+.rail-scope .rail-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-8);
+}
+
+.rail-scope .rail-rows,
+.rail-scope .rail-item {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── 11.2 · 11.3 the three rungs ─────────────────────────────────────────
+   Four channels, none of them hue: height, indent, icon, type family. */
+.rail-scope .rail-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-10);
+  background-color: transparent;
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.rail-scope .rail-row:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+/* 11.4: selection is neutral. It is where the keyboard is, not a verdict. */
+.rail-scope .rail-row[data-selected='true'] {
+  background-color: var(--state-selected);
+  color: var(--ink-1);
+}
+
+/*
+  THE ONE ACCENT MARK, FOR ONE FACT. 11.4: "Hover may never out-weigh playing.
+  The playing mark is the one thing a reader hunts for in this rail, and a hover
+  that paints heavier than it turns the pointer into a liar." Declared after the
+  hover rule so equal specificity cannot lose it.
+
+  IT IS A PSEUDO-ELEMENT AND NOT AN `inset box-shadow`, AND THE SCREENSHOT IS
+  WHY. An inset shadow is clipped by the row's own `--r-10`, so a 2px rule on a
+  28px row painted as a small rounded ARC — a "(" — rather than as a bar. It was
+  present, it was the right colour, and every computed-style assertion about it
+  passed; it simply did not read as the mark sheet 11.4 describes. A positioned
+  bar with its own square corners paints the full height, every time.
+*/
+.rail-scope .rail-row[data-playing='true'] { color: var(--ink-1); }
+.rail-scope .rail-row[data-playing='true']::before,
+.rail-scope .rail-hop[data-playing='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--w-rule);
+  background-color: var(--accent);
+}
+
+/* card — 24px, mono 10, uppercase, tracked */
+.rail-scope .rail-card {
+  height: var(--sp-24);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* file — 30px, sans 12/500. "Structure that opens and closes." */
+.rail-scope .rail-file {
+  height: var(--row-h);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+
+/* function — 28px, mono 11. "The object you act on", and deliberately not the
+   26px footnote rung: "demoting it to a footnote would say the opposite of what
+   the product means." */
+.rail-scope .rail-fn {
+  height: var(--row-h-thread);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+}
+
+/* One indent step, applied once by the container. The rail is three levels deep
+   by construction, so the indent never compounds and never eats the name. */
+.rail-scope .rail-indent { padding-left: var(--sp-16); }
+
+.rail-scope .rail-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A function name truncates at the END, because the identity of a name is its
+   head. The file ROW shows the filename only; the path lives in its title. */
+.rail-scope .rail-fn .rail-name { direction: ltr; }
+
+.rail-scope .rail-trail,
+.rail-scope .rail-line {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: normal;
+  color: var(--ink-4);
+}
+.rail-scope .rail-file .rail-trail { color: var(--ink-3); }
+
+/* ── 11.7 the sentences that replace rows ────────────────────────────────
+   Three ways to have nothing, three sentences. "'No results' for all three is
+   the rail refusing to answer." */
+.rail-scope .rail-empty {
+  margin: var(--sp-8) 0;
+  padding: var(--sp-12);
+  border: var(--w-hair) dashed var(--edge-strong);
+  border-radius: var(--r-14);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+.rail-scope .rail-cardempty {
+  margin: 0 0 var(--sp-4);
+  padding: 0 var(--sp-8) 0 var(--sp-32);
+  color: var(--ink-4);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+/* WHAT WAS NOT READ. Below the scroll rather than inside it, because it is a
+   fact about the whole index and not about any row — a note that scrolled away
+   would be a coverage claim the reader can lose. No hue: this is not a verdict
+   on the repository, it is arithmetic about the scan. */
+.rail-scope .rail-unscanned {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  border-top: var(--w-hair) solid var(--edge-faint);
+  color: var(--ink-4);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+/* ── 11.6 "Not traced" — the only badge this rail may draw, and it is grey ── */
+.rail-scope .rail-nottraced {
+  margin: 0 0 var(--sp-4) var(--sp-16);
+  padding: 0 var(--sp-8) 0 var(--sp-32);
+  color: var(--unknown);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── 4.4 the coverage badge ──────────────────────────────────────────────
+   Grey, and deliberately so. tokens/graphite.css argues it at --cov-*:
+   "coverage is not a verdict… the reflex is to redden a low one, and that
+   reflex is wrong twice over." A component nobody read is a fact about the
+   answer, not a failure of the code. */
+.rail-scope .rail-badge {
+  margin: 0 0 var(--sp-4);
+  padding: 0 var(--sp-8);
+  min-height: var(--cov-h);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  color: var(--cov-missed);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* ── 11.6 the trace card. Never accent-tinted: "two accent marks for one fact
+      read as two facts." ─────────────────────────────────────────────────── */
+.rail-scope .rail-flow,
+.rail-scope .rail-detail {
+  flex: 0 0 auto;
+  max-height: 40%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-8);
+  border-top: var(--w-hair) solid var(--edge);
+  background-color: var(--surface-2);
+}
+.rail-scope .rail-detail { overflow: auto; }
+
+/*
+  THE HOP LIST SCROLLS; THE STRIP DOES NOT. Found in a screenshot: on
+  `analyzer/src/cli.ts#main` — the longest flow this repository produces, at 14
+  hops — the whole panel scrolled as one block, so play/pause and the scrub went
+  off the bottom of the rail. A transport control that scrolls away is not a
+  control. The list is the only scroller in the panel, exactly as `.pane-scroll`
+  is the only scroller in the column.
+*/
+.rail-scope .rail-flow .rail-hops {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.rail-scope .rail-flow-hd,
+.rail-scope .rail-strip { flex: 0 0 auto; }
+
+.rail-scope .rail-flow-hd,
+.rail-scope .rail-detail-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--sp-24);
+}
+
+.rail-scope .rail-flow-t,
+.rail-scope .rail-detail-lbl {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.rail-scope .rail-flow-hd .rail-iconbtn,
+.rail-scope .rail-detail-hd .rail-iconbtn { margin-left: auto; }
+
+.rail-scope .rail-hops {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rail-scope .rail-hop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-8);
+  border-radius: var(--r-8);
+}
+
+
+.rail-scope .rail-hop-ends {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.rail-scope .rail-hop-end {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+  AN EVIDENCE REF IS A PATH, SO IT TRUNCATES AT THE FRONT. Sheet 11.2: "a path
+  truncates at the front, because the identity of …/board/boardFocusModel.ts is
+  its tail." The line number is the most load-bearing character in the whole
+  string and it is the LAST one — a ref that truncates at its tail throws away
+  precisely the part the reader came for. Same `direction: rtl` + <bdi> pairing
+  as the detail lists; see the note there for why it must not be a flex row.
+*/
+.rail-scope .rail-hop-ref,
+.rail-scope .rail-strip-ref,
+.rail-scope .rail-detail-ref {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/*
+  THE HONEST EMPTY CASE IS GREY, NOT RED. It is not a failure — the hop is real
+  and the proof is missing, which is `--unknown`'s exact meaning on this rail
+  (11.6: "A claim the source could not confirm is --unknown"). Reddening it
+  would spend the verdict budget saying the code is wrong when what is being
+  said is that we did not see it.
+*/
+.rail-scope [data-unknown='true'] { color: var(--unknown); }
+
+/* ── 4.5 the strip: one button, one range, one line. No fourth control. ─── */
+.rail-scope .rail-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--control-h);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: var(--w-hair) solid var(--edge);
+}
+
+/*
+  `color` IS BOUND EXPLICITLY, AND IT IS NOT COSMETIC PEDANTRY. A bare
+  <input type="range"> takes its `color` from the user agent, which resolves to
+  pure white here — a value that is in no Graphite ramp and that the rendered
+  hue audit caught on its first run. It is invisible today because a range draws
+  no text, and it would stop being invisible the moment a tick list, a datalist
+  label or a `currentColor` focus treatment landed on it. An unbound colour is a
+  colour nobody chose.
+*/
+.rail-scope .rail-scrub {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ink-3);
+  accent-color: var(--accent);
+}
+
+.rail-scope .rail-strip-ref { flex: 0 0 auto; max-width: 55%; }
+
+/* ── the shared icon button, at the book's 26px rung ────────────────────── */
+.rail-scope .rail-iconbtn {
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.rail-scope .rail-iconbtn:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+/* ── 4.3 node detail ─────────────────────────────────────────────────────── */
+.rail-scope .rail-detail-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-head);
+}
+
+.rail-scope .rail-detail-does,
+.rail-scope .rail-detail-none,
+.rail-scope .rail-detail-empty {
+  margin: var(--sp-4) 0 var(--sp-8);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.rail-scope .rail-detail-none { color: var(--unknown); }
+
+.rail-scope .rail-detail-sec { margin-bottom: var(--sp-8); }
+
+.rail-scope .rail-detail-list {
+  list-style: none;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+}
+
+/*
+  A path truncates at the FRONT, because the identity of …/rail/railModel.ts is
+  its tail. `direction: rtl` is the only way CSS puts the ellipsis on the left
+  without measuring the string in JS, and the inner <bdi> keeps the path's own
+  characters running left-to-right inside that RTL line box.
+
+  THE `display: block` IS THE WHOLE FIX AND IT COST A SCREENSHOT TO FIND. The
+  first draft laid these rows out as `display: flex`, and `text-align` has no
+  effect on a flex container — so under `direction: rtl` every SHORT path was
+  packed against the RIGHT edge and the list rendered as a ragged right column
+  of paths. Every unit test passed: the text was correct, the element was
+  present, the truncation worked. Only the render showed it, which is exactly
+  what §4.6 Tier 4 exists for and exactly what CANON means by "nobody has looked
+  at this with human eyes".
+*/
+.rail-scope .rail-detail-part,
+.rail-scope .rail-detail-file,
+.rail-scope .rail-detail-ref {
+  display: block;
+  min-height: var(--sp-20);
+  line-height: var(--lh-11);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  color: var(--ink-2);
+  font-size: var(--t-11);
+}
+.rail-scope .rail-detail-ref { color: var(--ink-3); }
+
+/* THE ANNOTATION — /api/annotate's English for this node (Decision 6). Prose,
+   not a path: it wraps like a sentence instead of truncating like the file
+   rows above, and it reads at the same rung as everything else in the panel. */
+.rail-scope .rail-detail-note {
+  display: block;
+  margin: 0 0 var(--sp-2);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+}
+
+/*
+  Sheet 08's overflow discipline, applied to a list rather than to the board:
+  the remainder is COUNTED and said, never dropped and never scrolled forever.
+  `analyzer` has 248 files; a panel that printed all 248 is not a detail panel,
+  it is the file tree again. The number is derived from the list it summarises,
+  so law 4 is satisfied without a placeholder.
+*/
+.rail-scope .rail-detail-more {
+  margin: var(--sp-2) 0 0;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+.rail-scope .rail-scopebtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  cursor: pointer;
+}
+.rail-scope .rail-scopebtn:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+/* WHAT THE FILTER'S CAP WITHHELD. Quieter than the match count beside it: the
+   count is the answer, this is a caveat on the answer. No hue — a truncation
+   is not a verdict. */
+.rail-scope .rail-omitted { color: var(--ink-4); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   READING A FILE.
+
+   The rail listed every file and clicking one grounded the composer on it;
+   there was no way to READ it. A product whose claim is "every edge cites a
+   file and a line" could show the citation and not the line.
+
+   Mono throughout, and the gutter is not decoration: evidence here is
+   `file:line`, and a viewer without line numbers makes the reader count.
+   ══════════════════════════════════════════════════════════════════════════ */
+.rail-scope .fileview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: var(--w-hair) solid var(--edge-faint);
+  background: var(--surface-1);
+}
+
+.rail-scope .fileview-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-6) var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  flex: none;
+}
+.rail-scope .fileview-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Right-biased truncation: the LEAF is what identifies a file, and cutting
+     the end of `packages/analyzer/src/scan.ts` leaves every path in a package
+     reading the same. */
+  direction: rtl;
+  text-align: left;
+  font-size: var(--t-11);
+  color: var(--ink-2);
+}
+
+.rail-scope .fileview-note {
+  margin: 0;
+  padding: var(--sp-8);
+  color: var(--ink-4);
+  font-size: var(--t-11);
+}
+
+.rail-scope .fileview-body {
+  margin: 0;
+  padding: var(--sp-4) 0;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.rail-scope .fileview-line { display: flex; gap: var(--sp-8); padding: 0 var(--sp-8); white-space: pre; }
+/* The cited line, marked with the accent — this is the product pointing at its
+   own evidence, which is the accent's job: the product's own voice. */
+.rail-scope .fileview-line[data-cited='true'] { background: var(--accent-wash); }
+.rail-scope .fileview-n {
+  flex: none;
+  min-width: 4ch;
+  text-align: right;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+/* THE READ CONTROL. Expanding a file shows its FUNCTIONS; this shows its
+   source — two different questions about one row, so two controls rather than
+   one gesture that has to guess which was meant.
+
+   NO HUE. Sheet 11.8 rule 2: "the only colours this rail may draw are the
+   accent on the playing row and a verdict word on a claim the scan could not
+   confirm." Left unstyled, this button rendered at the browser's default
+   white, which the rail's hue audit caught. */
+.rail-scope .rail-read {
+  flex: none;
+  height: var(--control-h);
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-4);
+  font-family: inherit;
+  font-size: var(--t-10);
+  cursor: pointer;
+  opacity: 0;
+}
+.rail-scope .rail-item:hover .rail-read,
+.rail-scope .rail-read:focus-visible { opacity: 1; color: var(--ink-2); border-color: var(--edge-faint); }
+.rail-scope .rail-read:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}

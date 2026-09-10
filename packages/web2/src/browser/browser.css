@@ -1,0 +1,81 @@
+/* Browser pane — Graphite compact, no hue (C2.5). */
+.browser-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: var(--surface-1);
+  color: var(--ink-1);
+}
+
+.browser-pane-chrome {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-6) var(--sp-10);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+
+.browser-pane-title {
+  flex-shrink: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+
+.browser-pane-url {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  padding: var(--sp-4) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  color: var(--ink-1);
+}
+
+.browser-pane-fetch {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  padding: var(--sp-4) var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  cursor: pointer;
+}
+
+.browser-pane-fetch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.browser-pane-meta {
+  flex-shrink: 0;
+  padding: var(--sp-6) var(--sp-10);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  border-bottom: var(--w-hair) solid var(--edge);
+  overflow-wrap: anywhere;
+}
+
+.browser-pane-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: var(--sp-8) var(--sp-10);
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

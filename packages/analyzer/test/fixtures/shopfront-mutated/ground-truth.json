@@ -1,0 +1,32 @@
+{
+  "description": "Hand-written service-level interaction ground truth for the shopfront fixture. Topic nodes are named topic:<name>; datastore nodes by compose service name.",
+  "edges": [
+    { "src": "gateway", "dst": "orders", "kind": "http" },
+    { "src": "gateway", "dst": "payments", "kind": "http" },
+    { "src": "orders", "dst": "payments", "kind": "http" },
+    { "src": "orders", "dst": "inventory", "kind": "grpc" },
+    { "src": "orders", "dst": "topic:order.created", "kind": "queue_publish" },
+    { "src": "notifications", "dst": "topic:order.created", "kind": "queue_consume" },
+    { "src": "orders", "dst": "postgres", "kind": "db_access" },
+    { "src": "payments", "dst": "postgres", "kind": "db_access" },
+    { "src": "gateway", "dst": "shipping", "kind": "http" },
+    { "src": "shipping", "dst": "postgres", "kind": "db_access" },
+    { "src": "shipping", "dst": "topic:order.created", "kind": "queue_consume" },
+    { "src": "edge", "dst": "gateway", "kind": "http" },
+    { "src": "gateway", "dst": "invoices", "kind": "http" },
+    { "src": "invoices", "dst": "payments", "kind": "http" },
+    { "src": "invoices", "dst": "postgres", "kind": "db_access" }
+  ],
+  "traps": [
+    "gateway depends_on redis but never uses it — no gateway->redis edge",
+    "payments calls https://api.stripe.com — external, no internal edge",
+    "every HTTP service exposes GET /health — generic paths must not cross-match",
+    "gateway/src/lib/http.ts is a URL-hole wrapper — no edge from the wrapper file itself",
+    "shipping (Go) subscribes to order.created alongside notifications — the topic has two consumers",
+    "shipping's sql.Open driver name literal (\"postgres\") happens to equal the compose service name, giving a second, redundant route to the same edge",
+    "edge (nginx) proxy_passes /api/ to http://gateway:3000/api/ — a literal-host proxy_pass edge; its /health location uses `return 200` with no proxy_pass and must not produce an edge",
+    "invoices (Java/Spring) resolves its RestTemplate call to payments via a @Value(\"${PAYMENTS_URL}\")-annotated field (Spring relaxed binding to the PAYMENTS_URL env var, wired in compose) concatenated with a literal path — not a class constant or compose-URL literal like the other services",
+    "invoices's JdbcTemplate calls (queryForMap/update) are plain SQL-string calls, not annotated @Query methods — exercising the callee-hint path (queryForMap/update) rather than the @Query annotation path",
+    "invoices's spring.datasource.url in application.properties is a literal jdbc:postgresql:// URL with no env placeholder — exercising the manifest-config literal path rather than env-wire/fallback"
+  ]
+}

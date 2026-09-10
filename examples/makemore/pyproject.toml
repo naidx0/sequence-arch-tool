@@ -1,0 +1,5 @@
+[project]
+name = "makemore-lesson"
+version = "0.1.0"
+description = "Karpathy's makemore part 1 as a teachable exemplar: bigram counts -> sampling -> the same model as a one-layer neural net."
+requires-python = ">=3.9"

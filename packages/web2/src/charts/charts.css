@@ -1,0 +1,389 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   SEQ-CHART — THE PAINT
+   packages/web2/src/charts/charts.css
+
+   Geometry is computed in chartLayout.ts because SVG coordinates cannot read a
+   custom property. EVERYTHING ELSE IS HERE, and every value is a var().
+
+   THE HUE RULE, RESTATED FOR CHARTS. docs/brand/graphite/_core.html counts the
+   hue budget: five verdicts, one accent, six series, two diff channels, zero
+   chrome hues. A chart is the one surface where it is easiest to break that,
+   because a chart "wants" colour. It does not get any:
+
+     - `tone` is SEMANTIC. chart.ts says so in the type — "Semantic accent —
+       never decoration." neutral resolves to --unknown, which is grey, so an
+       untoned chart is a greyscale chart and the reader learns that a hue on it
+       always means something.
+     - a SERIES is a different question and takes the different namespace.
+       --viz-1..6 exist precisely so six lines on one chart do not spend the
+       verdict budget. A series index is not a claim about the world.
+     - chrome — frames, grids, axes, rules, labels — is never coloured.
+
+   DIMMING IS --board-dim-opacity, NOT A NUMBER.
+   docs/brand/graphite/pages/06-selection-focus-and-dimming.html settled what
+   "receded but still readable" is worth and it is .6. A teach-mode spotlight
+   that drops the rest of the chart to .3 makes the surrounding structure
+   unreadable, which defeats the point of showing one concept IN CONTEXT.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.seqchart {
+  --ctone: var(--unknown);
+  --cseries: var(--viz-baseline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  margin: 0;
+  padding: var(--sp-12);
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  /* The frame owns its own width and never grows the column it sits in. */
+  max-width: 100%;
+  min-width: 0;
+}
+
+.seqchart-hd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.seqchart-title {
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  overflow-wrap: anywhere;
+}
+
+.seqchart-cap {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+/* THE ONLY SCROLLER. A wide chart scrolls here; the page never moves. */
+.seqchart-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.seqchart-svg {
+  display: block;
+  /* Intrinsic width is set as an attribute from the layout, so a chart narrower
+     than its column does not stretch and a wider one triggers the scroller. */
+  max-width: none;
+}
+
+.seqchart-note {
+  margin: 0;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-weight: var(--fw-body);
+  color: var(--spills);
+}
+
+/* ── THE HONEST FAILURE ────────────────────────────────────────────────────
+   A chart that cannot be drawn says so IN PLACE. The alternative that keeps
+   getting reached for — render nothing, or render an empty frame — is the
+   defect CLAUDE.md's "honest errors" non-negotiable exists to stop: a blank box
+   reads as "there was nothing to show", which is a different and false claim
+   from "this spec was refused, here is why". */
+.seqchart-fail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: var(--sp-12);
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--wont-edge);
+  border-radius: var(--r-14);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+}
+
+.seqchart-fail-hd {
+  color: var(--wont);
+  font-weight: var(--fw-label);
+}
+
+.seqchart-fail-list {
+  margin: 0;
+  padding-left: var(--sp-16);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+/* ── TONE — five meanings, five tokens, nothing else ───────────────────── */
+.seqchart .t-neutral { --ctone: var(--unknown); }
+.seqchart .t-good { --ctone: var(--fits); }
+.seqchart .t-warn { --ctone: var(--spills); }
+.seqchart .t-bad { --ctone: var(--wont); }
+.seqchart .t-accent { --ctone: var(--accent); }
+
+/* ── SERIES — the disjoint namespace ───────────────────────────────────── */
+.seqchart .s-1 { --cseries: var(--viz-1); }
+.seqchart .s-2 { --cseries: var(--viz-2); }
+.seqchart .s-3 { --cseries: var(--viz-3); }
+.seqchart .s-4 { --cseries: var(--viz-4); }
+.seqchart .s-5 { --cseries: var(--viz-5); }
+.seqchart .s-6 { --cseries: var(--viz-6); }
+
+/* ── THE SPOTLIGHT ─────────────────────────────────────────────────────── */
+.seqchart[data-focus='on'] .ci[data-dim='true'] {
+  opacity: var(--board-dim-opacity);
+}
+
+.seqchart .ci[data-focused='true'] .cbox,
+.seqchart .ci[data-focused='true'] .cbar,
+.seqchart .ci[data-focused='true'] .ccard {
+  stroke: var(--accent);
+  stroke-width: var(--w-rule);
+}
+
+.seqchart .ci[data-focused='true'] .clabel {
+  fill: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+
+/* ── DRAWN PARTS ───────────────────────────────────────────────────────── */
+.seqchart .cbox {
+  fill: var(--surface-2);
+  stroke: var(--ctone);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .ccard {
+  fill: var(--surface-2);
+  stroke: var(--edge);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .cplate {
+  fill: var(--surface-1);
+  stroke: var(--edge-faint);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .cband {
+  fill: var(--surface-2);
+  stroke: var(--edge);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .clabel {
+  fill: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--fw-body);
+}
+
+.seqchart .cdetail {
+  fill: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-weight: var(--fw-body);
+}
+
+.seqchart .cvalue {
+  fill: var(--ink-1);
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+}
+
+.seqchart .cbignum {
+  fill: var(--ctone);
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+  font-size: var(--t-20);
+  font-weight: var(--fw-verdict);
+}
+
+.seqchart .ccap {
+  fill: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.seqchart .caxis-label {
+  fill: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+}
+
+.seqchart .ctick {
+  fill: var(--ink-4);
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+  font-size: var(--t-10);
+  font-weight: var(--fw-body);
+}
+
+/* Connectors. --w-edge is "a connector the reader is not being asked to
+   follow"; --w-flow is "a connector on the flow being read". A toned link is
+   on the flow by definition — the author said something about it. */
+.seqchart .cedge {
+  fill: none;
+  stroke: var(--flow-traced);
+  stroke-width: var(--w-edge);
+}
+
+.seqchart .cedge.t-good,
+.seqchart .cedge.t-warn,
+.seqchart .cedge.t-bad,
+.seqchart .cedge.t-accent {
+  stroke: var(--ctone);
+  stroke-width: var(--w-flow);
+}
+
+/* A back edge closes a cycle. It is DASHED for the same reason a declared
+   connector is: the evidence for the step is not continuous, it is a return. */
+.seqchart .cedge[data-back='true'] {
+  stroke-dasharray: var(--flow-dash-declared);
+}
+
+.seqchart .cedge-head {
+  fill: var(--flow-traced);
+  stroke: none;
+}
+
+.seqchart .cedge-head.t-good,
+.seqchart .cedge-head.t-warn,
+.seqchart .cedge-head.t-bad,
+.seqchart .cedge-head.t-accent {
+  fill: var(--ctone);
+}
+
+.seqchart .cedge-label {
+  fill: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-10);
+  font-weight: var(--fw-body);
+}
+
+.seqchart .cedge-label-plate {
+  fill: var(--surface-1);
+  stroke: none;
+}
+
+/* Axes and grids are chrome and are never coloured. */
+.seqchart .cgrid {
+  stroke: var(--viz-grid);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .caxis {
+  stroke: var(--viz-axis);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .cbar {
+  fill: var(--ctone);
+  stroke: none;
+}
+
+.seqchart .cbar-track {
+  fill: var(--edge-faint);
+  stroke: none;
+}
+
+.seqchart .cseries-line {
+  fill: none;
+  stroke: var(--cseries);
+  stroke-width: var(--w-flow);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.seqchart .cdot {
+  fill: var(--cseries);
+  stroke: var(--surface-1);
+  stroke-width: var(--w-hair);
+}
+
+/* A DONUT SLICE IS A SERIES, NOT A CLAIM.
+   Four untoned slices painted from --ctone are four identical greys, and on a
+   ring adjacent equal fills merge into one wedge — the reader loses the
+   boundary the whole chart is made of. Slices therefore take the viz namespace,
+   which is what tokens/graphite.css says it is for. `toned` is the opt-out: an
+   item the author DID make a claim about takes the verdict hue instead, and the
+   claim outranks the series. */
+.seqchart .carc,
+.seqchart .ckey {
+  fill: var(--cseries);
+  stroke: var(--surface-1);
+  stroke-width: var(--w-hair);
+}
+
+/* THE SLICE BOUNDARY IS STRUCTURAL AND DOES NOT DEPEND ON THE HUES EITHER SIDE
+   OF IT. In the dark palette --accent and --viz-1 resolve to the SAME value, so
+   a slice the author toned `accent` sitting beside series 1 paints as one
+   continuous wedge if the only thing between them is a hairline. A --w-rule gap
+   in the surface colour separates any two neighbours, whatever they resolve to
+   — the same argument Decision 2 makes for node kinds one surface over. */
+.seqchart .carc {
+  stroke-width: var(--w-rule);
+}
+
+.seqchart .carc.toned,
+.seqchart .ckey.toned {
+  fill: var(--ctone);
+}
+
+.seqchart .cvenn {
+  fill: var(--ctone);
+  fill-opacity: 0.12;
+  stroke: var(--ctone);
+  stroke-width: var(--w-flow);
+}
+
+.seqchart .cheat {
+  stroke: var(--surface-1);
+  stroke-width: var(--w-hair);
+  fill: var(--cseries);
+}
+
+/* A HEAT CELL'S LABEL SITS ON THE FILL, SO IT CANNOT BE THE QUIET INK.
+   --ink-4 is the "barely there" rung and it is chosen for text on the SURFACE.
+   Over a cell painted at up to 0.8 of a series hue it disappears, which is how
+   a chart ends up with three cells nobody can read and a passing test. The
+   label is the loudest ink; the cell behind it is what varies. */
+.seqchart .cheat-label {
+  fill: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+}
+
+.seqchart .clane {
+  fill: var(--surface-2);
+  stroke: none;
+}
+
+.seqchart .clane-alt {
+  fill: var(--bg-base);
+  stroke: none;
+}
+
+.seqchart .cspine {
+  stroke: var(--viz-axis);
+  stroke-width: var(--w-hair);
+}

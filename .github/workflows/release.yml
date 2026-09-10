@@ -1,0 +1,143 @@
+# RELEASE — the installers, built on the platforms that can build them.
+#
+# Owner ruling (Max, 2026-09-10): "just create a DMG for macOS ... I don't know
+# if we need to have an Apple developer account and pay for that ... Windows,
+# the EXE launches and works from my computer, fine, people can just use that."
+# So: a DMG, unsigned, no Apple account, no code-signing certificate anywhere.
+#
+# WHY THIS EXISTS RATHER THAN A LOCAL BUILD. electron-builder does not
+# cross-compile the mac target from Windows, and the only machine this project
+# is developed on runs Windows. A macOS runner is the whole reason for the file.
+# The public mirror is a public repository, so those runners are free there.
+#
+# Event-driven only — a tag push or a manual dispatch. Do not add a schedule
+# timer; tools/ci/no-cron.test.mjs fails the hygiene job, and the owner's
+# standing rule is no timers burning runners unattended.
+#
+# NOT SIGNED, AND THAT IS A DECISION, NOT AN OVERSIGHT. Both artefacts warn on
+# first open: SmartScreen on Windows, Gatekeeper on macOS. The README says so
+# under Download, with the right-click -> Open workaround, because a download
+# that warns and does not explain itself reads as broken software.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and release (e.g. v0.1.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      # One platform failing must not delete the other's artefact: a Windows
+      # build that succeeded is still worth shipping while mac is being fixed.
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows installer (NSIS)
+            artifact: sequence-windows
+            glob: packages/desktop/release/*.exe
+          - os: macos-latest
+            label: macOS disk image (unsigned)
+            artifact: sequence-macos
+            glob: packages/desktop/release/*.dmg
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # prepare-server.mjs refuses unless analyzer/dist and web2/dist exist —
+      # it copies them, it does not build them.
+      - run: pnpm -r build
+
+      - name: Pack
+        working-directory: packages/desktop
+        env:
+          # Belt and braces with `mac.identity: null` in electron-builder.yml.
+          # Without this electron-builder hunts the keychain for a certificate,
+          # and on a runner that has none the failure is a confusing one about
+          # identities rather than a clear "not signing".
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          # The token is NOT passed here. electron-builder publishes to GitHub
+          # by itself when it finds one, which would race the release job below
+          # and produce a half-populated draft. Publishing happens in one place.
+          GH_TOKEN: ""
+        run: pnpm dist
+
+      - name: What was produced
+        shell: bash
+        run: ls -lh packages/desktop/release/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.glob }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Attach to the release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: What will be attached
+        run: |
+          find artifacts -type f -print0 | xargs -0 ls -lh
+
+      # `gh` rather than a third-party release action: it ships on the runner,
+      # it is the same tool a person would use by hand, and a release is the one
+      # step where an unreviewed third-party action would be holding the token.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          mapfile -t FILES < <(find artifacts -type f \( -name '*.exe' -o -name '*.dmg' \))
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "no installers were produced — refusing to cut an empty release" >&2
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${FILES[@]}" --clobber
+          else
+            gh release create "$TAG" "${FILES[@]}" \
+              --title "Sequence $TAG" \
+              --notes "Unsigned builds. Windows warns via SmartScreen (More info -> Run anyway); macOS warns via Gatekeeper (right-click the app -> Open). See the README under Download."
+          fi

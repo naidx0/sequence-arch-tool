@@ -1,0 +1,26 @@
+{
+  "capturedAt": "2026-09-05T22:58:52.221Z",
+  "commit": "6a44445b",
+  "build": {
+    "startedAt": "2026-09-05T22:53:50.247Z",
+    "builtAt": "2026-09-05T22:53:28.328Z"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 820
+  },
+  "port": 4173,
+  "session": "Teach me how brief.ts",
+  "modelCallsMade": 0,
+  "video": {
+    "file": "docs/journeys/teach-mode.webm",
+    "bytes": 3607317,
+    "seconds": 39.44,
+    "secondsMeasuredBy": "ffprobe",
+    "scriptElapsedSeconds": 41.52,
+    "size": {
+      "width": 1280,
+      "height": 820
+    }
+  }
+}

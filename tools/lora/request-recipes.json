@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "note": "The change-request mix for Phase 0. docs/lora-operator-guide.md §7 names this as a HUMAN judgment call — 'whether the generated change requests are realistic ... the mix should look like what a real user asks, not what was easy to generate'. So it is an editable, reviewable list, not a heuristic buried in code. Edit this file, re-run `pnpm lora:dataset`, and the mix changes. Each recipe declares the node roles it needs; the generator fills those slots ONLY from real nodes in that repo's scan, so a request can never name something that does not exist (a request that hallucinates teaches the model to hallucinate). `weight` biases how often a family is drawn when a repo can satisfy many recipes. `why` is the reason the family is in the mix at all — delete a recipe whose reason you disagree with.",
+  "families": {
+    "cache": "Read-path caching. The single most common architecture ask in the wild, and the one buildLocalArchProposal already special-cases — so the tuned model must be at least as good as the keyless fallback.",
+    "split": "Decomposition. 'This thing does too much.' Exercises addCards anchored to an existing service plus edges back to it.",
+    "events": "Asynchronous decoupling. The only family that exercises the `topic` card kind and the queue_publish/queue_consume edge inference.",
+    "edge": "Ingress concerns — gateways, rate limits, auth in front of public traffic. Exercises an added service that fronts an existing one.",
+    "storage": "Datastore topology: own database, read replica, audit log. Exercises the datastore card kind and db_read/db_write inference.",
+    "retire": "Removal. The ONLY family that exercises removeCardIds. Rare in real chat but structurally distinct, so the model must not learn that the field is always empty.",
+    "observability": "Cross-cutting sinks — metrics, tracing, audit. Realistic, and produces fan-in edges rather than the usual fan-out."
+  },
+  "recipes": [
+    {
+      "id": "cache-in-front-of-service",
+      "family": "cache",
+      "needs": ["service"],
+      "weight": 3,
+      "text": "Add a read cache in front of {0.label} (`{0.id}`) so repeated lookups stop hitting it every time. Where would it sit?",
+      "why": "The canonical ask. One new datastore card anchored to a real service, one edge."
+    },
+    {
+      "id": "cache-between-service-and-store",
+      "family": "cache",
+      "needs": ["service", "datastore"],
+      "weight": 2,
+      "text": "{0.label} (`{0.id}`) reads from {1.label} (`{1.id}`) on every request. Put a cache between them.",
+      "why": "Two real endpoints, a new node in the middle — the model must anchor to one and edge to both."
+    },
+    {
+      "id": "split-service-out",
+      "family": "split",
+      "needs": ["service"],
+      "weight": 2,
+      "text": "{0.label} (`{0.id}`) has grown too big. Split the read side out into its own service and show me the result.",
+      "why": "Decomposition anchored on a real service; tests that new ids are prop:-prefixed rather than reusing the parent's."
+    },
+    {
+      "id": "extract-shared-library",
+      "family": "split",
+      "needs": ["service", "service"],
+      "weight": 1,
+      "text": "{0.label} (`{0.id}`) and {1.label} (`{1.id}`) both duplicate the same logic. Pull it out into a shared service they both call.",
+      "why": "Two real anchors, fan-in from both — a shape the single-anchor recipes never produce."
+    },
+    {
+      "id": "event-stream-between-services",
+      "family": "events",
+      "needs": ["service", "service"],
+      "weight": 3,
+      "text": "Put an event stream between {0.label} (`{0.id}`) and {1.label} (`{1.id}`) instead of the direct call, so a slow consumer can't stall the producer.",
+      "why": "The `topic` card kind plus publish/consume edges — the only path that exercises queue edge inference."
+    },
+    {
+      "id": "outbox-for-service",
+      "family": "events",
+      "needs": ["service"],
+      "weight": 1,
+      "text": "{0.label} (`{0.id}`) can lose writes if it crashes mid-request. Add a durable outbox so events survive a restart.",
+      "why": "Durability language rather than 'queue' language; keeps the model from keying on one keyword."
+    },
+    {
+      "id": "queue-in-front-of-worker",
+      "family": "events",
+      "needs": ["service"],
+      "weight": 1,
+      "text": "Give {0.label} (`{0.id}`) a work queue in front of it so bursts get absorbed instead of dropped.",
+      "why": "A topic anchored to a consumer rather than a producer — the edge direction reverses."
+    },
+    {
+      "id": "rate-limit-ingress",
+      "family": "edge",
+      "needs": ["service"],
+      "weight": 2,
+      "text": "Add a rate limiter in front of {0.label} (`{0.id}`) — public traffic is hitting it unthrottled.",
+      "why": "A new SERVICE card that fronts an existing one; the added edge points INTO the real node."
+    },
+    {
+      "id": "bff-in-front-of-two",
+      "family": "edge",
+      "needs": ["service", "service"],
+      "weight": 1,
+      "text": "The client is calling {0.label} (`{0.id}`) and {1.label} (`{1.id}`) directly. Put a backend-for-frontend in front of both.",
+      "why": "One new node, two outbound edges — checks the model does not stop at one edge."
+    },
+    {
+      "id": "own-database-for-service",
+      "family": "storage",
+      "needs": ["service"],
+      "weight": 2,
+      "text": "{0.label} (`{0.id}`) should own its data instead of sharing. Give it its own database.",
+      "why": "Datastore card + a db_write-shaped edge label."
+    },
+    {
+      "id": "read-replica-for-store",
+      "family": "storage",
+      "needs": ["datastore", "service"],
+      "weight": 2,
+      "text": "{1.label} (`{1.id}`) is hammering {0.label} (`{0.id}`) with reads. Add a read replica and point the read path at it.",
+      "why": "The only recipe whose FIRST slot is a datastore — guards against a positional habit."
+    },
+    {
+      "id": "audit-log-store",
+      "family": "observability",
+      "needs": ["service"],
+      "weight": 1,
+      "text": "We need an audit trail of everything {0.label} (`{0.id}`) changes. Add somewhere to write it.",
+      "why": "Vague, user-voice phrasing with no schema words in it at all — the realistic worst case."
+    },
+    {
+      "id": "metrics-sink-fan-in",
+      "family": "observability",
+      "needs": ["service", "service"],
+      "weight": 1,
+      "text": "Both {0.label} (`{0.id}`) and {1.label} (`{1.id}`) should report metrics somewhere central. Add the sink.",
+      "why": "Fan-in to a single new node from two real ones."
+    },
+    {
+      "id": "retire-service",
+      "family": "retire",
+      "needs": ["service"],
+      "weight": 1,
+      "text": "We are retiring {0.label} (`{0.id}`). Show me the architecture with it gone.",
+      "why": "The only recipe that should produce a non-empty removeCardIds. Without it the model learns the field is dead."
+    },
+    {
+      "id": "replace-service-with-managed",
+      "family": "retire",
+      "needs": ["service"],
+      "weight": 1,
+      "text": "Replace {0.label} (`{0.id}`) with a managed equivalent — drop the one we run and add the one we call.",
+      "why": "Removal AND addition in one proposal; the mixed case neither pure family covers."
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+# PR CI — subset of docs/release-gate.md
+# Full three gates (real-repo scale, human-usability, desktop smoke) stay local / orchestrator.
+# Desktop suites are not required here (needs Electron binary). Analyzer is required again
+# (terminal.test hang cleared; suite finishes under the package test script with
+# isolate-user-store).
+# @sequence/web2 vitest IS required (correctness job). The old "web vitest informational /
+# ProductShell leftover" note is obsolete — packages/web was deleted 2026-08-20.
+#
+# Draft PRs skip the build job so bench drafts do not burn a runner every push.
+# Do not add `on.schedule` / `cron:` — tools/ci/no-cron.test.mjs fails the hygiene job.
+# Turn on GitHub → Settings → General → "Automatically delete head branches"
+# so merged mxcr/* refs do not pile up again.
+# Marketing site/ + root vercel.json were deleted 2026-08-20 — disconnect trysequence.app
+# in the Vercel dashboard if it still serves a ghost (owner ops; not a workflow job).
+
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hygiene:
+    name: Docs catalog + merge lanes + no cron
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Mutants catalogue targets compiled analyzer output; dist/ is gitignored.
+      # `...` builds analyzer and every workspace dependency it imports.
+      - run: pnpm --filter @sequence/analyzer... build
+      - name: Hygiene tests
+        env:
+          MERGE_LANE_BASE: ${{ github.event.pull_request.base.sha }}
+        run: node --test tools/ci/*.test.mjs
+
+  correctness:
+    name: Build + package tests
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r build
+      - name: Green package tests
+        run: |
+          pnpm --filter @sequence/schema test
+          pnpm --filter @sequence/acp test
+          pnpm --filter @sequence/export test
+          pnpm --filter @sequence/ink test
+          pnpm --filter @sequence/mcp test
+          pnpm --filter @sequence/gateway test
+
+      # The v2 app. Added 2026-08-20 — until now CI gated six engine packages and
+      # NOTHING gated the UI being built, so `packages/web2` could go red on main
+      # unnoticed. It is a separate step from the engine packages so a UI failure
+      # reads as a UI failure in the checks list.
+      #
+      # NOT included, deliberately, each for a stated reason:
+      #   @sequence/web     — v1, deleted on the owner's ruling; do not re-add.
+      #   e2e — Playwright needs a browser install step; the suite exists and runs
+      #     locally (`pnpm --filter @sequence/web2 test:e2e`).
+      - name: analyzer tests
+        run: pnpm --filter @sequence/analyzer test
+      - name: v2 app tests
+        run: pnpm --filter @sequence/web2 test

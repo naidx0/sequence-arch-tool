@@ -1,0 +1,1693 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE CHAT COLUMN — transcript, tool rows, composer, permission control
+   packages/web2/src/chat/chat.css        items 2.5, 2.7, 2.8
+
+   Transcribed from docs/brand/graphite/pages/12-the-agentic-surfaces.html
+   and its substrate docs/brand/graphite/_core.html. Every geometry below is
+   the sheet's own spec list, not a re-derivation of it.
+
+   HUE BUDGET FOR THIS SHEET: FIVE TOKENS, and sheet 12.7 lists what each one
+   claims. Nothing else here is coloured — not a divider, not a border, not a
+   tool row, not a message lane, not the composer's chrome.
+
+     --accent-solid  the send button's fill, and nothing else
+     --accent        the composer's focus ring — "this is where the keyboard is"
+     --fits          the tick on a command that returned zero, .stat-add, and
+                     the Measured provenance tag
+     --wont          the cross on a command that did not, .stat-del, and the
+                     glyph on the failure strip
+     --unknown       the Declared provenance tag (grey, and that is the point)
+
+   Render this column in greyscale and no state becomes ambiguous, because
+   every one of them is a word before it is a colour.
+
+   NO HEX AND NO px FONT-SIZE: tokens/graphite.css is the only file allowed to
+   declare either, and test/firewall.test.ts fails the build if this sheet grows
+   one. Every value below is a var().
+
+   SCOPING. Every selector is under .chat-scope, which each exported root
+   element carries. The class names are the BOOK'S names (.toolrow, .composer,
+   .userbubble, .prose) because the book is the source of truth for this
+   surface — but they are namespaced so that this lane cannot collide with the
+   shell sheet or the board sheet over a name the substrate also uses.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the icon rung ────────────────────────────────────────────────────────
+   _core.html:619-623. Three sizes, one stroke weight, currentColor. Lives here
+   only until the shared components/Icon.tsx of the plan's §5 skeleton exists;
+   see the handback note in Icon.tsx. */
+.chat-scope .i {
+  width: 16px; height: 16px; flex: 0 0 auto;
+  stroke: currentColor; fill: none;
+  stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+.chat-scope .i-14 { width: 14px; height: 14px; }
+.chat-scope .i-12 { width: 12px; height: 12px; }
+
+.chat-scope .mono { font-family: var(--font-mono); font-variant-numeric: var(--num); }
+
+/* ── the column ──────────────────────────────────────────────────────────
+   Two children: a transcript that takes the free space and a composer block
+   that does not. min-height:0 on the scroller is the flexbox rule without
+   which `overflow:auto` on a flex child never scrolls — it grows instead. */
+.chat-scope.chatcol {
+  display: flex; flex-direction: column;
+  min-width: 0; height: 100%;
+  background-color: var(--bg-base);
+}
+
+/* ── 12.1 the transcript ────────────────────────────────────────────────── */
+.chat-scope.transcript,
+.chat-scope .transcript {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+  padding: var(--sp-20) var(--sp-20) var(--sp-8);
+  /* display:flex is load-bearing, not tidiness: `margin-top:auto` on a BLOCK
+     child resolves to zero, so bottom-anchoring the column below only works
+     inside a flex container. */
+  display: flex; flex-direction: column;
+}
+
+/* BOTTOM-ANCHORED WITH AN AUTO MARGIN, NOT justify-content:flex-end.
+   MLH/frontend/src/styles/shell.css:687 records why: an auto margin resolves to
+   zero when there is no free space, whereas flex-end on an OVERFLOWING scroll
+   container pushes the first rows past the scrollable origin where they cannot
+   be reached. width:100% is load-bearing too — auto cross-axis margins cancel
+   `align-items:stretch`, so without it the column collapses to its content. */
+.chat-scope .tcol {
+  display: flex; flex-direction: column;
+  /* A CENTRED READING COLUMN WITH A REAL CAP — the Claude/Codex shape.
+     Owner, twice in one day. Morning: "I should be able to actually see a
+     wider output because the screen's bigger", which took --col-max from 720
+     to a measure that fits a diff. Afternoon, on the overcorrection that
+     followed: "when you were in the chat, it made it too big … it's centered
+     first with an actual cap, and it doesn't stretch the whole way."
+
+     `max-width: 100%` was that overcorrection: the transcript ran edge to edge
+     in a pane the shell would grow to half the frame, so on a wide monitor
+     prose sat against the left edge of a 1280px lane. The cap is back, at the
+     wider 960 measure, and `margin: auto auto 0` centres it — the auto side
+     margins are what "centered first" means here.
+
+     Content INSIDE the column stays left-aligned. Centring each block would
+     ragged the left edge that user bubbles, tool rows and prose currently
+     share, which is the alignment that makes a transcript scannable. */
+  width: 100%; max-width: var(--col-max);
+  margin: auto auto 0;
+}
+
+/* THE RHYTHM LADDER — six rules, not one flex gap.
+   MLH/shell.css:692-732 records the measurement that produced it: every gap
+   used to be 16px, so "a user message starting a brand-new turn stood exactly
+   as far from the previous reply as a tool row stood from the message that
+   caused it. Nothing grouped." Note the direction — within-turn gaps went DOWN
+   from 16 to 8. A flex `gap` cannot express this, which is why these are
+   adjacent-sibling margins. */
+.chat-scope .tcol > * + * { margin-top: var(--sp-8); }
+/* a brand-new turn */
+.chat-scope .tcol > * + .userbubble { margin-top: var(--sp-24); }
+/* the answer, after the work that produced it */
+.chat-scope .tcol > * + .prose { margin-top: var(--sp-12); }
+/* an affordance row is a door, not narration: it gets a card's air */
+.chat-scope .tcol > * + .opensrow { margin-top: var(--sp-12); }
+/* narration stacked under narration */
+.chat-scope .tcol > .toolstack + .toolstack { margin-top: var(--sp-4); }
+.chat-scope .tcol > * + .ending { margin-top: var(--sp-10); }
+
+/* THE ONE LANE THAT IS A BOX. 12.1: a request is a sentence, it never holds a
+    diff, a graph or a file list, so the horizontal measure a bubble spends is
+    measure this lane was never going to use.
+
+   G4 (codex#23008): THE BOX CARRIES A LEFT RULE, and it is ink, not accent.
+   The bubble's surface alone read as "a grey rectangle", not "the human said
+   this" — the assistant lane has no box at all, so at a glance the two roles
+   differed only by indentation. --w-rule (the 2px "claim drawn as a line"
+   stroke) down the speaking edge says who is speaking while spending no hue:
+   indigo stays reserved for send, selection and focus, and the rule renders
+   greyscale-identical. The assistant prose keeps NO bar — sheet 12.1's ruling
+   against an object per message stands, and the test below pins that half. */
+.chat-scope .userbubble {
+  align-self: flex-end; max-width: 82%;
+  background-color: var(--surface-2); border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-18); padding: var(--sp-10) var(--sp-12);
+  font-size: var(--t-14); line-height: var(--lh-14); color: var(--ink-1);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* THE LANE THAT IS NOT. No background, no border, no avatar, no role marker.
+   12.1: a 2px accent bar down the side of every assistant message would put an
+   indigo object next to every paragraph in the thread, "and the accent would
+   immediately stop meaning anything except 'a message exists'." */
+.chat-scope .prose {
+  font-size: var(--t-15); line-height: var(--lh-15); color: var(--ink-1);
+  /* 96ch, not 68: the owner asked for wider output on a wider screen, and a
+     reply here is code, diffs and file lists as often as sentences. */
+  max-width: 96ch; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.chat-scope .prose p { margin: 0 0 var(--sp-10); }
+.chat-scope .prose p:last-child { margin-bottom: 0; }
+
+/* ── 12.2 the tool row ───────────────────────────────────────────────────
+   26px, --t-12, --ink-3, past tense. Four slots, only the first two
+   compulsory. The stack offset pulls the glyphs out to the prose edge. */
+.chat-scope .toolstack {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  margin-left: calc(-1 * var(--sp-10));
+}
+.chat-scope .toolrow {
+  display: flex; align-items: center; gap: var(--sp-8);
+  /* `--row-h-tool` — law 3's tool-row rung, which shares 26px with the icon
+     buttons and is not the same rung. */
+  height: var(--row-h-tool); padding: 0 var(--sp-10);
+  border-radius: var(--r-8); color: var(--ink-3);
+  font-size: var(--t-12); white-space: nowrap;
+  min-width: 0;
+}
+.chat-scope .toolrow .name {
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.chat-scope .toolrow .file {
+  font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-1);
+  overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.chat-scope .toolrow .right {
+  margin-left: auto; display: flex; align-items: center;
+  gap: var(--sp-6); color: var(--ink-3); font-size: var(--t-10);
+}
+/* THE TWO HUES THE WHOLE ROW VOCABULARY SPENDS, on a 14px glyph each. 12.3:
+   --fits for a command that returned zero and --wont for one that did not. */
+.chat-scope .toolrow .ok { color: var(--fits); }
+.chat-scope .toolrow .fail { color: var(--wont); }
+.chat-scope .toolrow .cmd-out {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+
+/* ── DECISION 7 — THE INLINE FOLD ─────────────────────────────────────────
+   Work rows render INSIDE the answer flow at the point they justify, per the
+   artifact's B panel (docs/design-refs/tool-trail-detached-vs-inline.html):
+   an indented block with a rule on its left edge, and ink one step quieter
+   than the detached trail wore. The stack keeps this shape only inside a
+   `.prose`; where rows precede any prose (a wordless turn) they keep the
+   plain stack above. */
+.chat-scope .toolstack.inline {
+  margin-left: var(--sp-20);
+  padding-left: var(--sp-12);
+  border-left: var(--w-rule) solid var(--edge);
+}
+/* Quieter ink, one step down each slot — panel B dims v and id alike. */
+.chat-scope .toolstack.inline .toolrow .name { color: var(--ink-3); }
+.chat-scope .toolstack.inline .toolrow .file { color: var(--ink-2); }
+
+/* ── DECISION 7 — THE LIVING ROW ──────────────────────────────────────────
+   While a call runs, its whole status line shimmers — the Cursor-style living
+   status, Max, 2026-08-24: "I like the cursor animation style… very
+   straightforward about saying what's happening." The name carries the
+   present-progressive label derived from the real event (workRowModel.ts);
+   the gradient sweeps between the row's own muted ink and one step brighter,
+   so every frame of the sweep is ≥ 4.5:1 on the column's ground (asserted in
+   Transcript.test.tsx). The glyph pulse stays. On landing the whole line is
+   REPLACED by the past-tense row — never appended (sheet 12.3's own rule). */
+.chat-scope .toolrow.live .name {
+  /* Brighter shimmer ramp — Cursor-like living status, higher contrast. */
+  background-image: linear-gradient(90deg, var(--ink-2), var(--ink-1), var(--ink-1), var(--ink-2));
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chatshimmer 2.4s linear infinite;
+}
+@keyframes chatshimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Proof / files researched — collapsed until the reader asks (owner 2026-08-25). */
+.chat-scope .prooffold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.chat-scope .prooffold-trigger {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  height: var(--row-h-tool);
+  padding: 0 var(--sp-4);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: var(--t-11);
+  cursor: pointer;
+  text-align: left;
+}
+.chat-scope .prooffold-trigger:hover {
+  background: var(--state-hover);
+  color: var(--ink-2);
+}
+.chat-scope .prooffold-trigger .name { flex: 1 1 auto; }
+.chat-scope .prooffold-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-left: var(--sp-8);
+  border-left: var(--w-hair) solid var(--edge-faint);
+  margin-left: var(--sp-4);
+}
+
+/* Braille orbit — reasoning row only (fusion pick 1). */
+.chat-scope .spin.braille {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  flex: 0 0 14px;
+  color: var(--ink-1);
+}
+.chat-scope .spin.braille::after {
+  content: '⠋';
+  animation: spin-braille 900ms steps(1, end) infinite;
+}
+@keyframes spin-braille {
+  0% { content: '⠋'; }
+  10% { content: '⠙'; }
+  20% { content: '⠹'; }
+  30% { content: '⠸'; }
+  40% { content: '⠼'; }
+  50% { content: '⠴'; }
+  60% { content: '⠦'; }
+  70% { content: '⠧'; }
+  80% { content: '⠇'; }
+  90% { content: '⠏'; }
+}
+
+/* Inline reasoning glyph slot — same 14px box as kind icons. */
+.chat-scope .reasonglyph {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── REASONING DISCLOSURE (Cursor-style expand) ───────────────────────────
+   Header always visible; body only when the reader opens it. Live state keeps
+   the glyph pulse + shimmer on the label so collapsed is still honest. Body
+   ink is --ink-2 (not --ink-3/--ink-4) so expanded steps are readable. */
+.chat-scope .reasonfold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  /* Owner: crowded against the next prose line — keep air under the fold. */
+  margin-bottom: var(--sp-10);
+}
+.chat-scope .toolstack.inline .reasonfold {
+  margin-bottom: var(--sp-12);
+}
+.chat-scope .reasonfold-trigger {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  min-height: var(--row-h-tool);
+  padding: 0 var(--sp-4);
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+  text-align: left;
+}
+.chat-scope .reasonfold-trigger:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+.chat-scope .reasonfold-trigger .name {
+  flex: 1 1 auto;
+  color: inherit;
+}
+.chat-scope .reasonfold.live .reasonfold-trigger .name {
+  background-image: linear-gradient(90deg, var(--ink-2), var(--ink-1), var(--ink-2));
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chatshimmer 2.8s linear infinite;
+}
+.chat-scope .reasonfold-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-8);
+  margin-left: var(--sp-4);
+  border-left: var(--w-hair) solid var(--edge);
+  color: var(--ink-2);
+}
+.chat-scope .reasonfold-body .toolrow .name { color: var(--ink-2); }
+.chat-scope .reasonfold-body .toolrow .file { color: var(--ink-3); }
+
+/* A bordered row is an AFFORDANCE — it opens the canvas, the rail or review.
+   Everything wider than a row becomes one of these, never an expanded block
+   inside the transcript — except the Reasoning disclosure above, which is an
+   explicit opt-in fold (owner 2026-08-26), not an always-open dump. */
+.chat-scope .toolrow.bordered {
+  border: var(--w-hair) solid var(--edge); background-color: var(--surface-1);
+}
+.chat-scope button.toolrow.bordered {
+  appearance: none; width: 100%; text-align: left;
+  font-family: inherit; cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+.chat-scope button.toolrow.bordered:hover { background-color: var(--surface-2); }
+
+/* A RUNNING ROW PULSES; IT DOES NOT SPIN AND IT DOES NOT REWRITE ITS VERB.
+   12.5: "a spinner says 'wait', a pulse says 'still true'." Floor raised
+   again (owner 2026-08-26: more contrast on loading) so the wave still reads
+   on dark chat chrome. */
+.chat-scope .toolrow.running .i { animation: chatpulse 1.8s var(--ease) infinite; }
+
+/* Accent wash — reasoning row only (fusion pick 1). File/search rows: glimmer + glyph pulse. */
+.chat-scope .toolrow.live.wash {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--r-8);
+}
+.chat-scope .toolrow.live.wash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent-wash) 45%,
+    color-mix(in srgb, var(--accent-wash) 80%, var(--accent-edge) 20%) 50%,
+    var(--accent-wash) 55%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: chatpot 2.6s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.chat-scope .toolrow.live.wash > * {
+  position: relative;
+  z-index: 1;
+}
+@keyframes chatpot {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@keyframes chatpulse { 0%, 100% { opacity: 1; } 50% { opacity: .85; } }
+
+/* AN ANSWER THAT IS STILL ARRIVING SAYS SO, IN THE SAME IDIOM.
+   Max, 2026-08-24: "I kind of want some type of animation while it's asking and
+   loading." The tool rows above already had one and the ANSWER did not - it
+   simply appeared, a word at a time, with nothing to say whether it had
+   finished or stalled.
+
+   12.5's rule decides the shape: "a spinner says 'wait', a pulse says 'still
+   true'". So this is a pulsing caret, not a spinner, and it sits at the END of
+   the text that exists rather than covering the surface with a placeholder -
+   it says where the answer has got to, which is the one thing a reader watching
+   it wants to know. `data-streaming` was already on the element; only the
+   visible half was missing. */
+.chat-scope .prose[data-streaming]::after {
+  content: '';
+  display: inline-block;
+  width: var(--sp-6);
+  height: var(--sp-12);
+  margin-left: var(--sp-4);
+  vertical-align: text-bottom;
+  background-color: var(--ink-3);
+  border-radius: var(--r-4);
+  animation: chatpulse 1.8s var(--ease) infinite;
+}
+
+/* the diff's own arithmetic — not the verdict vocabulary */
+.chat-scope .stat-add {
+  color: var(--fits); font-family: var(--font-mono);
+  font-size: var(--t-11); font-variant-numeric: var(--num);
+}
+.chat-scope .stat-del {
+  color: var(--wont); font-family: var(--font-mono);
+  font-size: var(--t-11); font-variant-numeric: var(--num);
+}
+
+/* 12.3: reading the graph is the cheapest demonstration of the product, and the
+   tag beside the row says where the number came from. */
+.chat-scope .prov {
+  display: inline-flex; align-items: center; height: 16px; padding: 0 var(--sp-6);
+  border-radius: var(--r-full); font-family: var(--font-mono);
+  font-size: var(--t-10); line-height: 1; font-weight: var(--fw-label);
+  letter-spacing: .07em; text-transform: uppercase; white-space: nowrap;
+}
+.chat-scope .p-measured { color: var(--fits); background-color: var(--fits-wash); }
+.chat-scope .p-declared { color: var(--unknown); background-color: var(--unknown-wash); }
+
+/* A TURN ALWAYS ENDS IN WORDS. The named ending sits in the tool-row register:
+   it is a record of how the turn finished, not the assistant speaking. */
+.chat-scope .ending {
+  display: flex; align-items: flex-start; gap: var(--sp-8);
+  padding: 0 var(--sp-10); color: var(--ink-3);
+  font-size: var(--t-12); line-height: var(--lh-12);
+  margin-left: calc(-1 * var(--sp-10));
+}
+.chat-scope .ending .i { margin-top: var(--sp-2); }
+
+/* THE POINTER TO THE PICTURE. Same muted register as the ending line, because
+   it is the same kind of thing: a record of what the turn did. It is a button
+   rather than a row so it reads as one sentence at the end of the answer, and
+   it earns its underline on hover the way a link does. */
+.chat-scope .chart-pointer {
+  display: flex; align-items: flex-start; gap: var(--sp-8);
+  padding: 0 var(--sp-10); color: var(--ink-3);
+  font-size: var(--t-12); line-height: var(--lh-12);
+  margin-left: calc(-1 * var(--sp-10));
+  background: none; border: 0; cursor: pointer; text-align: left;
+}
+.chat-scope .chart-pointer:hover span { text-decoration: underline; }
+.chat-scope .chart-pointer .i { margin-top: var(--sp-2); }
+
+/* RESTORED-TURN HONESTY — muted record line, same register as usage/ending.
+   Not a chip, not a hue: it states a fact about the transcript source. */
+.chat-scope .restored {
+  margin: 0;
+  padding: 0 var(--sp-10);
+  margin-left: calc(-1 * var(--sp-10));
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.chat-scope .tcol > * + .restored { margin-top: var(--sp-16); }
+.chat-scope .tcol > .restored + .userbubble { margin-top: var(--sp-12); }
+
+/* ── 12.4 the composer ───────────────────────────────────────────────────
+   Three zones. The field and the control row share one container, one border
+   and one shadow: they are the same object, and everything in the control row
+   changes what the field will send. The under-composer strip sits OUTSIDE that
+   container entirely, because it describes the session and is true whether or
+   not you type anything. */
+.chat-scope .composerwrap { flex: 0 0 auto; padding: 0 var(--sp-20) var(--sp-12); }
+/*
+ * THE POSITIONING CONTEXT FOR THE POPUPS, and that is the whole fix.
+ *
+ * `.menu` and `.mentions` open UPWARD and were anchored inside `.composer`,
+ * so they crossed over `.strip` - which is `.composer`'s SIBLING, one level
+ * up. Measured in the running app with the toolbelt open:
+ * `composer-strip-settings` failed `elementFromPoint` with
+ * `blockedBy: "menu"`. The one control that fixes "the assistant cannot
+ * answer" was covered by an optional browse menu.
+ *
+ * Anchoring them to `.inner` - which contains the strip AND the composer -
+ * means `bottom: 100%` clears both. Neither surface has to lose: raising the
+ * strip instead simply reversed who was blocked, and measuring showed it
+ * covered two of the menu's four rows.
+ */
+.chat-scope .composerwrap .inner {
+  max-width: var(--col-max); /* the centred reading column — see .tcol */
+  margin: 0 auto;
+  position: relative;
+}
+
+.chat-scope .composer {
+  /* Soften the "whole bar" chrome — owner prefers inline feel over a heavy
+     boxed chatbox (2026-08-25). Fainter edge, lighter surface, less lift. */
+  background-color: transparent; border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-14); box-shadow: none;
+  padding: var(--sp-8) var(--sp-10) var(--sp-6);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+/* THE RING IS ON THE CONTAINER, NOT ON THE FIELD INSET INSIDE IT.
+   MLH/shell.css:1092-1103: a ring on a box inset 10px inside another rounded
+   rectangle "read as a rendering defect rather than as focus". v1 strips the
+   textarea's outline and rings only the buttons, so keyboard focus on the input
+   is invisible — the composer is the one control in the product a keyboard user
+   is guaranteed to land on. */
+.chat-scope .composer.focused {
+  border-color: var(--edge-strong); box-shadow: var(--e3);
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+
+.chat-scope .composer .field {
+  display: block; width: 100%; resize: none; overflow-y: auto;
+  appearance: none; border: 0; background-color: transparent;
+  /* The longhand, not `outline: none`: the ring belongs to the container above
+     and this is the declaration that says so, so it is the declaration a test
+     can read back. */
+  outline-style: none;
+  font-family: inherit; font-size: var(--t-14); line-height: var(--lh-14);
+  color: var(--ink-1); padding: var(--sp-4) var(--sp-6) var(--sp-12);
+}
+.chat-scope .composer .field::placeholder { color: var(--ink-3); }
+
+.chat-scope .composer .ctrls { display: flex; align-items: center; gap: var(--sp-6); }
+/* THE MODEL LABEL ABSORBS THE SQUEEZE, NEVER THE SEND CLUSTER. `.modelsel`
+   already ellipsizes, but its `.menuwrap` flex parent kept the default
+   `min-width: auto` and refused to shrink below the full label — at 800px a
+   long local model id (granite4-hermes:latest) pushed the Send button 74px
+   past the composer's own border, under the board pane, where the board ate
+   the click. Caught by composer-over-board's 800px reach test. */
+.chat-scope .composer .ctrls .menuwrap { min-width: 0; flex: 0 1 auto; }
+.chat-scope .composer .ctrls .right {
+  margin-left: auto; display: flex; align-items: center; gap: var(--sp-4);
+  flex-shrink: 0;
+}
+
+/* CONTEXT CHIPS — UNSHEETED. Sheet 12.4 draws no chip row; item 2.7 requires
+   chips with remove. They are placed INSIDE the container, above the field,
+   because the sheet's own boundary rule decides it: the field and the control
+   row are one object and "everything in the control row changes what the field
+   will send". A chip is exactly that, so it belongs inside the border with
+   them, not outside it with the session strip. */
+/* ATTACHMENTS — what the user brought, drawn so it cannot be mistaken for a
+   grounded chip. Same rung and same ink (law 1: no hue for something no claim
+   needs), but a SQUARE corner against the chip's pill: the difference between
+   "this is in your repository" and "this is what you pasted" has to survive
+   being read quickly, and it is carried by form rather than colour so it
+   survives sheet 12.5 too. */
+.chat-scope .attachrow {
+  display: flex; flex-wrap: wrap; gap: var(--sp-4);
+  padding: 0 var(--sp-6) var(--sp-6);
+}
+.chat-scope .attach {
+  display: inline-flex; align-items: center; gap: var(--sp-6);
+  height: 24px; padding: 0 var(--sp-4) 0 var(--sp-8);
+  background-color: var(--surface-2); border: var(--w-hair) dashed var(--edge);
+  border-radius: var(--r-4); font-size: var(--t-11); color: var(--ink-2);
+  max-width: 100%; min-width: 0;
+}
+.chat-scope .attach .lbl {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* THE DROP TARGET SAYS IT IS ONE. A drag with no feedback leaves the reader
+   guessing whether the composer will take the file at all. */
+.chat-scope .composer[data-dragging='true'] {
+  border-color: var(--ink-3);
+}
+.chat-scope .chiprow {
+  display: flex; flex-wrap: wrap; gap: var(--sp-4);
+  padding: 0 var(--sp-6) var(--sp-6);
+}
+.chat-scope .chip {
+  display: inline-flex; align-items: center; gap: var(--sp-6);
+  height: 24px; padding: 0 var(--sp-4) 0 var(--sp-8);
+  background-color: var(--surface-2); border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full); font-size: var(--t-11); color: var(--ink-1);
+  white-space: nowrap; max-width: 100%;
+}
+.chat-scope .chip .lbl { overflow: hidden; text-overflow: ellipsis; }
+/* P2.6 — grounded selection is ask context, not a tool invocation. */
+.chat-scope .chip .chip-ctx {
+  font-family: var(--font-mono); font-size: var(--t-10); line-height: var(--lh-10);
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-4);
+  padding: 0 var(--sp-4); border-radius: var(--r-4);
+  background-color: var(--surface-1); border: var(--w-hair) solid var(--edge);
+}
+.chat-scope .chip .chipx {
+  appearance: none; border: 0; background-color: transparent; padding: 0;
+  width: 16px; height: 16px; display: grid; place-items: center;
+  border-radius: var(--r-full); color: var(--ink-3); cursor: pointer;
+}
+.chat-scope .chip .chipx:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+.chat-scope .plusbtn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--edge);
+  background-color: transparent;
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  cursor: pointer;
+}
+.chat-scope .plusbtn .i {
+  display: block;
+  margin: 0;
+}
+.chat-scope .plusbtn:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+.chat-scope .modelsel {
+  display: inline-flex; align-items: center; gap: var(--sp-4);
+  height: 24px; padding: 0 var(--sp-8); border-radius: var(--r-8);
+  border: var(--w-hair) solid transparent; background-color: transparent;
+  color: var(--ink-2); font-family: inherit; font-size: var(--t-11); cursor: pointer;
+  /* Long model ids (deepseek/deepseek-v4-flash-…) stay ONE line with … */
+  max-width: min(100%, 220px);
+  min-width: 0;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.chat-scope .modelsel:hover { background-color: var(--state-hover); color: var(--ink-1); }
+.chat-scope .modelsel > .i { flex-shrink: 0; }
+.chat-scope .modelsel .mono {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Tool-call card — replaces raw JSON dumps aimed at Architecture / AI Canvas */
+.chat-scope .tool-call-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  margin: 0 0 var(--sp-10);
+}
+.chat-scope .tool-call-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--sp-8) var(--sp-10);
+  border-radius: var(--r-10);
+  border: var(--w-hair) solid var(--edge-strong);
+  background-color: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--t-12);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.chat-scope .tool-call-card-title {
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+  flex-shrink: 0;
+}
+.chat-scope .tool-call-card-name {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Topology tool theater — live propose_topology procedure card */
+.chat-scope .topology-theater {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--sp-8) var(--sp-10);
+  border-radius: var(--r-10);
+  border: var(--w-hair) solid var(--edge-strong);
+  background-color: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--t-12);
+  margin: 0 0 var(--sp-10);
+}
+.chat-scope .topology-theater-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.chat-scope .topology-theater-title {
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+  flex-shrink: 0;
+}
+.chat-scope .topology-theater-tool {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-scope .topology-theater-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.chat-scope .topology-theater-step {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+  height: var(--row-h-tool);
+  color: var(--ink-3);
+}
+.chat-scope .topology-theater-step[data-status="done"] {
+  color: var(--ink-2);
+}
+.chat-scope .topology-theater-step-index {
+  flex: 0 0 auto;
+  width: 1.25rem;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  text-align: right;
+}
+.chat-scope .topology-theater-step-marker {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  display: inline-grid;
+  place-items: center;
+}
+.chat-scope .topology-theater-check { color: var(--fits); }
+.chat-scope .topology-theater-pending {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--ink-4);
+}
+.chat-scope .topology-theater-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background-color: var(--ink-2);
+  animation: chatpulse 1.8s var(--ease) infinite;
+}
+.chat-scope .topology-theater-step-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.chat-scope .topology-theater-step-label.live {
+  background-image: linear-gradient(90deg, var(--ink-2), var(--ink-1), var(--ink-1), var(--ink-2));
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chatshimmer 2.4s linear infinite;
+}
+
+.chat-scope .iconbtn {
+  appearance: none; width: var(--icon-btn); height: var(--icon-btn);
+  display: inline-grid; place-items: center;
+  background-color: transparent; border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8); color: var(--ink-3); cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.chat-scope .iconbtn:hover { background-color: var(--state-hover); color: var(--ink-1); }
+.chat-scope .iconbtn[disabled] { color: var(--ink-4); cursor: not-allowed; background-color: transparent; }
+
+/* THE SIGNATURE ELEMENT. 28px, --r-full, --accent-solid, an up arrow inside it.
+   It is round, not a square with soft corners, and on most screens it is the
+   only saturated object present. */
+.chat-scope .sendbtn {
+  /* THE CONTROL RUNG, from the token that names it. `--control-h` is 28px
+     and this wrote the number - identical today, and free to drift the
+     moment the rung moves. Sheet 10 owns that height, not this file. */
+  appearance: none; width: var(--control-h); height: var(--control-h); border-radius: var(--r-full);
+  border: 0; background-color: var(--accent-solid); color: var(--accent-on-solid);
+  display: grid; place-items: center; cursor: pointer;
+  transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.chat-scope .sendbtn:hover { background-color: var(--accent-solid-hover); }
+.chat-scope .sendbtn:active { transform: scale(.94); }
+/* DISABLED IS A DIFFERENT OBJECT, NOT A FADED ONE. 12.4: "a translucent brand
+   colour reads as 'this is nearly available', and an empty composer is not
+   nearly anything." v1 uses opacity: 0.45. There is no opacity here. */
+.chat-scope .sendbtn[disabled] {
+  background-color: var(--surface-3); color: var(--ink-4); cursor: not-allowed;
+}
+
+/* ── session home context — repo · branch · model (empty thread only) ─── */
+.chat-scope .session-home {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+  max-width: var(--col-max); /* the centred reading column — see .tcol */
+  margin: 0 auto;
+  padding: 0 var(--sp-4) var(--sp-8);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chat-scope .session-home-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: 20px;
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.chat-scope .session-home-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── session home strip — under-composer mono row (owner pick B) ─────── */
+.chat-scope .session-home-strip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  min-width: 0;
+}
+.chat-scope .session-home-strip-part {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.chat-scope .session-home-strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-scope .session-home-strip-sep {
+  color: var(--ink-4);
+  user-select: none;
+}
+
+/* ── the under-composer strip ────────────────────────────────────────────
+   20px, --r-8, --t-10, outside the composer's border. The permission control
+   takes the left slot and the grounding target takes the right, mono, --ink-3.
+   Sheet 12.4's .branch geometry, carrying the thing that is actually true:
+   Sequence surfaces no git branch, and drawing one would be drawing a feature
+   that does not exist. */
+.chat-scope .undercomposer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-10);
+  padding: var(--sp-6) var(--sp-4) 0;
+  max-width: var(--col-max); /* the centred reading column — see .tcol */
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+.chat-scope .undercomposer-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-10);
+  flex-wrap: wrap;
+}
+.chat-scope .branch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 2.8 the permission control — UNSHEETED, geometry borrowed from the strip
+   the sheet does draw there. It spends no hue: autonomy is a setting, not a
+   verdict, and Graphite law 1 reserves colour for claims about the world. */
+/* GEOMETRY CORRECTED 2026-09-02. This borrowed 20px/--t-10 from `.branch`,
+   which is a LABEL. `.permsel` is the only interactive thing in the strip, and
+   a button that takes its size from a caption ends up below the floor: measured
+   in the running app it was 89.1 x 20, failing WCAG 2.2 AA 2.5.8's 24x24
+   minimum, and the owner's words for it were "very discreet, and sometimes
+   they're hard or easy to mess up".
+
+   It now sits on --control-h, the same rung the failure strip below already
+   takes "by its token". Nothing is aligned to it - the strip's other children
+   are text - so raising it moves nothing else. The menu it opens was measured
+   at 43px rows and was already fine; the trigger was the whole defect. */
+.chat-scope .permsel {
+  appearance: none; display: inline-flex; align-items: center; gap: var(--sp-4);
+  height: var(--control-h); padding: 0 var(--sp-10); border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge); background-color: var(--surface-2);
+  color: var(--ink-2); font-family: inherit; font-size: var(--t-11);
+  font-weight: var(--fw-label); cursor: pointer; white-space: nowrap;
+}
+.chat-scope .permsel:hover { background-color: var(--surface-3); color: var(--ink-1); }
+
+/* ── transient surfaces ─────────────────────────────────────────────────
+   _core.html:1216-1228. A menu is --e3/--r-10; it differs from a tooltip, a
+   popover and a dialog by ELEVATION and RADIUS, never by colour. */
+/* STATIC ON PURPOSE: a relative wrapper here would capture `.menu` and put it
+   back inside the composer, over the strip. The wrapper still groups the
+   button; it just is not the anchor. */
+.chat-scope .menuwrap { display: inline-flex; }
+.chat-scope .menu {
+  position: absolute; bottom: calc(100% + var(--sp-6)); left: 0; z-index: 2;
+  min-width: var(--sp-56); width: max-content; max-width: var(--menu-w);
+  padding: var(--sp-4); background-color: var(--surface-2);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-10);
+  box-shadow: var(--e3);
+}
+.chat-scope .menu hr { margin: var(--sp-4) 0; border: 0; border-top: var(--w-hair) solid var(--edge-faint); }
+.chat-scope .menuitem {
+  appearance: none; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: var(--sp-8);
+  height: var(--row-h); padding: 0 var(--sp-8);
+  background-color: transparent; border: 0; border-radius: var(--r-8);
+  font-family: inherit; font-size: var(--t-12); color: var(--ink-2);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.chat-scope .menuitem:hover { background-color: var(--state-hover); color: var(--ink-1); }
+.chat-scope .menuitem svg { color: var(--ink-3); }
+.chat-scope .menuitem:hover svg { color: var(--ink-2); }
+.chat-scope .menuitem[aria-disabled='true'] {
+  color: var(--ink-4); cursor: not-allowed; background-color: transparent;
+}
+.chat-scope .menuitem .right {
+  margin-left: auto; padding-left: var(--sp-12);
+  font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-4);
+}
+/* A two-line menu row for the permission modes: the mode, then what it means.
+   The description is the whole reason this control is safe to ship before the
+   rule algebra exists — a mode nobody can read is a mode nobody can consent
+   to. */
+.chat-scope .menuitem.tall { height: auto; padding: var(--sp-6) var(--sp-8); align-items: flex-start; }
+.chat-scope .menuitem.tall .stack { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+.chat-scope .menuitem.tall .sub { font-size: var(--t-10); line-height: var(--lh-10); color: var(--ink-4); white-space: normal; }
+
+/* ── the failure strip — above the composer, never a message in the thread ──
+   Graphite page 20.4 makes it a law. v1 breaks it twice, turning a failed ask
+   into an assistant message: an error permanently in the artifact you hand to
+   someone else. The composer stays fully usable underneath, and Retry is here
+   from the start — MLH ships the strip with `dismissError` wired to nothing. */
+.chat-scope .strip {
+  /*
+   * A STACKING CONTEXT OF ITS OWN, as a backstop.
+   *
+   * The overlap that made `composer-strip-settings` unclickable is fixed where
+   * it belonged - the popups now anchor to `.inner`, above this strip, so they
+   * no longer cross it at all. This is belt-and-braces for the next absolutely
+   * positioned thing someone adds inside the composer: an actionable failure
+   * outranks a transient popup, because a menu is something you opened to look
+   * through and this is the only route out of a turn that failed.
+   */
+  position: relative; z-index: 4;
+  display: flex; align-items: center; gap: var(--sp-8);
+  /* Same rung as every other control in this frame, by its token. */
+  min-height: var(--control-h); margin-bottom: var(--sp-6);
+  padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-10);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-10);
+  background-color: var(--surface-1);
+  font-size: var(--t-12); line-height: var(--lh-12); color: var(--ink-1);
+}
+/* ONE hue, on one 14px glyph — the same budget sheet 12.3 gives the run group.
+   The strip's chrome stays neutral: a red box teaches the reader to distrust
+   every other red on the screen. */
+.chat-scope .strip .i-alert { color: var(--wont); }
+.chat-scope .strip .msg { min-width: 0; overflow-wrap: anywhere; }
+.chat-scope .strip .acts { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); }
+.chat-scope .strip .ghost {
+  appearance: none; height: 24px; padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-10);
+  background-color: transparent; color: var(--ink-2);
+  font-family: inherit; font-size: var(--t-11); cursor: pointer;
+}
+.chat-scope .strip .ghost:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+/* ── the trust strip — the one moment, and it is not a security dialog ──────
+   Owner ruling: this is the first thing a new reader meets, so it is a NOTICE.
+   It reuses `.strip` wholesale — same rung, same hairline, same neutral
+   surface — and adds only the disclosure beneath it.
+
+   NO WARNING HUE, and that is deliberate rather than an omission. Graphite law
+   1: every hue on screen is a claim about the world, and there are never more
+   hues than claims. An untrusted repository is the ORDINARY case (it is the
+   default for every repo you have not decided about), not a verdict about the
+   code, so the glyph takes the same neutral ink as the words. Painting it
+   `--wont` would spend the failure strip's one hue on a non-failure and teach
+   the reader to discount the next real one. */
+.chat-scope .truststrip { display: block; }
+.chat-scope .truststrip .i-trust { color: var(--ink-3); }
+/* The one action reads as the primary of the two, WITHOUT a fill: the send
+   button is the signature filled element in this frame and a second one would
+   compete with it. Weight and ink carry the emphasis instead. */
+.chat-scope .truststrip .trustbtn { color: var(--ink-1); border-color: var(--edge-strong); }
+.chat-scope .truststrip .trustbtn:hover { background-color: var(--state-hover); }
+/* A CONTROL LABEL DOES NOT WRAP. Measured in the running app: at the composer's
+   own width both labels broke to two lines inside a 24px control, and a Range
+   over the text put its bottom 5px BELOW the button's border — the label
+   painting outside the thing it labels, which is the legibility gate's "nothing
+   overflows its box" in miniature. It is invisible to `scrollHeight >
+   clientHeight`, which compares against the CONTENT box and reads a 24px button
+   as fine; the text's own bounds are what show it.
+   The message beside them already shrinks, so holding two short labels on one
+   line costs the strip nothing and makes the row read as one line of chrome
+   rather than a paragraph with buttons in it. */
+.chat-scope .truststrip .acts button { white-space: nowrap; }
+/* The disclosure hangs UNDER the strip and shares its box, so the text the
+   repository wrote is visibly inside the notice rather than floating as if it
+   were ours. Capped and scrollable: an instruction file runs to 24,000
+   characters and must never push the composer off screen. */
+.chat-scope .trustreview {
+  margin: calc(-1 * var(--sp-6)) 0 var(--sp-6) 0;
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge); border-top: none;
+  border-radius: 0 0 var(--r-10) var(--r-10);
+  background-color: var(--surface-1);
+}
+.chat-scope .trustreview-head {
+  margin-bottom: var(--sp-4);
+  font-size: var(--t-10); line-height: var(--lh-10); color: var(--ink-3);
+}
+.chat-scope .trustreview-body {
+  margin: 0; max-height: 180px; overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-2);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* THE EMPTY STATE IS A SCREEN, NOT A MESSAGE — so it is centred, not
+   bottom-anchored. MLH/shell.css:1178-1189 marks this the deliberate exception
+   to the auto-margin rule above. */
+.chat-scope .emptychat {
+  margin: auto; display: flex; flex-direction: column; align-items: center;
+  gap: var(--sp-8); color: var(--ink-3); font-size: var(--t-12); text-align: center;
+  max-width: 420px; padding: 0 var(--sp-16);
+}
+
+/* STARTER CHIPS — three grounded doors on the attached empty thread (P1 audit:
+   the first glance was a void). Same chassis as the attach button, quieter
+   ink; the chip's title carries the full ask it will draft. */
+.chat-scope .emptychat-starters {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: var(--sp-8); margin-top: var(--sp-12);
+}
+.chat-scope .emptychat-starter {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+  color: var(--ink-2); font-family: inherit; font-size: var(--t-12);
+  cursor: pointer; white-space: nowrap;
+}
+.chat-scope .emptychat-starter:hover {
+  background: var(--state-hover); color: var(--ink-1);
+}
+
+.chat-scope .emptychat-attach {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font-family: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+
+.chat-scope .emptychat-attach:hover {
+  filter: brightness(1.06);
+}
+
+/* WHAT THE ANSWER DID NOT READ.
+
+   Quiet on purpose: --ink-3 and --t-10, the same weight the footer rows carry.
+   It is a measurement standing under a claim, not a warning — colouring it
+   would make it a verdict, and Graphite law 1 reserves hue for claims about the
+   world. Law 3's ladder puts working type at 10/11/12, and this is the 10. */
+.chat-scope .coverage {
+  margin: var(--sp-4) 0 0;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: 1.4;
+}
+
+/* WHAT THE TURN COST — the same footing as coverage, and quieter than it.
+
+   Coverage is a claim about the ANSWER and can change whether a reader trusts
+   it. Cost is a claim about the BILL and cannot, so it sits at --ink-4 where
+   coverage sits at --ink-3. Both are measurements the engine made, and neither
+   is a sentence the model appears to have written.
+
+   The numbers are mono and tabular so a column of turns lines up and a reader
+   can compare two of them without counting digits. No hue: a token count is
+   not a verdict. */
+.chat-scope .usage {
+  margin: var(--sp-2) 0 0;
+  color: var(--ink-4);
+  font-size: var(--t-10);
+  line-height: 1.4;
+}
+.chat-scope .usage-n {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+.chat-scope .usage-est { color: var(--ink-4); }
+
+/* ── Wave L4 — turn elapsed, phase card, edit ledger (Codex-class polish) ── */
+
+.chat-scope .turn-elapsed {
+  margin: 0 0 var(--sp-8);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+.chat-scope .turn-elapsed-live {
+  color: var(--ink-2);
+}
+
+.chat-scope .phase-card {
+  margin: var(--sp-8) 0;
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+}
+
+.chat-scope .phase-card-crumb {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+.chat-scope .phase-card-crumb-icon {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+.chat-scope .phase-card-live {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  font-size: var(--t-11);
+  color: var(--ink-2);
+}
+
+.chat-scope .phase-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-solid, var(--accent));
+  animation: chatpulse 1.2s var(--ease) infinite;
+  flex-shrink: 0;
+}
+
+.chat-scope .phase-card-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-scope .phase-card-timer {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.chat-scope .ask-live-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.chat-scope .ask-round-status {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-2);
+}
+
+.chat-scope .ask-stall-notice {
+  margin: 0;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+
+.chat-scope .edits-ledger {
+  margin-top: var(--sp-10);
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-1);
+}
+
+.chat-scope .edits-ledger-hd {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  font-size: var(--t-10);
+  color: var(--ink-2);
+  margin-bottom: var(--sp-6);
+}
+
+.chat-scope .edits-ledger-stats {
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.chat-scope .edits-ledger .stat-add {
+  color: var(--fits);
+}
+
+.chat-scope .edits-ledger .stat-del {
+  color: var(--wont);
+}
+
+.chat-scope .edits-ledger-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+.chat-scope .edits-ledger-list li {
+  padding: var(--sp-2) 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}
+
+.chat-scope .edits-ledger-list li > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── THE `@` PICKER — sheet 12.4 ─────────────────────────────────────────
+   "@ resolves against the graph, or it resolves against nothing. The picker
+   offers only targets that exist in the attached repo — architecture nodes,
+   files and functions… Where nothing matches it says so and offers no
+   free-text fallback."
+
+   It is a MENU by the substrate's definition — --e3 elevation, --r-10 radius —
+   because that is what `_core.html:1216-1228` says a menu is, and a second
+   transient surface with its own look would be a second answer to a question
+   already settled. Rows sit on the 30px rung like every other `.menuitem`. */
+.chat-scope .mentions {
+  position: absolute; bottom: calc(100% + var(--sp-6)); left: 0; right: 0; z-index: 3;
+  max-height: calc(var(--row-h) * 6);
+  overflow-y: auto;
+  padding: var(--sp-4);
+  background-color: var(--surface-2);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e3);
+}
+.chat-scope .mention-row {
+  appearance: none; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: var(--sp-8);
+  height: var(--row-h); padding: 0 var(--sp-8);
+  background-color: transparent; border: 0; border-radius: var(--r-8);
+  font-family: inherit; font-size: var(--t-12); color: var(--ink-2);
+  cursor: pointer; white-space: nowrap;
+}
+.chat-scope .mention-row[data-active='true'],
+.chat-scope .mention-row:hover { background-color: var(--state-hover); color: var(--ink-1); }
+.chat-scope .mention-name { flex: 0 0 auto; }
+/* The path is context, not the name — it recedes and it truncates first. */
+.chat-scope .mention-detail {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-4);
+}
+/* A CATEGORY, so neutral mono at --ink-3 and never a badge — the same ruling
+   the node card's kind tag follows. */
+.chat-scope .mention-kind {
+  flex: 0 0 auto; margin-left: auto;
+  font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-3);
+}
+.chat-scope .mention-empty {
+  display: flex; align-items: center;
+  height: var(--row-h); padding: 0 var(--sp-8);
+  font-size: var(--t-12); color: var(--ink-3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COPY ONE MESSAGE — sheet 12 line 551 draws it as an `iconbtn` with
+   `aria-label="Copy"` beside the message body.
+
+   QUIET UNTIL WANTED. It sits under the prose at --ink-4 and only reaches
+   --ink-2 on hover or focus, because a control on every message is furniture
+   if it competes with the words above it — and the words are the product.
+
+   No hue: copying is not a verdict. The "Copied" state is a WORD as well as a
+   glyph (sheet 12.5: no state in this product is communicated by colour
+   alone), which is also what makes the failure case sayable.
+   ══════════════════════════════════════════════════════════════════════════ */
+.chat-scope .prose-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+  height: var(--control-h);
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-4);
+  font-family: inherit;
+  font-size: var(--t-11);
+  cursor: pointer;
+}
+.chat-scope .prose-copy:hover {
+  color: var(--ink-2);
+  background: var(--state-hover);
+  border-color: var(--edge-faint);
+}
+.chat-scope .prose-copy:focus-visible {
+  outline: none;
+  color: var(--ink-2);
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+/* Done and failed both stay legible without a hue — the word carries it. */
+.chat-scope .prose-copy[data-said='done'] { color: var(--ink-2); }
+.chat-scope .prose-copy[data-said='failed'] { color: var(--ink-3); }
+
+/* The message is what matters; the control appears when the reader is near it.
+   Kept visible on focus so a keyboard never loses it. */
+.chat-scope .prose .prose-copy { opacity: 0; transition: opacity .12s ease; }
+.chat-scope .prose:hover .prose-copy,
+.chat-scope .prose .prose-copy:focus-visible,
+.chat-scope .prose .prose-copy[data-said='done'],
+.chat-scope .prose .prose-copy[data-said='failed'] { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Still visible, still says "not finished" — it just stops moving. Removing
+     it entirely would take the answer's only liveness signal from the readers
+     most likely to need it. */
+  .chat-scope .prose[data-streaming]::after { animation: none; opacity: .62; }
+  /* Decision 7: the living row stills too — static ink, one step brighter
+     than --ink-3 so the line keeps its emphasis without moving. */
+  .chat-scope .toolrow.running .i { animation: none; }
+  .chat-scope .toolrow.live .name {
+    animation: none;
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--ink-2);
+  }
+  .chat-scope .toolrow.live.wash::before { animation: none; }
+  .chat-scope .spin.braille::after { animation: none; content: '⠋'; }
+  .chat-scope .reasonfold.live .reasonfold-trigger .name {
+    animation: none;
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--ink-1);
+  }
+  .chat-scope .phase-card-dot { animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-scope .prose .prose-copy { transition: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CODE IN AN ANSWER — fenced blocks and inline ticks.
+
+   The transcript displays every answer this product exists to give, and it
+   rendered a fence as literal backticks in an unindented paragraph. Grounded
+   answers are full of paths and snippets; the surface could not format a path.
+
+   MONO, AND ON ITS OWN GROUND. A code block that shared the prose ground would
+   be a paragraph in a different typeface — the point of the block is that the
+   reader can see where the quoted code starts and stops without reading it.
+
+   No hue: this is not highlighted, and pretending otherwise with one accent
+   colour would be a claim about syntax nothing parsed. It scrolls in its own
+   box so a long line never widens the column.
+   ══════════════════════════════════════════════════════════════════════════ */
+.chat-scope .prose-code {
+  margin: var(--sp-8) 0;
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+  overflow-x: auto;
+}
+.chat-scope .prose-code code {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+  white-space: pre;
+}
+
+/* Inline, and quieter than a block: it sits inside a sentence and must not
+   break the line it is in. --r-4 is the book's inline-code chip. */
+.chat-scope .prose-tick {
+  font-family: var(--font-mono);
+  font-size: .92em;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  word-break: break-word;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REWRITING A QUESTION.
+
+   The control sits on the user's own bubble and appears on hover, like Copy
+   does on an answer: a pencil on every question in a long thread is furniture.
+   Kept visible on focus so a keyboard never loses it.
+   ══════════════════════════════════════════════════════════════════════════ */
+.chat-scope .userbubble { position: relative; }
+
+.chat-scope .bubble-edit {
+  position: absolute;
+  top: 50%;
+  left: calc(-1 * var(--control-h));
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.chat-scope .userbubble:hover .bubble-edit,
+.chat-scope .bubble-edit:focus-visible { opacity: 1; color: var(--ink-2); }
+.chat-scope .bubble-edit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* The editing state is a FIELD, not a styled div: a question being rewritten
+   is being typed, and anything less than a real textarea loses selection,
+   undo and the platform's own editing keys. */
+.chat-scope .userbubble.editing { display: flex; flex-direction: column; gap: var(--sp-6); }
+.chat-scope .bubble-field {
+  width: 100%;
+  min-height: calc(var(--control-h) * 2);
+  resize: vertical;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  padding: var(--sp-6) var(--sp-8);
+}
+.chat-scope .bubble-acts { display: flex; gap: var(--sp-6); justify-content: flex-end; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-scope .bubble-edit { transition: none; }
+}
+
+
+/* THE CONTEXT RING — the same fact the usage line prints, in front of the
+   reader while they are deciding what to type rather than after the turn.
+   The track is the whole window and the arc is the part in use; --ink-4 against
+   --accent keeps the unused part legible without spending a second hue on it. */
+.chat-scope .ctxring-anchor {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.chat-scope button.ctxring-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+.chat-scope .ctxring { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.chat-scope .ctxring-label {
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.chat-scope .ctxring-track { fill: none; stroke: var(--ink-4); opacity: .45; }
+.chat-scope .ctxring-used {
+  fill: none; stroke: var(--accent); stroke-linecap: round;
+  transition: stroke-dasharray var(--dur-2) var(--ease);
+}
+.chat-scope .ctxring-panel {
+  position: absolute;
+  bottom: calc(100% + var(--sp-6));
+  left: 0;
+  z-index: 20;
+  min-width: 14rem;
+  max-width: 18rem;
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  filter: var(--e2-drop);
+  color: var(--ink-1);
+}
+.chat-scope .ctxring-panel-title {
+  margin: 0 0 var(--sp-6);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+.chat-scope .ctxring-panel-empty {
+  margin: 0;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+.chat-scope .ctxring-panel-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.chat-scope .ctxring-panel-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  font-size: var(--t-11);
+}
+.chat-scope .ctxring-sec-label { color: var(--ink-2); min-width: 0; }
+.chat-scope .ctxring-sec-tokens { color: var(--ink-3); flex: 0 0 auto; }
+.chat-scope .ctxring-panel-foot {
+  margin: var(--sp-8) 0 0;
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-scope .ctxring-used { transition: none; }
+}
+
+/* ── "What I already know": three cards, one click ────────────────────────
+   Shown only in Teach mode, under the composer, so the choice is made BEFORE
+   the lesson and never inside it. Chat-pane pixels, not board units — these do
+   not scale with camera zoom, which is the trap the board controls hit; the
+   floor is still declared from --target-min so it moves with the ramp rather
+   than being a literal that drifts from it. */
+.chat-scope .teach-known {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-6);
+  margin-top: var(--sp-6);
+}
+
+.chat-scope .teach-known-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  text-align: left;
+  /* Comfortably past the 24px floor: these are the one control the goal calls
+     "obvious", and an obvious control is not a 24px square. */
+  min-height: calc(var(--target-min) * 2);
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--e1);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  cursor: pointer;
+}
+
+.chat-scope .teach-known-card:hover {
+  background: var(--surface-3);
+}
+
+/* SELECTED IS NOT A HUE ALONE. A ring plus a tone step, so the state survives
+   greyscale and colour-blindness the same way node kinds have to. */
+.chat-scope .teach-known-card[data-selected='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent);
+  background: var(--surface-3);
+}
+
+.chat-scope .teach-known-card:focus-visible {
+  outline: var(--w-struct) solid var(--accent);
+  outline-offset: var(--w-hair);
+}
+
+.chat-scope .teach-known-label {
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  line-height: var(--lh-14);
+}
+
+.chat-scope .teach-known-hint {
+  font-size: var(--t-10);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+}

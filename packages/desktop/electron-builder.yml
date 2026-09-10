@@ -1,0 +1,90 @@
+# electron-builder configuration for @sequence/desktop.
+#
+# VERIFIED ON WINDOWS x64, and no longer on the docs alone. `--win nsis` was
+# run on a real machine and produced `release/Sequence Setup 0.1.0.exe`; the
+# unpacked app was then launched and reached the app UI, which is what proves
+# the `extraResources` assumption below rather than merely asserting it —
+# `serverPaths()` resolved `<resources>/server/packages/...` and the child
+# server started under Electron's own Node. Gate:
+#   node tools/desktop-smoke.mjs --packaged
+#
+# STILL UNVERIFIED: the mac and linux targets. dmg/zip/AppImage/deb are
+# authored from the electron-builder docs and have never been run.
+#
+# Bundling model:
+#   - `files`         → the Electron app itself (this package's compiled dist +
+#                       package.json), packed into the asar archive.
+#   - `extraResources`→ the SELF-CONTAINED server bundle produced by
+#                       `scripts/prepare-server.mjs` (analyzer dist + its real,
+#                       de-symlinked node_modules + the web dist). Copied to
+#                       `<resources>/server` OUTSIDE the asar, because the app
+#                       spawns it as a child Node process and Node must execute
+#                       real on-disk files and resolve node_modules normally.
+#     Runtime paths (see src/main.ts → serverPaths):
+#       <resources>/server/packages/analyzer/dist/cli.js
+#       <resources>/server/packages/web2/dist
+#
+# Prerequisite: run `node scripts/prepare-server.mjs` before packing (the `dist`
+# npm script does this; if you invoke electron-builder directly, run it first).
+
+appId: dev.sequence.desktop
+productName: Sequence
+copyright: Copyright © 2026 Sequence
+
+directories:
+  output: release
+  buildResources: build
+
+# Only the compiled Electron app goes into the asar. The server tree is shipped
+# via extraResources (below), not here, so it stays executable outside the asar.
+files:
+  - dist/**/*
+  - package.json
+
+extraResources:
+  - from: server-bundle
+    to: server
+    filter:
+      - "**/*"
+
+asar: true
+
+mac:
+  category: public.app-category.developer-tools
+  # UNSIGNED, BY OWNER RULING (Max, 2026-09-10): "just create a DMG for macOS
+  # ... I don't know if we need to have an Apple developer account and pay for
+  # that". `null` is electron-builder's explicit "do not sign" — distinct from
+  # omitting the key, which makes it hunt the keychain and fail confusingly on
+  # a machine that has no certificate. Gatekeeper therefore warns on first
+  # open; the README says so, and says right-click -> Open.
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+
+linux:
+  category: Development
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64

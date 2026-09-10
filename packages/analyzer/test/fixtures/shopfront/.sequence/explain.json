@@ -1,0 +1,626 @@
+{
+  "scannedAt": "2026-08-18T10:27:15.798Z",
+  "tree": {
+    "id": "p:repo",
+    "title": "Shopfront",
+    "summary": "Your whole application, grouped into plain-English areas.",
+    "kind": "group",
+    "children": [
+      {
+        "id": "p:area:backend",
+        "title": "Backend",
+        "summary": "The services that do the work behind the scenes.",
+        "kind": "area",
+        "children": [
+          {
+            "id": "p:svc:gateway",
+            "title": "Gateway",
+            "summary": "index · http · invoices · 3 more",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:gateway/src/index.ts",
+                "title": "index.ts",
+                "summary": "gateway/src/index.ts (ts, 20 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:gateway/src/index.ts"
+                ],
+                "edgeRefs": [
+                  "imp1",
+                  "imp2",
+                  "imp3",
+                  "imp4"
+                ]
+              },
+              {
+                "id": "p:file:gateway/src/lib/http.ts",
+                "title": "http.ts",
+                "summary": "gateway/src/lib/http.ts (ts, 19 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:gateway/src/lib/http.ts"
+                ],
+                "edgeRefs": [
+                  "imp5",
+                  "imp6",
+                  "imp7"
+                ]
+              },
+              {
+                "id": "p:file:gateway/src/routes/invoices.ts",
+                "title": "invoices.ts",
+                "summary": "gateway/src/routes/invoices.ts (ts, 12 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:gateway/src/routes/invoices.ts"
+                ],
+                "edgeRefs": [
+                  "e1:http",
+                  "e8:http",
+                  "imp1",
+                  "imp5"
+                ]
+              },
+              {
+                "id": "p:file:gateway/src/routes/orders.ts",
+                "title": "orders.ts",
+                "summary": "gateway/src/routes/orders.ts (ts, 17 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:gateway/src/routes/orders.ts"
+                ],
+                "edgeRefs": [
+                  "e2:http",
+                  "e3:http",
+                  "imp2",
+                  "imp6"
+                ]
+              },
+              {
+                "id": "p:file:gateway/src/routes/payments.ts",
+                "title": "payments.ts",
+                "summary": "gateway/src/routes/payments.ts (ts, 9 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:gateway/src/routes/payments.ts"
+                ],
+                "edgeRefs": [
+                  "e4:http",
+                  "imp3"
+                ]
+              },
+              {
+                "id": "p:file:gateway/src/routes/shipments.ts",
+                "title": "shipments.ts",
+                "summary": "gateway/src/routes/shipments.ts (ts, 12 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:gateway/src/routes/shipments.ts"
+                ],
+                "edgeRefs": [
+                  "e5:http",
+                  "imp4",
+                  "imp7"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:gateway"
+            ],
+            "edgeRefs": [
+              "e1:http",
+              "e2:http",
+              "e3:http",
+              "e4:http",
+              "e5:http",
+              "e8:http"
+            ]
+          },
+          {
+            "id": "p:svc:orders",
+            "title": "Orders service",
+            "summary": "db · events · inventory_client · 4 more",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:orders/app/db.py",
+                "title": "db.py",
+                "summary": "orders/app/db.py (py, 26 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:orders/app/db.py"
+                ],
+                "edgeRefs": [
+                  "e13:db_read",
+                  "e14:db_write",
+                  "e23:db_access",
+                  "imp9"
+                ]
+              },
+              {
+                "id": "p:file:orders/app/events.py",
+                "title": "events.py",
+                "summary": "orders/app/events.py (py, 11 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:orders/app/events.py"
+                ],
+                "edgeRefs": [
+                  "e10:queue_publish",
+                  "imp10"
+                ]
+              },
+              {
+                "id": "p:file:orders/app/inventory_client.py",
+                "title": "inventory_client.py",
+                "summary": "orders/app/inventory_client.py (py, 13 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:orders/app/inventory_client.py"
+                ],
+                "edgeRefs": [
+                  "e9:grpc",
+                  "imp11"
+                ]
+              },
+              {
+                "id": "p:file:orders/app/main.py",
+                "title": "main.py",
+                "summary": "orders/app/main.py (py, 12 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:orders/app/main.py"
+                ],
+                "edgeRefs": [
+                  "imp8"
+                ]
+              },
+              {
+                "id": "p:file:orders/app/models.py",
+                "title": "models.py",
+                "summary": "orders/app/models.py (py, 15 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:orders/app/models.py"
+                ],
+                "edgeRefs": [
+                  "e15:db_access"
+                ]
+              },
+              {
+                "id": "p:file:orders/app/payments_client.py",
+                "title": "payments_client.py",
+                "summary": "orders/app/payments_client.py (py, 13 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:orders/app/payments_client.py"
+                ],
+                "edgeRefs": [
+                  "e6:http",
+                  "imp12"
+                ]
+              },
+              {
+                "id": "p:file:orders/app/routes.py",
+                "title": "routes.py",
+                "summary": "orders/app/routes.py (py, 26 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:orders/app/routes.py"
+                ],
+                "edgeRefs": [
+                  "e2:http",
+                  "e3:http",
+                  "imp10",
+                  "imp11",
+                  "imp12",
+                  "imp8",
+                  "imp9"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:orders"
+            ],
+            "edgeRefs": [
+              "e10:queue_publish",
+              "e13:db_read",
+              "e14:db_write",
+              "e15:db_access",
+              "e23:db_access",
+              "e2:http",
+              "e3:http",
+              "e6:http",
+              "e9:grpc"
+            ]
+          },
+          {
+            "id": "p:svc:payments",
+            "title": "Payments service",
+            "summary": "db · index · stripe",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:payments/src/db.js",
+                "title": "db.js",
+                "summary": "payments/src/db.js (js, 25 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:payments/src/db.js"
+                ],
+                "edgeRefs": [
+                  "e16:db_write",
+                  "e17:db_read",
+                  "e18:db_read",
+                  "imp13"
+                ]
+              },
+              {
+                "id": "p:file:payments/src/index.js",
+                "title": "index.js",
+                "summary": "payments/src/index.js (js, 28 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:payments/src/index.js"
+                ],
+                "edgeRefs": [
+                  "e4:http",
+                  "e6:http",
+                  "e7:http",
+                  "imp13",
+                  "imp14"
+                ]
+              },
+              {
+                "id": "p:file:payments/src/stripe.js",
+                "title": "stripe.js",
+                "summary": "payments/src/stripe.js (js, 12 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:payments/src/stripe.js"
+                ],
+                "edgeRefs": [
+                  "imp14"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:payments"
+            ],
+            "edgeRefs": [
+              "e16:db_write",
+              "e17:db_read",
+              "e18:db_read",
+              "e4:http",
+              "e6:http",
+              "e7:http"
+            ]
+          },
+          {
+            "id": "p:svc:notifications",
+            "title": "Notifications service",
+            "summary": "worker",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:notifications/worker.py",
+                "title": "worker.py",
+                "summary": "notifications/worker.py (py, 25 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:notifications/worker.py"
+                ],
+                "edgeRefs": [
+                  "e11:queue_consume"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:notifications"
+            ],
+            "edgeRefs": [
+              "e11:queue_consume"
+            ]
+          },
+          {
+            "id": "p:svc:inventory",
+            "title": "Inventory service",
+            "summary": "server",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:inventory/server.py",
+                "title": "server.py",
+                "summary": "inventory/server.py (py, 30 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:inventory/server.py"
+                ],
+                "edgeRefs": [
+                  "e9:grpc"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:inventory"
+            ],
+            "edgeRefs": [
+              "e9:grpc"
+            ]
+          },
+          {
+            "id": "p:svc:shipping",
+            "title": "Shipping service",
+            "summary": "main · subscriber",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:shipping/main.go",
+                "title": "main.go",
+                "summary": "shipping/main.go (go, 57 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:shipping/main.go"
+                ],
+                "edgeRefs": [
+                  "e19:db_read",
+                  "e20:db_write",
+                  "e24:db_access"
+                ]
+              },
+              {
+                "id": "p:file:shipping/subscriber.go",
+                "title": "subscriber.go",
+                "summary": "shipping/subscriber.go (go, 37 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:shipping/subscriber.go"
+                ],
+                "edgeRefs": [
+                  "e12:queue_consume"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:shipping"
+            ],
+            "edgeRefs": [
+              "e12:queue_consume",
+              "e19:db_read",
+              "e20:db_write",
+              "e24:db_access",
+              "e5:http"
+            ]
+          },
+          {
+            "id": "p:svc:invoices",
+            "title": "Invoices service",
+            "summary": "InvoiceController · PaymentClient · application",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+                "title": "InvoiceController.java",
+                "summary": "invoices/src/main/java/shop/invoices/InvoiceController.java (java, 33 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:invoices/src/main/java/shop/invoices/InvoiceController.java"
+                ],
+                "edgeRefs": [
+                  "e1:http",
+                  "e21:db_read",
+                  "e22:db_read"
+                ]
+              },
+              {
+                "id": "p:file:invoices/src/main/java/shop/invoices/PaymentClient.java",
+                "title": "PaymentClient.java",
+                "summary": "invoices/src/main/java/shop/invoices/PaymentClient.java (java, 21 lines)",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:invoices/src/main/java/shop/invoices/PaymentClient.java"
+                ],
+                "edgeRefs": [
+                  "e7:http"
+                ]
+              },
+              {
+                "id": "p:file:invoices/src/main/resources/application.properties",
+                "title": "application.properties",
+                "summary": "invoices/src/main/resources/application.properties",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:invoices/src/main/resources/application.properties"
+                ],
+                "edgeRefs": [
+                  "e25:db_access"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:invoices"
+            ],
+            "edgeRefs": [
+              "e1:http",
+              "e21:db_read",
+              "e22:db_read",
+              "e25:db_access",
+              "e7:http"
+            ]
+          },
+          {
+            "id": "p:svc:edge",
+            "title": "Edge service",
+            "summary": "default",
+            "kind": "service",
+            "children": [
+              {
+                "id": "p:file:edge/default.conf",
+                "title": "default.conf",
+                "summary": "edge/default.conf",
+                "kind": "file",
+                "children": [],
+                "sourceRefs": [
+                  "file:edge/default.conf"
+                ],
+                "edgeRefs": [
+                  "e8:http"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "svc:edge"
+            ],
+            "edgeRefs": [
+              "e8:http"
+            ]
+          }
+        ],
+        "sourceRefs": [
+          "svc:gateway",
+          "svc:orders",
+          "svc:payments",
+          "svc:notifications",
+          "svc:inventory",
+          "svc:shipping",
+          "svc:invoices",
+          "svc:edge"
+        ],
+        "edgeRefs": [
+          "e10:queue_publish",
+          "e11:queue_consume",
+          "e12:queue_consume",
+          "e13:db_read",
+          "e14:db_write",
+          "e15:db_access",
+          "e16:db_write",
+          "e17:db_read",
+          "e18:db_read",
+          "e19:db_read",
+          "e20:db_write",
+          "e21:db_read",
+          "e22:db_read",
+          "e23:db_access",
+          "e24:db_access",
+          "e25:db_access"
+        ]
+      },
+      {
+        "id": "p:area:data",
+        "title": "Data",
+        "summary": "Where information is stored and passed between services.",
+        "kind": "area",
+        "children": [
+          {
+            "id": "p:ds:postgres",
+            "title": "Postgres database",
+            "summary": "A database that stores information.",
+            "kind": "data",
+            "children": [],
+            "sourceRefs": [
+              "ds:postgres"
+            ],
+            "edgeRefs": [
+              "e13:db_read",
+              "e14:db_write",
+              "e15:db_access",
+              "e16:db_write",
+              "e17:db_read",
+              "e18:db_read",
+              "e19:db_read",
+              "e20:db_write",
+              "e21:db_read",
+              "e22:db_read",
+              "e23:db_access",
+              "e24:db_access",
+              "e25:db_access"
+            ]
+          },
+          {
+            "id": "p:ds:redis",
+            "title": "Redis (cache & message queue)",
+            "summary": "Fast storage that also passes messages between services.",
+            "kind": "data",
+            "children": [
+              {
+                "id": "p:topic:order.created",
+                "title": "Order Created messages",
+                "summary": "A stream of \"order.created\" messages.",
+                "kind": "data",
+                "children": [],
+                "sourceRefs": [
+                  "topic:order.created"
+                ],
+                "edgeRefs": [
+                  "e10:queue_publish",
+                  "e11:queue_consume",
+                  "e12:queue_consume"
+                ]
+              }
+            ],
+            "sourceRefs": [
+              "ds:redis"
+            ],
+            "edgeRefs": [
+              "e10:queue_publish",
+              "e11:queue_consume",
+              "e12:queue_consume"
+            ]
+          }
+        ],
+        "sourceRefs": [
+          "ds:postgres",
+          "ds:redis"
+        ],
+        "edgeRefs": [
+          "e10:queue_publish",
+          "e11:queue_consume",
+          "e12:queue_consume",
+          "e13:db_read",
+          "e14:db_write",
+          "e15:db_access",
+          "e16:db_write",
+          "e17:db_read",
+          "e18:db_read",
+          "e19:db_read",
+          "e20:db_write",
+          "e21:db_read",
+          "e22:db_read",
+          "e23:db_access",
+          "e24:db_access",
+          "e25:db_access"
+        ]
+      }
+    ],
+    "sourceRefs": [
+      "repo"
+    ]
+  },
+  "mode": "structural",
+  "profile": "recommended",
+  "detailLevel": "regular"
+}

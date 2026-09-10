@@ -1,0 +1,193 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   BOOT SMOKE — the Wave 0 surface, and the only surface in the tree
+   packages/web2/src/styles/boot.css
+
+   HUE BUDGET: 6 — the 5 verdicts (--fits --spills --wont --unknown --info)
+   plus --accent, each appearing exactly once, as a SPECIMEN of itself. That is
+   the one honest reason a sheet may paint every hue at once: this surface's
+   subject IS the palette. No chrome here is coloured; the dividers, headings
+   and labels are all ink and edge.
+
+   THIS IS NOT A PRODUCT SURFACE AND MUST NOT BECOME ONE. It exists to prove
+   three things at boot and nothing else:
+     1. the token layer parses and every var(--…) resolves,
+     2. Instrument Sans is bound and rendering from local files,
+     3. the three-state theming switches ground, ink and hue together.
+   Wave 2 (items 2.3-2.9) builds the shell. Wave 0 deliberately ships no chat,
+   no canvas, no rail, no composer — docs/PIVOT-V2.md's whole point is that
+   nothing visual is inherited, so nothing visual is guessed at either.
+
+   No hex literal, no px font-size, no invented number. Item 0.6 enforces it.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.boot {
+  min-height: 100%;
+  background: var(--bg-ground);
+  padding: var(--sp-32) var(--sp-24) var(--sp-56);
+}
+
+.boot-sheet {
+  max-width: var(--col-max);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-32);
+}
+
+/* ── page header ───────────────────────────────────────────────────────── */
+.boot-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding-bottom: var(--sp-24);
+  border-bottom: 1px solid var(--edge);
+}
+.boot-title {
+  margin: 0;
+  font-size: var(--t-20);
+  line-height: var(--lh-20);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+.boot-sub {
+  margin: 0;
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  color: var(--ink-3);
+}
+.boot-stamp {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-variant-numeric: var(--num);
+  color: var(--ink-4);
+}
+
+/* ── section ───────────────────────────────────────────────────────────── */
+.boot-section { display: flex; flex-direction: column; gap: var(--sp-12); }
+.boot-legend {
+  margin: 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ── the surface ramp ──────────────────────────────────────────────────── */
+.boot-row { display: flex; flex-wrap: wrap; gap: var(--sp-8); align-items: flex-start; }
+
+.boot-chip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-10) var(--sp-12);
+  min-width: var(--sp-56);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e1);
+}
+.boot-chip-name {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+
+.boot-s1 { background: var(--surface-1); }
+.boot-s2 { background: var(--surface-2); }
+.boot-s3 { background: var(--surface-3); }
+.boot-s4 { background: var(--surface-4); }
+
+/* ── the ink ramp ──────────────────────────────────────────────────────── */
+.boot-ink { font-size: var(--t-14); line-height: var(--lh-14); }
+.boot-i1 { color: var(--ink-1); }
+.boot-i2 { color: var(--ink-2); }
+.boot-i3 { color: var(--ink-3); }
+.boot-i4 { color: var(--ink-4); }
+
+/* ── the type ladder ───────────────────────────────────────────────────── */
+.boot-ladder { display: flex; flex-direction: column; gap: var(--sp-6); }
+.boot-rung { display: flex; align-items: baseline; gap: var(--sp-12); }
+.boot-rung-key {
+  flex: 0 0 auto;
+  min-width: var(--sp-56);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-variant-numeric: var(--num);
+  color: var(--ink-4);
+}
+.boot-rung-spec { color: var(--ink-1); }
+.boot-t10 { font-size: var(--t-10); line-height: var(--lh-10); }
+.boot-t11 { font-size: var(--t-11); line-height: var(--lh-11); }
+.boot-t12 { font-size: var(--t-12); line-height: var(--lh-12); }
+.boot-t13 { font-size: var(--t-13); line-height: var(--lh-13); }
+.boot-t14 { font-size: var(--t-14); line-height: var(--lh-14); }
+.boot-t15 { font-size: var(--t-15); line-height: var(--lh-15); }
+.boot-t17 { font-size: var(--t-17); line-height: var(--lh-17); }
+.boot-t20 { font-size: var(--t-20); line-height: var(--lh-20); }
+.boot-t26 { font-size: var(--t-26); line-height: var(--lh-26); }
+
+/* ── the radius ramp ───────────────────────────────────────────────────── */
+.boot-r {
+  display: grid;
+  place-items: center;
+  width: var(--sp-56);
+  height: var(--sp-56);
+  background: var(--surface-3);
+  border: 1px solid var(--edge);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+.boot-r4 { border-radius: var(--r-4); }
+.boot-r8 { border-radius: var(--r-8); }
+.boot-r10 { border-radius: var(--r-10); }
+.boot-r14 { border-radius: var(--r-14); }
+.boot-r18 { border-radius: var(--r-18); }
+.boot-rfull { border-radius: var(--r-full); }
+
+/* ── the hue budget, one specimen each ─────────────────────────────────── */
+.boot-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border-radius: var(--r-full);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-verdict);
+  letter-spacing: .04em;
+}
+.boot-dot { width: var(--dot); height: var(--dot); border-radius: var(--r-full); background: currentColor; }
+
+.boot-fits    { color: var(--fits);    background: var(--fits-wash);    box-shadow: inset 0 0 0 1px var(--fits-edge); }
+.boot-spills  { color: var(--spills);  background: var(--spills-wash);  box-shadow: inset 0 0 0 1px var(--spills-edge); }
+.boot-wont    { color: var(--wont);    background: var(--wont-wash);    box-shadow: inset 0 0 0 1px var(--wont-edge); }
+.boot-unknown { color: var(--unknown); background: var(--unknown-wash); box-shadow: inset 0 0 0 1px var(--unknown-edge); }
+.boot-info    { color: var(--info);    background: var(--info-wash);    box-shadow: inset 0 0 0 1px var(--info-edge); }
+
+/* The accent is the product's own voice — send, selection, focus. It sits in
+   this row to prove it reads as none of the five verdicts beside it. */
+.boot-accent {
+  color: var(--accent-on-solid);
+  background: var(--accent-solid);
+  box-shadow: none;
+}
+
+/* ── the note ──────────────────────────────────────────────────────────── */
+.boot-note {
+  margin: 0;
+  padding: var(--sp-12);
+  background: var(--surface-1);
+  border: 1px solid var(--edge-faint);
+  border-radius: var(--r-14);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-2);
+}

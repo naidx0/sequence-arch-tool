@@ -1,0 +1,13 @@
+services:
+  cache:
+    image: redis:7-alpine
+  legacy-cache:
+    image: redis:7-alpine
+  svc-a:
+    build:
+      context: ./svc-a
+  svc-b:
+    build:
+      context: ./svc-b
+    environment:
+      REDIS_URL: redis://cache

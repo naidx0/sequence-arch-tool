@@ -1,0 +1,4 @@
+global:
+  registry: registry.example.com
+api:
+  containerPort: 80

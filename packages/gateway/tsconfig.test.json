@@ -1,0 +1,19 @@
+{
+  "//": "Compiles src + test into dist-test for `node --test`. Self-contained (see tsconfig.json).",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "sourceMap": false,
+    "resolveJsonModule": true,
+    "outDir": "dist-test",
+    "rootDir": "."
+  },
+  "include": ["src", "test"]
+}

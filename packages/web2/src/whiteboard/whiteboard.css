@@ -1,0 +1,370 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE WHITEBOARD — packages/web2/src/whiteboard/whiteboard.css
+
+   Consumes tokens and declares none. `tokens/graphite.css` is the only file in
+   this package that may name a colour, a radius, a type size or a spacing
+   value; test/firewall.test.ts enforces it.
+
+   HUE BUDGET: ZERO. Nothing on this surface is a claim about the world, so
+   nothing on it earns a hue — which is Law 1 read the other way round. The ink
+   is --ink-2 and the grid is --ink-4 at the faintest weight the substrate has.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.wb-scope.wb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* --surface-1, NOT --bg-base. The architecture board's ground is --bg-base,
+     and the two surfaces must not be mistakable for one another in a
+     screenshot three weeks old: one holds what the scanner found, the other
+     holds what a person drew. */
+  background: var(--surface-1);
+}
+
+.wb-scope .wb-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+  row-gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  flex: none;
+}
+
+.wb-scope .wb-gap { flex: 1 1 var(--sp-16); min-width: var(--sp-8); }
+
+/* Grouped tool menus — shapes / annotate collapse behind one trigger. */
+.wb-scope .wb-menuwrap {
+  position: relative;
+  display: inline-flex;
+}
+.wb-scope .wb-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-4));
+  left: 0;
+  z-index: 5;
+  min-width: var(--menu-w-sm, 140px);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  background: var(--surface-3);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e3);
+}
+.wb-scope .wb-menuitem {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+  text-align: left;
+}
+.wb-scope .wb-menuitem:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+.wb-scope .wb-menuitem[aria-checked='true'] {
+  background: var(--state-selected);
+  color: var(--ink-1);
+}
+
+/* Toolbar controls. Glyph tools are square; Fit / Reset / Undo stay words
+   (sheet 09 ruling 3 — no camera-move glyph). */
+.wb-scope .wb-tool {
+  height: var(--control-h);
+  min-width: var(--control-h);
+  padding: 0 var(--sp-8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+/*
+ * Seat walk: icon buttons rendered blank because `.wb-scope` never set
+ * stroke/size on `.i` the way `.chat-scope` / `.shell-scope` / `.board-scope`
+ * do. Icons inherit currentColor; without an explicit stroke the SVG paths
+ * are invisible against the dark chrome.
+ */
+.wb-scope .i {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.wb-scope .i-14 { width: 14px; height: 14px; }
+.wb-scope .i-12 { width: 12px; height: 12px; }
+.wb-scope .wb-tool:hover:not(:disabled) { background-color: var(--surface-3); color: var(--ink-1); }
+/* ON is --state-selected, the token for "this is the one" — not the accent.
+   The accent is the product offering something; a tool the reader picked is
+   their state. Same rule the Draw toggle follows. */
+.wb-scope .wb-tool[data-on='true'] { background-color: var(--state-selected); color: var(--ink-1); }
+/* Disabled is a COLOUR change, not an opacity one — the convention review.css
+   already uses. Fading a control leaves it legible-ish and clickable-looking;
+   dropping it to --ink-4 on --edge-faint says plainly that it is not available. */
+.wb-scope .wb-tool:disabled {
+  border-color: var(--edge-faint);
+  color: var(--ink-4);
+  background-color: transparent;
+  cursor: default;
+}
+.wb-scope .wb-tool:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.wb-scope .wb-canvas {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: block;
+  touch-action: none; /* the pen draws; the page does not pan under it */
+  cursor: crosshair;
+}
+
+/* --viz-grid is the substrate's own token for a grid that must sit UNDER
+   content without competing with it. Inventing an opacity here would be a
+   second answer to a question the book already answers. */
+.wb-scope .wb-dot { fill: var(--viz-grid); }
+
+.wb-scope .wb-ink {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: var(--w-flow);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.wb-scope .wb-draft { stroke: var(--ink-3); }
+.wb-scope .wb-erasable { cursor: pointer; }
+.wb-scope .wb-erasable:hover { stroke: var(--wont); }
+
+.wb-scope .wb-text {
+  fill: var(--ink-1);
+  stroke: none;
+  font-family: inherit;
+  font-size: var(--t-13);
+}
+.wb-scope .wb-noderef {
+  fill: var(--accent);
+  stroke: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+}
+
+.wb-scope .wb-empty {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  max-width: var(--pane-w);
+  text-align: center;
+  color: var(--ink-4);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE TWO BOARDS — the tab bar above the canvas region
+
+   Tabs rather than a mode, and not for layout reasons: the architecture board
+   is derived from a parser and this one holds whatever somebody drew. On one
+   surface those become indistinguishable within a week.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.canvastabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.canvastabs-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background: var(--bg-base);
+  flex: none;
+}
+
+.canvastabs-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.canvastabs-body > * { flex: 1; min-height: 0; }
+
+/* Worded, and quiet until selected. A tab bar louder than the boards under it
+   would spend attention on navigation rather than on the thing navigated to. */
+.canvastab {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+.canvastab:hover { color: var(--ink-1); background: var(--state-hover); }
+/* --state-selected, not the accent: the accent is the product offering
+   something, and which board you are on is your state, not an offer. */
+.canvastab[data-on='true'] {
+  background: var(--state-selected);
+  color: var(--ink-1);
+  border-color: var(--edge);
+}
+.canvastab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── SELECTED ────────────────────────────────────────────────────────────
+   Owner 2026-08-27: selection must be OBVIOUS — non-scaling stroke so zoom
+   does not erase the chrome, plus a filled halo and hittable shape interiors. */
+.wb-scope .wb-canvas[data-tool='select'] .wb-item.wb-ink[data-kind='shape'],
+.wb-scope .wb-canvas[data-tool='select'] .wb-item.wb-ink[data-kind='stroke'] {
+  /* Transparent fill so the whole mark is clickable, not only the stroke. */
+  fill: color-mix(in srgb, var(--ink-2) 8%, transparent);
+}
+.wb-scope .wb-item[data-selected='true'] {
+  stroke: var(--board-select-edge);
+  stroke-width: 3px;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 2px var(--board-select-edge));
+}
+.wb-scope .wb-canvas[data-tool='select'] .wb-item[data-selected='true'] {
+  fill: color-mix(in srgb, var(--board-select-edge) 22%, transparent);
+}
+.wb-scope .wb-text[data-selected='true'],
+.wb-scope .wb-noderef[data-selected='true'] {
+  fill: var(--board-select-edge);
+  stroke: var(--board-select-edge);
+  stroke-width: 4px;
+  stroke-opacity: 0.45;
+  paint-order: stroke fill;
+  vector-effect: non-scaling-stroke;
+}
+.wb-scope .wb-sel-halo {
+  fill: color-mix(in srgb, var(--board-select-edge) 16%, transparent);
+  stroke: var(--board-select-edge);
+  stroke-width: 3px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.wb-scope .wb-hit {
+  pointer-events: all;
+  cursor: inherit;
+}
+
+/* A mark you can pick up says so before you press it. */
+.wb-scope .wb-item[data-selected] { cursor: default; }
+.wb-scope .wb-canvas[data-tool='select'] .wb-item { cursor: grab; }
+.wb-scope .wb-canvas[data-tool='select'] .wb-item[data-selected='true'] { cursor: grabbing; }
+
+/* ── THE REFERENCE PICKER, AND THE HAND-OFF ──────────────────────────────
+   Both sit over the board rather than beside it: the surface is one canvas and
+   a second column would be the fourth column CANON forbids. Every measurement
+   is a token; law 3's rungs are --control-h for a control. */
+
+.wb-scope .wb-picker,
+.wb-scope .wb-askpanel {
+  position: absolute;
+  left: var(--sp-12);
+  bottom: var(--sp-12);
+  width: min(320px, calc(100% - var(--sp-24)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+  box-shadow: var(--e3);
+}
+
+.wb-scope .wb-input {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  min-width: 0;
+}
+.wb-scope .wb-textarea { height: auto; padding: var(--sp-8); resize: vertical; }
+.wb-scope .wb-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.wb-scope .wb-field { display: flex; flex-direction: column; gap: var(--sp-4); }
+.wb-scope .wb-label { font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-3); }
+
+.wb-scope .wb-picker-rows { list-style: none; margin: 0; padding: 0; max-height: 200px; overflow-y: auto; }
+.wb-scope .wb-picker-row {
+  display: block;
+  width: 100%;
+  height: var(--row-h-thread);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  text-align: left;
+  cursor: pointer;
+}
+.wb-scope .wb-picker-row:hover { background-color: var(--surface-3); }
+.wb-scope .wb-picker-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* Sheet 12.4: nothing matches is a RENDERED ROW, never an empty list. */
+.wb-scope .wb-picker-none {
+  margin: 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+.wb-scope .wb-askactions { display: flex; gap: var(--sp-8); justify-content: flex-end; }
+
+/* At most one thing the product is offering, per sheet 09. */
+.wb-scope .wb-tool-solid {
+  border-color: transparent;
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+}
+.wb-scope .wb-tool-solid:hover:not(:disabled) { border-color: transparent; color: var(--accent-on-solid); }

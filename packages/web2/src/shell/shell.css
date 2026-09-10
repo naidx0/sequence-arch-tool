@@ -1,0 +1,1326 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE SHELL — the frame
+   packages/web2/src/shell/shell.css
+
+   HUE BUDGET: 0 of its own. Every colour below is a var(--…) out of
+   tokens/graphite.css. The only accent on this sheet is on a resizer being
+   dragged and on focus, which is exactly what sheet 01 law two reserves the
+   accent for — "send, selection, focus" — and never a verdict.
+
+   No hex literal, no px font-size, no invented spacing. test/firewall.test.ts
+   fails the build if one appears.
+
+   THE CHASSIS IS DECISION 5'S, NOT THE SUBSTRATE'S ANY MORE.
+   docs/brand/graphite/_core.html:1017 draws `.win` as chat LEFT / canvas
+   CENTRE / rail RIGHT; Decision 5 (docs/OWNER-PLAN-2026-08-24c.md) overrides
+   it outright: sessions sidebar LEFT, chat CENTRE, board pane RIGHT, settings
+   bottom-left of the sidebar, and NO board pane at all until a repository is
+   attached. The grid is therefore
+
+     --side-w | --pane-w | remainder        under a full-width 44px top line
+
+   where --side-w is the sessions sidebar's column contribution, --pane-w is
+   the chat's, and the board (or, before any attach, the boot workspace) takes
+   whatever is left. The columns' widths come from React inline custom
+   properties; the tokens are the DEFAULTS and the clamps, and sheet 11's rule
+   still holds: "the clamps are the design; the value inside them is not."
+
+   WHAT IS NOT IN THE BOOK stays drawn from the nearest chassis that exists:
+   a resizer is a hairline and a hit area, an overlay pane is the same `.pane`
+   on `--e3`, and the command surface is the substrate's menu.
+
+   EVERY BORDER IS --w-hair, NEVER A LITERAL. The five stroke widths are
+   declared in docs/brand/graphite/_core.html:416-420 and land in
+   tokens/graphite.css, which item 2.2 owns. A resting border is --w-hair and
+   nothing on this sheet is anything else.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── The frame ─────────────────────────────────────────────────────────── */
+
+.shell {
+  height: 100%;
+  display: grid;
+  /* Row 1 is the appbar's 44px line, shared by every region. --side-w and
+     --pane-w are written inline by Shell.tsx and carry the COLUMN
+     contribution only: a pane that is hidden, or floating over the work,
+     contributes 0 and the third region takes the space. */
+  grid-template-columns: var(--side-w) var(--pane-w) minmax(0, 1fr);
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  background: var(--bg-base);
+  /* The resizers are positioned against this box rather than laid out in it.
+     A resizer that were a grid column would push the layout by its own width
+     and the drag would never line up with the border it appears to move. */
+  position: relative;
+  overflow: hidden;
+}
+
+.shell > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── A region ──────────────────────────────────────────────────────────── */
+
+.shell-pane {
+  background: var(--surface-1);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Every region starts below the frame's top line. */
+  grid-row: 2;
+}
+
+.shell-appbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+/* LEFT: the sessions sidebar (Decision 5). The slice key that drives it is
+   still 'rail'; the class name says what the reader is looking at. */
+.shell-sessions {
+  grid-column: 1;
+  border-right: var(--w-hair) solid var(--edge);
+}
+
+/* CENTRE: the chat (Decision 5). When no board is mounted, it spans the
+   remainder of the frame — OpenCode boot, not chat beside an empty third
+   region. */
+.shell-chat {
+  grid-column: 2;
+  border-right: var(--w-hair) solid var(--edge);
+}
+
+.shell[data-board='off'] .shell-chat[data-fill='frame'] {
+  grid-column: 2 / -1;
+  border-right: none;
+}
+
+/* RIGHT: the board pane — canvas tabs, live board, index rail. It EXISTS only
+   while a repository is attached. */
+.shell-rail {
+  grid-column: 3;
+  border-left: var(--w-hair) solid var(--edge);
+}
+
+/* A pane in overlay mode leaves the grid entirely: it floats over the work,
+   it does not shrink it. Conditionally mounted, never display:none —
+   app/routes.ts records the reason, and it is an accessibility one: panes left
+   in the DOM duplicated every row AND its landmark, so a screen reader met the
+   same pane twice. */
+.shell-pane[data-mode='overlay'] {
+  position: absolute;
+  top: var(--topbar-h);
+  bottom: 0;
+  /* ABOVE EVERYTHING THE BOARD DRAWS, and that is the whole point of the
+     number. An overlay pane floats over the board without shrinking it, so it
+     lands on top of board furniture that still spans its region - and
+     `.boardfurniture` is z-index 7 with pointer-events re-enabled on its
+     children. At z-index 2 the kind legend was painted across the composer and
+     ate the click on Send: measured at 800px in a real browser, where
+     `elementFromPoint` on the composer field answered `SPAN.k`, a legend chip.
+     The primary surface of the product could not be typed into.
+
+     45 clears the canvas's tallest layer (`.boardmenu`, z-index 40) and stays
+     under the shell's own command surface, which is raised to match in the
+     block that owns it. Two scales share this stacking context; when either
+     end moves, the other has to be looked at. `e2e/composer-over-board.mjs`
+     is what says so out loud. */
+  z-index: 45;
+  box-shadow: var(--e3);
+}
+
+.shell-chat[data-mode='overlay'] {
+  left: 0;
+  width: var(--shell-chat-over);
+  border-right: var(--w-hair) solid var(--edge);
+  /* Rounded on the inner side only. The outer edge is flush with the window,
+      and a radius there would show the ground through a corner that is not a
+      corner. */
+  border-radius: 0 var(--r-14) var(--r-14) 0;
+}
+
+.shell-sessions[data-mode='overlay'] {
+  left: 0;
+  width: var(--shell-rail-over);
+  border-right: var(--w-hair) solid var(--edge);
+  border-radius: 0 var(--r-14) var(--r-14) 0;
+}
+
+/* ── The 44px line ─────────────────────────────────────────────────────── */
+
+/* Sheet 10's row ladder, the 44 rung: "--topbar-h · .appbar · .rail-top ·
+   .pane-hd", and sheet 11: the rail's header "lands on the same 44px line as
+   the chat header and the app bar". Three headers, one line, one token. */
+.shell-appbar,
+.shell-pane-hd {
+  height: var(--topbar-h);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+
+.shell-appbar {
+  padding: 0 var(--sp-12);
+}
+
+/* ── WORKSPACE TABS (P2.5) — OpenCode-style surface switcher ─────────────
+   Chat | Architecture | Whiteboard sit in the appbar; + opens extras that
+   are not shipped yet (honest disabled rows). Compact, one composition. */
+.shell-ws {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-left: var(--sp-12);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.shell-ws-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.shell-ws-tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.shell-ws-tab:hover { color: var(--ink-1); background-color: var(--surface-2); }
+.shell-ws-tab[data-on='true'] {
+  color: var(--ink-1);
+  border-color: var(--edge);
+  background-color: var(--surface-1);
+}
+.shell-ws-tab .i { color: inherit; }
+
+/* Chrome tab strip — minimise compresses to icon; close removes tab. */
+.shell-ws-chrome .shell-ws-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.shell-ws-chrome .shell-ws-tabs::-webkit-scrollbar { display: none; }
+.shell-ws-tab-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.shell-ws-tab-min {
+  width: var(--control-h);
+  padding: 0;
+  justify-content: center;
+}
+.shell-ws-tab-min .shell-ws-tab-label { display: none; }
+.shell-ws-tab-on,
+.shell-ws-tab[data-on='true'] {
+  color: var(--ink-1);
+  border-color: var(--edge);
+  background-color: var(--surface-1);
+}
+.shell-ws-tab-acts {
+  display: inline-flex;
+  align-items: center;
+  margin-left: calc(-1 * var(--sp-4));
+}
+.shell-ws-tab-act {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.shell-ws-tab-act:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+/* Tab layout — one workspace below the appbar; no pane docks. */
+.shell-tab-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.shell-workspace {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-1);
+}
+.shell-workspace-empty {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+}
+
+/* Resizable workspace columns — track list is set inline from pane widths. */
+.shell-workspace-split {
+  flex: 1 1 auto;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+.shell-workspace-split-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.shell-workspace-split[data-workspace-split='resizable'] .shell-workspace-split-pane {
+  border-right: none;
+}
+.shell-workspace-pane-focused {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* THE GRAB AREA IS WIDER THAN THE TRACK, AND ONLY TO THE LEFT.
+   Measured in the running app: this button was 8 x 639 CSS px, the smallest
+   target on screen and the only one a reader DRAGS rather than taps. WCAG 2.2 AA
+   2.5.8's floor is 24 x 24, and 2.5.8's spacing exception cannot rescue it —
+   that exception needs 24px of clearance to the next target, and the board's
+   first card begins 4px to the right.
+
+   So the target grows into the side that has room. The chat's nearest control is
+   34px away on the left; the board starts 4px away on the right, and a symmetric
+   24px strip would swallow the left edge of the leftmost card at z-index 1 —
+   trading a drag defect for a click one. `right: 0` pins the grab area's right
+   edge to the track it already occupied, so it reaches NO further into the board
+   than the 8px version did.
+
+   The visible line does not move: `::after` is repositioned to the same
+   coordinate below, so this changes what can be grabbed and not one pixel of
+   what is drawn. */
+.shell-workspace-resizer {
+  /* STAYS IN FLOW — an earlier attempt used `position: absolute; right: 0` and
+     the button flew to the right edge of the WINDOW, because its grid track is
+     not a containing block. Measured at left 1256 of a 1280 frame: a resizer
+     536px inside the board. Keep it a grid item and grow it with margin. */
+  position: relative;
+  width: var(--target-min);
+  /* A percentage margin on a grid item resolves against ITS TRACK, so this is
+     `track width − 24` without naming the track's width. The box therefore
+     spans [track.left − 16, track.right] on today's 8px track and would follow
+     the track if it ever changed. */
+  margin-left: calc(100% - var(--target-min));
+  height: 100%;
+  margin-top: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 1;
+}
+/* PINNED TO THE TRACK'S CENTRE, WHICH IS WHERE IT ALWAYS WAS.
+   The button now extends leftward past its track, so `left: 50%` would drag the
+   line 8px into the chat and `right: 0` would push it 4px into the board —
+   measured at 748 before and 752 after, which is why this is not `right: 0`.
+   `--sp-4` is half the 8px track, so the line stays on the same pixel it has
+   always occupied and this change moves NOTHING that is drawn. */
+.shell-workspace-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--sp-4);
+  width: var(--r-bar);
+  transform: translateX(50%);
+  background: var(--edge);
+  transition: background var(--dur-1) var(--ease);
+}
+.shell-workspace-resizer:hover::after,
+.shell-workspace-resizer[data-dragging='true']::after,
+.shell-workspace-resizer:focus-visible::after {
+  background: var(--accent);
+}
+.shell-workspace-split[data-dragging='true'] {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* C+B workspace — persistent left rail + in-main pills */
+.shell-cb {
+  flex: 1 1 auto;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+.shell-cb-rail {
+  /* Slightly tighter than --rail-w default — owner: condense + hug the side. */
+  flex: 0 0 min(var(--rail-w, 200px), 216px);
+  width: min(var(--rail-w, 200px), 216px);
+  border-right: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--sp-6) 0;
+}
+.shell-rail-group {
+  padding: 0 var(--sp-6);
+  margin-bottom: var(--sp-4);
+  flex: 0 0 auto;
+}
+.shell-rail-group-lbl {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  margin-bottom: var(--sp-4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.shell-rail-act {
+  appearance: none;
+  width: calc(100% - var(--sp-12));
+  margin: 0 var(--sp-6) var(--sp-2);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: var(--row-h);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  /* The rail's rows are the app's LEFT navigation, on the same rung as the
+     pill bar's labels above. The group heading over them stays --t-11: a
+     heading is scanned once, a nav row is read every time. */
+  font-size: var(--t-12);
+  cursor: pointer;
+  text-align: left;
+}
+.shell-rail-act .i { color: var(--ink-3); flex-shrink: 0; }
+.shell-rail-act:hover { background: var(--state-hover); color: var(--ink-1); }
+.shell-rail-act-sel,
+.shell-rail-act.shell-rail-act-sel {
+  background: var(--state-selected);
+  color: var(--ink-1);
+}
+.shell-rail-act-sel .i,
+.shell-rail-act.shell-rail-act-sel .i { color: inherit; }
+.shell-rail-act[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.shell-rail-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--sp-4);
+}
+.shell-rail-tools {
+  flex: 0 0 auto;
+  padding-top: var(--sp-8);
+  border-top: var(--w-hair) solid var(--edge);
+}
+.shell-rail-settings-foot {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding: var(--sp-4) var(--sp-8) 0;
+}
+.shell-cb-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: var(--bg-base);
+}
+.shell-wsbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-10);
+  border-bottom: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  flex-wrap: wrap;
+}
+.shell-wpill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: 24px;
+  padding: 0 var(--sp-10);
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid transparent;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  /* PRIMARY NAVIGATION IS NOT FOOTNOTE TYPE — audited at 1280x720, the six
+     labels that name every surface in the app (Chat, Architecture, Whiteboard,
+     AI Canvas, Terminal, Browser) painted at the 10px rung, the smallest one
+     on the ladder and the one reserved for badges and units. The bar is the
+     app's main nav; --t-12/--lh-12 is the smallest rung a label a reader has
+     to FIND may sit on. The pill height moves with it. */
+  font-size: var(--t-12);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.shell-wpill:hover { color: var(--ink-1); }
+/* At capacity: the pill still takes the click and answers in `.shell-ws-notice`
+   (role=status). Reading as unavailable is the point; being unreachable is not,
+   so it keeps its focus ring and its place in the tab order. */
+.shell-wpill[aria-disabled='true'] {
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+.shell-wpill[aria-disabled='true']:hover { color: var(--ink-3); }
+.shell-wpill-on,
+.shell-wpill.shell-wpill-on,
+.shell-wpill[data-on='true'] {
+  background: var(--state-selected);
+  color: var(--ink-1);
+  border-color: var(--edge);
+}
+.shell-wpill-label { line-height: 1; }
+.shell-cb-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell-ws-notice {
+  margin-left: var(--sp-8);
+  max-width: 28rem;
+  min-width: 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.shell-ws-plus-wrap { position: relative; }
+.shell-ws-plus {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  line-height: 0;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.shell-ws-plus .i {
+  display: block;
+  margin: 0;
+}
+.shell-ws-plus:hover { color: var(--ink-1); background-color: var(--surface-2); }
+.shell-ws-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-4));
+  left: 0;
+  z-index: 40;
+  min-width: 180px;
+  padding: var(--sp-4);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  box-shadow: var(--e2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.shell-ws-menu button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+.shell-ws-menu-label { flex: 0 0 auto; }
+.shell-ws-menu-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  text-align: right;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+.shell-ws-menu button:hover:not(:disabled) { background: var(--surface-2); color: var(--ink-1); }
+.shell-ws-menu button:disabled {
+  color: var(--ink-3);
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.shell-pane-hd {
+  padding: 0 var(--sp-10);
+}
+
+.shell-pane-hd .shell-pane-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+.shell-pane-hd .shell-pane-title .i {
+  flex: 0 0 auto;
+  color: var(--ink-2);
+}
+
+.shell-pane-hd .shell-pane-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sheet 11: "The header carries the word, not a glyph." — we carry BOTH:
+   a section identity glyph plus the word; minimise is a separate shared minus. */
+.shell-pane-hd .shell-acts {
+  margin-left: auto;
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.shell-appbar .shell-acts {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+}
+
+.shell-title {
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+/* THE REPOSITORY CONTROL — owner walk A1.
+
+   Quieter than `.shell-btn`, because this is not a third pane toggle: it is
+   the frame naming what it is pointing at, and the fact is the content. It
+   reads as text until it is hovered, which is when it admits to being a
+   control.
+
+   `--ink-2` and not `--ink-1`: the product's name beside it is the brighter of
+   the two, and a repository name louder than the product would invert the
+   hierarchy of the bar. No hue anywhere — Law 1, this is chrome. */
+.shell-repo {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-body);
+  cursor: pointer;
+}
+.shell-repo:hover {
+  background: var(--state-hover);
+  border-color: var(--edge);
+  color: var(--ink-1);
+}
+.shell-repo:active { background: var(--state-press); }
+.shell-repo:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* Workspace chip menu — Leave / Open another (seat-walk Wave 6). */
+.shell-repo-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.shell-repo-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-4));
+  left: 0;
+  z-index: 40;
+  min-width: 18ch;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  box-shadow: var(--e2);
+}
+/* Portaled above `.shell-title { overflow: hidden }` clipping. */
+.shell-repo-menu-portal {
+  position: fixed;
+  z-index: 200;
+}
+.shell-repo-item {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.shell-repo-item:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+/* ── Region bodies ─────────────────────────────────────────────────────── */
+
+.shell-pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ── The board region's interior split ───────────────────────────────────
+   Canvas on the left; the index rail on the right (sheet 11) — collapsed
+   until the reader opens Index. Vertical scroll, not a horizontal deck. */
+.boardregion {
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
+}
+
+.boardregion-canvas {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* The containing block for the board's chrome that sits BESIDE the board
+     rather than inside it (`.interiorbar`, `.proposalbar`) — the role
+     `.shell-canvas` played before Decision 5 moved the boards into this pane.
+     Without it their absolutes resolve against the whole frame and the bar
+     centres on the window instead of the boards it belongs to. */
+  position: relative;
+}
+
+.boardregion-canvas > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.boardregion-rail {
+  flex: 0 0 min(var(--rail-w), 240px);
+  width: min(var(--rail-w), 240px);
+  max-width: 240px;
+  min-width: 0;
+  min-height: 0;
+  border-left: var(--w-hair) solid var(--edge);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+}
+
+.boardregion-rail[data-collapsed='true'] {
+  flex: 0 0 0;
+  width: 0;
+  border-left: 0;
+  overflow: hidden;
+}
+
+.boardregion-rail-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--topbar-h);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-bottom: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.boardregion-rail[data-collapsed='true'] .boardregion-rail-toggle {
+  display: none;
+}
+
+.boardregion-rail-chev {
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  width: 0.75em;
+}
+
+.boardregion-rail-toggle:hover {
+  color: var(--ink-1);
+  background: var(--surface-2);
+}
+
+.boardregion-rail-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-top: 0;
+}
+
+.boardregion-index-tab {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: var(--control-h);
+  padding: var(--sp-8) var(--sp-4);
+  border: 0;
+  border-left: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  cursor: pointer;
+}
+
+.boardregion-index-tab:hover {
+  color: var(--ink-1);
+  background: var(--surface-2);
+}
+
+/* The board tabs live on the pane's 44px header line now, so their column
+   wrapper becomes an inline row and loses the bar's own border — the header
+   line already IS the border. */
+.shell:has(.shell-pane-dock-sessions) .shell-rail .shell-pane-hd {
+  padding-left: calc(var(--control-h) + var(--sp-10));
+}
+
+.shell:has(.shell-pane-dock-chat) .shell-rail .shell-pane-hd {
+  padding-left: calc(var(--control-h) + var(--sp-10));
+}
+
+.shell:has(.shell-pane-dock-sessions):has(.shell-pane-dock-chat) .shell-rail .shell-pane-hd {
+  padding-left: calc(2 * var(--control-h) + var(--sp-10) + var(--sp-6));
+}
+
+.shell-pane-hd .canvastabs {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  height: auto;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.shell-pane-hd .canvastabs-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--sp-2);
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border-bottom: none;
+  background: transparent;
+}
+
+/* ── The resizers ──────────────────────────────────────────────────────── */
+
+/* Unsheeted. Drawn as the smallest thing that can be grabbed: the pane border
+   is already the line, so the resizer adds only a hit area straddling it. The
+   width is --sp-8, off the closed space scale — eight pixels is two on either
+   side of a hairline plus the hairline, which is the smallest target that does
+   not require aiming. */
+.shell-resizer {
+  position: absolute;
+  top: var(--topbar-h);
+  bottom: 0;
+  width: var(--sp-8);
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  /* Centred ON the border rather than beside it, so the cursor and the line it
+     moves are the same place. */
+  transform: translateX(-50%);
+}
+
+/* The chat's handle sits on the chat|board border: dragging right widens the
+   centre column against the board floor. */
+.shell-resizer[data-pane='chat'] {
+  left: calc(var(--side-w) + var(--pane-w));
+}
+
+/* The sessions handle sits on the sidebar|chat border: dragging left widens
+   the sidebar, into the chat's allowance. */
+.shell-resizer[data-pane='rail'] {
+  left: var(--side-w);
+}
+
+/* A resizer at rest is invisible: the border is the affordance and the cursor
+   is the hint. Under the pointer it shows the line it is about to move, and
+   while it is being dragged it wears the accent — which is law two's "focus",
+   the one thing indigo is for. */
+.shell-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--r-bar);
+  transform: translateX(-50%);
+  background: transparent;
+  transition: background var(--dur-1) var(--ease);
+}
+
+.shell-resizer:hover::after {
+  background: var(--edge-strong);
+}
+
+.shell-resizer[data-dragging='true']::after,
+.shell-resizer:focus-visible::after {
+  background: var(--accent);
+}
+
+.shell[data-dragging='chat'],
+.shell[data-dragging='rail'] {
+  /* While a drag is live the pointer may leave the 8px strip; without this the
+     cursor flickers back to a text caret over the transcript and the drag
+     looks like it has been dropped when it has not. */
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* ── Controls ──────────────────────────────────────────────────────────── */
+
+/* The control ladder, sheet 10: 28px is --control-h and it is the default.
+   Seat-walk: pane toggles are icon buttons (`aria-pressed`); words remain for
+   More and similar where no single glyph carries the meaning alone. */
+.shell-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+
+.shell-btn.shell-icon-btn {
+  width: var(--control-h);
+  padding: 0;
+  justify-content: center;
+}
+
+.shell-btn.shell-ghost.shell-icon-btn {
+  width: var(--icon-btn);
+}
+
+/* Minimised panes condense to a dock icon in the frame — not an appbar twin.
+   Owner: chat/sessions should not vanish; minimise lives on the pane card. */
+.shell-pane-dock {
+  position: absolute;
+  z-index: 3;
+  top: calc(var(--topbar-h) + var(--sp-8));
+  width: var(--control-h);
+  height: var(--control-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  cursor: pointer;
+  padding: 0;
+  overflow: visible;
+  transition:
+    background var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+
+.shell-pane-dock .i {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.shell-pane-dock:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+.shell-pane-dock-sessions {
+  left: var(--sp-8);
+}
+
+.shell-pane-dock-chat {
+  left: calc(var(--side-w) + var(--sp-8));
+}
+
+.shell-pane-dock-board {
+  right: var(--sp-8);
+  left: auto;
+}
+
+.shell:has(.shell-pane-dock-sessions) .shell-pane-dock-chat {
+  left: calc(var(--sp-8) + var(--control-h) + var(--sp-6));
+}
+
+/* Icons under the shell frame (appbar + pane headers). chat.css scopes `.i`
+   under `.chat-scope`; settings gear under `.shell-scope` — the frame itself
+   is `.shell`. */
+.shell .i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.shell .i-14 { width: 14px; height: 14px; }
+.shell .i-12 { width: 12px; height: 12px; }
+
+/* THE COLLAPSED PANEL GROUP. The buttons inside it are ordinary `.shell-btn`s
+   - a panel does not become a different kind of control by being one press
+   further away - so this only groups them and gives the row its gap. */
+.shell-more-panels {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+}
+
+/* OPEN IS CARRIED BY THE SAME MARK a pressed pane toggle uses, not by a hue:
+   sheet 12.5 forbids state communicated by colour alone, and `aria-expanded`
+   carries it for a reader who cannot see the difference at all. */
+.shell-btn[aria-expanded='true'] {
+  background: var(--state-selected);
+  color: var(--ink-1);
+}
+
+.shell-btn:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+.shell-btn:active {
+  background: var(--state-press);
+}
+
+.shell-btn[aria-pressed='true'] {
+  background: var(--state-selected);
+  color: var(--ink-1);
+}
+
+/* The 26 rung — --icon-btn, where sheet 11's pane header puts its actions.
+   Rendered at a screenshot pass, a bordered 28px control in a pane header
+   outweighed the title beside it, and sheet 11 is explicit about which of the
+   two the header is for: "The header carries the word, not a glyph." So the
+   action drops a rung and loses its border and its fill; the word stays. */
+.shell-btn.shell-ghost {
+  height: var(--icon-btn);
+  padding: 0 var(--sp-6);
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+
+.shell-btn.shell-ghost:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+/* ── The sessions sidebar's bottom line: the settings entry ──────────────
+   Decision 5 puts a persistent settings entry at the bottom of the left
+   sidebar. It opens the SAME overlay the palette command and the More group
+   open — one settings flow, three doors, no drift.
+
+   THE ICON RUNG comes with it (Wave 0 exposed `gear`): one glyph at the book's
+   1.5px stroke beside the word, never instead of it. The rung is declared here
+   rather than borrowed from chat.css because that sheet scopes its icons under
+   `.chat-scope` deliberately, and a second lane reaching into it would couple
+   two surfaces over a class name. */
+
+.shell-scope .i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.shell-scope .i-14 { width: 14px; height: 14px; }
+.shell-scope .i-12 { width: 12px; height: 12px; }
+
+.sessions-side {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Specimen B — conditional glass on shell panes (chat column uses same token). */
+@supports (backdrop-filter: blur(1px)) {
+  .shell[data-shell-surface='glass'] .shell-pane {
+    background: color-mix(in srgb, var(--surface-1) 90%, transparent);
+    backdrop-filter: blur(12px);
+  }
+}
+
+.sessions-side-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Blank / unattached empty copy — owner 2026-08-25: unstyled <p> sat with
+   browser margins and body line-height, so the description looked stretched
+   and floating in the sessions column. Compact Graphite note, full width
+   (never a 1-word collapse), no invented top dead air. */
+.sessions-side-empty {
+  margin: 0;
+  padding: var(--sp-10) var(--sp-12);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.sessions-side-foot {
+  flex: 0 0 auto;
+  border-top: var(--w-hair) solid var(--edge);
+  padding: var(--sp-4) var(--sp-8);
+}
+
+.sessions-gear {
+  width: 100%;
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.sessions-gear:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+/* ── The command surface ───────────────────────────────────────────────── */
+
+.shell-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--scrim);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--sp-56) var(--sp-20) var(--sp-20);
+}
+
+/* The substrate's menu, at the substrate's menu width. Sheet 01 is explicit
+   that 320 is --menu-w and never --pane-w-min: "A menu or a field that wants
+   320px asks for --menu-w, which the substrate declares for that job." */
+.shell-cmd {
+  width: var(--menu-w);
+  max-width: 100%;
+  background: var(--surface-3);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e3);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* Never nest equal radii: --r-10 outer with --sp-4 of padding lands its
+   children on --r-8, by arithmetic rather than by eye. */
+.shell-cmd-input {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  width: 100%;
+}
+
+.shell-cmd-input::placeholder {
+  color: var(--ink-4);
+}
+
+.shell-cmd-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: calc(var(--row-h) * 8);
+  overflow: auto;
+}
+
+/* The 30px rung: --row-h · .railitem · .folder · .menuitem · .acct. */
+.shell-cmd-item {
+  height: var(--row-h);
+  padding: 0 var(--sp-8);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  border-radius: var(--r-8);
+  color: var(--ink-2);
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+
+.shell-cmd-item[aria-selected='true'] {
+  background: var(--state-selected);
+  color: var(--ink-1);
+}
+
+.shell-cmd-item[aria-disabled='true'] {
+  color: var(--ink-4);
+  cursor: default;
+}
+
+/* An unavailable command says why, in the same grey as the row. It is not
+   hidden: a command that vanishes teaches nothing, and the reason it is
+   unavailable is the useful half. */
+.shell-cmd-why {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-4);
+}
+
+/* Mirrors .emptyfolder — the substrate's own answer to "there is nothing
+   here", at the 28px rung. */
+.shell-cmd-empty {
+  height: var(--row-h-thread);
+  padding: 0 var(--sp-8);
+  display: flex;
+  align-items: center;
+  color: var(--ink-4);
+  font-size: var(--t-11);
+}
+
+/* ── The overlay host ──────────────────────────────────────────────────── */
+
+/* Attach, settings, the session list and review. Sheet 01's ladder: --surface-4
+   is "Dialogs. Sparingly", and --r-18 is "the window … dialogs". */
+.shell-dialog {
+  background: var(--surface-4);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-18);
+  box-shadow: var(--e4);
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+}
+/* Settings keeps one compact frame — content scrolls inside, not the dialog. */
+.shell-dialog:has(.settingspanel) {
+  overflow: hidden;
+  padding: 0;
+}
+
+/* THE PALETTE CHORD, SAID OUT LOUD. Quieter than the controls beside it: it is
+   a hint rather than an offer, and a hint that competes with the buttons it
+   sits among has stopped being one. Pressable, because a reader who has just
+   been told a chord exists should not have to type it to try it. */
+.shell-hint {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  /* Off the 10px floor. It stays quieter than the controls beside it by
+     staying MONO AND ONE STEP DOWN from them (base.css's rule, and `.shell-repo`
+     / `.shell-more` beside it are --t-12) — not by sitting on the rung the
+     ladder keeps for badges and units. */
+  font-size: var(--t-11);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.shell-hint:hover { color: var(--ink-2); border-color: var(--edge-faint); }
+.shell-hint:focus-visible {
+  outline: none;
+  color: var(--ink-2);
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}

@@ -1,0 +1,759 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE REVIEW SURFACE — Wave 5
+   packages/web2/src/review/review.css
+
+   EVERY SELECTOR IS SCOPED UNDER .rv-scope, WITHOUT EXCEPTION. R7's own
+   measurement of v1 found ~50 unscoped selectors, "essentially the whole
+   .arch-rf-* family", and the legibility gate exists because one stray
+   `.board-chat-input button` crushed a whole menu while every other check
+   passed. A pane that can only paint inside its own root cannot do that.
+
+   NO HEX, NO px FONT-SIZE, NO RAW font-weight. tokens/graphite.css is the one
+   file allowed to declare a colour, a size or a weight, and test/firewall.ts
+   enforces it. Everything below is a var().
+
+   THE THREE VOCABULARIES ON THIS SURFACE, KEPT APART ON PURPOSE:
+
+     --diff-add-* / --diff-del-*   the book's THIRD disjoint colour channel,
+       a wash and a gutter edge and never a foreground — "so a removed line
+       can never be misread as 'won't fit'".
+     --fits / --wont               sheet 12.7's hue ledger, spent here on
+       .rv-stat-add / .rv-stat-del ONLY: the diff's own arithmetic, which is a
+       claim about what happened and therefore earns a hue.
+     --diffx-*                     the token file's §8 block, written for this
+       wave, for the four things a training-metrics delta list never had:
+       hunk headers, intraline runs, per-line comments, a per-file header.
+
+   COMPACT IS THE ONLY DENSITY. 10/11/12px type, 28px controls, 26px icon
+   buttons, 26-28px rows. "Airy is a defect."
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.rv-scope {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  color: var(--ink-1);
+  background: var(--bg-base);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+}
+
+.rv-scope .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+}
+
+.rv-scope .rv-i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rv-scope .rv-i-14 { width: 14px; height: 14px; }
+.rv-scope .rv-i-12 { width: 12px; height: 12px; }
+
+/* ── the scope segmented control — item 5.4 ────────────────────────────────
+   The permission control's geometry, because they are the same object: a
+   compact row of exclusive segments under a heading. --perm-h is the control
+   ladder and --perm-r is the book's segmented radius, so neither can drift off
+   compact independently of the other controls.
+
+   AN UNSERVED SEGMENT IS A DIFFERENT OBJECT, NOT A FADED ONE. Sheet 12.4 makes
+   this ruling about the send button — "Disabled is a different object, not a
+   faded one… a translucent brand colour reads as 'this is nearly available'" —
+   and the same reasoning holds here: these three are not nearly available,
+   they have no route at all. --perm-locked-ink is the token item 2.8 added for
+   exactly this distinction. */
+.rv-scope .rv-scopebar {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  flex: 0 0 auto;
+  padding: var(--sp-8) var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+
+.rv-scope .rv-seg {
+  height: var(--perm-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--perm-r);
+  background: transparent;
+  color: var(--perm-idle-ink);
+  font: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.rv-scope .rv-seg:hover { background: var(--state-hover); }
+.rv-scope .rv-seg[aria-pressed='true'] {
+  background: var(--perm-active-bg);
+  color: var(--perm-active-ink);
+}
+/* AN UNSERVED SEGMENT IS STILL A LIVE CONTROL, AND BORROWING --perm-locked-ink
+   FOR IT WAS A CATEGORY ERROR — caught by the contrast lock at 2.70:1.
+
+   The token file introduces --perm-locked-ink for a permission mode "Settings
+   has not enabled": genuinely unavailable, and unclickable. These three scopes
+   are NOT that. They are clickable, and clicking one is the point — it opens
+   the sentence naming the route the engine is missing, which is the whole
+   mechanism by which this surface is honest about the gap. Painting a control
+   at the disabled step and then asking the user to click it is the product
+   contradicting itself, quietly.
+
+   So the segment keeps the idle ink every other segment has, and the
+   unserved-ness is carried NON-CHROMATICALLY by the dashed border alone —
+   which is the same reasoning Decision 2 applied one surface over, where
+   escalation is carried by a count of dots rather than by spending three
+   verdict hues on a control making no claim about the world. */
+.rv-scope .rv-seg[data-served='no'] {
+  color: var(--perm-idle-ink);
+  border-style: dashed;
+  border-color: var(--edge-strong);
+}
+.rv-scope .rv-seg:focus-visible {
+  outline: var(--w-edge) solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── provenance, and the named gap ────────────────────────────────────────
+   Sheet 12.3's "Measured" tag: a quantity that tells the truth about where it
+   came from. It is a plain label, not a hue — the tag says the engine produced
+   this, which is not a verdict about anything. */
+.rv-scope .rv-prov {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--sp-6) var(--sp-12);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.rv-scope .rv-prov-tag {
+  color: var(--ink-2);
+  font-weight: var(--fw-label);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.rv-scope .rv-prov-caveat { color: var(--ink-3); }
+
+/* --unknown, and NOT --wont. Sheet 12.6's ruling, transcribed: "a gate that
+   never had its input is --unknown — not known, and refusing to guess…
+   Painting a missing prerequisite red teaches the reader to distrust every
+   other red on the screen." A scope with no route has not failed at anything. */
+.rv-scope .rv-gap {
+  display: flex;
+  gap: var(--sp-10);
+  align-items: flex-start;
+  margin: var(--sp-16) var(--sp-12);
+  padding: var(--sp-12);
+  border: var(--w-hair) solid var(--unknown-edge);
+  border-radius: var(--r-10);
+  background: var(--unknown-wash);
+  color: var(--ink-2);
+}
+.rv-scope .rv-gap strong { font-weight: var(--fw-head); color: var(--ink-1); }
+.rv-scope .rv-gap p { margin: var(--sp-4) 0 0; color: var(--ink-3); }
+
+/* ── the two columns: files, and the impact panel beside them ──────────── */
+.rv-scope .rv-body {
+  display: grid;
+  grid-template-columns: minmax(var(--col-min), 1fr) var(--pane-w);
+  gap: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* THE PANEL FOLDS UNDER THE DIFF BEFORE IT SQUEEZES IT. A diff has a hard
+   minimum useful width — a gutter, a sign column and a line of code — and
+   squeezing it is what turns a review surface into a word-wrapped mess. The
+   threshold is the pane plus the narrowest legible diff, not a device width. */
+@media (max-width: 900px) {
+  .rv-scope .rv-body { grid-template-columns: 1fr; }
+}
+
+.rv-scope .rv-files {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--sp-24);
+}
+
+/* ── the header — "n files changed", + and − ──────────────────────────── */
+.rv-scope .rv-head {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: center;
+  height: var(--topbar-h);
+  padding: 0 var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+  position: sticky;
+  top: 0;
+  background: var(--bg-base);
+  z-index: 1;
+}
+.rv-scope /* WHY THIS CHANGE. Quieter than the title above it - the title names the
+   change and this explains it - and it wraps, because a reason is prose and
+   truncating a reason is worse than not showing one. */
+.rv-scope .rv-why {
+  margin: 0;
+  padding: 0 var(--sp-12) var(--sp-8);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  max-width: 70ch;
+}
+.rv-head-what { font-weight: var(--fw-head); color: var(--ink-1); }
+.rv-scope .rv-head-branch {
+  display: inline-flex;
+  gap: var(--sp-4);
+  align-items: center;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+.rv-scope .rv-totals { margin-left: auto; color: var(--ink-3); font-size: var(--t-11); }
+
+/* The diff's own arithmetic — sheet 12.7's ledger, and the two places on this
+   surface that spend a hue on a count. */
+.rv-scope .rv-stat-add {
+  color: var(--fits);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-variant-numeric: var(--num);
+}
+.rv-scope .rv-stat-del {
+  color: var(--wont);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-variant-numeric: var(--num);
+}
+
+.rv-scope .rv-note {
+  margin: var(--sp-10) var(--sp-12);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.rv-scope .rv-note-fail { color: var(--wont); }
+
+.rv-scope .rv-failure {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: flex-start;
+  margin: var(--sp-12);
+  padding: var(--sp-10) var(--sp-12);
+  border: var(--w-hair) solid var(--wont-edge);
+  border-radius: var(--r-10);
+  background: var(--wont-wash);
+  color: var(--ink-1);
+}
+
+/* ── one file ─────────────────────────────────────────────────────────────
+   The file header is the control ladder's own height (--diffx-file-hd-h is
+   --control-h), so a file row and a composer control are the same object at
+   the same size. */
+.rv-scope .rv-file {
+  margin: var(--sp-10) var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+.rv-scope .rv-file[data-decision='accepted'] { border-color: var(--fits-edge); }
+.rv-scope .rv-file[data-decision='rejected'] { opacity: .62; }
+.rv-scope .rv-file[data-applied='written'] { border-color: var(--fits-edge); }
+.rv-scope .rv-file[data-applied='failed'] { border-color: var(--wont-edge); }
+
+.rv-scope .rv-file-hd {
+  display: flex;
+  gap: var(--sp-6);
+  align-items: center;
+  height: var(--diffx-file-hd-h);
+  padding: 0 var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background: var(--surface-2);
+}
+.rv-scope .rv-file[data-expanded='no'] .rv-file-hd { border-bottom-color: transparent; }
+.rv-scope .rv-file-path {
+  font-size: var(--t-11);
+  color: var(--ink-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* THE PATH TRUNCATES AND THE CONTROLS DO NOT. On a monorepo the path is the
+     longest string in the row by an order of magnitude, and a row that lets it
+     push the accept button off the edge is a row where the feature is
+     unreachable on exactly the repositories it matters most on. */
+  min-width: 0;
+  flex: 1 1 auto;
+  direction: rtl;
+  text-align: left;
+}
+.rv-scope .rv-file-status {
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  flex: 0 0 auto;
+}
+.rv-scope .rv-file-controls {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.rv-scope .rv-disclose,
+.rv-scope .rv-icon-btn {
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 0;
+}
+.rv-scope .rv-disclose:hover,
+.rv-scope .rv-icon-btn:hover { background: var(--state-hover); color: var(--ink-1); }
+.rv-scope .rv-icon-btn[aria-pressed='true'] {
+  background: var(--state-selected);
+  border-color: var(--edge-strong);
+  color: var(--ink-1);
+}
+.rv-scope .rv-disclose:focus-visible,
+.rv-scope .rv-icon-btn:focus-visible {
+  outline: var(--w-edge) solid var(--accent);
+  outline-offset: 1px;
+}
+
+.rv-scope .rv-stage {
+  display: inline-flex;
+  gap: var(--sp-4);
+  align-items: center;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  cursor: pointer;
+}
+/* accent-color IS NOT DECORATION HERE. A native checkbox left unstyled paints
+   in the platform's own blue — a hue this product never declared, that no
+   theme can move, and that the hue budget cannot count. It is the one place a
+   browser adds a colour to the page on its own, so it is the one place a
+   colour has to be taken BACK rather than given. Indigo is legal on it: a
+   checked box is selection, which sheet 12.7 lists as the accent's own
+   meaning, and never a verdict. */
+.rv-scope .rv-stage input {
+  accent-color: var(--accent-solid);
+  width: var(--sp-12);
+  height: var(--sp-12);
+  margin: 0;
+}
+
+/* ── the diff ─────────────────────────────────────────────────────────────
+   The gutter widths, the sign column and the line height are the token file's
+   §8 promoted literals. They are consumed rather than restated so a change to
+   the ladder reaches this surface without anyone editing it. */
+.rv-scope .rv-diff {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--diffx-line-h);
+  font-variant-numeric: var(--num);
+  /* A LONG LINE SCROLLS HERE AND NOWHERE ELSE. Without this the widest line in
+     a diff sets the width of the pane, and on a monorepo that means the chat
+     column and the canvas get pushed sideways by one minified import.
+
+     THE SCROLLBAR ITSELF IS DELIBERATELY NOT STYLED HERE. styles/base.css
+     already declares ::-webkit-scrollbar for the whole app at --sp-10 with the
+     --scrollbar-thumb tokens, and a second declaration in this file would be a
+     second specification of one control — the exact defect that cost this
+     project a repair cycle when twelve agents produced three specifications of
+     one thing. If the track needs to be thinner on a diff, that is an edit to
+     base.css by whoever owns it, not a local override here. */
+  overflow-x: auto;
+}
+
+.rv-scope .rv-hunk-hd {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: center;
+  padding: var(--sp-2) var(--sp-8);
+  background: var(--diffx-hunk-bg);
+  color: var(--diffx-hunk-ink);
+  font-size: var(--t-10);
+  border-top: var(--w-hair) solid var(--edge-faint);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.rv-scope .rv-hunk-sect {
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-scope .rv-line {
+  display: grid;
+  grid-template-columns: var(--diffx-num-w) var(--diffx-num-w) var(--icon-btn) var(--diffx-sign-w) 1fr;
+  align-items: baseline;
+  min-height: var(--diffx-line-h);
+  white-space: pre;
+}
+
+/* THE WASH IS THE BACKGROUND AND THE GUTTER IS THE BRIGHTER EDGE. The book's
+   diff channel is "background wash only, never foreground": the text of an
+   added line is the same ink as the text of a context line, because the line
+   being added is not a claim about the line being good. The 2px inset edge is
+   what carries the signal at a glance without spending saturation on eighty
+   characters of code. */
+.rv-scope .rv-line-add {
+  background: var(--diff-add-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-add-gutter);
+}
+.rv-scope .rv-line-del {
+  background: var(--diff-del-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-del-gutter);
+}
+
+/* MUTED IS --ink-3, NOT --ink-4, AND THAT IS A MEASUREMENT RATHER THAN A
+   PREFERENCE. The first draft used --ink-4 and the rendered tier measured the
+   line numbers at 2.05:1 against the add wash — below every legibility floor
+   there is, on the one column a line comment is anchored by. --ink-4 is the
+   ramp's DISABLED step; --ink-3 is its quiet step, and it measures 5.5:1 while
+   still reading a full stop quieter than the code beside it. Nothing about
+   this was visible to a jsdom assertion: both are valid token names. */
+.rv-scope .rv-num {
+  color: var(--ink-3);
+  text-align: right;
+  padding-right: var(--sp-6);
+  user-select: none;
+}
+
+/* THE SIGN TAKES THE GUTTER HUE ITSELF, NOT THE --diffx-*-strong MIX. The
+   token file introduces those two as INTRALINE emphasis — "the intraline
+   emphasis is derived through the existing --mix-* discipline" — which means a
+   46%-alpha fill behind a run of characters. Used as a FOREGROUND on a single
+   glyph it painted at 1.19:1, measured: the + and the − were, in practice,
+   not on the screen at all. A glyph that carries the whole meaning of the row
+   gets the solid token. */
+.rv-scope .rv-sign {
+  color: var(--ink-3);
+  text-align: center;
+  user-select: none;
+}
+.rv-scope .rv-line-add .rv-sign { color: var(--diff-add-gutter); }
+.rv-scope .rv-line-del .rv-sign { color: var(--diff-del-gutter); }
+
+.rv-scope .rv-code { color: var(--ink-1); }
+
+/* RESTRAINED SYNTAX HIGHLIGHTING, AND THE HUE BUDGET IS ZERO.
+   Law 1: "every hue on screen is a claim about the world". Which token is a
+   keyword is a claim about GRAMMAR, and spending five hues on it — on the one
+   surface whose two real hues are the add and remove washes — would leave the
+   diff's own arithmetic no longer the loudest thing present. So the separation
+   is the ink ramp and the weight ladder, which is what the book already spends
+   on hierarchy everywhere else. syntax.test.ts asserts there are four classes
+   and only four. */
+.rv-scope .rv-t-kw { color: var(--ink-1); font-weight: var(--fw-solid); }
+.rv-scope .rv-t-str { color: var(--ink-2); }
+.rv-scope .rv-t-num { color: var(--ink-2); }
+/* The comment is the quietest thing in the line and is still READ: --ink-4
+   measured 2.05:1 against the wash, which is not quiet, it is absent. */
+.rv-scope .rv-t-com { color: var(--ink-3); font-style: italic; }
+
+/* ── the line-comment affordance — item 5.3 ───────────────────────────────
+   It occupies its column at all times and only becomes VISIBLE on hover or
+   focus. A control that appears and disappears from the layout makes every
+   line jump under the pointer; a control that is always visible puts a plus
+   sign on every line of a four-hundred-line diff. Reserving the space and
+   revealing the ink is the only arrangement that does neither.
+
+   It is reachable by keyboard whether or not the row is hovered — :focus-within
+   is what makes the feature exist for a keyboard at all. */
+.rv-scope .rv-cadd,
+.rv-scope .rv-cadd-gap {
+  width: var(--icon-btn);
+  height: var(--diffx-line-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* Quiet, not off: this is --ink-3 for the same reason everything else on
+     this surface is. It reveals on hover AND on :focus-visible, and the
+     keyboard reveal has no pointer over it to explain a shape nobody can
+     see. */
+  color: var(--ink-3);
+  opacity: 0;
+  cursor: pointer;
+}
+.rv-scope .rv-line:hover .rv-cadd,
+.rv-scope .rv-cadd:focus-visible { opacity: 1; }
+.rv-scope .rv-cadd:hover { color: var(--accent); }
+.rv-scope .rv-cadd:focus-visible {
+  outline: var(--w-edge) solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* THE COMMENT EDGE IS THE ACCENT, AND THE TOKEN FILE SAYS WHY: "a line comment
+   is the user speaking, not a verdict on the line." Law 2 — indigo can never
+   be mistaken for a verdict — is satisfied because a comment is not a claim
+   about whether the line is right. */
+.rv-scope .rv-comment,
+.rv-scope .rv-compose {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: var(--sp-2) 0 var(--sp-2) calc(var(--diffx-num-w) * 2);
+  padding: var(--sp-6) var(--sp-10);
+  border-left: var(--w-struct) solid var(--diffx-comment-edge);
+  background: var(--surface-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  white-space: normal;
+}
+.rv-scope .rv-comment-anchor,
+.rv-scope .rv-compose-anchor { color: var(--ink-3); font-size: var(--t-10); }
+.rv-scope .rv-comment-text { color: var(--ink-1); flex: 1 1 auto; min-width: 0; }
+.rv-scope .rv-comment-state { color: var(--ink-3); font-size: var(--t-10); }
+
+.rv-scope .rv-compose { flex-direction: column; align-items: stretch; }
+.rv-scope .rv-compose-field {
+  width: 100%;
+  resize: vertical;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+  padding: var(--sp-6) var(--sp-8);
+}
+.rv-scope .rv-compose-field:focus {
+  outline: none;
+  border-color: var(--edge-strong);
+  box-shadow: 0 0 0 var(--w-edge) var(--accent-edge);
+}
+.rv-scope .rv-compose-row { display: flex; gap: var(--sp-6); justify-content: flex-end; }
+
+/* ── the actions ──────────────────────────────────────────────────────────
+   ONE SOLID BUTTON PER GROUP, ON THE ONLY ACTION THAT COMMITS SOMETHING —
+   sheet 12.5's rule, verbatim. Reject and Revert are WORDED, never reddened:
+   "a destructive or declining action in this design is worded, never
+   reddened." */
+.rv-scope .rv-actions {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--sp-12);
+  border-top: var(--w-hair) solid var(--edge);
+}
+
+.rv-scope .rv-btn {
+  height: var(--control-h);
+  display: inline-flex;
+  gap: var(--sp-6);
+  align-items: center;
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.rv-scope .rv-btn:hover:not(:disabled) { background: var(--state-hover); }
+.rv-scope .rv-btn:focus-visible {
+  outline: var(--w-edge) solid var(--accent);
+  outline-offset: 1px;
+}
+.rv-scope .rv-btn-solid {
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+  color: var(--accent-on-solid);
+}
+.rv-scope .rv-btn-solid:hover:not(:disabled) { background: var(--accent-solid-hover); }
+.rv-scope .rv-btn-solid:active:not(:disabled) { background: var(--accent-solid-press); }
+
+/* DISABLED IS A DIFFERENT OBJECT, NOT A FADED ONE — sheet 12.4's ruling about
+   the send button, and it applies with more force here: Apply with nothing
+   accepted is not "nearly available", and a translucent accent would say it
+   was. --surface-3 with --ink-4 is the book's own answer. */
+.rv-scope .rv-btn:disabled {
+  background: var(--surface-3);
+  border-color: var(--edge-faint);
+  color: var(--ink-4);
+  cursor: default;
+}
+
+.rv-scope .rv-field {
+  height: var(--control-h);
+  flex: 1 1 var(--col-min);
+  min-width: 0;
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-body);
+}
+.rv-scope .rv-field:focus {
+  outline: none;
+  border-color: var(--edge-strong);
+  box-shadow: 0 0 0 var(--w-edge) var(--accent-edge);
+}
+
+/* ── the impact panel — item 5.5 / B2 ─────────────────────────────────────
+   It is a COLUMN BESIDE THE DIFF and never a pop-up. CLAUDE.md: "the grounded
+   logic engine (risks/impact/cycles) is background context the chat
+   references, not pop-up suggestions." A panel that interrupts is a panel that
+   gets dismissed, and this is the one thing on the surface no competitor has. */
+.rv-scope .rv-impact {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  border-left: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+}
+@media (max-width: 900px) {
+  .rv-scope .rv-impact { border-left: 0; border-top: var(--w-hair) solid var(--edge); }
+}
+
+.rv-scope .rv-impact-hd {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+  position: sticky;
+  top: 0;
+  background: var(--surface-1);
+}
+.rv-scope .rv-impact-sec { padding: var(--sp-10) var(--sp-12); }
+.rv-scope .rv-impact-h {
+  margin: 0 0 var(--sp-6);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-weight: var(--fw-label);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.rv-scope .rv-impact-row {
+  display: flex;
+  gap: var(--sp-6);
+  align-items: baseline;
+  flex-wrap: wrap;
+  min-height: var(--row-h);
+  padding: var(--sp-4) 0;
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.rv-scope .rv-impact-row:last-child { border-bottom: 0; }
+.rv-scope .rv-impact-name { color: var(--ink-1); font-weight: var(--fw-label); }
+.rv-scope .rv-impact-id { color: var(--ink-3); font-size: var(--t-10); }
+.rv-scope .rv-impact-kind { color: var(--ink-3); font-size: var(--t-10); }
+.rv-scope .rv-impact-cite {
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  overflow-wrap: anywhere;
+}
+.rv-scope .rv-impact-note {
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  flex: 1 1 100%;
+}
+
+/* TWO HUES ON THIS PANEL AND BOTH ARE CLAIMS. A cycle is a defect the graph
+   found; a concentration risk is a warning about the shape. Neither is chrome,
+   and both are a WORD before they are a colour — sheet 12.7's rule that a
+   greyscale render must lose no meaning. */
+.rv-scope .rv-impact-cycle .rv-i { color: var(--wont); }
+.rv-scope .rv-impact-risk .rv-i { color: var(--spills); }
+
+.rv-scope .rv-impact-gaps { border-top: var(--w-hair) solid var(--edge); }
+/* --ink-3, MEASURED. The first draft used --ink-4 and the rendered tier read
+   these sentences at 2.56:1 on --surface-1. These are the lines that say what
+   the panel could NOT measure — the whole mechanism by which this surface is
+   honest about the post-change graph it does not have. A disclosure nobody can
+   read is not a disclosure, and dimming it to the disabled step was the one
+   place on this surface where quiet became untrue. */
+.rv-scope .rv-impact-gap {
+  margin: 0 0 var(--sp-6);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* ── A FINDING, RECORDED WHERE THE NEXT PERSON WILL LOOK ──────────────────
+   --ink-4 IS NOT A TEXT INK IN THIS THEME. IT IS THE DISABLED STEP.
+
+   The first draft of this sheet reached for it five times, on the reasonable
+   instinct that the quietest ink suits the quietest text. The rendered
+   contrast lock measured every one of those five between 2.05:1 and 2.70:1
+   against its own composited background — the line-number gutter, the syntax
+   comment, the +/− sign, the unserved scope segment, and the two sentences
+   that say what the impact panel could not measure. Not one was visible to any
+   of the 106 jsdom assertions, because --ink-4 is a real token used correctly
+   in valid CSS.
+
+   Measured in dark: --ink-4 on the base ground is 2.7:1 at best and less over
+   any wash, while --ink-3 measures about 5.5:1 and is still plainly quieter
+   than --ink-1. (The values themselves are deliberately NOT written here: the
+   firewall bans a colour literal outside the token file even inside a comment,
+   because "a colour written down anywhere is a second source of truth waiting
+   to be pasted" — and that rule caught this very paragraph.) So the rule for
+   this surface, and the reason it is written down rather than left as five
+   scattered edits:
+
+     --ink-3  is quiet.
+     --ink-4  is OFF, and the only thing on this surface allowed to be off is
+              a control that is genuinely disabled — which sheet 12.4 says is
+              "a different object, not a faded one" and which the lock exempts
+              by selector rather than by threshold.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── THE REVISION PICKER ─────────────────────────────────────────────────
+   Shown only for the commit and branch scopes — a control that is meaningless
+   for three of five segments is worse than no control. Controls sit on the 28px
+   rung with sheet 10's --sp-10 inset, like every other free-standing control. */
+.rv-revpicker { display: flex; align-items: center; gap: var(--sp-8); }
+.rv-revlabel {
+  display: flex; align-items: center; gap: var(--sp-8);
+  min-width: 0; font-size: var(--t-11); color: var(--ink-3);
+}
+.rv-revselect {
+  flex: 1 1 auto; min-width: 0;
+  height: var(--control-h); padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-8);
+  background-color: var(--surface-2); color: var(--ink-1);
+  font-family: var(--font-sans); font-size: var(--t-12);
+  appearance: none;
+}
+.rv-revselect:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
