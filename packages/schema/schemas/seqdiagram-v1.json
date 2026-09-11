@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sequence.dev/schemas/seqdiagram/v1.json",
+  "title": "SeqDiagram v1",
+  "description": "Grounded architecture diagram IR for Sequence chat, export, and .seqd files.",
+  "type": "object",
+  "required": ["version", "kind", "title", "grounded", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "service-sequence",
+        "service-flow",
+        "package-map",
+        "agent-workflow",
+        "function-path",
+        "breakout-interior"
+      ]
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "grounded": {
+      "type": "object",
+      "required": ["graphId"],
+      "additionalProperties": false,
+      "properties": {
+        "graphId": { "type": "string", "minLength": 1 },
+        "repoPath": { "type": "string" },
+        "scopeNodeIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "origin": {
+          "type": "string",
+          "enum": ["export", "scan", "chat", "design"]
+        },
+        "unknowns": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "theme": {
+      "type": "string",
+      "enum": ["structural", "macos-dark"]
+    },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/edge" }
+    },
+    "groups": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/group" }
+    },
+    "flows": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/flow" }
+    },
+    "primaryNodeIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "boundaries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/boundary" }
+    },
+    "externalDependencies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/externalDependency" }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
+          "type": "string",
+          "enum": ["sequence", "layered-flow", "grid"]
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["LR", "TD"]
+        },
+        "showTitleBlock": { "type": "boolean" }
+      }
+    },
+    "projections": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mermaid": { "type": "string" },
+        "capNote": { "type": "string" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "createdAt": { "type": "string" },
+        "generator": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "nodeDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "whatItIs": { "type": "string" },
+        "whatItDoes": { "type": "string" },
+        "parts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "talksTo": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "label", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "service",
+            "datastore",
+            "topic",
+            "module",
+            "file",
+            "package",
+            "function",
+            "agent"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "enum": ["participant", "actor", "boundary", "group"]
+        },
+        "primary": { "type": "boolean" },
+        "evidenceRef": { "type": "string" },
+        "detail": { "$ref": "#/$defs/nodeDetail" },
+        "agent": { "$ref": "#/$defs/agentPack" }
+      }
+    },
+    "agentPack": {
+      "type": "object",
+      "required": ["prompt"],
+      "additionalProperties": false,
+      "properties": {
+        "prompt": { "type": "string", "minLength": 1 },
+        "agentRef": { "type": "string" },
+        "scopeFiles": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime": {
+          "type": "string",
+          "enum": ["gateway", "acp"]
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "from", "to", "family"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "family": {
+          "type": "string",
+          "enum": ["http", "grpc", "queue", "db", "import", "call", "control"]
+        },
+        "label": { "type": "string" },
+        "evidenceRef": { "type": "string" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "required": ["id", "label", "memberIds"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "memberIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "required": ["id", "label", "nodeIds"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "nodeIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "edgeIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "required": ["id", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "memberIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "external": { "type": "boolean" },
+        "evidenceRef": { "type": "string" }
+      }
+    },
+    "externalDependency": {
+      "type": "object",
+      "required": ["id", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "boundaryNodeId": { "type": "string", "minLength": 1 },
+        "evidenceRef": { "type": "string" }
+      }
+    }
+  }
+}

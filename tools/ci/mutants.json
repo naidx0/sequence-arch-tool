@@ -1,0 +1,427 @@
+{
+ "$comment": [
+  "THE CATALOGUE OF DELIBERATE BREAKAGES.",
+  "",
+  "Each entry breaks the product in one specific way and names the suite that must notice.",
+  "`node tools/ci/mutate.mjs` applies each in turn and reports any that SURVIVED - a mutation",
+  "nothing caught is a hole in the suite, stated as a fact rather than as an opinion.",
+  "",
+  "WHY THIS EXISTS. Every defect worth finding in this repository has been the same shape: a test",
+  "that passes for the wrong reason. A reducer arm with no dispatcher. A gate whose regex required",
+  "an invisible control byte. Three tests that grepped source for a string that survived deleting",
+  "the wiring. Each was found by a person or a model READING, which is expensive and does not stay",
+  "found. A mutant is cheap and stays.",
+  "",
+  "EVERY ENTRY BELOW LOCKS A REAL FIX. Nothing here is hypothetical - each `find` string is the",
+  "actual line some defect was closed with, so a refactor that quietly undoes one is caught by the",
+  "mutant that can no longer be killed.",
+  "",
+  "ANALYZER MUTANTS TARGET `dist`, NOT `src`, and that is deliberate: its suite runs from dist, so",
+  "mutating source would need a 60-second rebuild per mutant. The question asked is 'does the",
+  "suite notice this behaviour change', and dist is where the behaviour is. `tools/ci/",
+  "mutants.test.mjs` separately proves every `find` string still exists, so a mutant that has",
+  "silently stopped applying cannot sit here looking useful.",
+  "AN EQUIVALENT MUTANT IS NOT A FINDING. The first version of the two keyless mutants below changed `let keylessLoopback = false` to `true` - and the next three lines overwrite it unconditionally, so the product behaved identically and the mutant 'survived' while proving nothing. Both now target the ASSIGNMENT. Before filing a survivor as a hole, reproduce it by hand and confirm the product actually misbehaves; the harness reports suspects, not verdicts.",
+  "BLANKING THE COMMENT TEXT TURNED OUT TO BE REDUNDANT. A mutant that stopped `lexicalView` overwriting comment characters with spaces could not be killed - because the `code` array, not the blanked text, is what excludes a match. Both belts are real, but only one is load-bearing, and the mutants now name the load-bearing one. Finding this took reproducing the survivor by hand; a survivor is a question, not an answer."
+ ],
+ "suites": {
+  "firewall": {
+   "cwd": "packages/web2",
+   "cmd": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "test/firewall.test.ts"
+   ]
+  },
+  "reachability": {
+   "cwd": ".",
+   "cmd": [
+    "node",
+    "--test",
+    "tools/ci/reachability.test.mjs"
+   ]
+  },
+  "whiteboard": {
+   "cwd": "packages/web2",
+   "cmd": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/whiteboard/"
+   ]
+  },
+  "activity": {
+   "cwd": "packages/web2",
+   "cmd": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/activity/"
+   ]
+  },
+  "canvas": {
+   "cwd": "packages/web2",
+   "cmd": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/canvas/"
+   ]
+  },
+  "settings": {
+   "cwd": "packages/web2",
+   "cmd": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/settings/"
+   ]
+  },
+  "analyzer-provider": {
+   "cwd": "packages/analyzer",
+   "cmd": [
+    "node",
+    "--test",
+    "dist/test/ai-gateway.test.js",
+    "dist/test/free-tier.test.js"
+   ]
+  },
+  "analyzer-topology": {
+   "cwd": "packages/analyzer",
+   "cmd": [
+    "node",
+    "--test",
+    "dist/test/propose-topology.test.js"
+   ]
+  },
+  "analyzer-origin": {
+   "cwd": "packages/analyzer",
+   "cmd": [
+    "node",
+    "--test",
+    "dist/test/dns-rebinding.test.js",
+    "dist/test/same-origin-http.test.js"
+   ]
+  },
+  "analyzer-search": {
+   "cwd": "packages/analyzer",
+   "cmd": [
+    "node",
+    "--test",
+    "dist/test/search-coverage.test.js",
+    "dist/test/search-route.test.js"
+   ]
+  },
+  "analyzer-local": {
+   "cwd": "packages/analyzer",
+   "cmd": [
+    "node",
+    "--test",
+    "dist/test/local-providers.test.js"
+   ]
+  },
+  "boot": {
+   "cwd": "packages/web2",
+   "cmd": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/boot/"
+   ]
+  },
+  "analyzer-explain": {
+   "cwd": "packages/analyzer",
+   "cmd": [
+    "node",
+    "--import",
+    "./dist/test/isolate-user-store.js",
+    "--test",
+    "dist/test/explain.test.js"
+   ]
+  },
+  "chat": {
+   "cwd": "packages/web2",
+   "cmd": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/chat/"
+   ]
+  }
+ },
+ "mutants": [
+  {
+   "id": "origin-gate-removed",
+   "file": "packages/analyzer/dist/server/repoServer.js",
+   "find": "if (engineRequest &&",
+   "replace": "if (false &&",
+   "suite": "analyzer-origin",
+   "why": "A rebound page could replace the AI provider and read the repository. The gate must run before routing, auth and any provider call."
+  },
+  {
+   "id": "origin-gate-skips-archgraph",
+   "file": "packages/analyzer/dist/server/repoServer.js",
+   "find": "pathname === '/archgraph.json' || pathname === '/api'",
+   "replace": "pathname === '/api'",
+   "suite": "analyzer-origin",
+   "why": "/archgraph.json carries private repository topology and predates the /api namespace, so it is easy to forget."
+  },
+  {
+   "id": "keyless-validator-accepts-any-host",
+   "file": "packages/analyzer/dist/server/provider.js",
+   "find": "keylessLoopback =\n                    (url.protocol === 'http:' || url.protocol === 'https:') &&\n                        isLoopbackHost(url.hostname);",
+   "replace": "keylessLoopback = true;",
+   "suite": "analyzer-provider",
+   "why": "A keyless provider config is only safe on loopback. A private-LAN address is still another machine and a wider disclosure boundary for repository context."
+  },
+  {
+   "id": "topology-accepts-evidence",
+   "file": "packages/analyzer/dist/server/askTools.js",
+   "find": "if (n.evidenceRef !== undefined)",
+   "replace": "if (false)",
+   "suite": "analyzer-topology",
+   "why": "A proposed node wearing a scan citation is indistinguishable from something the scanner found - the exact fabrication this product exists to detect."
+  },
+  {
+   "id": "search-hides-truncation",
+   "file": "packages/analyzer/dist/server/askTools.js",
+   "find": "` (stopped after ${maxResults} matches - there may be more; narrow the query or use a glob)`",
+   "replace": "''",
+   "suite": "analyzer-search",
+   "why": "Search capped at 20 and reported '20 matches'. Absence must be reported as a state, never as a clean bill of health."
+  },
+  {
+   "id": "probe-follows-redirects",
+   "file": "packages/analyzer/dist/server/localProviders.js",
+   "find": "fetchImpl(`${probe.baseUrl}/models`, { signal: controller.signal, redirect: 'manual' })",
+   "replace": "fetchImpl(`${probe.baseUrl}/models`, { signal: controller.signal, redirect: 'follow' })",
+   "suite": "analyzer-local",
+   "why": "The probe URLs are loopback literals, but following a redirect leaves localhost entirely."
+  },
+  {
+   "id": "reachability-treats-line-comments-as-code",
+   "file": "tools/ci/reachability.test.mjs",
+   "find": "if (char === '/' && next === '/') {",
+   "replace": "if (false) {",
+   "suite": "reachability",
+   "why": "Three agents defeated an earlier version of this gate by writing the construction in a // comment: the scanner saw it, the baseline row could be retired, and the feature stayed unreachable. Disabling this branch restores exactly that hole."
+  },
+  {
+   "id": "firewall-web-dir-prefix-only",
+   "file": "packages/web2/test/firewall.test.ts",
+   "find": "return landed === web || landed.startsWith(web + sep);",
+   "replace": "return landed.startsWith(web + sep);",
+   "suite": "firewall",
+   "why": "An import resolving EXACTLY to the deleted packages/web directory escaped a startsWith with an appended separator. This mutates a test helper on purpose: the thing being checked is that the guard test for the exact-directory case still exists."
+  },
+  {
+   "id": "whiteboard-deletes-while-editing",
+   "file": "packages/web2/src/whiteboard/Whiteboard.tsx",
+   "find": "if (isEditableTarget(event.target)) return;",
+   "replace": "if (false) return;",
+   "suite": "whiteboard",
+   "why": "Backspace inside the note editor bubbled to the board listener and deleted the whole note on the first keystroke."
+  },
+  {
+   "id": "whiteboard-drag-without-capture",
+   "file": "packages/web2/src/whiteboard/Whiteboard.tsx",
+   "find": "(host as Element & { setPointerCapture?: (id: number) => void }).setPointerCapture?.(\n                      event.pointerId,\n                    );\n                    setSelected(item.id);",
+   "replace": "setSelected(item.id);",
+   "suite": "whiteboard",
+   "why": "A drag released outside the canvas never committed the move and left the drag stale."
+  },
+  {
+   "id": "board-ghosts-a-real-node",
+   "file": "packages/web2/src/canvas/ConnectedBoard.tsx",
+   "find": "proposal.nodes.filter((n) => !have.has(n.id))",
+   "replace": "proposal.nodes",
+   "suite": "canvas",
+   "why": "A proposed id colliding with a scanned one drew the grounded, evidence-bearing node as a dashed ghost."
+  },
+  {
+   "id": "run-start-posts-to-the-list-route",
+   "file": "packages/web2/src/activity/activityClient.ts",
+   "find": "        '/api/program/run',\n        {\n          program,",
+   "replace": "        '/api/program/runs',\n        {\n          program,",
+   "suite": "activity",
+   "why": "The start and list routes are one character apart and the client calls both. The call became multi-line when run budgets (timeoutMs/maxSteps) were added, so the find spans the route plus the opening of its body to name exactly one site."
+  },
+  {
+   "id": "local-offer-saves-nothing",
+   "file": "packages/web2/src/settings/SettingsPanel.tsx",
+   "find": "setBaseUrl(local.baseUrl);",
+   "replace": "/* mutated */;",
+   "suite": "settings",
+   "why": "Using a detected local model must actually fill the form it claims to fill; the first version of this feature could never be saved at all."
+  },
+  {
+   "id": "keyless-call-path-accepts-any-host",
+   "file": "packages/analyzer/dist/server/provider.js",
+   "find": "loopbackNoKey =\n            !cfg.apiKey &&\n                (url.protocol === 'http:' || url.protocol === 'https:') &&\n                isLoopbackHost(url.hostname);",
+   "replace": "loopbackNoKey = !cfg.apiKey;",
+   "suite": "analyzer-provider",
+   "why": "The keyless rule is enforced twice - once when a config is validated and again when a provider call is built. Validation can be bypassed by a config that was stored before the rule existed, so the call path needs its own mutant."
+  },
+  {
+   "id": "firewall-misses-numeric-fontsize",
+   "file": "packages/web2/test/firewall.test.ts",
+   "find": "  /fontSize\\s*:\\s*[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?![\\w.])/g,",
+   "replace": "",
+   "suite": "firewall",
+   "why": "The brand firewall first caught only quoted px sizes, so a bare numeric fontSize: 14 in an inline style walked straight through the one gate that owns type scale."
+  },
+  {
+   "id": "reachability-treats-block-comments-as-code",
+   "file": "tools/ci/reachability.test.mjs",
+   "find": "if (char === '/' && next === '*') {",
+   "replace": "if (false) {",
+   "suite": "reachability",
+   "why": "The same attack in /* */ form. A lexer with two comment states needs two mutants, or half of it is guarded by nothing."
+  },
+  {
+   "id": "reachability-reads-quoted-prose-as-code",
+   "file": "tools/ci/reachability.test.mjs",
+   "find": "      state = 'string';",
+   "replace": "      state = 'code';",
+   "suite": "reachability",
+   "why": "The third lexer state. A route or action name mentioned inside a documentation string must not count as wiring, or prose about a feature retires the row that tracks building it."
+  },
+  {
+   "id": "whiteboard-sends-an-unlabelled-board",
+   "file": "packages/web2/src/whiteboard/whiteboardAsk.ts",
+   "find": "return notesOf(doc.items).length > 0 || refsOf(doc.items).length > 0;",
+   "replace": "return doc.items.length > 0;",
+   "suite": "whiteboard",
+   "why": "A board of unlabelled strokes is not a brief. Offering to send it produces a request whose entire content is that the reader drew twelve lines, and spends a metered turn to say so."
+  },
+  {
+   "id": "whiteboard-drops-the-not-evidence-line",
+   "file": "packages/web2/src/whiteboard/whiteboardAsk.ts",
+   "find": "lines.push('This is from a whiteboard sketch, not from the scan — nothing on it is evidence.');",
+   "replace": "",
+   "suite": "whiteboard",
+   "why": "Grounded-not-guessed is the product's first non-negotiable. A sketch arriving without that sentence is indistinguishable, to the model, from something the scanner found."
+  },
+  {
+   "id": "whiteboard-hides-what-it-cannot-read",
+   "file": "packages/web2/src/whiteboard/whiteboardAsk.ts",
+   "find": "  if (unlabelled > 0) {",
+   "replace": "  if (false) {",
+   "suite": "whiteboard",
+   "why": "Silence about the unlabelled marks lets the reader believe the assistant is looking at their diagram. The count is the one thing standing between a sketch and that misunderstanding."
+  },
+  {
+   "id": "search-glob-cannot-extend-reach",
+   "file": "packages/analyzer/dist/server/askTools.js",
+   "find": "        if (globRe && !globRe.test(rel))\n            return true;\n        /*\n         * A SCREENSHOT IS NOT A SEARCH RESULT, and it used to cost the same as a\n         * source file. Only a CONTENT search filters by extension: a glob-only\n         * listing reads no bodies, so it stays able to answer \"what PNGs are here\".\n         */\n        if (queryLower && !isSearchableTextFile(rel))\n            return true;\n        filesExamined++;",
+   "replace": "        filesExamined++;\n        if (globRe && !globRe.test(rel))\n            return true;\n        if (queryLower && !isSearchableTextFile(rel))\n            return true;",
+   "suite": "analyzer-search",
+   "why": "Counting a file the glob EXCLUDED spends the examine budget on work never done, so the walk stops in the same place however narrow the glob is - and 'narrow with a glob', the advice the truncation message gives, becomes inert. Inert advice is worse than none: the reader follows it, gets the identical answer, and concludes the symbol is not in their repository."
+  },
+  {
+   "id": "boot-never-re-asks",
+   "file": "packages/web2/src/boot/useBoot.ts",
+   "find": "if (bootIsStale(settled, body)) setAttempt((n) => n + 1);",
+   "replace": "if (false) setAttempt((n) => n + 1);",
+   "suite": "boot",
+   "why": "A tab opened before a repository was attached kept saying 'no repo attached' while the engine answered from that repository's graph - and because ai-config is fetched gated on attachment, the model label never loaded either. Three reported symptoms, one staleness."
+  },
+  {
+   "id": "boot-loops-on-an-unreachable-engine",
+   "file": "packages/web2/src/boot/bootSequence.ts",
+   "find": "  if (status === null) return false;",
+   "replace": "  if (status === null) return true;",
+   "suite": "boot",
+   "why": "Treating a failed probe as staleness turns a flaky network into a boot loop: every focus re-runs the ladder, which fails, which marks it stale again. 'The engine stopped answering' has its own surface and is not this one."
+  },
+  {
+   "id": "boot-re-asks-while-hidden",
+   "file": "packages/web2/src/boot/useBoot.ts",
+   "find": "      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;",
+   "replace": "",
+   "suite": "boot",
+   "why": "The re-ask is tied to the moment a reader is about to believe what is on screen. Firing it for a hidden tab makes it a background poll, which is the thing PlatformReport's contract says this is not: a fact with a timestamp, not a status light."
+  },
+  {
+   "id": "prompt-asks-for-bullets-again",
+   "file": "packages/analyzer/dist/explain/explain.js",
+   "find": "(short lines over prose walls)",
+   "replace": "(short bullets over prose walls)",
+   "suite": "analyzer-explain",
+   "why": "The original defect exactly: the prompt asked for the one construct proseBlocks.ts refuses on purpose, and the reader got literal bullet characters. Re-adding it three lines above the format clause is how it would come back, so the test asserts the ABSENCE, not just the presence of the fix."
+  },
+  {
+   "id": "design-prompt-loses-the-format-rule",
+   "file": "packages/analyzer/dist/explain/explain.js",
+   "find": "    }\n    L.push(ASK_REGISTER_MATCHING_CLAUSE);\n    L.push(ASK_TRANSCRIPT_FORMAT_CLAUSE);",
+   "replace": "    }\n    L.push(ASK_REGISTER_MATCHING_CLAUSE);",
+   "suite": "analyzer-explain",
+   "why": "Two ask paths render into the same transcript. A formatting rule that covers only one of them leaves the other free to emit markdown nothing will render - which is the half the owner hit, since 'design me a system' takes the design path."
+  },
+  {
+   "id": "topology-refusal-teaches-nothing",
+   "file": "packages/analyzer/dist/server/askTools.js",
+   "find": "const near = nearestNodeIds(missingEndpoint, known);",
+   "replace": "const near = [];",
+   "suite": "analyzer-topology",
+   "why": "The guard's own comment says refusal exists so the MODEL can repair the call. Refusing without naming a single real id leaves it guessing the same invented endpoint again, and half a proposal is discarded before it can reach the board."
+  },
+  {
+   "id": "slash-menu-opens-on-a-path",
+   "file": "packages/web2/src/chat/composerModel.ts",
+   "find": "  const match = /^\\/([a-z0-9-]*)$/i.exec(text);",
+   "replace": "  const match = /\\/([a-z0-9-]*)/i.exec(text);",
+   "suite": "chat",
+   "why": "A slash mid-sentence is a path separator far more often than a command, and this product's questions are full of paths like packages/web2/src. An unanchored query opens the menu on every one of them and fights the reader continuously."
+  },
+  {
+   "id": "slash-enter-sends-the-command-as-prose",
+   "file": "packages/web2/src/chat/Composer.tsx",
+   "find": "      if (event.key === 'Enter' && slashActive) {\n        event.preventDefault();\n        runSlash(slashActive);\n        return;\n      }",
+   "replace": "",
+   "suite": "chat",
+   "why": "Without this the product advertises / in its most-read line and then posts '/plan' to the model as a question. An affordance that is named and then ignored is worse than one that was never offered."
+  },
+  {
+   "id": "slash-registry-stops-deriving-from-the-keeper-lists",
+   "file": "packages/web2/src/chat/composerModel.ts",
+   "find": "  const fromTools = toolbelt.map((item) => ({",
+   "replace": "  const fromTools = [].map((item: ToolbeltItem) => ({",
+   "suite": "chat",
+   "why": "v1 shipped three competing + menus and item 2.7 names that as a defect - three lists is three answers to 'what can I do here'. A slash registry that stops deriving from TOOLBELT becomes the fourth, and drifts the moment anyone edits either one."
+  },
+  {
+   "id": "token-gate-sees-no-tokens",
+   "file": "packages/web2/test/firewall.test.ts",
+   "find": "      for (const m of file.text.matchAll(/(--[a-z0-9-]+)\\s*:/gi)) DEFINED.add(m[1]);",
+   "replace": "      for (const m of file.text.matchAll(/(--never-matches-anything)\\s*:/gi)) DEFINED.add(m[1]);",
+   "suite": "firewall",
+   "why": "A gate that collects nothing reports nothing missing and passes forever. This one found three real defects on its first run - two var(--r-6) radii on a scale the book says has six steps and only six, and a letter-spacing naming a --ls-* token that does not exist anywhere - all of which had been silently resolving to nothing."
+  },
+  {
+   "id": "context-probe-follows-redirects",
+   "file": "packages/analyzer/dist/server/localProviders.js",
+   "find": "                method: 'POST',\n                signal: controller.signal,\n                redirect: 'manual',",
+   "replace": "                method: 'POST',\n                signal: controller.signal,\n                redirect: 'follow',",
+   "suite": "analyzer-local",
+   "why": "The second loopback probe needs its own lock, and its ambiguity with the first is how it announced itself: adding it made the models-probe mutant match two sites, and the catalogue's applies-exactly-once gate refused the whole run rather than silently judging the wrong one."
+  },
+  {
+   "id": "context-ring-invents-a-window",
+   "file": "packages/web2/src/chat/ContextRing.tsx",
+   "find": "  if (window === null || window <= 0) return null;",
+   "replace": "  window = window ?? 128_000;",
+   "suite": "chat",
+   "why": "Only Ollama reports a context length. A ring is a fraction, so drawing one with no denominator means inventing the denominator - and a plausible default like 128k is the confident wrong number CANON law 4 forbids, on the very surface whose usage line already says 'never invent a number'."
+  },
+  {
+   "id": "context-ring-overflows-past-full",
+   "file": "packages/web2/src/chat/ContextRing.tsx",
+   "find": "  return Math.min(1, Math.max(0, used / window));",
+   "replace": "  return used / window;",
+   "suite": "chat",
+   "why": "A turn can exceed the window; the provider truncates and says so elsewhere. An arc drawn at 140% laps itself and reads as 40% - the opposite of the truth, at the moment the reader most needs it."
+  }
+ ]
+}

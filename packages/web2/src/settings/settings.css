@@ -1,0 +1,509 @@
+/* ── SETTINGS ────────────────────────────────────────────────────────────
+   UNSHEETED. No Graphite page draws a settings panel, so nothing here invents
+   a new visual language: every value is a token the substrate already owns and
+   every control sits on a rung the control ladder already defines (sheet 10).
+   A panel that introduced its own radius or its own field height would be a
+   second answer to a question the book has settled, and would be the thing a
+   later sheet has to undo. */
+.settings-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  box-sizing: border-box;
+  width: var(--settings-w);
+  max-width: min(var(--settings-w), calc(100vw - var(--sp-32)));
+  height: var(--settings-h);
+  max-height: min(var(--settings-h), calc(100vh - var(--sp-32)));
+  padding: var(--sp-12);
+  overflow: hidden;
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+}
+.settings-scope .settings-title {
+  margin: 0; font-size: var(--t-14); line-height: var(--lh-14); color: var(--ink-1);
+}
+/* Sessions sidebar section mark — glyph only; words live in aria / .sr. */
+.settings-scope .sessions-heading {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  color: var(--ink-3);
+  line-height: 1;
+}
+.settings-scope .sessions-heading-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* THE SHELL — sidebar nav + one scrolling body box. Content switches inside the
+   same frame; the pane never morphs the outer layout (owner seat 2026-08-27). */
+.settings-scope .settings-shell {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--sp-12);
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+/* THE SIDEBAR NAV. Vertical list; selected is edge + weight, not hue (12.5). */
+.settings-scope .settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex: 0 0 auto;
+  min-width: calc(var(--sp-32) * 3.5);
+  padding-right: var(--sp-4);
+  border-right: var(--w-hair) solid var(--edge-faint);
+}
+.settings-scope .settings-nav-item {
+  appearance: none;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  min-height: var(--row-h);
+  height: auto;
+  padding: var(--sp-6) var(--sp-10);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  cursor: pointer;
+}
+.settings-scope .settings-nav-item[data-selected='true'] {
+  border-color: var(--edge);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+.settings-scope .settings-nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+/* ONE SETTINGS BOX — every pane scrolls inside the same bordered body. The
+   outer `.settingspanel` owns width/height; this region fills what is left. */
+.settings-scope .settings-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+  padding: var(--sp-4) var(--sp-2) var(--sp-4) var(--sp-8);
+}
+.settings-scope .settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+.settings-scope .settings-h {
+  margin: 0; font-size: var(--t-12); line-height: var(--lh-12); color: var(--ink-2);
+}
+.settings-scope .settings-note,
+.settings-scope .settings-hint {
+  margin: 0 0 var(--sp-8);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+/* B5.2 — Plan/Propose/Auto-edit/Full ladder. No hue: yes/no are ink, not green. */
+.settings-scope .settings-matrix-wrap {
+  margin-top: var(--sp-8);
+  overflow-x: auto;
+  min-width: 0;
+}
+.settings-scope .settings-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-2);
+}
+.settings-scope .settings-matrix th,
+.settings-scope .settings-matrix td {
+  border: var(--w-hair) solid var(--edge);
+  padding: var(--sp-4) var(--sp-6);
+  text-align: center;
+  vertical-align: middle;
+}
+.settings-scope .settings-matrix thead th {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+.settings-scope .settings-matrix tbody th {
+  text-align: left;
+  font-weight: var(--fw-body);
+  color: var(--ink-1);
+  min-width: 7rem;
+}
+.settings-scope .settings-matrix-mode {
+  display: block;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.settings-scope .settings-matrix-summary {
+  display: block;
+  margin-top: var(--sp-2);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  font-weight: var(--fw-body);
+}
+.settings-scope .settings-matrix td[data-on='true'] {
+  color: var(--ink-1);
+  font-family: var(--font-mono);
+}
+.settings-scope .settings-matrix td[data-on='false'] {
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+}
+.settings-scope .settings-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-4);
+}
+.settings-scope .settings-label {
+  flex: 0 0 auto;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  font-weight: var(--fw-label);
+}
+/* The 28px control rung — `.btn`, `.input`, `.node` — inset --sp-10, per
+   sheet 10's inset table. */
+.settings-scope .settings-input {
+  flex: 1 1 auto; min-width: 0;
+  height: var(--control-h);
+  box-sizing: border-box;
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  appearance: none;
+}
+.settings-scope .settings-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-top: var(--sp-4);
+}
+.settings-scope .settings-actions-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+.settings-scope .settings-actions-row .settings-save {
+  width: 100%;
+  justify-content: center;
+}
+.settings-scope .settings-save {
+  height: var(--control-h); padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-8);
+  background-color: var(--surface-2); color: var(--ink-1);
+  font-family: inherit; font-size: var(--t-12); cursor: pointer;
+  white-space: nowrap; flex: 0 0 auto;
+}
+
+.settings-scope .settings-textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--control-h) * 6);
+  padding: var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  resize: vertical;
+}
+/* Disabled is a DIFFERENT OBJECT, not a faded one — sheet 12.4's ruling about
+   the send button, and it holds for every control: a translucent brand colour
+   reads as "nearly available", and an unnamed model is not nearly anything. */
+.settings-scope .settings-save[disabled] {
+  background-color: var(--surface-3); color: var(--ink-4); cursor: not-allowed;
+}
+.settings-scope .settings-ok {
+  font-size: var(--t-11); color: var(--ink-3);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* THE ONE HUE ON THIS PANEL, and it is spent on a claim: something failed.
+   `--wont` is the token the composer's failure strip uses, and that strip's own
+   note states the budget — "ONE hue, on one glyph… a red box teaches the reader
+   to distrust every other red on the screen". So it is on the TEXT and the
+   panel's chrome stays neutral. */
+.settings-scope .settings-failure {
+  margin: 0; font-size: var(--t-11); line-height: var(--lh-11); color: var(--wont);
+}
+.settings-scope .settings-input:focus-visible,
+.settings-scope .settings-save:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── SESSIONS ────────────────────────────────────────────────────────────
+   Shares `.settings-scope` deliberately: it is the same kind of surface — an
+   overlay panel of rows and one action — and giving it a second scope would be
+   a second set of answers to questions this one already settled. Rows sit on
+   the 30px rung, like every other list row in the product (sheet 10). */
+.settings-scope .sessions-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  max-height: calc(var(--row-h) * 10); overflow-y: auto;
+}
+.settings-scope .sessions-group + .sessions-group {
+  margin-top: var(--sp-12);
+}
+.settings-scope .sessions-group-label {
+  margin: 0 0 var(--sp-4);
+  padding: 0 var(--sp-8);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.settings-scope .sessions-row {
+  appearance: none; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: var(--sp-8);
+  height: var(--row-h); padding: 0 var(--sp-8);
+  background-color: transparent; border: 0; border-radius: var(--r-8);
+  font-family: inherit; font-size: var(--t-12); color: var(--ink-2);
+  cursor: pointer; white-space: nowrap;
+}
+.settings-scope .sessions-row:hover:not([disabled]) {
+  background-color: var(--state-hover); color: var(--ink-1);
+}
+/* The CURRENT session is selected, not hovered — `--state-selected` is the
+   token for "this is the one", and it is paired with `aria-current` in the
+   markup so the fact survives for a reader who cannot see it. */
+.settings-scope .sessions-row[data-active='true'] {
+  background-color: var(--state-selected); color: var(--ink-1); cursor: default;
+}
+.settings-scope .sessions-name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+/* A CATEGORY, so neutral mono at --ink-3 and never a badge — the same ruling
+   the node card's kind tag follows. */
+.settings-scope .sessions-tag,
+.settings-scope .sessions-when {
+  flex: 0 0 auto;
+  font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-3);
+}
+.settings-scope .sessions-when { color: var(--ink-4); }
+.settings-scope .sessions-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── G1 TAIL — per-row actions and rename-in-place ──────────────────────
+   The row is a flex line: the activate button takes the free width and the
+   action cluster rides beside it at the same 30px rung. Seat-walk: actions
+   are opacity-0 until hover/focus-within (chat prose-copy pattern) so a
+   216px sidebar can show the title. Selection chrome wraps the whole item. */
+.settings-scope .sessions-item {
+  display: flex; align-items: center; gap: var(--sp-2);
+  border-radius: var(--r-8);
+  position: relative;
+}
+.settings-scope .sessions-item:has(.sessions-row[data-active='true']) {
+  background-color: var(--state-selected);
+}
+.settings-scope .sessions-item .sessions-row { flex: 1 1 auto; min-width: 0; }
+.settings-scope .sessions-item .sessions-row[data-active='true'] {
+  background-color: transparent;
+}
+.settings-scope .sessions-pin-mark {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+.settings-scope .sessions-acts {
+  display: inline-flex; align-items: center; gap: var(--sp-2); flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.settings-scope .sessions-item:hover .sessions-acts,
+.settings-scope .sessions-item:focus-within .sessions-acts {
+  opacity: 1;
+}
+.settings-scope .sessions-act {
+  appearance: none;
+  width: var(--icon-btn); height: var(--icon-btn);
+  display: inline-grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--r-8);
+  background-color: transparent; color: var(--ink-4);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.settings-scope .sessions-act:hover:not([disabled]) {
+  background-color: var(--state-hover); color: var(--ink-1);
+}
+.settings-scope .sessions-act:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.settings-scope .sessions-act[disabled] { color: var(--ink-4); cursor: not-allowed; opacity: .6; }
+.settings-scope .sessions-rename {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: var(--row-h);
+}
+.settings-scope .sessions-rename-field {
+  flex: 1 1 auto; min-width: 0; height: var(--control-h);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE OWNER'S NINE — one row per thing settings is for.
+
+   No hue anywhere. The state is a WORD (sheet 12.5: no state in this product
+   is communicated by colour alone) and these are settings, not verdicts —
+   Law 1 reserves colour for claims about the world.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.settings-scope .settings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.settings-scope .settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+}
+
+.settings-scope .settings-row-hd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+}
+
+.settings-scope .settings-row-title {
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+  flex: 1;
+}
+
+/* The state word. `Not built` is the one that matters and it is not dressed
+   up: it reads as the plainest thing in the row, because it is the plainest
+   fact in it. */
+.settings-scope .settings-row-state {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  /* .07em, matching board.css's mono kind tag — the same shape of label at
+     the same size. No token exists for this; the book sets it per use. */
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.settings-scope .settings-row-state[data-state='ready'] { color: var(--ink-3); }
+
+.settings-scope .settings-row-purpose {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+}
+
+.settings-scope .settings-row-detail {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-4);
+}
+
+/* ── WHAT IS ALREADY RUNNING HERE ─────────────────────────────────────────
+   An offer, not a choice: pressing one FILLS the form and the reader still
+   presses Save. Styled as ordinary controls for exactly that reason — a solid
+   button would read as the product having decided. */
+.settings-scope .settings-local {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-6);
+  margin: var(--sp-8) 0;
+}
+/* ── SAVED MODELS ─────────────────────────────────────────────────────────
+   One row per saved model: the name it was given, the wire id it resolves to,
+   and the three things you can do to it. Row order is the order they were
+   saved, and the DEFAULT is named in words on the row itself — sheet 12.5, no
+   state in this product is carried by colour alone. */
+.settings-scope .settings-profile {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  width: 100%;
+  padding: var(--sp-6) 0;
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+.settings-scope .settings-profile:last-of-type { border-bottom: none; }
+.settings-scope .settings-profile-name {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-1);
+}
+.settings-scope .settings-profile-mark { color: var(--ink-3); }
+.settings-scope .settings-profile-model {
+  flex: 1 1 12ch;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+.settings-scope .settings-btn:disabled {
+  color: var(--ink-4);
+  border-color: var(--edge);
+  cursor: default;
+}
+
+.settings-scope .settings-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  cursor: pointer;
+}
+.settings-scope .settings-btn:hover { border-color: var(--edge-strong); color: var(--ink-1); }
+.settings-scope .settings-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}

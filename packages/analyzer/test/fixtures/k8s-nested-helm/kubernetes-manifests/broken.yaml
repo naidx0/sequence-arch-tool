@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadtest
+spec:
+  template:
+    spec:
+      containers:
+      - name: loadtest
+        image: {{if .Values.global.registry}}{{ .Values.global.registry }}/{{end}}weaveworksdemos/load-test

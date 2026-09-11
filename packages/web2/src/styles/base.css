@@ -1,0 +1,84 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   BASE — reset, document, and the one place the typeface is bound
+   packages/web2/src/styles/base.css
+
+   HUE BUDGET: 0. This sheet declares no hue of its own and never will. Every
+   colour below is a var(--…) read out of tokens/graphite.css. Dividers,
+   headings, borders and chrome are never coloured.
+
+   No hex literal, no px font-size, no invented spacing. tokens/graphite.css is
+   the only file allowed to declare those; test/firewall.test.ts (item 0.6)
+   fails the build if this sheet ever grows one.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; padding: 0; }
+
+/* THE TYPEFACE BINDING — item 0.1.
+   This single declaration is what test/font.test.tsx asserts against:
+   getComputedStyle(document.body).fontFamily must start with "Instrument
+   Sans". It reads --font-sans and never restates the stack, so the family
+   lives in exactly one place. Changing the token moves the whole app; there is
+   no second declaration to forget.
+
+   THE WEIGHT IS A TOKEN, AND THE RECONCILIATION THIS COMMENT USED TO PROMISE
+   HAS HAPPENED. It used to read "Body weight is 450 per Graphite … reconciling
+   the ladder is item 2.2's" and declare a literal 450. Item 2.2 landed the
+   ramp at what actually paints — @fontsource/instrument-sans ships 400/500/
+   600/700, and CSS Fonts 4 searches UPWARD, so a declared 450 painted 500 and
+   body text shipped one cut heavy. The literal stayed behind. It is now
+   --fw-body, and test/firewall.test.ts rule 5 is why it cannot come back. */
+body {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-body);
+  color: var(--ink-1);
+  background: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* FORM CONTROLS DO NOT INHERIT TYPE, AND THE UA'S ANSWER IS OFF THE LADDER.
+   `button`, `input`, `select` and `textarea` start from the user-agent sheet
+   rather than from `body`, and Chrome's is `13.3333px Arial` — a size that is
+   on no rung of the ladder above and a family that is not the one this app
+   binds. An audit of the running app found 83 elements painting at 13.3333px
+   beside 162 at the real --t-13: two body sizes, a third of a pixel apart,
+   neither of them chosen. Inheriting costs nothing — every control that wants
+   its own size still declares one, and an element selector loses to every
+   class in the cascade.
+
+   line-height is deliberately NOT inherited: the UA's `normal` is what the
+   fixed control heights in shell.css and chat.css were measured against, and
+   pushing --lh-13 into every button would move them. */
+button, input, select, textarea, optgroup {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Every number, identifier, path, log line, diff line, verdict badge and
+   provenance tag. Mono always sets one step down from the sans beside it. */
+code, kbd, samp, pre { font-family: var(--font-mono); font-size: var(--t-12); }
+
+::selection { background: var(--selection-bg); }
+
+::-webkit-scrollbar { width: var(--sp-10); height: var(--sp-10); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: var(--r-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+/* Focus is the accent's job — send, selection, focus. Never a verdict hue. */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+#root { height: 100%; }

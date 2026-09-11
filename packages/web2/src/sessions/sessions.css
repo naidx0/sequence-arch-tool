@@ -1,0 +1,459 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   SESSIONS SIDEBAR — OpenCode / Cursor IA
+   packages/web2/src/sessions/sessions.css
+
+   Scoped under `.sessions-scope` so the overlay dialog and the persistent
+   sidebar share one row vocabulary without coupling to settings.css.
+
+   SURFACE SPECIMENS (owner picks one for product landing):
+     A — opaque (default): solid --surface-2, no blur
+     B — glass: parent sets data-shell-surface="glass"; frost only where
+         @supports (backdrop-filter) holds; opaque fallback otherwise
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.sessions-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.sessions-scope .sessions-head .sessions-note {
+  padding: 0 var(--sp-2);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+.sessions-scope .sessions-new-chat {
+  appearance: none;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp-8);
+  height: var(--row-h);
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+
+.sessions-scope .sessions-new-chat:hover:not([disabled]) {
+  background: var(--state-hover);
+}
+
+.sessions-scope .sessions-new-chat:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.sessions-scope .sessions-new-chat[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sessions-scope .sessions-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-4) var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+.sessions-scope .sessions-note,
+.sessions-scope .sessions-failure {
+  margin: 0;
+  padding: 0 var(--sp-8);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-3);
+}
+
+.sessions-scope .sessions-failure {
+  color: var(--st-failed);
+}
+
+.sessions-scope .sessions-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.sessions-scope .sessions-group + .sessions-group {
+  margin-top: 0;
+  padding-top: var(--sp-8);
+  border-top: var(--w-hair) solid var(--edge-faint);
+}
+
+.sessions-scope .sessions-list {
+  list-style: none;
+  margin: 0;
+  /* Session chats indent under section headers — never flush with General / repo titles. */
+  padding: 0 0 0 var(--sp-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.sessions-scope .sessions-group-label {
+  margin: 0;
+  padding: 0 var(--sp-8);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: var(--row-h);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  text-align: left;
+}
+
+.sessions-scope button.sessions-group-label {
+  appearance: none;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+
+.sessions-scope button.sessions-group-label:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+.sessions-scope .sessions-group-folder,
+.sessions-scope .sessions-group-general-mark {
+  flex-shrink: 0;
+  color: var(--ink-3);
+  /* Book glyphs — delicate marks; no vertical stretch. */
+  transform: scale(0.86);
+  transform-origin: center;
+}
+
+.sessions-scope .sessions-group-folder.i {
+  stroke-width: 1.5;
+}
+
+.sessions-scope button.sessions-group-label:hover .sessions-group-folder {
+  color: var(--ink-1);
+}
+
+.sessions-scope .sessions-group-label:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+  border-radius: var(--r-8);
+}
+
+.sessions-scope .sessions-group-label-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+}
+
+.sessions-scope .sessions-group-count {
+  display: none;
+}
+
+.sessions-scope .sessions-row {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--row-h);
+  height: auto;
+  padding: var(--sp-6) var(--sp-8);
+  /* GROUNDED AT REST — owner, 2026-09-02: "unless you hover on the actual chat
+     sessions, I don't want them to have this whole outline." New chat and the
+     General / repo group labels KEEP their hairline (he likes those crisp);
+     the threads under them sit flat on the rail like a list, and the hairline
+     + hover wash arrive together on hover. The border stays in the box model
+     as a transparent stroke so a row does not shift by 1px when it appears. */
+  background-color: transparent;
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  font-family: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+
+.sessions-scope .sessions-row:hover:not([disabled]) {
+  background-color: var(--state-hover);
+  color: var(--ink-1);
+  border-color: var(--edge);
+}
+
+/* THE THREAD YOU ARE IN IS RAISED, NOT SUNK — owner, 2026-09-02: "when not
+   hovering, the chat sessions … it's hard seeing some weird little small black
+   outline around it. You don't hover over it, which I don't like. It should
+   only pop up when you hover over stuff."
+
+   That black was this row's own mark: `inset 0 2px 5px rgba(0,0,0,.22)`. On a
+   30px row a 5px black blur hugs the entire inner edge, so the "sunk" reading
+   never arrived — it read as a thin dark outline, on the ONE row the owner has.
+   It was also a raw rgba() literal in a component sheet, which the token law
+   forbids outright.
+
+   The mark is now a step UP the ramp, with no stroke and no shadow at rest.
+   SessionsPanel.tsx says the active row is "marked rather than merely
+   highlighted"; that still holds — the mark a keyboard or screen-reader user
+   gets is `aria-current="true"` plus the button being `disabled`, which is why
+   a fill alone is honest here.
+
+   MEASURED on the running rail (localhost:4173): the ground under these rows is
+   .shell-cb-rail = --surface-1 rgb(20,20,22); a hovered inactive row composites
+   --state-hover over it to ≈rgb(31,31,33) AND takes an --edge hairline; this
+   fill is --surface-3 rgb(35,35,39) with NO hairline. Rest 20 < hover 31 <
+   active 35, so the order of the ramp matches the order of the states — and
+   because 35-vs-31 is a thin gap, the weight (not a hue, not a stroke) is what
+   keeps a hovered row from reading as the loaded one. Raising the row onto
+   --surface-3 took the step .sessions-acts used to sit on, so that chip moved
+   up to --surface-4 — see its own block. */
+.sessions-scope .sessions-row[data-active='true'] {
+  background-color: var(--surface-3);
+  color: var(--ink-1);
+  border-color: transparent;
+  font-weight: var(--fw-label);
+  cursor: default;
+}
+
+.sessions-scope .sessions-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessions-scope .sessions-when {
+  /* Always flush-right — same in General and repo catalog groups.
+     Pin/rename/delete overlay on hover and must not reserve a flex column
+     (that was why General timers sat mid-row while SEQUENCE/SCHWAI sat right). */
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-4);
+}
+
+.sessions-scope .sessions-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.sessions-scope .sessions-item {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  border-radius: var(--r-8);
+  position: relative;
+}
+
+.sessions-scope .sessions-item:has(.sessions-row[data-active='true']) {
+  background-color: transparent;
+}
+
+.sessions-scope .sessions-item .sessions-row {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Carried at .sessions-item depth so the fill out-specifies the hover wash
+   (`.sessions-row:hover:not([disabled])`) rather than losing to it. */
+.sessions-scope .sessions-item .sessions-row[data-active='true'] {
+  background-color: var(--surface-3);
+  font-weight: var(--fw-label);
+}
+
+.sessions-scope .sessions-pin-mark {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+
+/* THE CHIP MUST NOT SHARE A FILL WITH THE ROW IT COVERS. It used to be
+   --surface-3 over a --surface-1 row; the round that raised the active row to
+   --surface-3 (see the active-row block above) landed the chip on its own
+   colour, leaving one --edge hairline — rgba(255,255,255,.09) over --surface-3
+   composites to ≈rgb(55,55,58), a ~1.4:1 step on a single pixel — as the whole
+   boundary. The owner has ONE session, so the active row is the only row he
+   hovers: the three icons read as loose in the row, and the chip's occlusion of
+   the timestamp had no visible edge.
+
+   --surface-4 is the sheet's own floating chip step (sheet 01 gives it to
+   .tooltip, with the same --edge hairline), so the chip now clears every row
+   state: rest --surface-1 ≈rgb(20,20,22), hover ≈rgb(31,31,33), active
+   --surface-3 ≈rgb(35,35,39), chip --surface-4 ≈rgb(44,44,49). (Values as
+   rgb(), never as a hex literal: test/firewall.test.ts scans this sheet's TEXT
+   and tokens/graphite.css is the only place a hex may appear.) The fill alone
+   is still only a 9-level step and any
+   future row state that climbs the ramp would re-collide with it, so the raised
+   reading is carried by --e2 as well — the book gives every overlay that sits
+   over content an elevation (.menu and .popover take --e3). It costs nothing at
+   rest: this chip is opacity 0 until :hover / :focus-within, which is exactly
+   what the owner asked for — "it should only pop up when you hover over stuff." */
+.sessions-scope .sessions-acts {
+  position: absolute;
+  right: var(--sp-4);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--surface-4);
+  box-shadow: var(--e2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 1;
+}
+
+.sessions-scope .sessions-item:hover .sessions-acts,
+.sessions-scope .sessions-item:focus-within .sessions-acts {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sessions-scope .sessions-act {
+  appearance: none;
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+
+.sessions-scope .sessions-act:hover:not([disabled]) {
+  background-color: var(--state-hover);
+  color: var(--ink-1);
+}
+
+.sessions-scope .sessions-act:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.sessions-scope .sessions-act[disabled] {
+  color: var(--ink-4);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* An ARMED delete replaces the row, the way a rename does — it must not hide
+   in the hover-only acts overlay, because the question it asks is the last
+   chance to keep a transcript. --st-failed is the one hue spent here: this is
+   a claim about the world (the thread is about to be destroyed), the same
+   claim `.sessions-failure` spends it on. */
+.sessions-scope .sessions-confirm {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--row-h);
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-3);
+}
+
+.sessions-scope .sessions-confirm-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+}
+
+.sessions-scope .sessions-act-destroy {
+  color: var(--st-failed);
+}
+
+.sessions-scope .sessions-act-destroy:hover:not([disabled]) {
+  background-color: var(--state-hover);
+  color: var(--st-failed);
+}
+
+.sessions-scope .sessions-rename {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--row-h);
+}
+
+.sessions-scope .sessions-rename-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+}
+
+/* ── Specimen B — conditional glass (parent: data-shell-surface="glass") ─ */
+
+.sessions-side[data-shell-surface='glass'] .sessions-scope {
+  background: transparent;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .sessions-side[data-shell-surface='glass'] .shell-pane-body,
+  .sessions-side[data-shell-surface='glass'] .sessions-scope {
+    background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .sessions-side[data-shell-surface='glass'] .sessions-new-chat {
+    background: color-mix(in srgb, var(--surface-3) 90%, transparent);
+    backdrop-filter: blur(8px);
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .sessions-side[data-shell-surface='glass'] .sessions-scope,
+  .sessions-side[data-shell-surface='glass'] .sessions-new-chat {
+    background: var(--surface-2);
+  }
+}

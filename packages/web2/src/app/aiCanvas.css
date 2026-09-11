@@ -1,0 +1,582 @@
+.ai-canvas {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-16) var(--sp-20);
+  background: var(--bg-base);
+}
+
+.ai-canvas-empty {
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.ai-canvas-empty-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-8);
+  max-width: 42ch;
+}
+
+.ai-canvas-empty-icon {
+  color: var(--ink-3);
+}
+
+.ai-canvas-lede {
+  margin: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-3);
+}
+
+.ai-canvas-lede-mono {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-12);
+  color: var(--ink-3);
+}
+
+/*
+ * A PASSAGE IN A DOCUMENT, NOT A CARD ON A SHELF.
+ *
+ * Owner, 2026-09-09: "The AI canvas right now seems to open up little section
+ * cards within the canvas. I want that whole canvas to be like a whiteboard, as
+ * if you're in Obsidian ... you open a Markdown file, and it's the main view
+ * where you can view so many things."
+ *
+ * This was `border + border-radius + background: var(--surface-1) + overflow:
+ * hidden` — a card, by construction, in a scrolling column of them. The border
+ * and the panel fill are what made each block read as a separate object rather
+ * than a section of one page, so both go and RHYTHM separates them instead,
+ * which is how a document has always done it.
+ *
+ * `overflow: hidden` goes with them: it existed to clip children to the card's
+ * radius, and with no radius it only clips content that should be allowed to
+ * size itself. Design of record: docs/AI-CANVAS-IS-A-DOCUMENT.md.
+ */
+.ai-canvas-block {
+  margin-bottom: var(--sp-24);
+  transition: box-shadow 0.3s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* The header keeps its row because "Ask about this" and the status live in it —
+   point-to-ask is how this surface talks to the chat. What it loses is the bar:
+   no bottom rule, no inset padding, because a titled bar over every passage is
+   the chrome that made these read as cards. */
+.ai-canvas-block-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  padding: 0 0 var(--sp-4);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+/* Self-naming content keeps only its glyph, so the reader can still see at a
+   glance that a tool wrote this — the kind WORD is what duplicated the title. */
+.ai-canvas-block-hd-quiet { opacity: 0.55; }
+
+.ai-canvas-block-hd-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+.ai-canvas-block-hd-icon {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+.ai-canvas-block-hd-status {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  text-transform: lowercase;
+}
+
+.ai-canvas-block-body {
+  margin: 0;
+  padding: var(--sp-10);
+  font-size: var(--t-11, var(--t-12));
+  line-height: 1.45;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.ai-canvas-block-live {
+  box-shadow:
+    0 0 0 var(--w-hair) var(--accent-edge, color-mix(in srgb, var(--accent) 40%, transparent)),
+    0 0 24px var(--accent-wash, color-mix(in srgb, var(--accent) 14%, transparent));
+  animation: ai-canvas-block-in 400ms var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.ai-canvas-agent {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin-bottom: var(--sp-12);
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--accent-edge, color-mix(in srgb, var(--accent) 35%, transparent));
+  border-radius: var(--r-10);
+  background: var(--accent-wash, color-mix(in srgb, var(--accent) 10%, transparent));
+  font-size: var(--t-11, var(--t-12));
+  color: var(--ink-2);
+}
+
+.ai-canvas-agent-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+  animation: ai-canvas-agent-pulse 1.4s ease-in-out infinite;
+}
+
+.ai-canvas-agent-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-canvas-agent-tool {
+  flex-shrink: 0;
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+@keyframes ai-canvas-agent-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ai-canvas-block-pending-wrap {
+  border-style: dashed;
+  opacity: 0.92;
+}
+
+.ai-canvas-block-pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-8);
+  min-height: 96px;
+  padding: var(--sp-16);
+}
+
+.ai-canvas-block-pending-shimmer {
+  width: min(240px, 80%);
+  height: 8px;
+  border-radius: var(--r-8);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    color-mix(in srgb, var(--accent) 18%, var(--surface-2)) 50%,
+    var(--surface-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: ai-canvas-pending-shimmer 1.2s ease-in-out infinite;
+}
+
+.ai-canvas-block-pending-label {
+  margin: 0;
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+@keyframes ai-canvas-pending-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-canvas-agent-icon {
+    animation: none;
+  }
+
+  .ai-canvas-block-pending-shimmer {
+    animation: none;
+  }
+}
+
+@keyframes ai-canvas-block-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-canvas-block-live {
+    animation: none;
+  }
+}
+
+/*
+ * A READING MEASURE FOR PROSE — docs/AI-CANVAS-IS-A-DOCUMENT.md §5 item 3.
+ *
+ * This surface is a document, and a document has a measure. Without one a
+ * paragraph runs the full width of a wide pane, which is the one thing a
+ * reader's eye cannot follow: the return sweep loses the line.
+ *
+ * 68ch IS THE BOOK'S NUMBER, NOT MINE. `docs/brand/graphite/_core.html:954`
+ * sets `.prose { … max-width: 68ch }`. CANON is explicit that inventing a
+ * value here is the mistake — "you extend Graphite, you do not redesign it …
+ * the answer is already in the book" — and the book had one.
+ *
+ * PROSE ONLY, and the limit is the design. A diagram, a chart, an html or react
+ * block and a fenced code listing all need the width they are given; capping
+ * them at 68ch would cramp the very content this canvas exists to show. Code
+ * and display maths already scroll inside their own containers rather than
+ * wrapping, which is the correct answer for content that is not prose.
+ */
+.ai-canvas-md-p,
+.ai-canvas-md-h {
+  max-width: 68ch;
+}
+
+.ai-canvas-md-p {
+  margin: 0 0 var(--sp-8);
+}
+
+.ai-canvas-md-h {
+  margin: 0 0 var(--sp-8);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+}
+
+/*
+ * A LONG TOKEN STILL HAS TO WRAP. `white-space: pre-wrap` breaks at whitespace,
+ * and a token with no break opportunity — a URL, a minified line, base64, a
+ * deep import path — has none, so it overflows the document. Code blocks are
+ * exactly where those live.
+ *
+ * FOUND BY COMPARING SIBLINGS: `.ai-canvas-react-src` is the same shape, a
+ * <pre> holding foreign text, and it already carries `overflow-wrap: anywhere`.
+ * This one did not. Matching it is adopting the decision already made here
+ * rather than making a second one.
+ */
+.ai-canvas-md-code {
+  margin: 0 0 var(--sp-8);
+  padding: var(--sp-8);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ai-canvas-mermaid-box {
+  margin-top: var(--sp-8);
+  padding: var(--sp-8);
+  border: var(--w-hair) dashed var(--edge);
+  border-radius: var(--r-8);
+}
+
+/* The third preformatted container, and the one a hand-written list missed.
+   A mermaid definition is one long line as often as not, and `pre-wrap` alone
+   breaks only at whitespace. Same shape as the other two <pre> holders, so the
+   same guard. */
+.ai-canvas-mermaid-src {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.ai-canvas-svg {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.ai-canvas-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.ai-canvas-html-frame {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  border: 0;
+  background: var(--surface-2);
+  border-radius: var(--r-8);
+}
+
+.ai-canvas-react {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+.ai-canvas-react-frame {
+  min-height: 100px;
+}
+
+.ai-canvas-react-note {
+  margin: 0;
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+.ai-canvas-react-src {
+  margin: 0;
+  padding: var(--sp-8);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.ai-canvas-react-host {
+  min-height: 48px;
+}
+
+.ai-canvas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-10);
+  margin-bottom: var(--sp-12);
+}
+
+/* THE QUIET EXIT. Was `.ai-canvas-export`: a bordered, filled, labelled button
+   sitting alone in the toolbar of a surface whose job is to SHOW the lesson —
+   the loudest control on the page pointed out of the app (owner, 2026-09-02).
+   Now a bare icon at the toolbar's tail: no chrome, no label, ink-3 until
+   hovered. Reachable, never advertised. */
+.ai-canvas-export-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: var(--sp-4);
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.ai-canvas-export-quiet:hover {
+  background: var(--surface-1);
+  color: var(--ink-1);
+}
+
+.ai-canvas-block-hd-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  flex-shrink: 0;
+}
+
+.ai-canvas-ask-block {
+  padding: 2px var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: transparent;
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.ai-canvas-ask-block:hover {
+  border-color: var(--accent-edge, color-mix(in srgb, var(--accent) 40%, transparent));
+  color: var(--ink-1);
+}
+
+.ai-canvas-block-story-active {
+  box-shadow:
+    0 0 0 var(--w-hair) var(--accent-edge, color-mix(in srgb, var(--accent) 40%, transparent)),
+    0 0 16px var(--accent-wash, color-mix(in srgb, var(--accent) 10%, transparent));
+}
+
+.ai-canvas-story {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-1);
+}
+
+.ai-canvas-story-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  margin-bottom: var(--sp-8);
+}
+
+.ai-canvas-story-title {
+  font-size: var(--t-10);
+  color: var(--ink-2);
+}
+
+.ai-canvas-story-count {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+.ai-canvas-story-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-canvas-story-step {
+  padding: var(--sp-4) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: transparent;
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.ai-canvas-story-step.active,
+.ai-canvas-story-step:hover {
+  border-color: var(--accent-edge, color-mix(in srgb, var(--accent) 40%, transparent));
+  color: var(--ink-1);
+}
+
+.ai-canvas-story-controls {
+  display: flex;
+  gap: var(--sp-8);
+  margin-top: var(--sp-8);
+}
+
+.ai-canvas-story-ctrl {
+  padding: var(--sp-4) var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  font-size: var(--t-10);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.ai-canvas-story-ctrl:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* THE LESSON'S SENTENCE — the step caption, above the picture it describes.
+   `teach:step` wrote `canvasDoc.teachStep.caption` and NOTHING read it: the
+   board took the lit node ids and the sentence was dropped on the floor. This
+   is where the learner lands, because the chart paints here and the "Drew a
+   chart" work row opens this surface.
+
+   READS AS PROSE, NOT AS CHROME. One ink step above the lede so it leads the
+   surface without competing with a chart's own title, and no fill, border or
+   radius — a tinted callout would make a teaching sentence look like a status
+   banner, and Graphite spends a hue on a claim rather than on emphasis. */
+.ai-canvas-lesson {
+  margin: 0;
+  max-width: var(--col-max);
+  font-size: var(--t-12);
+  line-height: var(--lh-14);
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* THE FENCE'S LANGUAGE, SHOWN. It was captured in `data-lang` from the first
+   version of this renderer and drawn by nothing, so every block in every
+   language read as one anonymous grey box. Quiet by Graphite law 1 — a language
+   is a fact about the block, not a claim about the world, so it gets no hue. */
+.ai-canvas-md-codewrap {
+  margin: 0 0 var(--sp-8);
+}
+.ai-canvas-md-codewrap .ai-canvas-md-code {
+  margin: 0;
+}
+.ai-canvas-md-lang {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  padding: 0 0 var(--sp-2);
+}
+
+/* MATHS. KaTeX declares no colour of its own, so a formula inherits the prose
+   around it — it spends no hue (Graphite law 1) and needs nothing for the
+   dark-only theme (Decision 1).
+
+   WHAT IT DOES DECLARE is `white-space: nowrap` on a display block, so a long
+   formula would run out of a narrow pane, so it scrolls inside its own
+   container rather than pushing the document sideways.
+
+   NOT THE SAME RULE CODE FOLLOWS, and an earlier version of this comment said
+   it was. Code blocks WRAP (`white-space: pre-wrap` plus `overflow-wrap`),
+   because a wrapped line is still readable and a formula broken mid-expression
+   is not. Two shapes, two answers; the comment claimed one. No e2e fixture puts maths on screen, so this
+   would not have been caught by the legibility gate. */
+.ai-canvas-math-display {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* A formula KaTeX refused, shown as the source the model asked for. Quiet, and
+   marked as code so it reads as "this is what was written", not as prose. */
+.ai-canvas-math-raw {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+/*
+ * KEYBOARD FOCUS, VISIBLE — Sequence's third gate.
+ *
+ * Every control here was already a real <button> and therefore reachable; this
+ * stylesheet defined no focus styling at all, so a reader tabbing through the
+ * canvas could not see where they were. Reachable and unseeable is the case the
+ * human-usability gate exists for: "a feature that exists but can't be found
+ * isn't done."
+ *
+ * THE RING IS THE APP'S, NOT A NEW ONE. shell.css and chat.css both draw focus
+ * as a two-ring box-shadow — a gap in --bg-base, then --accent — and
+ * tokens/graphite.css reserves the accent for "selection, focus". Matching it
+ * extends the book; an outline of my own choosing would redesign it, which
+ * CANON forbids.
+ *
+ * `outline: none` is paired with the shadow rather than left bare: removing the
+ * platform outline without replacing it is how a surface loses focus entirely,
+ * and that is the defect this rule closes rather than one to repeat.
+ */
+.ai-canvas-ask-block:focus-visible,
+.ai-canvas-export-quiet:focus-visible,
+.ai-canvas-story-ctrl:focus-visible,
+.ai-canvas-story-step:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}

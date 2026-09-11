@@ -1,0 +1,42 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client", "vitest/globals"],
+    "noEmit": true,
+    "declaration": false,
+    "sourceMap": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sequence/api-types": ["../api-types/src/index.ts"]
+      /*
+       * `@sequence/schema` AND `@sequence/export` ARE NOT MAPPED HERE, AND
+       * THAT IS THE FIX RATHER THAN AN OMISSION.
+       *
+       * This block used to carry `"@sequence/schema": ["../schema/dist/index.d.ts"]`
+       * as half a fix, because the package did not depend on schema and a bare
+       * specifier could not resolve. Wave 3's closing lane lifted
+       * `seqdFromGraph`, which needs both packages AT RUNTIME —
+       * `archGraphToSeqDiagram` and `validateSeqDiagram` are calls, not types,
+       * and verbatimModuleSyntax cannot erase a call. So both are real
+       * `workspace:*` dependencies now, installed, and node resolution finds
+       * exactly the same declaration files a `paths` entry would have pointed
+       * at. Keeping the entry as well would give tsc one resolution and vite
+       * another for the same specifier, which is the disagreement a bundler
+       * finds at the worst possible moment.
+       *
+       * `@sequence/api-types` stays mapped because it is the one workspace
+       * package this tree reads as SOURCE (`src/index.ts`, no build step).
+       */
+    }
+  },
+  "include": ["src", "test", "vite.config.ts", "vitest.config.ts"]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "d1",
+  "name": "propose_topology",
+  "args": {
+    "title": "Hermes local agent hub",
+    "nodes": [
+      { "id": "proposal:hermes", "label": "Hermes orchestrator", "kind": "agent" }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "from": "proposal:hermes",
+        "to": "proposal:hermes",
+        "family": "call",
+        "label": "loop"
+      }
+    ]
+  }
+}

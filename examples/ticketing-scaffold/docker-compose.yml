@@ -1,0 +1,35 @@
+services:
+  gateway:
+    build: ./gateway
+    ports:
+      - "3000:3000"
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      - api
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql://app:app@postgres:5432/ticketing
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build: ./worker
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ticketing
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+
+  redis:
+    image: redis:7
