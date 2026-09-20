@@ -1,0 +1,654 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE OPEN-A-REPOSITORY DIALOG
+
+   ── WHY THIS FILE WAS ONE COMMENT LINE ───────────────────────────────────
+
+   `fe6f644e` (2026-09-14, "Ship V3 fill-screen chrome") deleted 551 of this
+   sheet's 552 lines and left the note *"retired Decision 22 — V3 chrome owns
+   visuals"*. V3 chrome owns the OVERLAY — the scrim, the panel, the close
+   affordance — and it never owned what is inside this one. `AttachDialog.tsx`
+   was not touched: it still renders twenty-five `attach-*` class names and
+   still imports this file.
+
+   So from that commit until 2026-09-20 the dialog rendered as raw HTML.
+   Measured against the owner's screenshots: `<ul>` bullets on every row,
+   labels overlapping their neighbours, and the folder glyph at roughly 500px
+   — because `Glyph` writes no width or height and relies entirely on
+   `.startup-i` here, and an `<svg>` with a viewBox and no size defaults to
+   100% × 150px.
+
+   THE LESSON IS THE ONE THE AI CANVAS TAUGHT IN Decision 36: a component and
+   its stylesheet are one object, and deleting half of one because a *different*
+   surface took over is how a screen ships unstyled for six days without a test
+   noticing. Nothing here asserts a pixel; what is checked is that every class
+   the component renders has a rule (`bootStyles.test.ts`).
+
+   ── EVERY VALUE IS A TOKEN ───────────────────────────────────────────────
+
+   The deleted sheet predated the Graphite ramp and carried literals. This one
+   carries none: the dialog is a MENU-FAMILY surface (a list of rows you pick
+   from, over a panel) so it takes the same ladder, radii and inks as the
+   composer's popovers, and law 3's compact density — rows on `--row-h-tool`,
+   the rung a scanned list gets.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── THE GLYPH, WHICH IS THE ONE RULE THE WHOLE SCREEN DEPENDED ON ───────
+   `icons.tsx` renders `<svg class="startup-i sz-12" viewBox="0 0 24 24">` with
+   no width and no height, by design: "the colour of every icon on this surface
+   is decided by the CSS of the element it sits in". Size is decided here for
+   the same reason, and when this rule was absent the browser's own default —
+   100% wide, 150px tall — is what the reader saw. */
+.startup-i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.startup-i.sz-12 { width: 12px; height: 12px; }
+.startup-i.sz-20 { width: 20px; height: 20px; }
+
+/* ── THE PANEL ───────────────────────────────────────────────────────────
+   V3 mounts this inside its own overlay, which owns the scrim and the outer
+   frame. What is left to this sheet is the CONTENT box: a column, a maximum
+   reach so the path strings do not run the width of a monitor, and a ceiling
+   so a home directory with two hundred folders scrolls instead of growing. */
+.attach {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+  width: min(100%, 560px);
+  max-height: min(78vh, 680px);
+  padding: var(--sp-16);
+  border-radius: var(--r-14);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  overflow: hidden;
+}
+
+.attach-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.attach-h {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-17);
+  line-height: var(--lh-17);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+/* One square, used for close, up, and look-inside. Three jobs, one shape:
+   they are all "a glyph you press", and giving them three would make the
+   reader learn three. */
+.attach-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  padding: 0;
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-8);
+  background: var(--glass-ctl);
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.attach-iconbtn:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+  border-color: var(--edge);
+  color: var(--ink-1);
+}
+
+.attach-iconbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* THE JAIL, STATED ONCE AND QUIETLY. It is a boundary, not a warning: the
+   reader has done nothing wrong by being told where the edge is, so it takes
+   the pane fill rather than a hue. */
+.attach-callout {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-10);
+  border-radius: var(--r-8);
+  background: var(--glass-pane-fill);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+.attach-callout code {
+  font-family: var(--font-mono);
+  color: var(--ink-2);
+}
+
+/* ── TYPE A PATH, OR WALK TO ONE ─────────────────────────────────────────
+   Two ways in, on one row, because the second is the one a person reaches for
+   when they already know where they are going and the walk would be six
+   clicks. */
+.attach-pathrow {
+  display: flex;
+  gap: var(--sp-6);
+}
+
+.attach-path-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-1);
+}
+
+.attach-path-input::placeholder { color: var(--ink-4); }
+
+.attach-path-input:focus-visible {
+  outline: none;
+  border-color: var(--accent-chosen-edge);
+}
+
+.attach-native {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-10);
+  background: var(--glass-ctl);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.attach-native:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+  border-color: var(--edge);
+  color: var(--ink-1);
+}
+
+.attach-native:disabled { opacity: 0.4; cursor: default; }
+
+/* ── WHERE YOU ARE ───────────────────────────────────────────────────────
+   The crumbs scroll sideways rather than wrapping: a path that wrapped would
+   change the dialog's height as the reader walks, and a panel that resizes
+   under the pointer is the thing they are aiming at moving. */
+.attach-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+.attach-crumbs {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+
+.attach-crumbs::-webkit-scrollbar { display: none; }
+
+.attach-crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.attach-crumb-sep { display: inline-flex; color: var(--ink-4); }
+
+.attach-crumb {
+  padding: var(--sp-2) var(--sp-6);
+  border: none;
+  border-radius: var(--r-4);
+  background: none;
+  font: inherit;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.attach-crumb:hover { background: var(--glass-hover); color: var(--ink-1); }
+
+/* The leaf is where you ARE, so it stops being a link and becomes a label. */
+.attach-crumb[aria-current='true'] {
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+}
+
+/* ── THE LISTS ───────────────────────────────────────────────────────────
+   `<ul>` with its bullets and its indent showing was the loudest thing in the
+   owner's screenshot. A list of things to press is a list of BUTTONS; the
+   list-ness is semantics for a screen reader and nothing to the eye.
+
+   The two lists share every rule, and the whole block scrolls as one so the
+   heading of each stays with its rows. */
+.attach-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.attach-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+/* Rows on --row-h-tool, the ladder's compact rung: a folder list is scanned,
+   not read, and this dialog can hold a hundred of them. */
+.attach-open {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+  height: var(--row-h-tool);
+  padding: 0 var(--sp-8);
+  border: none;
+  border-radius: var(--r-8);
+  background: none;
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.attach-open:hover:not(:disabled) { background: var(--glass-hover); color: var(--ink-1); }
+.attach-open:disabled { opacity: 0.5; cursor: default; }
+
+.attach-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* THE PATH IS TRUNCATED FROM THE LEFT, which is where the useless half is:
+   every recent shares the same home prefix and differs at the end. `direction:
+   rtl` with the isolate marks in the markup is how that is done without
+   reversing the text itself. */
+.attach-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-4);
+}
+
+/* A claim about marker files, not a decoration: it is why this folder is worth
+   pressing, so it reads as a fact and not as a badge. */
+.attach-tag {
+  flex: 0 0 auto;
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--accent-wash);
+  font-size: var(--t-10);
+  line-height: 16px;
+  color: var(--accent-ink);
+}
+
+.attach-legend {
+  margin: 0;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: var(--ls-ui);
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.attach-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding-top: var(--sp-8);
+  box-shadow: inset 0 var(--w-hair) 0 0 var(--edge-faint);
+}
+
+.attach-foot .attach-legend {
+  flex: 1 1 auto;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: var(--t-11);
+}
+
+/* The one solid on this surface, and it is the act the dialog exists for. */
+.startup-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-10);
+  background: var(--glass-ctl);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.startup-btn:hover:not(:disabled) { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.startup-btn:disabled { opacity: 0.4; cursor: default; }
+
+.startup-btn.solid {
+  border-color: transparent;
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font-weight: var(--fw-head);
+}
+
+.startup-btn.solid:hover:not(:disabled) {
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  opacity: 0.92;
+}
+
+/* ── THE REFUSAL STRIP ───────────────────────────────────────────────────
+   A refused attach names the boundary rather than dead-ending, so it gets the
+   room a sentence needs. The hue is the verdict family's, because this IS a
+   verdict about the folder — not a hint about a control. */
+.attach-failure {
+  display: flex;
+  gap: var(--sp-8);
+  padding: var(--sp-10);
+  border-radius: var(--r-8);
+  background: var(--glass-pane-fill);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+}
+
+.attach-failure-glyph { color: var(--wont); }
+
+.attach-failure-body { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+
+.attach-failure-title {
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+.attach-failure-detail,
+.attach-failure-why {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+
+/* ══ THE BOOT SCREEN, RESTORED 2026-09-20 ════════════════════════════
+
+   The attach dialog above was the half of this sheet that was noticed. The
+   other half is BootSurface — the FIRST screen a person meets when nothing is
+   attached — and it lost its rules in the same commit and for the same false
+   reason. Nothing in v3.css matches `startup-title`, `startup-detail` or any
+   other class it renders; checked by name across the package on 2026-09-20.
+
+   Restored as deleted, filtered so nothing overrides a rule this sheet already
+   carries. 14 classes.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ITEM 2.4 — THE BOOT SURFACE AND THE ATTACH DIALOG
+   ══════════════════════════════════════════════════════════════════════════
+
+   HUE BUDGET FOR THIS SHEET: ONE.
+     --wont, on the `fault` tone only — the single attach outcome where
+     something on the far side actually broke (a scan that threw).
+   Everything else on this surface is ink, surface and edge. An engine that is
+   not running is the local-first case working as designed; a folder above the
+   browse boundary is a boundary doing its job. Graphite law 1: every hue on
+   screen is a claim about the world, and there are never more hues than there
+   are claims. Counting the budget in the header is the enforcement mechanism
+   the book itself uses.
+
+   WHAT IS TRANSCRIBED, AND FROM WHERE. This surface is UNSHEETED — the attach
+   dialog is one of the eleven surfaces §5.6 of the plan lists as uncovered by
+   the book. Three things are therefore lifted from the frozen book rather than
+   invented, and the rest is designed here and said so:
+     · the empty box —
+       docs/brand/graphite/pages/08-board-density-and-overflow.html §08.5:
+       `1px dashed var(--edge-strong)`, `--r-14`, `--sp-20` padding, column,
+       `--sp-8` gaps, on `--surface-1`, and NOT ONE OF THE THREE IS COLOURED.
+     · its three parts, in order — what is not here, why it is not here, one
+       thing to do about it. The second is the one that gets dropped.
+     · the control ladder — `--control-h` 28, `--icon-btn` 26, rows on
+       `--row-h-thread` 28. Compact is the only density (Graphite law 3);
+       airy is a defect.
+
+   THE PREFIXES ARE `startup-` AND `attach-`, NOT `boot-`. `src/styles/boot.css`
+   already owns `.boot`, `.boot-row`, `.boot-chip` and a dozen more for the Wave
+   0 token smoke surface. Two sheets in one document with one prefix between
+   them is a collision that presents as a layout bug in whichever surface loads
+   second, and the fix is a name, not a specificity war.
+
+   THIS SHEET IS IMPORTED BY ITS COMPONENT, NOT BY App.tsx's ordered block.
+   App.tsx is item 2.3's file. When the shell lands, this import moves into that
+   block with a line saying what it raises off what — see the handback.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── The lane's local primitives ───────────────────────────────────────────
+   Transcribed from the book's own `.btn` and `.i` specimens (_core.html:832
+   and :619 in docs/brand/graphite/). They are LANE-LOCAL and temporary:
+   item 2.5 builds the shared `components/` primitives, and these three rules
+   are deleted in favour of them. They are not a second design — they are the
+   same numbers, sitting in the only directory this lane may write to. */
+.startup-btn {
+  appearance: none;
+  font-family: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  line-height: 1;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-10);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+
+.startup-btn.sm {
+  height: 24px;
+  font-size: var(--t-11);
+  padding: 0 var(--sp-8);
+}
+
+/* ── The boot surface ─────────────────────────────────────────────────────
+   It fills whatever the shell gives it and centres one box. The box is the
+   size of what it is talking about, never a lid over the pane: sheet 08.5's
+   "The state this replaces" note names an opaque sheet pinned over the whole
+   canvas as the thing that reads as a crash. */
+.startup {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  /* SCROLLS RATHER THAN CLIPS, and the centring below is why it has to.
+     A flex child centred with `align-items: center` is centred even when it is
+     TALLER than its container — which puts its top edge at a negative offset,
+     outside the scrollable region, where no scrollbar can reach it. Measured on
+     the real page at 1280x800 before this was fixed: the empty box was 211px
+     tall in a 48px pane and its title rendered at y = 0 with its icon at
+     y = -32, i.e. off the top of the screen with no way to bring it back. The
+     three-pane shell makes a short canvas pane ordinary rather than exotic, so
+     this is the common case, not the corner one.
+     `margin: auto` on the child does the same centring through free space, and
+     when there is no free space the auto margins resolve to zero and the box
+     starts at the top edge where scrolling can reach it. */
+  overflow: auto;
+  padding: var(--sp-24);
+  background: var(--bg-base);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+
+/* The `.empty` box, transcribed. */
+.startup-empty {
+  /* The centring. See the note on .startup above — this is not a shorthand for
+     `align-items: center`, it is the version of it that can be scrolled to. */
+  margin: auto;
+  border: 1px dashed var(--edge-strong);
+  border-radius: var(--r-14);
+  padding: var(--sp-20);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  align-items: flex-start;
+  background: var(--surface-1);
+  max-width: var(--menu-w);
+}
+
+/* Part one: what is not here. */
+.startup-title {
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  margin: 0;
+}
+
+/* Part two: why it is not here. The part that gets dropped. */
+.startup-why {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  margin: 0;
+}
+
+/* ── THE --ink-4 RULING FOR THIS SHEET ─────────────────────────────────────
+   --ink-4 IS NOT A TEXT COLOUR HERE. It measures 2.41:1 against --surface-2
+   and 2.56:1 against --surface-1 in dark — against a 4.5:1 floor for text and
+   a 3:1 floor for a glyph. Both numbers were measured twice and agree: once in
+   Chrome on the real page at 1280x800, and once through the token resolver in
+   contrast.test.tsx, which is the lock.
+
+   It shipped here on four rules — the section labels, the recents path, the
+   crumb separator and the two reported-detail lines — on the reasoning that
+   each is "secondary". Secondary is a reason to make something quieter than
+   its neighbour, not a reason to make it unreadable, and every one of those
+   five carries something a user is expected to actually read: which list they
+   are looking at, which folder a recent entry points to, and the machine's own
+   words about a failure.
+
+   --ink-4 keeps exactly one use on this surface, and it is the one the
+   standard itself exempts: a DISABLED control, where low contrast is the
+   meaning rather than a defect (WCAG 1.4.3 excludes inactive components).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The reported words — a quotation from a machine, so mono, one step down from
+   the sans beside it (the ramp's rule), and never coloured. It is evidence,
+   and evidence is not a verdict. */
+.startup-detail,
+.attach-failure-detail {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The glyph is the KIND OF ABSENCE and is never coloured — sheet 08.5's
+   caption states it outright: "an empty state is not a verdict". */
+.startup-glyph { color: var(--ink-3); }
+
+/* The one tone that spends the budget. It colours the GLYPH only: the body
+   text of a fault still has to be read, and ink is what reads. */
+.startup[data-tone='fault'] .startup-glyph { color: var(--wont); }
+
+/* The machine-readable outcome. Present for the e2e tier, inaudible to a
+   screen reader, and never a substitute for the sentence beside it. */
+.startup-state {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The attached / static-graph strip. Counts are mono and tabular — a number
+   the eye compares must not jump columns between renders. */
+.startup-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-12);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-variant-numeric: var(--num);
+  color: var(--ink-3);
+}
+
+.startup-repo {
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+}
+
+.attach-callout code {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-2);
+}
+
+/* The dialog's own scrim, for when the boot lane hosts it standalone. The
+   shell owns overlays from 2.3 onward and this rule retires with that. */
+.attach-scrim {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  /* Same rule as .startup, same reason: a dialog taller than the window must
+     scroll to its own top edge rather than be centred past it. */
+  overflow: auto;
+  padding: var(--sp-24);
+  background: var(--scrim);
+  z-index: 10;
+}

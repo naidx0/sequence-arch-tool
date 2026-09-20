@@ -1,0 +1,897 @@
+/* ── SETTINGS ────────────────────────────────────────────────────────────
+   UNSHEETED. No Graphite page draws a settings panel, so nothing here invents
+   a new visual language: every value is a token the substrate already owns and
+   every control sits on a rung the control ladder already defines (sheet 10).
+   A panel that introduced its own radius or its own field height would be a
+   second answer to a question the book has settled, and would be the thing a
+   later sheet has to undo. */
+.settings-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  box-sizing: border-box;
+  width: var(--settings-w);
+  max-width: min(var(--settings-w), calc(100vw - var(--sp-32)));
+  height: var(--settings-h);
+  max-height: min(var(--settings-h), calc(100vh - var(--sp-32)));
+  padding: var(--sp-12);
+  overflow: hidden;
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+}
+
+/* V3 overlay hosts settings full-panel — height comes from the shell, not --settings-h. */
+.v3-overlay-panel .settings-scope {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+}
+.settings-scope .settings-title {
+  margin: 0; font-size: var(--t-14); line-height: var(--lh-14); color: var(--ink-1);
+}
+/* Sessions sidebar section mark — glyph only; words live in aria / .sr. */
+.settings-scope .sessions-heading {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  color: var(--ink-3);
+  line-height: 1;
+}
+.settings-scope .sessions-heading-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* THE SHELL — sidebar nav + one scrolling body box. Content switches inside the
+   same frame; the pane never morphs the outer layout (owner seat 2026-08-27). */
+.settings-scope .settings-shell {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--sp-12);
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+/* THE SIDEBAR NAV. Vertical list; selected is edge + weight, not hue (12.5). */
+.settings-scope .settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex: 0 0 auto;
+  min-width: calc(var(--sp-32) * 3.5);
+  padding-right: var(--sp-4);
+  border-right: var(--w-hair) solid var(--edge-faint);
+}
+.settings-scope .settings-nav-item {
+  appearance: none;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  min-height: var(--row-h);
+  height: auto;
+  padding: var(--sp-6) var(--sp-10);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  cursor: pointer;
+}
+.settings-scope .settings-nav-item[data-selected='true'] {
+  border-color: var(--edge);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+.settings-scope .settings-nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+/* ONE SETTINGS BOX — every pane scrolls inside the same bordered body. The
+   outer `.settingspanel` owns width/height; this region fills what is left. */
+.settings-scope .settings-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+  padding: var(--sp-4) var(--sp-2) var(--sp-4) var(--sp-8);
+}
+.settings-scope .settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+.settings-scope .settings-h {
+  margin: 0; font-size: var(--t-12); line-height: var(--lh-12); color: var(--ink-2);
+}
+.settings-scope .settings-note,
+.settings-scope .settings-hint {
+  margin: 0 0 var(--sp-8);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+/* B5.2 — Plan/Propose/Auto-edit/Full ladder. No hue: yes/no are ink, not green. */
+.settings-scope .settings-matrix-wrap {
+  margin-top: var(--sp-8);
+  overflow-x: auto;
+  min-width: 0;
+}
+.settings-scope .settings-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-2);
+}
+.settings-scope .settings-matrix th,
+.settings-scope .settings-matrix td {
+  border: var(--w-hair) solid var(--edge);
+  padding: var(--sp-4) var(--sp-6);
+  text-align: center;
+  vertical-align: middle;
+}
+.settings-scope .settings-matrix thead th {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+.settings-scope .settings-matrix tbody th {
+  text-align: left;
+  font-weight: var(--fw-body);
+  color: var(--ink-1);
+  min-width: 7rem;
+}
+.settings-scope .settings-matrix-mode {
+  display: block;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.settings-scope .settings-matrix-summary {
+  display: block;
+  margin-top: var(--sp-2);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  font-weight: var(--fw-body);
+}
+.settings-scope .settings-matrix td[data-on='true'] {
+  color: var(--ink-1);
+  font-family: var(--font-mono);
+}
+.settings-scope .settings-matrix td[data-on='false'] {
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+}
+.settings-scope .settings-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-4);
+}
+.settings-scope .settings-label {
+  flex: 0 0 auto;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  font-weight: var(--fw-label);
+}
+/* The 28px control rung — `.btn`, `.input`, `.node` — inset --sp-10, per
+   sheet 10's inset table. */
+.settings-scope .settings-input {
+  flex: 1 1 auto; min-width: 0;
+  height: var(--control-h);
+  box-sizing: border-box;
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  appearance: none;
+}
+.settings-scope .settings-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-top: var(--sp-4);
+}
+.settings-scope .settings-actions-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+.settings-scope .settings-actions-row .settings-save {
+  width: 100%;
+  justify-content: center;
+}
+.settings-scope .settings-save {
+  height: var(--control-h); padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-8);
+  background-color: var(--surface-2); color: var(--ink-1);
+  font-family: inherit; font-size: var(--t-12); cursor: pointer;
+  white-space: nowrap; flex: 0 0 auto;
+}
+
+.settings-scope .settings-textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--control-h) * 6);
+  padding: var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  resize: vertical;
+}
+/* Disabled is a DIFFERENT OBJECT, not a faded one — sheet 12.4's ruling about
+   the send button, and it holds for every control: a translucent brand colour
+   reads as "nearly available", and an unnamed model is not nearly anything. */
+.settings-scope .settings-save[disabled] {
+  background-color: var(--surface-3); color: var(--ink-4); cursor: not-allowed;
+}
+.settings-scope .settings-ok {
+  font-size: var(--t-11); color: var(--ink-3);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* THE ONE HUE ON THIS PANEL, and it is spent on a claim: something failed.
+   `--wont` is the token the composer's failure strip uses, and that strip's own
+   note states the budget — "ONE hue, on one glyph… a red box teaches the reader
+   to distrust every other red on the screen". So it is on the TEXT and the
+   panel's chrome stays neutral. */
+.settings-scope .settings-failure {
+  margin: 0; font-size: var(--t-11); line-height: var(--lh-11); color: var(--wont);
+}
+.settings-scope .settings-input:focus-visible,
+.settings-scope .settings-save:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── SESSIONS ────────────────────────────────────────────────────────────
+   Shares `.settings-scope` deliberately: it is the same kind of surface — an
+   overlay panel of rows and one action — and giving it a second scope would be
+   a second set of answers to questions this one already settled. Rows sit on
+   the 30px rung, like every other list row in the product (sheet 10). */
+.settings-scope .sessions-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  max-height: calc(var(--row-h) * 10); overflow-y: auto;
+}
+.settings-scope .sessions-group + .sessions-group {
+  margin-top: var(--sp-12);
+}
+.settings-scope .sessions-group-label {
+  margin: 0 0 var(--sp-4);
+  padding: 0 var(--sp-8);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.settings-scope .sessions-row {
+  appearance: none; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: var(--sp-8);
+  height: var(--row-h); padding: 0 var(--sp-8);
+  background-color: transparent; border: 0; border-radius: var(--r-8);
+  font-family: inherit; font-size: var(--t-12); color: var(--ink-2);
+  cursor: pointer; white-space: nowrap;
+}
+.settings-scope .sessions-row:hover:not([disabled]) {
+  background-color: var(--state-hover); color: var(--ink-1);
+}
+/* The CURRENT session is selected, not hovered — `--state-selected` is the
+   token for "this is the one", and it is paired with `aria-current` in the
+   markup so the fact survives for a reader who cannot see it. */
+.settings-scope .sessions-row[data-active='true'] {
+  background-color: var(--state-selected); color: var(--ink-1); cursor: default;
+}
+.settings-scope .sessions-name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+/* A CATEGORY, so neutral mono at --ink-3 and never a badge — the same ruling
+   the node card's kind tag follows. */
+.settings-scope .sessions-tag,
+.settings-scope .sessions-when {
+  flex: 0 0 auto;
+  font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-3);
+}
+.settings-scope .sessions-when { color: var(--ink-4); }
+.settings-scope .sessions-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── G1 TAIL — per-row actions and rename-in-place ──────────────────────
+   The row is a flex line: the activate button takes the free width and the
+   action cluster rides beside it at the same 30px rung. Seat-walk: actions
+   are opacity-0 until hover/focus-within (chat prose-copy pattern) so a
+   216px sidebar can show the title. Selection chrome wraps the whole item. */
+.settings-scope .sessions-item {
+  display: flex; align-items: center; gap: var(--sp-2);
+  border-radius: var(--r-8);
+  position: relative;
+}
+.settings-scope .sessions-item:has(.sessions-row[data-active='true']) {
+  background-color: var(--state-selected);
+}
+.settings-scope .sessions-item .sessions-row { flex: 1 1 auto; min-width: 0; }
+.settings-scope .sessions-item .sessions-row[data-active='true'] {
+  background-color: transparent;
+}
+.settings-scope .sessions-pin-mark {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+.settings-scope .sessions-acts {
+  display: inline-flex; align-items: center; gap: var(--sp-2); flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.settings-scope .sessions-item:hover .sessions-acts,
+.settings-scope .sessions-item:focus-within .sessions-acts {
+  opacity: 1;
+}
+.settings-scope .sessions-act {
+  appearance: none;
+  width: var(--icon-btn); height: var(--icon-btn);
+  display: inline-grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--r-8);
+  background-color: transparent; color: var(--ink-4);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.settings-scope .sessions-act:hover:not([disabled]) {
+  background-color: var(--state-hover); color: var(--ink-1);
+}
+.settings-scope .sessions-act:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.settings-scope .sessions-act[disabled] { color: var(--ink-4); cursor: not-allowed; opacity: .6; }
+.settings-scope .sessions-rename {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: var(--row-h);
+}
+.settings-scope .sessions-rename-field {
+  flex: 1 1 auto; min-width: 0; height: var(--control-h);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE OWNER'S NINE — one row per thing settings is for.
+
+   No hue anywhere. The state is a WORD (sheet 12.5: no state in this product
+   is communicated by colour alone) and these are settings, not verdicts —
+   Law 1 reserves colour for claims about the world.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.settings-scope .settings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.settings-scope .settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-8) var(--sp-10);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+}
+
+.settings-scope .settings-row-hd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+}
+
+.settings-scope .settings-row-title {
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+  flex: 1;
+}
+
+/* The state word. `Not built` is the one that matters and it is not dressed
+   up: it reads as the plainest thing in the row, because it is the plainest
+   fact in it. */
+.settings-scope .settings-row-state {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  /* .07em, matching board.css's mono kind tag — the same shape of label at
+     the same size. No token exists for this; the book sets it per use. */
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.settings-scope .settings-row-state[data-state='ready'] { color: var(--ink-3); }
+
+.settings-scope .settings-row-purpose {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+}
+
+.settings-scope .settings-row-detail {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-4);
+}
+
+/* ── THE APPLICATION PANE ─────────────────────────────────────────────────
+   The menu bar moved inside the app (owner, 2026-09-12), so these rows are
+   what File / View / Help used to be. They are `.settings-row`s turned on
+   their side: label, then the state when there is one, then the chord, then
+   the control. Nothing new is invented — the row's own border, radius,
+   surface and rung are reused, because a menu item is not a new kind of object
+   and giving it one would be a second answer to a settled question.
+
+   The chord is MONO and it is ink-3, not a button: it names a key you can
+   press, it is not a thing you click. Spelling it beside the control is what
+   keeps the two doors visibly the same door. */
+.settings-scope .settings-row-act {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-8);
+}
+.settings-scope .settings-row-act .settings-row-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-scope .settings-key {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ── WHAT IS ALREADY RUNNING HERE ─────────────────────────────────────────
+   An offer, not a choice: pressing one FILLS the form and the reader still
+   presses Save. Styled as ordinary controls for exactly that reason — a solid
+   button would read as the product having decided. */
+.settings-scope .settings-local {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-6);
+  margin: var(--sp-8) 0;
+}
+/* ── SAVED MODELS ─────────────────────────────────────────────────────────
+   ONE CARD PER SAVED MODEL, in the ml-harness `ConnectionCard` shape the owner
+   named as the one that already works: what you call it over the wire id it
+   resolves to, one meta line saying who serves it and whether a key is stored,
+   and the acts underneath.
+
+   IT IS A `.settings-row`, NOT A NEW OBJECT. The pane already has a bordered,
+   radiused, `--surface-2` row with the right padding and the right rung; a
+   saved model is not a new kind of thing and giving it its own box would be a
+   second answer to a settled question. Everything below is a MODIFIER — no new
+   colour, no new radius, no literal anywhere.
+
+   The DEFAULT is named in words on the card itself — sheet 12.5, no state in
+   this product is carried by colour alone. */
+.settings-scope .settings-profiles {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-6);
+  margin: var(--sp-8) 0;
+}
+.settings-scope .settings-profile,
+.settings-scope .settings-local-row {
+  gap: var(--sp-4);
+}
+.settings-scope .settings-profile-hd {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+/* THE NAME IS THE RENAME CONTROL. ml-harness puts the edit where the name is
+   read, because that is where you notice two rows say the same thing. It is a
+   button and it is not dressed as one: the dotted underline is the only mark,
+   and it appears in full on hover and focus. */
+.settings-scope button.settings-profile-name {
+  appearance: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline dotted var(--edge-strong);
+  text-underline-offset: 3px;
+}
+.settings-scope button.settings-profile-name:hover {
+  text-decoration-color: var(--ink-3);
+}
+.settings-scope button.settings-profile-name:focus-visible {
+  outline: none;
+  border-radius: var(--r-4);
+  box-shadow: 0 0 0 var(--w-rule) var(--surface-2), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.settings-scope .settings-profile-name {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-1);
+}
+.settings-scope .settings-profile-mark {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.settings-scope .settings-profile-model {
+  flex: 1 1 12ch;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+/* One line, and the least shouty thing on the card: it is context for a
+   decision, not the decision. */
+.settings-scope .settings-profile-meta {
+  margin: 0;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-4);
+  overflow-wrap: anywhere;
+}
+.settings-scope .settings-profile-acts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+}
+.settings-scope .settings-profile-confirm {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+}
+/* The name, being typed, at the width of a name rather than of the pane. */
+.settings-scope .settings-profile-rename {
+  flex: 0 1 22ch;
+  min-width: 0;
+  border-color: var(--accent);
+}
+.settings-scope .settings-btn:disabled {
+  color: var(--ink-4);
+  border-color: var(--edge);
+  cursor: default;
+}
+
+.settings-scope .settings-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  cursor: pointer;
+}
+.settings-scope .settings-btn:hover { border-color: var(--edge-strong); color: var(--ink-1); }
+.settings-scope .settings-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* The settings panel's session list follows the rail's rule: the one you are
+   in is DARKENED, never lit (see sessions.css). */
+.settings-scope .sessions-row[data-active='true'] {
+  background-color: var(--bg-ground);
+  color: var(--ink-1);
+}
+
+/* THE SETTINGS RAIL IS DOORS, NOT ROWS — Decision 16.
+   Owner: "settings and rails inside of settings with big buttons."
+
+   Each nav item opens a whole pane; it is the same kind of control as Sessions
+   or New chat in the left rail, and it sat at --row-h like a list entry. Same
+   rung as those now, and the chosen one is frosted rather than a flat
+   --surface-2 slab — the material argument of Decision 14, which had reached
+   the chrome and not this panel. */
+.settings-scope .settings-nav-item {
+  min-height: var(--control-h-door);
+  border-radius: var(--r-10);
+}
+
+.settings-scope .settings-nav-item[data-selected='true'] {
+  background-color: var(--glass-sel);
+  border-color: var(--glass-sel-edge);
+  backdrop-filter: blur(var(--glass-ctl-blur));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur));
+  box-shadow: inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi);
+}
+/* == ADD A MODEL: WHERE IT RUNS ==========================================
+   Six cards over two wires. They are DOORS, not radio buttons: each one
+   fills the form below with an address the reader would otherwise have had
+   to already know. So they take the rung the settings rail takes for its own
+   doors -- --control-h-door, --r-10 -- and the chosen one is frosted rather
+   than filled, which is the material argument Decision 14 settled and
+   .settings-nav-item already follows. No new colour, no literal anywhere.
+
+   The selected state is carried by border, frost AND aria-pressed. Sheet
+   12.5: no state in this product is communicated by colour alone. */
+.settings-scope .settings-presets {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-6);
+  margin: var(--sp-8) 0;
+}
+.settings-scope .settings-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+}
+.settings-scope .settings-preset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h-door);
+  padding: var(--sp-6) var(--sp-10);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-10);
+  background: var(--surface-2);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-scope .settings-preset:hover { border-color: var(--edge-strong); }
+.settings-scope .settings-preset:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.settings-scope .settings-preset[data-selected='true'] {
+  background-color: var(--glass-sel);
+  border-color: var(--glass-sel-edge);
+  backdrop-filter: blur(var(--glass-ctl-blur));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur));
+  box-shadow: inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi);
+}
+.settings-scope .settings-preset-name {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-1);
+  white-space: nowrap;
+}
+/* What it costs, on the card rather than after the click. The quietest thing
+   in the row, because it is context for a decision and not the decision. */
+.settings-scope .settings-preset-where {
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.settings-scope .settings-preset-key-link {
+  color: var(--ink-2);
+  text-decoration: underline dotted var(--edge-strong);
+  text-underline-offset: 3px;
+}
+.settings-scope .settings-preset-key-link:hover { color: var(--ink-1); }
+.settings-scope .settings-preset-key-link:focus-visible {
+  outline: none;
+  border-radius: var(--r-4);
+  box-shadow: 0 0 0 var(--w-rule) var(--surface-2), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+/* Not answering is a different thing to fix from not installed, and it gets
+   the same .settings-row every other statement of fact in this pane gets. */
+.settings-scope .settings-preset-absent {
+  gap: var(--sp-4);
+}
+
+/* WHOSE WIRE THIS IS. Same mono-label shape as .settings-row-state and
+   .settings-profile-mark -- a third spelling of a label already settled twice
+   would be a third answer to one question. */
+.settings-scope .settings-profile-chip {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ── A DISCLOSURE (owner, 2026-09-19) ──────────────────────────────────────
+   "This shouldn't be automatically put out, it should be expandable… instead
+   of just having stuff in your face."
+
+   Quiet by design: this is a control that reveals something the reader did
+   not ask for, so it must not compete with the buttons that DO something. No
+   fill, no rim — the chevron and the ink carry it. */
+.settings-scope .settings-disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-4) 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.settings-scope .settings-disclosure:hover {
+  color: var(--ink-1);
+}
+
+/* The list it opens is indented, so an open disclosure reads as a branch of
+   this section rather than as a second section that appeared. */
+.settings-scope .settings-local #settings-local-models {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  width: 100%;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ONE CLICK TO A LOCAL MODEL
+
+   Owner, 2026-09-19: "render in a one-click local AI setup like Magnitude Dev
+   does." The card sits above the key form because the first thing a new reader
+   meets should be the path that costs them nothing.
+
+   IT IS A CARD, WHICH IS THE ONE SHAPE THE KIT ASSIGNS THIS. Lovable's entry
+   in the Ramp Kit says `structure: cards` and prefers `tool: card`; this is
+   the same object as a tool card — a thing the product did, framed — so it
+   takes the same pane fill and the same hairline rather than inventing a
+   fourth container on this pane.
+   ══════════════════════════════════════════════════════════════════════════ */
+.settings-scope .settings-local-setup {
+  display: grid;
+  gap: var(--sp-8);
+  margin: 0 0 var(--sp-16);
+  padding: var(--sp-12);
+  border-radius: var(--r-10);
+  background: var(--glass-pane-fill);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+}
+
+.settings-scope .settings-local-head {
+  margin: 0;
+  font-size: var(--t-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+/* THE ONE SOLID ON THIS PANE, and it is here because this card holds the one
+   act the pane is trying to get a new reader to perform. Everything else in
+   Settings is a `.settings-btn` on glass, and stays that way. */
+.settings-scope .settings-btn-primary {
+  border-color: transparent;
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font-weight: var(--fw-head);
+  text-decoration: none;
+}
+
+.settings-scope .settings-btn-primary:hover {
+  border-color: transparent;
+  color: var(--accent-on-solid);
+  opacity: 0.92;
+}
+
+/* ── THE DOWNLOAD BAR ─────────────────────────────────────────────────────
+   The kit's budget-bar rule applies, and it is worth restating because it is
+   the thing that makes a progress bar honest: THE TRACK IS A SCALE, NOT A
+   CONTAINER. It is the whole download; the fill is how much of it has landed.
+
+   An indeterminate state is drawn as a sweep rather than as a full bar,
+   because Ollama's first lines ("pulling manifest") carry no byte counts and
+   a bar sitting at 100% during them would be the product reporting a number
+   nobody measured. */
+.settings-scope .settings-local-bar {
+  position: relative;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.settings-scope .settings-local-bar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  transition: width 220ms ease;
+}
+
+.settings-scope .settings-local-bar > span[data-indeterminate='yes'] {
+  width: 40%;
+  animation: settings-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes settings-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-scope .settings-local-bar > span[data-indeterminate='yes'] {
+    animation: none;
+    width: 100%;
+    opacity: 0.35;
+  }
+}
+
+/* ── THE SKELETON (the kit's `loading/skeleton`) ──────────────────────────
+   This card's height is known before its content is, so reserving it stops
+   the pane jumping when the answer lands — and a pane that jumps makes a fast
+   read feel slower than a slow one. Three lines, at the widths the kit draws,
+   because a skeleton that does not resemble the thing it stands in for is
+   just a grey box. */
+.settings-scope .settings-skel {
+  height: 10px;
+  border-radius: var(--r-4);
+  background: var(--surface-3);
+  animation: settings-skel-pulse 1.4s ease-in-out infinite alternate;
+}
+
+.settings-scope .settings-skel.l60 { width: 60%; }
+.settings-scope .settings-skel.l90 { width: 90%; }
+.settings-scope .settings-skel.l40 { width: 40%; }
+
+@keyframes settings-skel-pulse {
+  to { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-scope .settings-skel { animation: none; }
+}

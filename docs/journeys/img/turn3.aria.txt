@@ -1,0 +1,223 @@
+- banner:
+  - text: Sequence
+  - button "sequence"
+  - button "Ctrl+K for commands"
+  - button "More"
+- main:
+  - complementary:
+    - text: Workspace
+    - button "Sessions"
+    - button "Search"
+    - button "New chat"
+    - list:
+      - listitem:
+        - button "session 9245 6m" [disabled]
+        - button "Pin session 9245"
+        - button "Rename session 9245"
+        - button "Delete session 9245"
+      - listitem:
+        - button "session 7507 8h"
+        - button "Pin session 7507"
+        - button "Rename session 7507"
+        - button "Delete session 7507"
+      - listitem:
+        - 'button "Teach me the verify contract: what it demands… 9h"'
+        - 'button "Pin Teach me the verify contract: what it demands…"'
+        - 'button "Rename Teach me the verify contract: what it demands…"'
+        - 'button "Delete Teach me the verify contract: what it demands…"'
+      - listitem:
+        - 'button "Teach me the verify contract: what it demands… 9h"'
+        - 'button "Pin Teach me the verify contract: what it demands…"'
+        - 'button "Rename Teach me the verify contract: what it demands…"'
+        - 'button "Delete Teach me the verify contract: what it demands…"'
+      - listitem:
+        - button "mix-06 11h"
+        - button "Pin mix-06"
+        - button "Rename mix-06"
+        - button "Delete mix-06"
+      - listitem:
+        - button "mix-03 11h"
+        - button "Pin mix-03"
+        - button "Rename mix-03"
+        - button "Delete mix-03"
+      - listitem:
+        - button "link-04 11h"
+        - button "Pin link-04"
+        - button "Rename link-04"
+        - button "Delete link-04"
+      - listitem:
+        - button "cs-06 11h"
+        - button "Pin cs-06"
+        - button "Rename cs-06"
+        - button "Delete cs-06"
+      - listitem:
+        - button "cs-05 11h"
+        - button "Pin cs-05"
+        - button "Rename cs-05"
+        - button "Delete cs-05"
+      - listitem:
+        - button "harness-08 11h"
+        - button "Pin harness-08"
+        - button "Rename harness-08"
+        - button "Delete harness-08"
+      - listitem:
+        - button "harness-07 11h"
+        - button "Pin harness-07"
+        - button "Rename harness-07"
+        - button "Delete harness-07"
+      - listitem:
+        - button "harness-06 11h"
+        - button "Pin harness-06"
+        - button "Rename harness-06"
+        - button "Delete harness-06"
+      - listitem:
+        - button "harness-05 11h"
+        - button "Pin harness-05"
+        - button "Rename harness-05"
+        - button "Delete harness-05"
+      - listitem:
+        - button "harness-04 11h"
+        - button "Pin harness-04"
+        - button "Rename harness-04"
+        - button "Delete harness-04"
+      - listitem:
+        - button "harness-03 11h"
+        - button "Pin harness-03"
+        - button "Rename harness-03"
+        - button "Delete harness-03"
+      - listitem:
+        - button "harness-02 11h"
+        - button "Pin harness-02"
+        - button "Rename harness-02"
+        - button "Delete harness-02"
+      - listitem:
+        - button "harness-01 11h"
+        - button "Pin harness-01"
+        - button "Rename harness-01"
+        - button "Delete harness-01"
+      - listitem:
+        - button "session 3391 12h"
+        - button "Pin session 3391"
+        - button "Rename session 3391"
+        - button "Delete session 3391"
+      - listitem:
+        - button "Teach me how brief.ts works. 12h"
+        - button "Pin Teach me how brief.ts works."
+        - button "Rename Teach me how brief.ts works."
+        - button "Delete Teach me how brief.ts works."
+      - listitem:
+        - button "In one sentence, what does bigram_counts.py do? 20h"
+        - button "Pin In one sentence, what does bigram_counts.py do?"
+        - button "Rename In one sentence, what does bigram_counts.py do?"
+        - button "Delete In one sentence, what does bigram_counts.py do?"
+      - listitem:
+        - button "Teach me how brief.ts works. 21h"
+        - button "Pin Teach me how brief.ts works."
+        - button "Rename Teach me how brief.ts works."
+        - button "Delete Teach me how brief.ts works."
+      - listitem:
+        - button "Teach me how brief.ts works. 21h"
+        - button "Pin Teach me how brief.ts works."
+        - button "Rename Teach me how brief.ts works."
+        - button "Delete Teach me how brief.ts works."
+      - listitem:
+        - button "Teach me how brief.ts works. 21h"
+        - button "Pin Teach me how brief.ts works."
+        - button "Rename Teach me how brief.ts works."
+        - button "Delete Teach me how brief.ts works."
+      - listitem:
+        - button "Teach me how brief.ts works 23h"
+        - button "Pin Teach me how brief.ts works"
+        - button "Rename Teach me how brief.ts works"
+        - button "Delete Teach me how brief.ts works"
+      - listitem:
+        - button "Teach me how brief.ts works 1d"
+        - button "Pin Teach me how brief.ts works"
+        - button "Rename Teach me how brief.ts works"
+        - button "Delete Teach me how brief.ts works"
+      - listitem:
+        - button "Hi 8d"
+        - button "Pin Hi"
+        - button "Rename Hi"
+        - button "Delete Hi"
+    - text: Tools
+    - button "Customize layout" [disabled]
+    - button "Settings"
+  - tab "Chat" [selected]
+  - tab "Architecture"
+  - tab "Whiteboard"
+  - tab "AI Canvas"
+  - tab "Terminal"
+  - tab "Browser"
+  - button "Open workspace views"
+  - log "Conversation":
+    - text: Which files depend on scan.ts, and what breaks if it changes?
+    - paragraph: Worked for 2m 19s ›
+    - paragraph:
+      - text: The files that directly depend on scan.ts are the 84 callers listed by
+      - code: who_calls
+      - text: ; they include packages/analyzer/src/cli.ts, packages/analyzer/src/diagramCli.ts, packages/analyzer/src/doctor.ts, packages/analyzer/src/index.ts, packages/analyzer/src/moat/collectEnvReads.ts, and several others.
+    - button "Reasoning"
+    - button "3 files researched"
+    - paragraph: If scan.ts changes (for example, due to a bug, new API usage, or altered output), all 84 of these direct dependents will be affected because they import or call into scan.ts. Additionally, the transitive blast radius is 186 nodes that can reach scan.ts within depth ≤ 6; those farther downstream may also be impacted depending on how the change propagates through the call graph.
+    - paragraph:
+      - text: (These figures come from the
+      - code: who_calls
+      - text: result and the BLAST RADIUS shown in the same result.)
+    - button "Copy this message": Copy
+    - paragraph: "answered from 0 of 2,887 edges — 10 components contributed nothing: packages/acp, packages/analyzer, packages/api-types, and 7 more"
+    - paragraph: 42,354 of 131,072 in · 219 out · estimated
+    - paragraph: 2m 19s wall · 4 provider calls (2m 18s) · 3 tool rounds · ~2 tok/s out · intent explore
+    - button "Read a file packages/api-types/src/files.ts measured"
+    - button "Read a file packages/analyzer/src/explain/fileSignals.ts measured"
+    - button "Read a file packages/schema/src/policyScans.test.ts measured"
+    - button "Read a file packages/schema/src/policyScans.ts measured"
+    - text: Of those, which one would I have to change first?
+    - paragraph: Worked for 2m 01s ›
+    - paragraph: "The first change you’d make is to edit the scan‑logic file itself:"
+    - button "Reasoning"
+    - text: Called who_calls who_calls packages/analyzer/src/scan.ts — 84 in, 33 out, blast radius 186 measured
+    - paragraph:
+      - code: packages/analyzer/src/scan.ts
+    - paragraph: All 84 dependent files (cli.ts, diagramCli.ts, doctor.ts, …) import and use this file; once you update the scan.ts implementation they will automatically reflect the new behavior without requiring separate edits in those files. No other file among the dependents needs to be changed first—just modify scan.ts directly.
+    - paragraph: "Note: no file change was staged this turn — there is nothing new in Review."
+    - button "Copy this message": Copy
+    - paragraph: "answered from 0 of 2,887 edges — 10 components contributed nothing: packages/acp, packages/analyzer, packages/api-types, and 7 more"
+    - paragraph: 25,118 of 131,072 in · 189 out · estimated
+    - paragraph: 2m 01s wall · 3 provider calls (2m 01s) · 2 tool rounds · ~2 tok/s out · intent edit
+    - text: Show me how that file uses what scan.ts returns.
+    - paragraph: Worked for 1m 51s ›
+    - paragraph:
+      - text: The file
+      - code: packages/analyzer/src/explain/fileSignals.ts
+      - text: does not contain an explicit call to
+      - code: scan.ts
+      - text: . Its purpose is to interpret the results that scan.ts produces (the list of files and modules it discovers).
+    - button "Reasoning"
+    - button "3 files researched"
+    - paragraph: "Here’s what the file does, based on the code we can read:"
+    - paragraph:
+      - text: "* It defines a set of *Signal* objects (checkout, marketing, auth, …) together with the exact token strings that identify each signal. * From those objects it builds a"
+      - code: TOKEN_TO_SIGNAL
+      - text: map that maps each relevant token (e.g., “checkout”, “payment”) to the Signal ID. * Later (in other scanner code, not shown here) the scanner that runs scan.ts returns a detailed result containing every file’s identifier together with the modules it belongs to. * That result is fed to fileSignals.ts; for each returned file/module the program matches the file’s token list (e.g., the filenames or their tokens) against the
+      - code: TOKEN_TO_SIGNAL
+      - text: map. * If a match is found, the file signal is applied (the file is grouped under that signal). If no match, the file’s signal is set to a generic “Group of files” (as described in the file’s comment).
+    - paragraph: "So the file uses scan.ts’s findings indirectly: it receives the file list and module information produced by scan.ts, then applies the token‑to‑signal logic defined in the file to classify each file into a signal group (checkout, marketing, auth, etc.). The detailed matching logic is carried out by the scanner module that runs scan.ts; the file merely consumes the scanner’s output and renders the resulting signal grouping."
+    - button "Copy this message": Copy
+    - paragraph: "answered from 0 of 2,887 edges — 10 components contributed nothing: packages/acp, packages/analyzer, packages/api-types, and 7 more"
+    - paragraph: 56,216 of 131,072 in · 387 out · estimated
+    - paragraph: 1m 51s wall · 4 provider calls (1m 51s) · 3 tool rounds · ~3 tok/s out · intent chat
+    - button "Read a file packages/analyzer/src/explain/askFileResearch.ts measured"
+    - button "Read a file packages/analyzer/src/explain/fileSignals.ts measured"
+    - button "Read a file packages/api-types/src/files.ts measured"
+    - button "Read a file packages/schema/src/policyScans.test.ts measured"
+    - button "Read a file packages/schema/src/policyScans.ts measured"
+  - textbox "Ask for a follow-up change — / for commands, @ to reference a node, a file or a function"
+  - button "Add context and actions"
+  - button "granite42-hermes"
+  - button "15,706 of 131,072 tokens in the context window": 15.7k/131.1k
+  - button "Browser"
+  - button "Terminal"
+  - button "Send" [disabled]
+  - button "Propose"
+  - text: grounded on sequence

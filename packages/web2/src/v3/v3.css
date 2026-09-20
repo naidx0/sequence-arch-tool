@@ -1,0 +1,3876 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   V3 HARNESS — macOS liquid glass layout (Draft V3 mock)
+   packages/web2/src/v3/v3.css
+
+   Token-only: every colour, radius, type size and weight is var(--…) from
+   tokens/graphite.css. Class prefix v3- avoids collision with archived UI.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.v3-scaffold {
+  /* The one duration the token sheet does not carry: the ease a pane rides from
+     where the pointer let go to the frame it snaps onto. --dur-1 (110ms) is too
+     short to read as motion over a few hundred pixels and --dur-2 (170ms) lags
+     the finger, so the snap gets its own name here rather than a bare number at
+     three call sites. Colour, radius, type and weight still come from the sheet. */
+  --dur-snap: 140ms;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  background: var(--bg-ground);
+}
+
+/* --- window shell — fill-screen product frame (Decision 23) -------------- */
+.v3-win {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.v3-win > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- title bar + traffic lights (Decision 25) ---------------------------- */
+/* Windows desktop is frameless — this strip is the drag region + window
+   controls. macOS keeps native traffic lights via hiddenInset; decorative
+   .v3-traffic stays mock-only in the sessions rail head. */
+.v3-titlebar {
+  flex: 0 0 auto;
+  height: var(--topbar-h, 36px);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-12);
+  background: var(--bg-base);
+  box-shadow: inset 0 calc(-1 * var(--w-hair)) 0 0 var(--edge);
+  -webkit-app-region: drag;
+  app-region: drag;
+  user-select: none;
+}
+
+.v3-titlebar button,
+.v3-titlebar [role='button'],
+.v3-titlebar .shell-winctl {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.v3-titlebar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+.v3-titlebar-mark {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-1);
+  shape-rendering: geometricPrecision;
+}
+
+.v3-titlebar-title {
+  font-size: var(--t-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  letter-spacing: 0.01em;
+}
+
+.v3-titlebar-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.shell-winctl {
+  display: inline-flex;
+  align-items: stretch;
+  margin-right: calc(-1 * var(--sp-12));
+  align-self: stretch;
+  flex: 0 0 auto;
+}
+
+.shell-winbtn {
+  appearance: none;
+  width: 46px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.shell-winbtn:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+.shell-winbtn:active {
+  background: var(--state-press);
+}
+
+.shell-winbtn:focus-visible {
+  outline: var(--w-struct) solid var(--accent);
+  outline-offset: -3px;
+}
+
+.shell-winbtn-close:hover,
+.shell-winbtn-close:active {
+  background: var(--wont);
+  color: var(--accent-on-solid);
+}
+
+.v3-traffic {
+  display: none;
+  gap: var(--sp-8);
+  flex-shrink: 0;
+  padding: var(--sp-4) var(--sp-4) 0;
+}
+
+[data-platform="mac"] .v3-rail-head .v3-traffic {
+  display: flex;
+}
+
+.v3-tl {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--edge-faint);
+}
+
+.v3-tl-close { background: var(--wont); }
+.v3-tl-min { background: var(--spills); }
+.v3-tl-max { background: var(--fits); }
+
+/* Icon size ladder under V3 (chat-scope .i-* does not apply here). */
+.v3-scaffold .i-14 {
+  width: 14px;
+  height: 14px;
+}
+
+.v3-scaffold .i-12 {
+  width: 12px;
+  height: 12px;
+}
+
+.v3-scaffold .i-16 {
+  width: 16px;
+  height: 16px;
+}
+
+.v3-scaffold svg.i-14,
+.v3-scaffold svg.i-12,
+.v3-scaffold svg.i-16 {
+  display: block;
+  flex-shrink: 0;
+  shape-rendering: geometricPrecision;
+}
+
+/* --- toolbar pills (center column only) ---------------------------------- */
+.v3-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-12) var(--sp-6);
+  backdrop-filter: blur(var(--glass-blur-bar)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-bar)) saturate(var(--glass-ctl-sat));
+  background: var(--glass-pane-fill);
+  box-shadow: inset 0 calc(-1 * var(--w-hair)) 0 0 var(--edge-faint);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE CHROME TAB IS ONE PILL, AND IT HAS ONE TONE — Decision 31
+
+   Owner, 2026-09-18, on the built app: "it shouldn't have this split X part…
+   The button should be big enough and evenly spaced on each side so it just
+   says Architecture, the surface name with the icon, also centered; then it
+   hovers and gives you an X to close. There's no different gradients between
+   the grays or the whites, nothing like that, which is what we're seeing right
+   now."
+
+   TWO DEFECTS, ONE CAUSE: the close control was IN THE FLOW. Decision 30 made
+   it `visibility: hidden` so it would not appear until hover, but a hidden box
+   is still a box — 16px of control plus 8px of margin on the right and nothing
+   on the left, so at rest the pill was 24px wider on one side and the label sat
+   visibly off-centre. That asymmetry is the "split X part": the eye reads the
+   empty reserved slot as a second compartment even with nothing drawn in it.
+
+   And the second tone came from the SAME element stack. The wrap painted a
+   wash and the button inside it painted another on `:hover`, so a pointer
+   crossing a tab lit two overlapping translucent boxes of different sizes —
+   two greys with a step between them, which is what "different gradients
+   between the grays" describes.
+
+   SO: the close control leaves the flow entirely (absolute, inside the right
+   edge), the pill's right padding grows to make room for it only while it is
+   showing, and every fill in this group is painted by the WRAP and by nothing
+   else. One box, one fill, one rim, one radius.
+   ══════════════════════════════════════════════════════════════════════════ */
+.v3-tab-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border-radius: var(--r-10);
+  min-width: 0;
+}
+
+/* THE ONLY RESTING WASH ON A TAB, and it is on the wrap. `.v3-tab:hover` used
+   to carry one too; two washes on two boxes is the second tone. */
+.v3-tab-wrap:hover:not(.is-selected):not(.is-open) {
+  background: var(--glass-hover);
+}
+
+/* CHOSEN, IN THREE CHANNELS AT ONCE — fill, rim and ink weight (the ink lives
+   on `.v3-tab.is-selected` below). One of the three is a preference; the three
+   together are a state nobody has to hunt for (owner, 2026-09-18: "people can
+   tell what's chosen and what's not"). The rim is --accent-chosen-edge, which
+   is .28 against the .10 hairline a resting control wears, and the blur is what
+   keeps the fill frosted rather than painted — there is no highlight and no
+   second fill, which is what "no different gradients between the grays" asks
+   for. */
+.v3-tab-wrap.is-selected {
+  background: var(--state-selected, var(--glass-sel));
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent-chosen-edge);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+}
+
+.v3-tab-wrap.is-open:not(.is-selected) {
+  background: var(--glass-hover);
+}
+
+.v3-tab-wrap .v3-tab.is-selected,
+.v3-tab-wrap .v3-tab.is-open:not(.is-selected) {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* EQUAL ON BOTH SIDES AT REST. --sp-12 left and right, and nothing reserved:
+   the glyph and the label are the pill's whole content, centred because the
+   padding is symmetric rather than because anything is nudging them. */
+.v3-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: none;
+  border-radius: var(--r-10);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-ui);
+  line-height: 1;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    padding-right 140ms cubic-bezier(0.2, 0, 0, 1),
+    color 150ms ease;
+}
+
+/* THE ROOM IS MADE ONLY WHILE THE x IS SHOWING, AND ONLY WHERE THERE IS ONE.
+   `:has(.v3-tab-close)` is the whole of that second clause: Chat is never
+   closeable and renders no control, so a hover rule without it would slide the
+   Chat label left to make room for nothing. 140ms is the curve the opacity
+   fades on, so the label moves exactly as the control arrives rather than the
+   pill snapping open under the pointer. */
+.v3-tab-wrap:has(.v3-tab-close):hover .v3-tab,
+.v3-tab-wrap:has(.v3-tab-close):focus-within .v3-tab {
+  padding-right: calc(var(--sp-12) + var(--sp-16));
+}
+
+/* The glyph is asked for at 14 (`TabIcon`) and drawn at 14 — one size, one
+   stroke. It used to be requested at 16 (1.65 stroke) and squeezed to 14 here,
+   which left every tab icon a fractional hairline heavier than its siblings. */
+.v3-tab svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  color: var(--ink-2);
+  shape-rendering: geometricPrecision;
+}
+
+.v3-tab-label {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* INK ONLY. The wash belongs to the wrap — see the block at the top of this
+   group for what two washes on two boxes looked like. */
+.v3-tab:hover {
+  color: var(--ink-2);
+}
+
+/* A TAB OUTSIDE A WRAP carries all three channels itself. Inside a wrap the
+   rule two blocks up owns the fill and the rim, and this one still owns the
+   ink — which is why the ink is declared here and not there. */
+.v3-tab.is-selected {
+  background: var(--state-selected, var(--glass-sel));
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent-chosen-edge);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+}
+
+.v3-tab.is-open:not(.is-selected) {
+  color: var(--ink-2);
+  background: var(--glass-hover);
+  box-shadow: none;
+}
+
+/* THE CHOSEN TAB'S GLYPH IS THE TOP INK, NOT THE ACCENT — Decision 33. Owner,
+   2026-09-18: "I don't know how much I like the blue highlighted icon on the
+   surfaces when you work on that specific place." Chosen is already said three
+   ways (fill, rim, weight); a fourth in colour was the one too many. */
+.v3-tab.is-selected svg {
+  opacity: 1;
+  color: var(--ink-1);
+}
+
+/* OUT OF THE FLOW, INSIDE THE RIGHT EDGE — Decision 31.
+
+   ABSOLUTE IS THE FIX FOR BOTH HALVES OF THE OWNER'S REPORT. Out of the flow,
+   the control reserves nothing: at rest the pill is exactly icon + label +
+   equal padding, so the name is centred in the box and there is no empty
+   compartment on the right. And because the pill grows its own padding on
+   hover rather than the control appearing between other boxes, no tab beside
+   this one moves — which was the reason Decision 30 gave for keeping the box
+   in the first place, met a different way.
+
+   VISIBILITY AND OPACITY BOTH. Opacity is the fade the owner asked for ("then
+   it hovers and gives you an X"); `visibility: hidden` is what takes the
+   control out of hit-testing and out of the tab order while it is invisible,
+   so nothing can be clicked by accident where nothing is drawn. It stays in
+   the DOM either way, which is how V3App's close test drives it and how an
+   assistive technology activates it — `display: none` would do neither. */
+.v3-tab-close {
+  position: absolute;
+  top: 50%;
+  right: var(--sp-6);
+  transform: translateY(-50%);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 140ms cubic-bezier(0.2, 0, 0, 1);
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  font-size: var(--t-12);
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v3-tab-wrap:hover .v3-tab-close,
+.v3-tab-wrap:focus-within .v3-tab-close {
+  visibility: visible;
+  opacity: 1;
+}
+
+.v3-tab-close:hover {
+  background: var(--glass-press-hover, var(--glass-hover));
+  color: var(--ink-1);
+}
+
+/* --- body: rail + center + meta ------------------------------------------ */
+.v3-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* --- left rail ----------------------------------------------------------- */
+.v3-rail {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* Same solid as titlebar — frosted glass lagged behind the darkened ground
+     and read as a bright strip (owner walk 2026-09-16). */
+  background: var(--bg-base);
+  box-shadow: inset calc(-1 * var(--w-hair)) 0 0 var(--edge-faint);
+}
+
+.v3-rail-slot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.v3-resizer {
+  flex: 0 0 1px;
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+  /* Single hairline — no black gutter strip between rail and chrome (owner walk
+     photo 4, 2026-09-16). Hit area stays wide via ::before. */
+  background: var(--edge-faint);
+  z-index: 2;
+}
+
+.v3-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -6px;
+}
+
+.v3-resizer::after {
+  display: none;
+}
+
+.v3-resizer:hover,
+.v3-resizer:active {
+  background: var(--accent-edge);
+}
+
+.v3-rail-head {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  /* Match toolbar top band so rail + chrome tabs meet at the T-junction. */
+  padding: var(--sp-8) var(--sp-12) var(--sp-8);
+}
+
+/* Decision 13 — display face only at --t-17+. Rail brand heading. */
+.v3-rail-title {
+  margin: 0;
+  padding: 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--t-17);
+  line-height: var(--lh-17);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  letter-spacing: -0.01em;
+}
+
+.v3-door-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: var(--control-h-door);
+  border: none;
+  border-radius: var(--r-10);
+  background: var(--glass-hover);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  transition: background 150ms ease, transform 120ms ease;
+  box-shadow: var(--glass-inset);
+}
+
+.v3-door-new:hover { background: var(--glass-press-hover); }
+.v3-door-new:active { transform: scale(0.97); }
+.v3-door-new svg { width: 14px; height: 14px; opacity: 0.75; }
+
+.v3-rail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-8) var(--sp-12);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-4) transparent;
+}
+
+.v3-rail-section { margin-bottom: var(--sp-4); }
+
+/* A section can host its own "+" (owner 2026-09-17: a start-chat button near
+   each folder workspace). Positioned in the header's top-right corner. */
+.v3-rail-section {
+  position: relative;
+}
+
+.v3-rail-section-new {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+}
+
+.v3-rail-section-new:hover,
+.v3-rail-section-new:focus-visible {
+  color: var(--accent);
+  background: var(--glass-hover);
+}
+
+.v3-rail-section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  padding: var(--sp-6) var(--sp-8) var(--sp-4);
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-11);
+  font-weight: var(--fw-head);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+  cursor: pointer;
+  text-align: left;
+}
+
+.v3-rail-section-label:hover {
+  color: var(--ink-2);
+}
+
+.v3-rail-section-label svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0.6;
+}
+
+.v3-rail-section.is-collapsed .v3-rail-section-body {
+  display: none;
+}
+
+.v3-session {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  height: var(--row-h);
+  padding: 0 var(--sp-8);
+  border: none;
+  border-radius: var(--r-10);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.v3-session:hover {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+}
+
+.v3-session.is-loaded {
+  background: var(--state-selected, var(--glass-sel));
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+  box-shadow: none;
+}
+
+.v3-session.is-picked {
+  background: var(--glass-press-hover);
+  color: var(--ink-1);
+}
+
+.v3-rail-pick-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: none;
+  border-radius: var(--r-10);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.v3-rail-pick-toggle:hover,
+.v3-rail-pick-toggle.is-on {
+  background: var(--glass-hover);
+  color: var(--ink-2);
+}
+
+.v3-session-pick {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.v3-session-working {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  align-self: center;
+  animation: v3-session-working-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes v3-session-working-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.v3-selection-bar {
+  position: absolute;
+  left: var(--sp-8);
+  right: var(--sp-8);
+  bottom: calc(var(--sp-12) + 88px);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  padding: var(--sp-8) var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  font-size: var(--t-12);
+  color: var(--ink-2);
+}
+
+.v3-selection-delete {
+  margin-left: auto;
+  padding: 0 var(--sp-10);
+  height: var(--control-h);
+  border: none;
+  border-radius: var(--r-8);
+  background: color-mix(in srgb, var(--wont) 16%, transparent);
+  color: var(--wont);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+
+.v3-selection-delete:hover {
+  background: color-mix(in srgb, var(--wont) 24%, transparent);
+}
+
+.v3-selection-clear {
+  border: none;
+  background: transparent;
+  color: var(--ink-4);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.v3-rail-foot {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-12) var(--sp-12);
+  /* Match rail + titlebar depth — not a darker well that makes Settings look crushed. */
+  background: var(--bg-base);
+  box-shadow:
+    inset 0 var(--w-hair) 0 0 var(--edge),
+    0 calc(-1 * var(--sp-4)) var(--sp-12) color-mix(in srgb, var(--bg-base) 80%, transparent);
+}
+
+.v3-rail-foot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: none;
+  border-radius: var(--r-10);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1),
+    transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.v3-rail-foot-btn:hover {
+  background: var(--glass-press-hover);
+  color: var(--ink-1);
+}
+
+.v3-rail-foot-btn:active {
+  transform: scale(0.97);
+}
+
+.v3-rail-foot-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  color: inherit;
+}
+
+.v3-session .v3-pin {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  opacity: 0.35;
+  color: inherit;
+  cursor: pointer;
+}
+
+.v3-session .v3-pin:hover {
+  opacity: 1;
+  background: var(--glass-hover);
+}
+
+.v3-session.is-loaded .v3-pin,
+.v3-session[data-pinned="true"] .v3-pin {
+  opacity: 0.85;
+  color: var(--accent);
+}
+
+.v3-session .v3-session-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v3-session .v3-time {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 2.25em;
+  height: 100%;
+  font-size: var(--t-11);
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.v3-session.is-loaded .v3-time {
+  color: var(--ink-2);
+  opacity: 0.85;
+}
+
+.v3-session-open {
+  flex-shrink: 0;
+  margin-left: var(--sp-4);
+  padding: 0 var(--sp-6);
+  height: 22px;
+  border: none;
+  border-radius: var(--r-4);
+  background: var(--glass-hover);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+
+.v3-session-open:hover {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* --- workspace panels ---------------------------------------------------- */
+.v3-panel {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.v3-panel.is-active { display: flex; }
+
+.v3-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-20) var(--sp-24);
+  overflow: auto;
+}
+
+.v3-stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-12);
+  margin-bottom: var(--sp-16);
+}
+
+.v3-stage-title {
+  font-size: var(--t-15);
+  font-weight: var(--fw-head);
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+
+.v3-stage-sub {
+  font-size: var(--t-12);
+  color: var(--ink-4);
+}
+
+.v3-canvas-glass {
+  flex: 1;
+  min-height: 360px;
+  position: relative;
+  border-radius: var(--r-14);
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset), 0 0 0 var(--w-hair) var(--edge-faint);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v3-canvas-placeholder {
+  font-size: var(--t-14);
+  color: var(--ink-4);
+  text-align: center;
+  padding: var(--sp-24);
+}
+
+.v3-canvas-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--edge-faint) var(--w-hair), transparent var(--w-hair)),
+    linear-gradient(90deg, var(--edge-faint) var(--w-hair), transparent var(--w-hair));
+  background-size: 28px 28px;
+  opacity: 0.45;
+}
+
+.v3-files-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: var(--sp-12);
+}
+
+.v3-files-tree,
+.v3-files-preview {
+  border-radius: var(--r-14);
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset), 0 0 0 var(--w-hair) var(--edge-faint);
+  overflow: auto;
+}
+
+.v3-files-tree {
+  padding: var(--sp-10) var(--sp-8);
+}
+
+.v3-files-preview {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- center: always-on chat + live surface (split-canon) ----------------- */
+.v3-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-base);
+}
+
+.v3-center-panes {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-width: 0;
+  min-height: 0;
+  /* The snap guide is positioned against this box — the same box a frame is a
+     fraction of, so the line lands exactly where the release does. */
+  position: relative;
+}
+
+.v3-chat-col {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-base);
+  box-shadow: inset calc(-1 * var(--w-hair)) 0 0 var(--edge-faint);
+  /* THE SNAP EASES IN (owner 2026-09-18: "I kind of like the fluid drag
+     motion"). During the drag the width is the pointer's and this transition is
+     off — see `.v3-scaffold[data-resizing]` — so it only ever runs on the one
+     change the release makes, which is the jump that needed softening. */
+  transition:
+    flex-basis var(--dur-snap) var(--ease),
+    width var(--dur-snap) var(--ease),
+    max-width var(--dur-snap) var(--ease);
+}
+
+/* ── THE LANDING, DRAWN WHILE THE DRAG RUNS ───────────────────────────────────
+
+   Owner, 2026-09-18, on the installed app: "I like the snap frames… but I kind
+   of like the fluid drag motion. Right now it's purely snapping and no
+   drag-to-snap."
+
+   A drag that snapped on every pointermove is not a drag: the edge is never
+   under the finger, so the pane reads as a five-position switch. The pane now
+   follows the pointer and this hairline says where letting go will put it — the
+   frame is still compulsory, it is just announced instead of enforced mid-gesture.
+
+   One pixel, no glow, no label: it has to be visible over a canvas and a
+   transcript without becoming the thing being looked at. */
+.v3-snap-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--accent);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.v3-center.is-chat-expanded .v3-chat-col {
+  flex: 1 1 auto;
+  width: auto !important;
+  max-width: none !important;
+  box-shadow: none;
+}
+
+.v3-live {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.v3-live-stack {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-base);
+  /* Origin for a split's snap guide — the stack is what a live frame divides. */
+  position: relative;
+}
+
+.v3-live-pane {
+  flex: 1 1 0;
+  min-width: 160px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  background: var(--bg-base);
+  box-shadow: inset 1px 0 0 0 var(--edge-faint);
+  overflow: hidden;
+  /* Same reasoning as `.v3-chat-col`: off while dragging, so this only runs on
+     the release's one jump. */
+  transition:
+    flex-basis var(--dur-snap) var(--ease),
+    width var(--dur-snap) var(--ease);
+}
+
+.v3-live-pane.is-focused {
+  background: var(--bg-ground);
+  box-shadow: inset 1px 0 0 0 var(--edge-faint);
+}
+
+.v3-live-pane:first-child {
+  box-shadow: none;
+}
+
+.v3-live-pane-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-4) var(--sp-10);
+  background: var(--bg-base);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+.v3-live-pane-title {
+  flex: 1;
+  font-family: var(--font-ui);
+  font-size: var(--t-11);
+  font-weight: var(--fw-head);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Focused pane title: the top ink, for the same reason as the tab glyph
+   above (Decision 33). */
+.v3-live-pane.is-focused .v3-live-pane-title {
+  color: var(--ink-1);
+}
+
+.v3-live-pane-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v3-center.is-chat-expanded .v3-live,
+.v3-center.is-chat-expanded .v3-live-stack {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WHILE A SPLITTER IS BEING DRAGGED — NOTHING BEHIND GLASS, NOTHING EASING
+
+   Owner, 2026-09-18, on the installed app: "when I'm moving certain frames too
+   fast they seem to be blurring the words out."
+
+   He is describing exactly what `backdrop-filter` does under a fast resize.
+   Every glass surface in this app samples what is BEHIND it and blurs that
+   sample; when the box the sample is taken from is being resized every frame,
+   the compositor cannot finish a sample before the geometry moves under it, so
+   it ships the stale, half-resolved one — and the text drawn on top of that
+   sample smears with it. It is not the text that is blurring; it is the
+   backdrop the text sits on, arriving late.
+
+   So the blur is switched OFF for the duration of the gesture — one attribute
+   on the scaffold, set on pointerdown and cleared on pointerup — and comes back
+   the moment the finger lifts. A wildcard rather than a list of the eight glass
+   classes in this file, because the panes being resized also contain glass from
+   chat.css, files.css, board.css and settings.css, which this lane does not own
+   and must not be able to silently fall behind.
+
+   `transition: none` goes with it: a width transition during a drag means every
+   pointermove starts a 140ms animation the next pointermove interrupts, so the
+   edge permanently trails the pointer — the opposite of the fluid drag asked
+   for. It is re-enabled by the same pointerup that applies the snap, which is
+   what makes the landing ease instead of jump.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.v3-scaffold[data-resizing='true'] *,
+.v3-scaffold[data-resizing='true'] *::before,
+.v3-scaffold[data-resizing='true'] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.v3-scaffold[data-resizing='true'] .v3-chat-col,
+.v3-scaffold[data-resizing='true'] .v3-live-pane {
+  transition: none;
+  will-change: width;
+}
+
+/* Containment keeps a resize from re-laying-out the whole window every frame.
+   `paint` only where a box ALREADY clips — `.v3-live-pane` carries
+   `overflow: hidden`, so paint containment changes nothing a reader can see.
+   `.v3-chat-col` does not clip: the composer's slash menu, tools menu and the
+   context-ring popover open upward out of it, and paint containment would cut
+   them off mid-drag. It gets layout containment only. */
+.v3-scaffold[data-resizing='true'] .v3-live-pane {
+  contain: layout paint;
+}
+
+.v3-scaffold[data-resizing='true'] .v3-chat-col {
+  contain: layout;
+}
+
+/* A drag is a pointer gesture; the selection it would otherwise sweep up across
+   the transcript is noise the reader then has to click away. */
+.v3-scaffold[data-resizing='true'] {
+  user-select: none;
+  cursor: col-resize;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v3-chat-col,
+  .v3-live-pane {
+    transition: none;
+  }
+}
+
+.v3-surface {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.v3-surface > * {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.v3-transcript {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--sp-20) var(--sp-24) var(--sp-12);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-4) transparent;
+}
+
+/* Turn-aware rhythm (legacy .tcol): tight within a turn, air before a new user. */
+.v3-transcript > * + * {
+  margin-top: var(--sp-8);
+}
+.v3-transcript > * + .v3-msg-user {
+  margin-top: var(--sp-20);
+}
+.v3-transcript > * + .v3-thinking {
+  margin-top: var(--sp-12);
+}
+
+.v3-msg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  max-width: 92%;
+  min-width: 0;
+  width: 100%;
+}
+
+.v3-msg-user { align-self: flex-end; align-items: flex-end; width: auto; max-width: 92%; }
+.v3-msg-assistant { align-self: flex-start; }
+
+.v3-msg-prose {
+  max-width: 92%;
+  padding: 0 var(--sp-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-14);
+  line-height: var(--lh-14);
+  color: var(--ink-1);
+}
+
+.v3-msg-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--sp-20);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  font-weight: var(--fw-label);
+  padding: 0 var(--sp-4);
+  line-height: 1;
+}
+
+.v3-msg-who {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--sp-20);
+}
+
+.v3-msg-meta .v3-context-chip {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  height: var(--sp-20);
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.v3-msg-bubble {
+  padding: var(--sp-10) var(--sp-12);
+  border-radius: var(--r-14);
+  font-family: var(--font-sans);
+  font-size: var(--t-14);
+  line-height: var(--lh-14);
+  color: var(--ink-1);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.v3-transcript .prose {
+  max-width: min(96ch, 100%);
+  min-width: 0;
+}
+
+.v3-transcript .prose-code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.v3-msg-user .v3-msg-bubble {
+  background: var(--user-bubble);
+  backdrop-filter: blur(12px) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(12px) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset);
+  border-bottom-right-radius: var(--sp-4);
+}
+
+.v3-msg-assistant .v3-msg-bubble {
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset);
+  border-bottom-left-radius: var(--sp-4);
+}
+
+.v3-msg-bubble code {
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  padding: 1px var(--sp-4);
+  border-radius: var(--r-4);
+  background: var(--bg-ground);
+  color: var(--ink-1);
+}
+
+/* --- tool cards ---------------------------------------------------------- */
+.v3-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+  max-width: 92%;
+}
+
+/* Prefer Transcript tool-call-card density — thin row, not heavy glass stack. */
+.v3-tools .tool-call-card {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge-faint);
+}
+
+.v3-tool-card {
+  border-radius: var(--r-10);
+  overflow: hidden;
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset);
+}
+
+.v3-tool-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-8) var(--sp-12);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  color: var(--ink-2);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+.v3-tool-head .v3-badge {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+  padding: 2px var(--sp-6);
+  border-radius: var(--r-4);
+  background: var(--bg-ground);
+  color: var(--ink-3);
+}
+
+.v3-tool-body {
+  padding: var(--sp-10) var(--sp-12);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+  background: var(--bg-ground);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.v3-tool-card.tool-edit .v3-tool-head { color: var(--spills); }
+.v3-tool-card.tool-bash .v3-tool-head { color: var(--fits); }
+.v3-tool-card.tool-read .v3-tool-head { color: var(--ink-3); }
+
+/* --- composer ------------------------------------------------------------ */
+.v3-composer {
+  flex: 0 0 auto;
+  padding: var(--sp-12) var(--sp-20) var(--sp-16);
+  background: linear-gradient(to top, var(--bg-base) 60%, transparent);
+  /* Context breakdown pops above the foot — must not clip into the live pane. */
+  overflow: visible;
+  position: relative;
+  z-index: 4;
+}
+
+.v3-composer-shell {
+  /* A container, so the foot can ask how wide the COMPOSER is rather than
+     the window — the chat column is the thing that gets dragged narrow. */
+  container-type: inline-size;
+  container-name: composer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-10) var(--sp-12);
+  border-radius: var(--r-14);
+  background: var(--glass-pane-fill);
+  backdrop-filter: blur(var(--glass-blur-input)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-input)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset), 0 0 0 var(--w-hair) var(--edge-faint);
+  transition: box-shadow 140ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* THE COMPOSER LIGHTS WHEN YOU ARE IN IT — Decision 32. Lovable's composer is
+   the one bordered object on its surface and its edge is the accent while it
+   has focus (the kit draws a brand gradient there; ours is one hue). The rim
+   is --accent-edge at .40, a hairline, never a glow: it says "this is where
+   the words go", not "look at me". */
+.v3-composer-shell:focus-within {
+  box-shadow: var(--glass-inset), 0 0 0 var(--w-hair) var(--accent-edge);
+}
+
+.v3-composer-input {
+  width: 100%;
+  min-height: 44px;
+  /* Eight lines of --lh-14, then the field scrolls (autosize in V3Chat). */
+  max-height: 200px;
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  font: inherit;
+  font-size: var(--t-14);
+  line-height: var(--lh-14);
+  color: var(--ink-1);
+}
+
+/* --ink-3, NOT --ink-4. The faint rung measures 3.4:1 over the composer's own
+   glass and a placeholder is text a person reads before they can type; the next
+   rung up measures 5.4:1 on the same ground and is still quieter than the words
+   they write. Decision 30's contrast pass is where this turned up. */
+.v3-composer-input::placeholder { color: var(--ink-3); }
+
+/*
+   ONE ROW. NEVER TWO.
+
+   This wrapped. At a chat column dragged to ~455px the foot broke into
+   Plan · model · Med · ring on one line and Send alone on the next — the
+   "buttons stacking on top of each other" the owner photographed
+   (2026-09-17). A control row that reflows is a different UI at every width,
+   and every one of them is untested. So the row holds, and when the composer
+   gets narrow the CONTROLS get shorter, in three designed steps below:
+   labels go, then the ring, then Send's word. Nothing ever drops to a
+   second line.
+*/
+.v3-composer-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE WHOLE ROW DROPS ONE RUNG, 30px TO 28px (owner, 2026-09-19)
+
+   "The buttons on the front bar need to be smaller... easier to use, easier
+   to see."
+
+   28 IS NOT A SMALLER NUMBER, IT IS THE NEXT RUNG. Sheet 10 sets three:
+   `--row-h` 30, `--control-h` / `--row-h-thread` 28, `--row-h-tool` 26, and
+   it names the send button at 28 explicitly ("28px - .sendbtn, .filehd -
+   var(--control-h)"). The composer was built at 30, which is the rung for a
+   LIST ROW - a folder, a rail item, a menu item - so the row that holds the
+   product's three most-pressed controls was sized as if it were part of a
+   list. Every control below now reads `--control-h`, so if the ladder ever
+   moves this row moves with it.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.v3-composer-foot > * {
+  flex: 0 0 auto;
+}
+
+/* Step 1 (< 460px): the model chip keeps its nickname — that is the one label
+   the reader asked to see — on a tighter leash.
+
+   ── WHAT USED TO BE HERE, AND WHY IT HAD TO GO (owner, 2026-09-19) ─────────
+
+   This step also hid the mode and effort WORDS with `font-size: 0` and their
+   CHEVRONS with `> svg:last-child { display: none }`. Decision 33 then took
+   the word and the chevron out of the markup, and the second rule stopped
+   meaning what it said: with the glyph now the only child, `svg:last-child`
+   IS the glyph. Both chips drew an empty 18px box at any composer under
+   460px — which is most of them — and the owner read it as "the icons look
+   like they can use some work… the teach icon is broken".
+
+   A rule that names a position in the markup ("the last one") outlives the
+   markup it was written against. The lesson is the reason the replacement
+   below names things by what they ARE (`.v3-chip-ellipsis`, the span that
+   holds the model's name) rather than by where they sit.
+
+   THE CAP IS NOW A BACKSTOP AND NOT THE CUT. `chipLabel` gives the span five
+   characters and a mark, so 96px is never reached; it stays because a cap
+   that is never hit costs nothing, and the day somebody raises
+   MODEL_CHIP_CHARS the row still holds. */
+@container composer (max-width: 460px) {
+  .v3-composer-foot .v3-chip-ellipsis {
+    max-width: 96px;
+  }
+}
+
+/* Step 2 (< 420px): Send drops to its arrow.
+   THE RING NEVER STEPS OUT — it used to, at this step, and that was the
+   defect the owner reported on 2026-09-17 ("I don't see a context window").
+   An arc survives being 16px wide, and since Decision 31 there is nothing
+   beside it to drop: the numbers live in the panel the ring opens, so this
+   step has only Send's word left to spend, which is the cheapest thing on
+   the row. */
+@container composer (max-width: 419.98px) {
+  .v3-composer-foot .v3-btn-send,
+  .v3-composer-foot .v3-btn-queue {
+    padding: 0 var(--sp-10);
+    font-size: 0;
+    gap: 0;
+  }
+}
+
+/* Step 3 (< 380px): the agent chip drops to its glyph.
+
+   `> span` IS the name now, which is exactly what this step means to spend:
+   the glyph still says there is an agent, the title still says which, and
+   nothing on the row has moved to a second line. The companion rule that used
+   to sit here named `> svg:last-child` and is gone — that is the rule whose
+   position-naming blanked both chips (see step 1 above). */
+@container composer (max-width: 380px) {
+  .v3-composer-foot [data-testid="v3-model-trigger"] > span {
+    display: none;
+  }
+  .v3-composer-foot [data-testid="v3-model-trigger"] {
+    width: var(--control-h);
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .v3-composer-foot {
+    gap: var(--sp-4);
+  }
+}
+
+/* Context ring shares Send's row height so it centers optically. */
+.v3-composer-foot .ctxring-anchor,
+.v3-composer-foot .ctxring-wrap {
+  height: var(--control-h);
+  align-items: center;
+  justify-content: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE RING'S POPOVER — A MEASUREMENT, NOT AN EXPLANATION
+
+   Owner, 2026-09-18, on the installed app: "it should open more information in
+   that window instead of showing 0 out of 131,000 on the main page… remove the
+   small text elements: 'last provider call, not the sum', 'usage not yet
+   measured for this model' — you say 0 / 131k and show a breakdown depending on
+   how much is done, that's all."
+
+   Three sentences of caveat wrapped round one number is a panel that teaches
+   the same lesson every time it opens. What he wants is what a gauge gives: the
+   pair, and where it went. So the panel is a header line, a stacked bar, and
+   one row per slice — and the prose is gone, including from the tooltip.
+
+   HUE BUDGET 0 (Graphite law 1). The slices are one claim — "this is what
+   filled the window" — so they are one colour at descending strengths rather
+   than a categorical palette. Depth separates them; the row under each segment
+   names it.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.chat-scope .ctxring-head {
+  margin: 0 0 var(--sp-8);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chat-scope .ctxring-bar {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  margin: 0 0 var(--sp-8);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  /* The track has to read as empty space, not as a ninth slice. */
+  background: color-mix(in srgb, var(--ink-4) 35%, transparent);
+}
+
+.chat-scope .ctxring-seg {
+  display: block;
+  min-width: 2px;
+  height: 100%;
+  background: var(--accent);
+}
+
+.chat-scope .ctxring-more {
+  margin: var(--sp-6) 0 0;
+  font-size: var(--t-10);
+  color: var(--ink-3);
+}
+
+.v3-composer-foot .v3-btn-send {
+  margin-left: var(--sp-4);
+}
+
+/*
+   STOP IS THE SAME OBJECT AS SEND, IN THE SAME PLACE, wearing the stop mark —
+   sheet 12.4: "the control that started the work is the control that ends it".
+   A second, differently-shaped button somewhere else would make the reader
+   look for it, and looking for a stop is the moment they needed it.
+*/
+.v3-btn-send.is-stop {
+  background: var(--surface-3);
+  color: var(--ink-1);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge);
+}
+
+/* Queue is the SECONDARY now: it only appears when there are words to queue,
+   and it must not compete with Stop for the eye. */
+.v3-btn-queue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-10);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-ui);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.v3-btn-queue:hover {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+}
+
+/*
+   THE SLASH MENU sits above the whole composer, anchored to `.v3-composer`
+   (the nearest positioned ancestor), so opening it never moves the field the
+   reader is typing into.
+*/
+/* THE PALETTE FITS ITS DEFAULT CONTENT (owner, 2026-09-19: "the pop-out
+   shouldn't have a scroll bar… it shouldn't auto-default to showing a bunch
+   of things, it should be like show-more buttons").
+
+   Three shelves of three one-line rows, with a heading and a count row each,
+   is 3 × (18 + 3 × 26 + 24) ≈ 360px. The ceiling is above that, so the
+   shelved palette never scrolls; it is still here because an EXPANDED shelf
+   of forty skills has to stop somewhere, and that is a scroll the reader
+   asked for by pressing "Show 37 more". */
+.v3-slash-pop {
+  left: var(--sp-20);
+  right: var(--sp-20);
+  max-height: min(56vh, 400px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.v3-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: var(--icon-btn);
+  padding: 0 var(--sp-10);
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.v3-chip:hover {
+  background: var(--glass-hover);
+  color: var(--ink-2);
+}
+
+/* The same three channels as a chosen tab: a fill a neighbour does not have,
+   the .28 rim, and the heading weight. Frosted, so the ground still moves
+   behind it (owner, 2026-09-18). */
+.v3-chip.is-selected {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-weight: var(--fw-head);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent-chosen-edge);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+}
+
+.v3-composer-spacer { flex: 1; }
+
+.v3-tools-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* THE OTHER COMPOSER CONTROL, GLASSED LIKE ITS NEIGHBOUR. It sat on
+   `transparent` beside a mode trigger that has a body, so the pair read as two
+   different kinds of thing doing the same kind of job. Same family, same blur,
+   same highlight (owner, 2026-09-18: "same with the chat elements"). */
+.v3-tools-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  /* --r-10 like every other control on this row (Decision 34): the tools
+     button sat at --r-8 and read as a slightly different family. */
+  border-radius: var(--r-10);
+  background: var(--glass-ctl);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.v3-tools-trigger:hover,
+.v3-tools-trigger[aria-expanded="true"] {
+  color: var(--ink-1);
+  border-color: var(--edge);
+  background: var(--glass-ctl-hover);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE PLUS IS THE MODE LIGHT NOW
+
+   The pill carried these two tokens and the pill is gone from the row. The
+   setting it carried did not go anywhere - it is the `+` menu's top shelf -
+   so the hue moves to the control that OPENS that shelf. One button, two
+   jobs, and the second one costs no width: a fill and a rim over a glyph the
+   row was already paying for.
+
+   The rim is what separates this from a hover. A tint alone on glass is what
+   `--glass-ctl-hover` already means, and a mode that looked like a hover
+   would be the one piece of state on this row that a reader cannot trust.
+   ══════════════════════════════════════════════════════════════════════════ */
+.v3-tools-trigger[data-mode='plan'] {
+  background: var(--mode-plan-fill);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--mode-plan-edge);
+  border-color: transparent;
+  color: var(--hint-blue);
+}
+.v3-tools-trigger[data-mode='build'] {
+  background: var(--mode-build-fill);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--mode-build-edge);
+  border-color: transparent;
+  color: var(--hint-yellow);
+}
+.v3-tools-trigger[data-mode='teach'] {
+  background: var(--mode-teach-fill);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--mode-teach-edge);
+  border-color: transparent;
+  color: var(--hint-purple);
+}
+
+/* THE POINTER STILL GETS AN ANSWER. `.v3-tools-trigger:hover` and the three
+   mode rules are the same specificity and the mode rules are later, so without
+   this the tinted `+` is the one control on the row that does not react to
+   being pointed at. The fill stays — a hover that removed the mode hue would
+   read as the mode going away — so the channel is the glyph. (The pill this
+   replaced had the same gap, and it was wrong there too.) */
+.v3-tools-trigger[data-mode]:hover {
+  color: var(--ink-1);
+}
+
+/* Open beats tinted: the accent rim says "this menu is the live one", and it
+   has to win over the mode hue or the reader cannot tell what is open. */
+.v3-tools-trigger[aria-expanded='true'][data-mode] {
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent-chosen-edge);
+  color: var(--ink-1);
+}
+
+.v3-tools-pop button.is-sep {
+  margin-top: var(--sp-4);
+  box-shadow: inset 0 var(--w-hair) 0 0 var(--edge-faint);
+  border-radius: 0 0 var(--r-8) var(--r-8);
+  padding-top: var(--sp-10);
+}
+
+.v3-goalbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin: 0 0 var(--sp-6);
+  padding: var(--sp-8) var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--glass-fill-2);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+  font-size: var(--t-12);
+  color: var(--ink-2);
+  min-width: 0;
+}
+
+/* THE DISCLOSURE — the glyph and the copy, made one control (walk 4 §2).
+   It has no box of its own: the bar is already the box, and a button drawn
+   inside a button-shaped bar would read as two nested things. Its only resting
+   decoration is the caret; everything else is inherited. */
+.v3-goalbar-disclosure {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.v3-goalbar-disclosure:hover .v3-goalbar-caret {
+  color: var(--ink-2);
+}
+
+.v3-goalbar-disclosure:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.v3-goalbar-caret {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-4);
+  transition: color 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* THE TARGET IS THE ONE GLYPH THAT SAYS "THERE IS A GOAL HERE" — Decision 31.
+   Orange is the run claim in the hint family, and the target and the Running
+   pill are the two places that claim is made, so they wear the same hue. It
+   was --accent-ink, which under the white accent is white: a crosshair drawn
+   in the same ink as the sentence beside it is a bullet, not a mark. */
+.v3-goalbar-target {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--hint-orange);
+  opacity: 0.9;
+}
+
+.v3-goalbar-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.v3-goalbar-dismiss {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  margin-left: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1),
+    transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.v3-goalbar-dismiss:hover {
+  background: var(--glass-hover);
+  color: var(--ink-2);
+}
+
+.v3-goalbar-dismiss:active {
+  transform: scale(0.96);
+}
+
+.v3-goalbar-dismiss:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.v3-goalbar-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--fw-head);
+  font-size: var(--t-13);
+  color: var(--ink-1);
+  line-height: 1.2;
+}
+
+/* The live line — "Working · Add the guard", "turn 19 of 24". It reports what
+   is happening RIGHT NOW, so it is not caption ink (owner, 2026-09-17). */
+.v3-goalbar-step {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-11);
+  color: var(--ink-2);
+  line-height: 1.25;
+}
+
+/* `display: block` because the track is a <span>: it lives inside the
+   disclosure BUTTON now, and a button may only contain phrasing content. */
+.v3-goalbar-track {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-top: 2px;
+  border-radius: var(--r-bar);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.v3-goalbar-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  border-radius: var(--r-bar);
+  background: var(--accent);
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.v3-goalbar-progress {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* A PILL, AT LAST LITERALLY. The radius ramp reserves --r-full for "this is a
+   state or a label, never an interactive container" — and a status pill is
+   exactly a state and a label. It sat at --r-8, which is the tab-and-menu-row
+   radius, so the one element on the bar that is NOT a control was drawn like
+   one (Decision 31). */
+.v3-goalbar-status {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--sp-10);
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-ui);
+  color: var(--ink-2);
+  line-height: 1;
+}
+
+/* RUNNING IS THE ONE STATE THAT IS HAPPENING TO YOU RATHER THAN BEING REPORTED
+   TO YOU, and orange is the hint family's name for it. The rim carries it too,
+   at one hairline — a pill that only changed its ink was the quietest thing on
+   a bar whose whole job at that moment is to say something is running. */
+.v3-goalbar-status[data-status='running'],
+.v3-goalbar-status[data-status='live'] {
+  color: var(--hint-orange);
+  background: var(--hint-orange-wash);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--hint-orange-rim);
+}
+
+.v3-goalbar-status[data-status='finished'] {
+  color: var(--fits);
+}
+
+/* 14, matching the <Icon size={14}> the goalbar now renders — a 12px box round
+   a 14px glyph would clip the ticks off the crosshair (owner 2026-09-18). */
+.v3-goalbar-target .i {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* ── THE GOAL PANEL — bar, plan steps, last-run line ──────────────────────────
+
+   The bar was a LABEL; it is a dashboard now (owner 2026-09-17: "once you
+   create a goal, you can tell the agent to work on the goal"). So the bar keeps
+   its own margin-free geometry and `.v3-goal` owns the spacing below the group,
+   because the steps and the last-run line have to sit tight under the bar and
+   read as one object rather than as three stacked strips.
+
+   Density is Graphite law 3: the rows are 11px, one line each, ellipsised. A
+   twenty-four-step plan is a real plan and it must not push the composer off
+   screen — hence the scroll ceiling, which is a height rather than a "+N more"
+   because a step the reader cannot reach is a step they cannot Unpark. */
+
+.v3-goal {
+  margin: 0 0 var(--sp-6);
+  min-width: 0;
+}
+
+.v3-goal .v3-goalbar {
+  margin: 0;
+}
+
+/* THE PLAN IS A STACK OF CAPSULES — Decision 32, Lovable's task rows: each
+   step is its own surface with its state at the edge, and the list has no box
+   of its own (a box of capsules is two borders round one thing). The step a
+   run would resume at wears the blue wash and rim, which is the kit's "68%"
+   row; a done step keeps the green mark and recedes. */
+.v3-goal-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  max-height: 168px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.v3-goal-step {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-6);
+  padding: var(--sp-4) var(--sp-8);
+  min-width: 0;
+  border-radius: var(--r-8);
+  background: var(--glass-fill-2);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+  font-size: var(--t-11);
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+
+.v3-goal-step[data-next='yes'] {
+  background: var(--hint-blue-wash);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--hint-blue-rim);
+}
+
+.v3-goal-step-mark {
+  flex-shrink: 0;
+  width: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-4);
+  text-align: center;
+}
+
+.v3-goal-step[data-state='done'] .v3-goal-step-mark {
+  color: var(--fits);
+}
+
+.v3-goal-step[data-state='parked'] .v3-goal-step-mark {
+  color: var(--spills);
+}
+
+.v3-goal-step-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A FINISHED STEP IS DIMMED, NEVER STRUCK THROUGH. Strike-through says
+   "cancelled"; a ticked step was done, which is the opposite claim. */
+.v3-goal-step[data-state='done'] .v3-goal-step-text {
+  color: var(--ink-4);
+}
+
+/* THE STEP A RUN WOULD RESUME AT — differentiated by WEIGHT and ink, never by
+   hue (Graphite law 1: never more hues than claims). */
+.v3-goal-step[data-next='yes'] .v3-goal-step-text {
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+
+.v3-goal-step-why {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--spills);
+  font-size: var(--t-11);
+}
+
+.v3-goal-step-unpark {
+  flex-shrink: 0;
+  padding: 0 var(--sp-6);
+  height: 18px;
+  border: none;
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.v3-goal-step-unpark:hover {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+}
+
+.v3-goal-step-unpark:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── WORK ON GOAL / STOP ────────────────────────────────────────────────────
+
+   The one control the feature exists for, so it sits in the bar itself rather
+   than in a menu. Disabled it keeps its box and loses its ink — it must stay
+   READABLE while unavailable, because its tooltip is the only place the reason
+   appears and a control nobody can see is a control nobody hovers. */
+
+.v3-goalbar-work {
+  flex-shrink: 0;
+  height: 22px;
+  padding: 0 var(--sp-10);
+  border: none;
+  border-radius: var(--r-8);
+  /* `.v3-focus-save` a few rules down is the same feature's other button and
+     already settled this: accent-WASH with accent ink, not a filled accent
+     block. A second accent treatment in one bar would be a second claim. */
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  line-height: 1;
+  cursor: pointer;
+  transition: background 150ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms cubic-bezier(0.2, 0, 0, 1),
+    transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.v3-goalbar-work:hover:not(:disabled) {
+  background: var(--glass-hover);
+}
+
+.v3-goalbar-work:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.v3-goalbar-work:disabled {
+  background: var(--surface-2);
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+
+.v3-goalbar-work[data-action='stop'] {
+  background: var(--surface-2);
+  color: var(--ink-1);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+}
+
+.v3-goalbar-work:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── HOW THE LAST RUN ENDED ─────────────────────────────────────────────────
+
+   Four tones, because "it stopped" hides the difference that decides what to do
+   next: the plan was worked down, the PLAN was the problem, the MODEL was, or a
+   boundary was reached. `goalRunVerdict.goalRunTone` owns the mapping; this
+   owns only what each one looks like.
+
+   THE `.v3-goal-last` ROW IS GONE (walk-4-white-glass-plan.md §2). The sentence
+   it carried is folded into the bar's own second line, so the tones live on
+   `.v3-goalbar-step[data-tone]` instead — same four claims, one line higher,
+   where the eye already is. `neutral` keeps the line's own ink rather than
+   dimming it to --unknown: a run that was stopped by hand is not an unknown. */
+
+.v3-goalbar-step[data-tone='done'] {
+  color: var(--fits);
+}
+
+.v3-goalbar-step[data-tone='attention'] {
+  color: var(--spills);
+}
+
+.v3-goalbar-step[data-tone='failed'] {
+  color: var(--wont);
+}
+
+.v3-goal-error {
+  margin-top: 2px;
+  padding: var(--sp-4) var(--sp-10);
+  border-radius: var(--r-8);
+  font-size: var(--t-11);
+  line-height: 1.35;
+  color: var(--wont);
+}
+
+.v3-focus-invite {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  min-height: 36px;
+  margin: 0 0 var(--sp-6);
+  padding: var(--sp-8) var(--sp-10);
+  border: none;
+  border-radius: var(--r-10);
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+  color: var(--ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 150ms cubic-bezier(0.2, 0, 0, 1), transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.v3-focus-invite:hover {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge);
+}
+
+.v3-focus-invite:active {
+  transform: scale(0.98);
+}
+
+.v3-focus-invite:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.v3-focus-invite .i {
+  flex-shrink: 0;
+  color: var(--accent-ink);
+  opacity: 0.85;
+}
+
+.v3-focus-invite-label {
+  flex: 0 0 auto;
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+  color: inherit;
+}
+
+.v3-focus-invite-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}
+
+.v3-focus-form {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin: 0 0 var(--sp-6);
+  padding: var(--sp-8) var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--glass-fill-2);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+  color: var(--ink-2);
+}
+
+.v3-focus-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-8);
+  background: var(--bg-ground);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-13);
+}
+
+.v3-focus-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.v3-focus-save,
+.v3-focus-cancel {
+  flex-shrink: 0;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: none;
+  border-radius: var(--r-8);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+
+.v3-focus-save {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+.v3-focus-cancel {
+  background: transparent;
+  color: var(--ink-3);
+}
+
+.v3-msg-assistant .todo-list,
+.v3-thinking .todo-list {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v3-goalbar-fill,
+  .v3-goalbar-dismiss,
+  .v3-goalbar-work,
+  .v3-goal-step-unpark,
+  .v3-focus-invite {
+    transition: none;
+  }
+  .v3-goalbar-dismiss:active,
+  .v3-goalbar-work:active:not(:disabled),
+  .v3-focus-invite:active {
+    transform: none;
+  }
+}
+
+.v3-queued {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin: 0 0 var(--sp-6);
+  padding: var(--sp-6) var(--sp-10);
+  border-radius: var(--r-8);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-size: var(--t-12);
+  min-width: 0;
+}
+
+.v3-queued-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v3-queued-cancel {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.v3-composer-where {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin-top: var(--sp-6);
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}
+
+.v3-composer-where.is-empty {
+  color: var(--spills);
+}
+
+/* Home workspace: a place like any attached repo, in the same ink. */
+.v3-composer-where.is-home {
+  color: var(--ink-4);
+}
+
+.v3-where-label {
+  flex: 0 0 auto;
+  font-family: var(--font-ui);
+  font-weight: var(--fw-label);
+  color: var(--ink-3);
+}
+
+.v3-where-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.v3-where-tail {
+  display: none;
+}
+
+.v3-mode-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* A COMPOSER CONTROL IS A PIECE OF GLASS, NOT A HOVER WASH. It used to take
+   --glass-hover — the fill a thing shows under the cursor — which left it with
+   no body of its own and made the chosen state and the hover state neighbours
+   in strength. It takes the control family now: a .10–.14 fill, the blur and
+   one hairline rim (owner, 2026-09-18: "frosted, not opaque… same with the
+   chat elements"). There is no top highlight any more — Decision 31 zeroed the
+   bevel, because a lit edge over a dark one is how a renderer draws metal.
+
+   --r-10 AND NOT --r-8: the ramp assigns --r-10 to buttons, and a control chip
+   is a button. It read at --r-8 because it was sized like a tab; the radius
+   follows what a thing IS (Decision 31, "soft edges"). */
+.v3-mode-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-10);
+  background: var(--glass-ctl);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-ui);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.v3-mode-trigger:hover {
+  background: var(--glass-ctl-hover);
+  color: var(--ink-1);
+  border-color: var(--edge);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE AGENT CHIP — A GLYPH AND FIVE CHARACTERS (owner, 2026-09-19)
+
+   "The agent, aka the sub-agent little icon, thinks okay. I think it should
+   be a sub-agent icon plus the model attached — maybe rendering five
+   characters, and the rest hidden behind a dot dot dot, which we can hover
+   over to see in full."
+
+   Decision 34 made this a bare square because the row was crowded: mode wore
+   a word, so the agent could not have one too without the bar becoming a
+   sentence. Mode has left the row, and the slot it freed goes to the one fact
+   the chip could not say by itself — a robot glyph tells a reader there is a
+   model, never WHICH.
+
+   THE WIDTH IS FIXED BY THE COUNT, NOT BY THE NAME. `chipLabel` cuts in
+   characters rather than letting CSS ellipsis a `max-width`, so "gpt-5" and
+   "qwen2.5-coder-32b-instruct" give the same chip and Send does not move when
+   the reader switches model. Sheet 12.4's rule about the composer row — one
+   row, never two, and the controls shorten in designed steps — is the same
+   argument one rung down.
+   ══════════════════════════════════════════════════════════════════════════ */
+.v3-agent-chip {
+  gap: var(--sp-6);
+  padding: 0 var(--sp-8);
+  color: var(--ink-2);
+}
+
+.v3-agent-chip .v3-chip-ellipsis {
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-ui);
+  line-height: 1;
+  /* The cut is already made in JS; this only stops a wide glyph font from
+     spilling the mark onto a second line. */
+  white-space: nowrap;
+}
+
+/* ─────────────────────────── the reasoning meter ───────────────────────── */
+
+.v3-agent-pop {
+  min-width: 232px;
+}
+
+.v3-pop-heading {
+  margin: var(--sp-6) var(--sp-10) var(--sp-2);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-ui);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE REASONING RAIL (owner, 2026-09-19: "the reasoning picker looks bad…
+   you can use progress rail as motivation")
+
+   TWO SHAPES HAVE BEEN WRONG HERE AND THEY WERE WRONG THE SAME WAY. Dots on a
+   track (Decision 35) promised continuous travel on a control with four
+   values. Boxes in a track (Decision 36) read as four tabs. Both were trying
+   to be the control AND the reading at once.
+
+   The kit's `tasks/rail` splits them, and that is the whole idea being
+   borrowed: flat equal bars for how far along, and a line of WORDS under them
+   for what that means — `<b>3 / 5</b>` then the step's name. Ours is
+   `<b>Med</b>` then what Med does. The bars carry no text, so they can stay at
+   the kit's own 6px and read as a level rather than as things to press.
+
+   THE BAR IS NOT THE HIT TARGET. Each button is the full 22px row with the
+   6px bar centred in it. That keeps a real target under the pointer AND lets
+   the bar be a pure mark at --r-full, which the ramp reserves for "this is a
+   state or a label" and forbids for an interactive container. A 6px button
+   would have been both, and wrong on both counts.
+   ══════════════════════════════════════════════════════════════════════════ */
+.v3-effort {
+  display: grid;
+  gap: var(--sp-6);
+  margin: var(--sp-2) var(--sp-10) var(--sp-8);
+}
+
+/* The kit's rail exactly: equal columns, a 4px gutter. */
+.v3-effort-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--sp-4);
+}
+
+.v3-effort .v3-effort-step {
+  display: grid;
+  align-items: center;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.v3-effort .v3-effort-bar {
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--edge);
+  transition: background 120ms ease;
+}
+
+/* EVERY BAR UP TO THE CHOSEN ONE. This is the meter, and it is the only thing
+   in the control that is a meter. */
+.v3-effort .v3-effort-step[data-filled='yes'] .v3-effort-bar {
+  background: var(--accent);
+}
+
+/* The chosen bar is the HEAD of the fill, not a thumb on top of it: it grows
+   by 2px rather than becoming a different object. A thumb is what said
+   "drag me" the first time round. */
+.v3-effort .v3-effort-step[aria-checked='true'] .v3-effort-bar {
+  height: 8px;
+}
+
+.v3-effort .v3-effort-step:hover .v3-effort-bar {
+  background: var(--accent-ink);
+}
+
+.v3-effort .v3-effort-step:focus-visible {
+  outline: var(--w-hair) solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-4);
+}
+
+/* THE READING. The kit sets its rail's label line at the element's own size
+   with the count in mono; the count here is a word, so it takes the UI face
+   in the heading weight and the gloss recedes beside it. */
+.v3-effort-read {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-6);
+  margin: 0;
+  font-size: var(--t-11);
+  line-height: 14px;
+  color: var(--ink-3);
+}
+
+.v3-effort-read b {
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+.v3-effort-read span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── THE PALETTE'S SHELVES AND THE `+` SUBMENUS (Decision 35) ───────────── */
+
+.v3-slash-section + .v3-slash-section {
+  margin-top: var(--sp-4);
+}
+
+/* A count, not a button: it reveals rows, it does not act. Quiet, like the
+   settings disclosure, and for the same reason. */
+.v3-slash-more {
+  display: block;
+  width: 100%;
+  padding: var(--sp-4) var(--sp-8);
+  border: none;
+  border-radius: var(--r-8);
+  background: none;
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.v3-slash-more:hover {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+}
+
+.v3-submenu {
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NO CEILING, AND THAT IS WHAT LETS A SUBMENU OUT (owner, 2026-09-19)
+
+   Two reports, one cause. "The pop-out shouldn't have a scroll bar", and
+   "when I click on Skills, that pop-out is only framed in that pop-out — I
+   want the pop-outs to be able to pop out of the other pop-outs and not be
+   broken into that one small little realm."
+
+   `overflow-y: auto` was doing BOTH. It is what drew the scrollbar, and
+   `overflow` on an ancestor also makes that ancestor a clipping box, so the
+   absolutely-positioned submenu at `left: 100%` was cut off at the parent's
+   edge no matter where it was told to go. There is no property that opens a
+   scroll container to one child; the only fix is not to be one.
+
+   SO THE MENU HAS TO FIT INSTEAD OF SCROLLING, and it now does: the rows lost
+   their second line (26px each, not 48) and a shelf one row over its cap
+   stopped hiding that row. Twelve rows and three headings is about 390px
+   against the ~520 this had asked for.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* THE CHEVRON IS PLACED, NOT FLOWED. `.v3-mode-pop button` is a two-column
+   grid (glyph, then label over hint), so a fourth child lands in column one of
+   a third row — under the row rather than at the end of it, which is where the
+   chevron went. `margin-left: auto` cannot fix that: a grid track has no free
+   space to push into. Re-declaring the columns can be undone by any later
+   change to the menu's own template, so the chevron comes out of the flow
+   entirely and is pinned to the row's right edge. The padding is what keeps
+   the hint from running under it. */
+.v3-mode-pop button.v3-submenu-trigger {
+  position: relative;
+  padding-right: 26px;
+}
+
+.v3-submenu-trigger .v3-submenu-chev {
+  position: absolute;
+  right: var(--sp-10);
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.6;
+}
+
+.v3-submenu-trigger[aria-expanded='true'] {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+}
+
+/* OPENS TO THE SIDE, and falls back over the menu when there is no room —
+   a panel that opens off-screen is a panel nobody can use. */
+/* TWO CLASSES, AND THAT IS THE WHOLE REASON. The panel carries
+   `v3-mode-pop v3-submenu-pop`, and `.v3-mode-pop` sets `left: 0` at the
+   same specificity further down this file — so the side-opening rule lost on
+   source order alone and every submenu opened ON TOP of the menu that
+   spawned it, which is the clipping complaint again by a different route.
+   The parent class in front makes this (0,2,0) and settles it. */
+.v3-submenu .v3-submenu-pop {
+  position: absolute;
+  left: calc(100% + var(--sp-4));
+  right: auto;
+  bottom: 0;
+  min-width: 200px;
+  /* THE PANEL IS THE ONE PLACE A SCROLL IS HONEST: a workspace can hold forty
+     skills and there is nothing to shelve them behind here — the shelving is
+     what `/` is for. It is also a leaf, so nothing has to escape IT. */
+  max-height: min(50vh, 300px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 720px) {
+  .v3-submenu .v3-submenu-pop {
+    left: 0;
+    bottom: calc(100% + var(--sp-4));
+  }
+}
+
+.v3-submenu-empty {
+  padding: var(--sp-10) var(--sp-12);
+}
+
+
+/* OPEN, not chosen — the wash and the .28 rim, so it reads as the live control
+   without becoming a second solid beside Send. */
+.v3-mode-trigger[aria-expanded="true"] {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  border-color: var(--accent-chosen-edge);
+}
+
+.v3-mode-pop {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--sp-6));
+  z-index: 30;
+  min-width: 200px;
+  padding: var(--sp-4);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A MENU ROW IS ONE LINE (owner, 2026-09-19)
+
+   "Plan, build, teach mode are self-explanatory. If you hover they can have a
+   description. That itself should be the icon, name. Same with Break it down
+   — icon, name. The warning symbol — so it's like blast radius. Make sure
+   it's a clear name. That's all you really need."
+
+   Every row was a two-row grid: label over gloss. The gloss is read once and
+   then re-read on every open for ever, and it was doubling the height of the
+   two menus a person opens most. It is still THERE — it is the row's `title`,
+   which is where a thing you want once belongs.
+
+   THAT IS WHY THE NAME HAD TO GET BETTER FIRST. Dropping a description is
+   only safe if the label survives alone, so "What breaks" became "Blast
+   radius" in the same change (`composerModel.TOOLBELT` carries the argument).
+   A one-line row with a label that needed its gloss would be a menu that got
+   shorter by getting worse.
+
+   THE HEIGHT, MEASURED IN THE APP: 30px — an 18px line with --sp-6 above and
+   below. That is --row-h, which is the rung sheet 10 assigns to .menuitem by
+   name, so a row that was 48 and off the ladder is now 30 and on it. The
+   inset is --sp-8, which is the same sheet's spacing for a menu item; only
+   the vertical padding and the second line moved.
+   ══════════════════════════════════════════════════════════════════════════ */
+.v3-mode-pop button {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: var(--sp-8);
+  align-items: center;
+  width: 100%;
+  padding: var(--sp-6) var(--sp-8);
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+
+.v3-mode-pop button:has(> .i:first-child) {
+  grid-template-columns: 20px 1fr;
+}
+
+/* HOVER IS NOT CHOSEN, AND THE ROWS MUST NOT SAY IT IS. The two shared one
+   declaration, so the mode a person is merely pointing at looked exactly like
+   the mode they are in — on the one menu whose whole job is to say which mode
+   they are in. Hover is the quiet wash; chosen is the chosen fill, the .28 rim
+   and the heading weight (owner, 2026-09-18). */
+.v3-mode-pop button:hover {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+}
+
+.v3-mode-pop button.is-selected {
+  background: var(--accent-chosen);
+  color: var(--accent-chosen-ink);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent-chosen-edge);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+}
+
+.v3-mode-pop button.is-selected .v3-mode-pop-label {
+  font-weight: var(--fw-head);
+}
+
+.v3-mode-pop button > .i,
+.v3-mode-pop-spacer {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.v3-mode-pop-label {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: var(--t-13);
+  font-weight: var(--fw-head);
+  line-height: 18px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v3-mode-pop button:has(> .i:first-child) .v3-mode-pop-label {
+  grid-column: 2;
+}
+
+/* WHAT IS LEFT OF THE GLOSS. No menu ROW draws one any more; this is the
+   voice for the two things in a popover that are prose and not options — the
+   model list's error line and a submenu's "nothing here yet, put it here". */
+.v3-mode-pop-desc {
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE HINTS — Decision 31
+
+   Owner, 2026-09-18: "the different modes, like Build, Plan, Teach, should be
+   coloured; the smarts and the effort levels should be coloured; the context
+   ring could be coloured; the goal icon can have a colour. Small — not standing
+   out — the goal is a transparent liquid glass button which can have certain
+   hints. Our goal is like Apple: macOS liquid glass, black, white, and the
+   Apple famous blue."
+
+   A HINT IS A GLYPH AND A RIM. Nothing below sets a foreground on a label, and
+   nothing below fills a control: the hue arrives as a 14px stroke and as one
+   hairline, over a fill that is still glass. That is the difference between a
+   hint and paint, and it is why Send is still the only solid on this surface.
+
+   ONE HUE, ONE CLAIM (law 1). Blue is Plan — and, on the ring, how full the
+   window is; green is Build; purple is Teach and the deepest reasoning; orange
+   is a run that is happening. Four claims, four hues, and no element carries
+   two of them.
+
+   THE UNCHOSEN CHIPS GET THE GLYPH AND NOTHING ELSE, because the menu has to
+   be readable as a LIST of three modes before it is readable as which one you
+   are in — three glyphs at three hues is what makes the list scannable, and the
+   rim plus the wash is what makes the chosen one unmistakable.
+
+   .75 AND NOT .70, AND THE .05 IS A MEASUREMENT. At 70% over the menu ground
+   (--bg-base) --hint-blue composites to 2.96:1, which is under the 3:1 floor a
+   non-text mark has to clear; green sat at 4.81 and purple at 3.05, so the
+   number was chosen by the worst of the three rather than by the one that
+   looked fine. .75 puts them at 3.22, 5.35 and 3.31. The step is small enough
+   that "quieter than the chosen one" still reads — which is the whole job of
+   the opacity — and it is the nearest round value that clears the floor.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.v3-mode-pop button[data-mode='plan'] > .i {
+  color: var(--hint-blue);
+  opacity: 0.75;
+}
+.v3-mode-pop button[data-mode='build'] > .i {
+  color: var(--hint-yellow);
+  opacity: 0.75;
+}
+.v3-mode-pop button[data-mode='teach'] > .i {
+  color: var(--hint-purple);
+  opacity: 0.75;
+}
+
+.v3-mode-pop button[data-mode].is-selected > .i {
+  opacity: 1;
+}
+
+/* THE WASH REPLACES THE WHITE CHOSEN FILL RATHER THAN LAYERING OVER IT. One
+   element has one background, and stacking a tint on the .12 white would have
+   needed a gradient — which is the reflection this build spent a decision
+   removing. The wash is .14 of the hue, which is the same alpha band the
+   chosen white fill sat in, so the chosen-versus-hover fill delta is unchanged.
+   The blur and the ink come from `.v3-mode-pop button.is-selected` above and
+   are deliberately not restated here. */
+.v3-mode-pop button[data-mode='plan'].is-selected {
+  background: var(--hint-blue-wash);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--hint-blue-rim);
+}
+.v3-mode-pop button[data-mode='build'].is-selected {
+  background: var(--hint-yellow-wash);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--hint-yellow-rim);
+}
+.v3-mode-pop button[data-mode='teach'].is-selected {
+  background: var(--hint-purple-wash);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--hint-purple-rim);
+}
+
+/* THE CHIP ON THE COMPOSER IS A GLYPH ON PLAIN GLASS — Decision 33.
+
+   Decision 32 tinted the chosen mode chip with its hue. The owner, on the
+   built app: "I like the colors when you choose between plan, build, teach,
+   between medium, high, low. But I don't like it selected in the bar. It
+   looks too colorful, a little bit unprofessional." So the colour lives in
+   the MENU only — the rows below keep their glyph tint, wash and rim — and
+   the chip in the bar is the control glass every chip on the row is made of,
+   with the glyph in the row's own ink. The bar says WHICH mode by the glyph
+   alone (file, hammer, book; gauge; bot), which is also why the chips carry
+   no word any more: "aim more for just icons in the toolbar or in the chat
+   box, and move away from all the descriptions."
+
+   No rule here on purpose. The glyph inherits `currentColor` from the
+   trigger (--ink-2, --ink-1 under the cursor), and the hint tokens are left
+   for the menu rows. */
+
+/* THE EFFORT ROWS THESE STYLED NO LONGER EXIST. Decision 34 folded the four
+   reasoning rows into a meter and Decision 36 redrew that meter as a segment,
+   so `.v3-mode-pop button[data-effort]` has matched nothing since — two dead
+   rules that would have quietly repainted any future row that happened to
+   carry the attribute. The hue is not lost: the segment's chosen cell takes
+   `--accent-chosen`, which is the same channel every other chosen control on
+   this surface uses. */
+
+.v3-context-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: var(--r-full);
+}
+
+.v3-context-glass:hover {
+  color: var(--ink-1);
+  background: var(--glass-hover);
+}
+
+.v3-context-glass-anchor {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.v3-context-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--sp-6));
+  z-index: 30;
+  width: 240px;
+  padding: var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  color: var(--ink-2);
+  font-size: var(--t-12);
+}
+
+.v3-context-panel-title {
+  margin: 0 0 var(--sp-8);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+.v3-context-panel-empty {
+  margin: 0;
+  color: var(--ink-4);
+  line-height: var(--lh-14);
+}
+
+.v3-context-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.v3-context-panel-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}
+
+.v3-chip-ellipsis {
+  /* Wide enough for a nickname ("MiniCPM 5 · local"); a raw wire id still
+     ellipsizes rather than shoving Send off the row. */
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v3-context-glass-water {
+  fill: none;
+}
+
+.v3-context-glass-rim {
+  stroke: currentColor;
+  fill: none;
+}
+
+.v3-btn-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: none;
+  border-radius: var(--r-10);
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font: inherit;
+  font-size: var(--t-13);
+  font-weight: var(--fw-head);
+  letter-spacing: var(--ls-ui);
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 120ms ease;
+  box-shadow: var(--e1);
+}
+
+.v3-btn-send:hover { opacity: 0.92; }
+.v3-btn-send:active { transform: scale(0.97); }
+/* 16px, the ladder's default, so Send's arrow matches the glyph chips
+   beside it rather than sitting a size below them (Decision 34). */
+/* 16px for BOTH marks, which is only fair because both are now drawn on the
+   same 16 viewBox at the same reach — Send's arrow spans y 3.4→12.5 and
+   Stop's square 3.6→12.4. The Icon glyph Stop used to borrow is drawn on the
+   book's 24 grid, where the stop rect fills 45% of the box; at 16px that is
+   7px of mark floating in 16px of air, which is what the owner read as the
+   word not being centred (2026-09-19). */
+.v3-btn-send svg { width: 16px; height: 16px; }
+
+/* --- meta strip (retired — Settings lives in sessions rail foot) --------- */
+.v3-meta { display: none; }
+
+/* --- thinking HUD (gold) ------------------------------------------------- */
+.v3-thinking {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  max-width: 92%;
+  align-self: flex-start;
+}
+
+/* THE THINKING BAR IS A CARD — Decision 32, Lovable's "Thought for 5.6 s":
+   one surface, a hairline, the timer at the far right. Glass rather than the
+   kit's opaque surface (the owner keeps the material), at the pane fill so it
+   sits UNDER the answer it precedes rather than beside it. */
+/* ══════════════════════════════════════════════════════════════════════════
+   THE RUNNING STRIP — THREE COLUMNS, NONE OF WHICH MOVE
+
+   Owner, 2026-09-19: "the one running, the 38 seconds, the 40 seconds, these
+   are all disproportionate, they're all disaligned."
+
+   Three faults, and they were all real.
+
+   1. IT COULD WRAP. `flex-wrap: wrap` made this a different control at every
+      column width, and at a narrow one it was two lines of unequal height.
+   2. THE TIMER MOVED EVERY FEW SECONDS. The phase word changes as the turn
+      goes (Working → Reading a file → Finalizing) and nothing reserved its
+      width, so `margin-left: auto` threw the timer somewhere new each time.
+      The kit's `status/strip` fixes exactly this with one property on the
+      state word: `min-width: 9ch`. A reserved column cannot jitter.
+   3. TWO SIZES AND TWO FACES ON ONE LINE. `.v3-thinking-bar
+      .v3-thinking-elapsed` set mono at --t-12 and `.v3-thinking-elapsed,
+      .v3-thinking-running` set the UI face at --t-14; the first won on
+      specificity for one of them and lost for the other, so the timer and the
+      count were different objects. They are one object: same face, same size,
+      tabular numerals, so a digit changing never changes a width.
+   ══════════════════════════════════════════════════════════════════════════ */
+.v3-thinking-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--sp-8);
+  padding: var(--sp-6) var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--glass-pane-fill);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  line-height: 16px;
+  color: var(--ink-1);
+  min-width: 0;
+}
+
+/* THE RESERVED COLUMN. 9ch is the kit's own number and it holds every phase
+   this HUD can print — "Finalizing" is the longest at ten, and a tool verb
+   that overruns is clipped rather than allowed to push the timer. */
+.v3-thinking-bar .name {
+  flex: 1 1 auto;
+  min-width: 9ch;
+  font-weight: var(--fw-head);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ONE OBJECT, TWICE. Same face, same size, same ink, and tabular numerals on
+   both — a count going from 9 to 10, or a timer from 59s to 1m 00s, must not
+   move anything beside it. */
+.v3-thinking-bar .v3-thinking-running,
+.v3-thinking-bar .v3-thinking-elapsed {
+  flex: 0 0 auto;
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  line-height: 16px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The timer is the right-hand column and it is the LAST thing on the row, so
+   it is the one that gets the gap rather than a margin nobody can see. */
+.v3-thinking-bar .v3-thinking-elapsed {
+  margin-left: auto;
+  min-width: 5ch;
+  text-align: right;
+}
+
+.v3-thinking-bar.live .name {
+  background-image: linear-gradient(90deg, var(--ink-2), var(--ink-1), var(--ink-1), var(--ink-2));
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chatshimmer 2.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v3-thinking-bar.live .name {
+    animation: none;
+    -webkit-text-fill-color: var(--ink-1);
+    background: none;
+  }
+}
+
+.v3-thinking-fold {
+  margin-top: var(--sp-4);
+}
+
+/*
+   LIVE PROSE IS READ WHILE IT MOVES, so it gets the readable ink.
+
+   Owner, 2026-09-17: the explanation under "Working" is low contrast. This
+   declared `--ink-3` — the fourth-loudest ink in the book, for captions that
+   are there to be skipped — on the one block of text on the surface that a
+   person actually watches. It happened to be overridden to `--ink-2` by
+   `.chat-scope .reasonfold-body` winning on specificity, which is not a design
+   decision, it is an accident that the next selector change deletes silently.
+   Stated here, at the element, so the value is the one this file means.
+*/
+.v3-thinking-thought {
+  font-size: var(--t-12);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+
+.v3-thinking-thought-chunk + .v3-thinking-thought-chunk {
+  margin-top: var(--sp-6);
+}
+
+.v3-thinking-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-4);
+  font-size: var(--t-11);
+  font-family: var(--font-mono);
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.v3-thinking-metrics span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.v3-context-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: 22px;
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-full);
+  background: var(--glass-fill-2);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.v3-tool-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.v3-tool-card.is-open .v3-tool-body {
+  display: block;
+}
+
+.v3-tool-body {
+  display: none;
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-6);
+  border-top: var(--w-hair) solid var(--edge-faint);
+  font-size: var(--t-11);
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.v3-approve {
+  margin-top: var(--sp-8);
+  padding: var(--sp-12);
+  border-radius: var(--r-14);
+  background: var(--glass-fill-2);
+  box-shadow: var(--glass-inset), 0 0 0 var(--w-hair) var(--accent-edge);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  max-width: 100%;
+}
+
+.v3-approve-hd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}
+
+.v3-approve-title {
+  font-size: var(--t-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+.v3-approve-count {
+  font-size: var(--t-11);
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+}
+
+.v3-approve-file {
+  font-size: var(--t-12);
+  font-family: var(--font-mono);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v3-approve-acts {
+  display: flex;
+  gap: var(--sp-8);
+  flex-wrap: wrap;
+}
+
+.v3-approve-act {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: none;
+  border-radius: var(--r-8);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+
+.v3-approve-act.accept {
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+}
+
+.v3-approve-act.reject {
+  background: var(--glass-hover);
+  color: var(--ink-2);
+}
+
+.v3-approve-settled {
+  font-size: var(--t-12);
+  color: var(--ink-3);
+}
+
+/* --- session row actions ------------------------------------------------- */
+.v3-session-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.v3-session-more {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+}
+
+.v3-session-more:hover {
+  background: var(--glass-hover);
+  color: var(--ink-2);
+}
+
+.v3-session-menu-pop {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 20;
+  min-width: 140px;
+  padding: var(--sp-4);
+  border-radius: var(--r-8);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.v3-session-menu-pop button {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: none;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.v3-session-menu-pop button:hover {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+.v3-session-menu-pop button.is-danger:hover {
+  background: color-mix(in srgb, var(--wont) 18%, transparent);
+  color: var(--wont);
+}
+
+.v3-session-rename {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  border: var(--w-hair) solid var(--accent-edge);
+  border-radius: var(--r-4);
+  background: var(--bg-base);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  padding: 0 var(--sp-6);
+}
+
+/* --- overlay host -------------------------------------------------------- */
+.v3-overlay-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-24);
+  background: color-mix(in srgb, var(--bg-ground) 72%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.v3-overlay-panel {
+  width: min(960px, 92vw);
+  min-width: min(720px, 100%);
+  height: min(720px, 88vh);
+  min-height: min(560px, calc(100vh - 48px));
+  max-height: min(860px, calc(100vh - 48px));
+  overflow: auto;
+  border-radius: var(--r-14);
+  background: var(--bg-base);
+  box-shadow: var(--e4), 0 0 0 var(--w-hair) var(--edge);
+  padding: var(--sp-20);
+  position: relative;
+}
+
+/* Settings: one inner scrollbar on `.settings-body`, not the overlay shell. */
+.v3-overlay-scrim[data-kind="settings"] .v3-overlay-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.v3-overlay-scrim[data-kind="settings"] .v3-overlay-panel [role="dialog"] {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* SQUARE, AND THE MARK CENTRED IN IT. It was 28 wide by --control-h tall
+   holding a text "×" with no centring, so the mark sat on a baseline inside a
+   box that was not square — which is what the owner saw (2026-09-19). */
+.v3-overlay-close {
+  position: absolute;
+  top: var(--sp-12);
+  right: var(--sp-12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: none;
+  border-radius: var(--r-8);
+  background: var(--glass-hover);
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.v3-overlay-close:hover {
+  color: var(--ink-1);
+}
+
+/* Settings / attach inside overlay — restyle stubbed sheets */
+.v3-overlay-panel .settings-scope,
+.v3-overlay-panel .attach-dialog {
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+}
+
+.v3-overlay-panel .settings-scope {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+}
+
+.v3-overlay-panel .settings-shell {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: var(--sp-20);
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  align-content: stretch;
+}
+
+.v3-overlay-panel .settings-shell .settings-body {
+  min-height: 0;
+  height: 100%;
+}
+
+.v3-overlay-panel .settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding-right: var(--sp-12);
+  border-right: var(--w-hair) solid var(--edge);
+}
+
+.v3-overlay-panel .settings-nav-item {
+  height: auto;
+  min-height: var(--control-h);
+  padding: var(--sp-8) var(--sp-10);
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.v3-overlay-panel .settings-nav-item:hover {
+  background: var(--surface-1);
+  color: var(--ink-1);
+}
+
+.v3-overlay-panel .settings-nav-item.is-active {
+  background: var(--surface-1);
+  color: var(--ink-1);
+  box-shadow: inset 2px 0 0 0 var(--accent);
+}
+
+.v3-overlay-panel .settings-title {
+  font-family: var(--font-display);
+  font-size: var(--t-17);
+  line-height: var(--lh-17);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  margin: 0 0 var(--sp-16);
+}
+
+.v3-overlay-panel .settings-section-title,
+.v3-overlay-panel h3,
+.v3-overlay-panel legend {
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+  font-size: var(--t-13);
+}
+
+.v3-overlay-panel .settings-hint,
+.v3-overlay-panel .settings-profile-meta,
+.v3-overlay-panel .muted,
+.v3-overlay-panel .hint {
+  color: var(--ink-4);
+  font-size: var(--t-12);
+  line-height: var(--lh-14);
+}
+
+.v3-overlay-panel label {
+  color: var(--ink-2);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+}
+
+.v3-overlay-panel input,
+.v3-overlay-panel select,
+.v3-overlay-panel textarea {
+  background: var(--bg-ground);
+  color: var(--ink-1);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+}
+
+.v3-overlay-panel input:focus,
+.v3-overlay-panel select:focus,
+.v3-overlay-panel textarea:focus {
+  border-color: var(--accent-edge);
+  outline: none;
+  box-shadow: 0 0 0 var(--w-hair) var(--accent-edge);
+}
+
+.v3-overlay-panel button.primary,
+.v3-overlay-panel .settings-save {
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  border: none;
+}
+
+.v3-overlay-panel .settings-card,
+.v3-overlay-panel .settings-profile {
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  padding: var(--sp-12);
+}
+
+.v3-overlay-panel .settings-nav-item[aria-current="true"],
+.v3-overlay-panel .settings-nav-item.is-active {
+  background: var(--surface-1);
+  color: var(--ink-1);
+  box-shadow: inset 2px 0 0 0 var(--accent);
+}
+
+.v3-overlay-panel .settings-btn,
+.v3-overlay-panel .attach-dialog button {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: none;
+  border-radius: var(--r-8);
+  background: var(--glass-hover);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+
+.v3-overlay-panel .settings-input,
+.v3-overlay-panel .attach-dialog input {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--bg-base);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+}
+
+.v3-overlay-panel .settings-note,
+.v3-overlay-panel .settings-hint,
+.v3-overlay-panel .settings-profile-meta {
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  line-height: var(--lh-14);
+}
+
+/* --- live surface skins (terminal / browser / whiteboard / ai-canvas) ---- */
+.v3-terminal,
+.v3-browser,
+.v3-whiteboard,
+.v3-ai-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  background: var(--bg-base);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.v3-terminal-pane,
+.terminal-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  color: var(--ink-1);
+  background: var(--bg-ground);
+}
+
+.terminal-pane-chrome,
+.v3-terminal-chrome {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-8);
+  padding: var(--sp-6) var(--sp-10);
+  background: var(--bg-base);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+.terminal-pane-meta {
+  margin-left: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}
+
+.terminal-pane-surface,
+.v3-terminal pre {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--sp-10);
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  outline: none;
+}
+
+.browser-pane,
+.v3-browser-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-12);
+  background: var(--bg-ground);
+}
+
+.browser-pane-chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  flex-wrap: wrap;
+}
+
+.browser-pane-url {
+  flex: 1;
+  min-width: 140px;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--bg-base);
+  color: var(--ink-1);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+}
+
+.browser-pane-fetch {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: none;
+  border-radius: var(--r-8);
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.browser-pane-fetch:hover {
+  opacity: 0.92;
+}
+
+.browser-pane-meta,
+.browser-pane-status,
+.v3-browser-status {
+  font-size: var(--t-11);
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+}
+
+.browser-pane-body,
+.v3-browser pre {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--sp-10);
+  overflow: auto;
+  border-radius: var(--r-8);
+  background: var(--bg-base);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.v3-whiteboard .whiteboard,
+.whiteboard-scope {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-ground);
+}
+
+.v3-ai-canvas .ai-canvas,
+.ai-canvas-scope {
+  flex: 1;
+  min-height: 0;
+}
+
+.v3-board-wrap {
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--r-10);
+  overflow: hidden;
+}
+
+.v3-files-wrap {
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--r-10);
+  overflow: hidden;
+  background: var(--glass-fill-2);
+}
+
+/* --- Cmd/Ctrl+K command surface (Graphite ladder) ------------------------ */
+.shell-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--scrim);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--sp-56) var(--sp-20) var(--sp-20);
+}
+
+.shell-cmd {
+  width: var(--menu-w);
+  max-width: 100%;
+  background: var(--glass-fill-2);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  box-shadow: var(--glass-inset), var(--e3);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.shell-cmd-input {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--bg-base);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  width: 100%;
+}
+
+.shell-cmd-input::placeholder { color: var(--ink-4); }
+
+.shell-cmd-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: calc(var(--row-h) * 8);
+  overflow: auto;
+}
+
+.shell-cmd-item {
+  height: var(--row-h);
+  padding: 0 var(--sp-8);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  border-radius: var(--r-8);
+  color: var(--ink-2);
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+
+.shell-cmd-item[aria-selected='true'] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--ink-1);
+  box-shadow: inset 0 0 0 var(--w-hair) color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.shell-cmd-item[aria-disabled='true'] {
+  color: var(--ink-4);
+  cursor: default;
+}
+
+.shell-cmd-why {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-4);
+}
+
+.shell-cmd-empty {
+  height: var(--row-h-thread);
+  padding: 0 var(--sp-8);
+  display: flex;
+  align-items: center;
+  color: var(--ink-4);
+  font-size: var(--t-11);
+}
+
+/* --- responsive ---------------------------------------------------------- */
+@media (max-width: 640px) {
+  .v3-rail-slot,
+  .v3-resizer[data-testid="v3-resize-rail"] { display: none; }
+  .v3-toolbar { justify-content: flex-start; overflow-x: auto; }
+  .v3-center-panes { flex-direction: column; }
+  .v3-live-stack { flex-direction: column; }
+  .v3-live-pane { min-height: 140px; min-width: 0; }
+  .v3-resizer[data-testid="v3-resize-chat"] { display: none; }
+  .v3-chat-col {
+    flex: 0 0 45% !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0;
+    box-shadow: inset 0 calc(-1 * var(--w-hair)) 0 0 var(--edge-faint);
+  }
+  .v3-center.is-chat-expanded .v3-chat-col { flex: 1 !important; }
+}

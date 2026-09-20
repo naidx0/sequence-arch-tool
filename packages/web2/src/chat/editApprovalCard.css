@@ -1,0 +1,428 @@
+/* ══ RESTORED 2026-09-20 ══════════════════════════════════════════════
+
+   `fe6f644e` (2026-09-14, "Ship V3 fill-screen chrome") emptied this sheet and
+   left the note "retired Decision 22 — V3 chrome owns visuals". For the shell,
+   the sessions rail, the terminal and the browser that note is TRUE: v3.css
+   carries those selectors, and they render.
+
+   It is not true here. Nothing in v3.css, or in any other sheet this package
+   loads, matches a single class this surface renders — checked by name on
+   2026-09-20 across every .css in packages/web2/src. So the component has been
+   drawing unstyled since that commit, exactly as the AI Canvas and the attach
+   dialog were, and for the same reason: the commit judged one blast radius and
+   applied it to sixteen sheets.
+
+   The rules below are the ones that were deleted, restored verbatim. They were
+   already written against the current token set — every `var(--…)` in this file
+   resolves in tokens/graphite.css today, checked before restoring — so this is
+   a revert of a deletion and not a redesign. If the surface wants redrawing,
+   that is a separate decision with a number.
+
+   `classCoverage.test.ts` now fails when any class a component renders has no
+   rule in any sheet, so this class of loss cannot recur silently.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE EDIT APPROVAL CARD
+   packages/web2/src/chat/editApprovalCard.css
+
+   EVERY RULE IS KEYED OFF `.editapproval` ITSELF, never off an ancestor
+   `.chat-scope`. The CodeCard precedent, and it is not tidiness: a card that
+   only styles correctly inside one parent renders as unstyled default-serif
+   the first time it is shown anywhere else — a review pane, a test, a
+   specimen page — and the place it would be shown unstyled is the place a
+   reader is being asked to approve a write to their repository.
+
+   MATERIAL, per Decision 17 (docs/brand/GRAPHITE-DECISIONS.md): the chassis is
+   a neutral lifted surface with a hairline, not a tinted slab. The controls are
+   `--glass-ctl` glass at real body — a fill, a specular top edge, a hairline
+   rim, a blur — with NO accent film over them, because Decision 17 amended
+   exactly that. Colour appears on three things and they are all verdicts: the
+   `+N −M` arithmetic, the Accept/Reject buttons, and the word the card settles
+   on.
+
+   THE DIFF SCROLLS INSIDE ITSELF, in both axes, and that is the whole answer
+   to overflow here. A unified diff is machine-generated: line length is
+   unbounded and so is line count. Wrapping a code line would renumber nothing
+   but would make one logical line occupy three rows beside a single gutter
+   number, which is the gutter lying about what it points at.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.editapproval {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background-color: var(--surface-1);
+  color: var(--ink-2);
+  /* The card is a flex/grid child in a transcript column. Without this, a long
+     mono line inside it sets the column's min-content width and pushes a
+     horizontal scrollbar across the WHOLE transcript — the inner scroller below
+     never gets the chance to do its job. */
+  min-width: 0;
+}
+
+/* ── header ─────────────────────────────────────────────────────────────── */
+
+.editapproval-hd {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-6) var(--sp-8);
+  min-width: 0;
+}
+
+.editapproval-title {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  overflow-wrap: anywhere;
+}
+
+/* The count is the second half of the header's one sentence, so it sits on the
+   label rung rather than the heading one — same baseline, quieter ink. */
+.editapproval-count {
+  flex: 0 0 auto;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.editapproval-why {
+  margin: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+/* ── one file ───────────────────────────────────────────────────────────── */
+
+.editapproval-file {
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-10);
+  min-width: 0;
+  /* Clips the diff's own corners to the file block's radius. The diff scroller
+     inside carries the overflow; this one only shapes. */
+  overflow: hidden;
+}
+
+.editapproval-filehd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-6) var(--sp-8);
+  padding: var(--sp-6) var(--sp-8);
+  min-width: 0;
+}
+
+/* THE PATH TRUNCATES AT THE FRONT, and `elidePath` has already decided where.
+   This sheet's job is only to be the backstop for the case that function
+   documents: when the filename alone overruns the budget it is returned WHOLE,
+   and a clip is a visibly incomplete answer where a cut filename would be a
+   confident wrong one. */
+.editapproval-path {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+
+.editapproval-path-head {
+  flex: 0 1 auto;
+  overflow: hidden;
+  color: var(--ink-4);
+}
+
+/* The informative half. It gives up its width last, and it is the only part of
+   the row carrying full-strength ink. */
+.editapproval-path-tail {
+  flex: 0 1 auto;
+  overflow: hidden;
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+
+.editapproval-stat {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--sp-6);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  /* Two numbers that change as the reader scrolls a list of files; lining
+     figures stop the pair from jittering sideways between rows. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* LAW 1's ONE LEGITIMATE SPEND ON A NUMBER: the arithmetic IS the claim about
+   what happened. The verdict pair rather than the diff wash, because a wash
+   used as a foreground on two short numerals measures below the legibility
+   floor — review.css tried it and moved off it. */
+.editapproval-add { color: var(--fits); }
+.editapproval-del { color: var(--wont); }
+
+/* ── the controls ───────────────────────────────────────────────────────── */
+
+.editapproval-acts {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.editapproval-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-8);
+  background-color: var(--glass-ctl);
+  backdrop-filter: blur(var(--glass-ctl-blur));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur));
+  /* The specular top edge. A control without it is a tinted rectangle, not
+     glass — the substrate's words, and the reason this is not optional. */
+  box-shadow: inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi);
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+
+.editapproval-act:hover {
+  background-color: var(--glass-ctl-hover);
+  /* Decision 17's hover: a 1px lift, released on :active. A control that lifts
+     and never comes back reads as broken rather than as pressed. */
+  transform: translateY(calc(-1 * var(--w-hair)));
+}
+
+.editapproval-act:active { transform: translateY(0); }
+
+/* The ring is drawn OUTSIDE the control on the card's own ground, so it is
+   visible against glass — an `outline` sits on the blurred fill and disappears
+   into it. `--accent` is the focus hue everywhere in this product and it is not
+   a verdict, so it does not collide with the two below. */
+.editapproval-act:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi),
+    0 0 0 var(--w-rule) var(--surface-1),
+    0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* A BUTTON YOU PRESS IS WHERE DECISION 17 LETS A HUE GO, and accept/reject are
+   the two verdicts in this product's vocabulary. The hue is on the ink and the
+   rim; the fill stays neutral glass until hover, so two coloured slabs never
+   sit in the middle of a transcript. */
+.editapproval-act-accept { color: var(--fits); border-color: var(--fits-edge); }
+.editapproval-act-accept:hover { background-color: var(--fits-wash); }
+.editapproval-act-reject { color: var(--wont); border-color: var(--wont-edge); }
+.editapproval-act-reject:hover { background-color: var(--wont-wash); }
+
+/* ── the verdict, once there is one ─────────────────────────────────────── */
+
+.editapproval-verdict {
+  flex: 0 0 auto;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-verdict);
+  white-space: nowrap;
+}
+
+.editapproval-verdict[data-decision='accepted'] { color: var(--fits); }
+.editapproval-verdict[data-decision='rejected'] { color: var(--wont); }
+
+.editapproval-settled {
+  margin: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+
+/* The write's progress is a second clause, not a second verdict. */
+.editapproval-settled-status {
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+}
+
+/* ── the diff ───────────────────────────────────────────────────────────── */
+
+.editapproval-diff {
+  border-top: var(--w-hair) solid var(--edge-faint);
+  /* Six screenfuls of the card's own line rung. A number of ROWS rather than a
+     round pixel height, so the box holds the same amount of diff after any
+     move of the type ladder. */
+  max-height: calc(var(--lh-11) * 18);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.editapproval-hunk-hd {
+  display: flex;
+  gap: var(--sp-8);
+  padding: var(--sp-2) var(--sp-8);
+  background-color: var(--surface-2);
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  white-space: nowrap;
+  /* Sticks while the reader scrolls a long hunk: the header is the only thing
+     on screen that says WHERE in the file these lines are. */
+  position: sticky;
+  top: 0;
+}
+
+.editapproval-hunk-range { flex: 0 0 auto; }
+.editapproval-hunk-sect { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+
+.editapproval-line {
+  display: flex;
+  gap: var(--sp-6);
+  padding: 0 var(--sp-8);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  /* `max-content` plus a 100% floor: a short line still paints its wash across
+     the full width, and a long one widens the scroller instead of wrapping. */
+  width: max-content;
+  min-width: 100%;
+}
+
+.editapproval-num {
+  flex: 0 0 auto;
+  width: 4ch;
+  text-align: right;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+  /* The gutter is furniture. Selecting the diff and pasting it should give the
+     code, not code with line numbers interleaved through it. */
+  user-select: none;
+}
+
+.editapproval-sign {
+  flex: 0 0 auto;
+  width: 1ch;
+  user-select: none;
+}
+
+.editapproval-code {
+  flex: 0 0 auto;
+  white-space: pre;
+  color: var(--ink-2);
+  tab-size: 2;
+}
+
+/* THE THIRD DISJOINT COLOUR CHANNEL, and the whole budget this file spends on
+   the code itself: a wash behind the row and the sign glyph. Never a
+   foreground on the text — an added line's ink is the same as a context line's,
+   because a line being added is not a claim that the line is good, and a
+   removed line painted in `--wont` would read as "won't fit". */
+.editapproval-line-add { background-color: var(--diff-add-bg); }
+.editapproval-line-del { background-color: var(--diff-del-bg); }
+.editapproval-line-add .editapproval-sign { color: var(--diff-add-gutter); }
+.editapproval-line-del .editapproval-sign { color: var(--diff-del-gutter); }
+
+/* ── the notes, and the tail ────────────────────────────────────────────── */
+
+.editapproval-note {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-8);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+}
+
+/* "Nothing parsed" is a failure, not a quiet aside, and it must not read like
+   one. The hue is on the WORDS of a stated failure, which law 1 counts as a
+   verdict — this is the same spend `files.css` makes on its own fail note. */
+.editapproval-note-fail { color: var(--wont); }
+.editapproval-note-quiet { color: var(--ink-4); }
+
+.editapproval-tail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  padding: var(--sp-6) var(--sp-8);
+  /* The tail sits at the end of a scroller whose content is `max-content` wide.
+     Sticking it to the left keeps the control reachable without scrolling back. */
+  position: sticky;
+  left: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOTION — the reference's vocabulary, with its trigger moved
+
+   An added line wipes in from the left; a removed line unfolds from nothing,
+   which is the visual inverse. Both are ENTRY animations, and the card never
+   removes anything on a decision — see the component header for why a
+   transcript may not collapse away the thing it is a record of.
+
+   `both` so the first frame is the start state: without it the row paints once
+   at full width and then jumps back to begin, which reads as a flicker rather
+   than as a wipe.
+
+   The wipe is a `clip-path`, not a width or a transform. Width would reflow the
+   row's contents while it animated — the code would slide as the box grew —
+   and a transform would scale the glyphs. A clip reveals the row already laid
+   out at its final size, which is what "wipes in" means.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes editapproval-wipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes editapproval-unfold {
+  from { transform: scaleY(0); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+.editapproval-line-add {
+  animation: editapproval-wipe var(--dur-2) var(--ease) both;
+}
+
+.editapproval-line-del {
+  transform-origin: top;
+  animation: editapproval-unfold var(--dur-2) var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* STILLED, NEVER HIDDEN. `animation: none` leaves the row at its own final
+     state; removing the rule instead would leave `both` holding the FROM frame
+     on a browser that still applied it, which is a clipped-to-zero added line —
+     a reader with reduced motion on would see the diff missing its additions.
+     That is the one failure mode this block exists to make impossible. */
+  .editapproval-line-add,
+  .editapproval-line-del {
+    animation: none;
+    clip-path: none;
+    transform: none;
+    opacity: 1;
+  }
+  .editapproval-act { transition: none; }
+  .editapproval-act:hover { transform: none; }
+}

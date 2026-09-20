@@ -1,0 +1,279 @@
+/* ══ RESTORED 2026-09-20 ══════════════════════════════════════════════
+
+   `fe6f644e` (2026-09-14, "Ship V3 fill-screen chrome") emptied this sheet and
+   left the note "retired Decision 22 — V3 chrome owns visuals". For the shell,
+   the sessions rail, the terminal and the browser that note is TRUE: v3.css
+   carries those selectors, and they render.
+
+   It is not true here. Nothing in v3.css, or in any other sheet this package
+   loads, matches a single class this surface renders — checked by name on
+   2026-09-20 across every .css in packages/web2/src. So the component has been
+   drawing unstyled since that commit, exactly as the AI Canvas and the attach
+   dialog were, and for the same reason: the commit judged one blast radius and
+   applied it to sixteen sheets.
+
+   The rules below are the ones that were deleted, restored verbatim. They were
+   already written against the current token set — every `var(--…)` in this file
+   resolves in tokens/graphite.css today, checked before restoring — so this is
+   a revert of a deletion and not a redesign. If the surface wants redrawing,
+   that is a separate decision with a number.
+
+   `classCoverage.test.ts` now fails when any class a component renders has no
+   rule in any sheet, so this class of loss cannot recur silently.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE CODE CARD — packages/web2/src/whiteboard/codeCard.css
+
+   Consumes tokens and declares none but its own two geometry handles, which
+   `CodeCard.tsx` hands down as inline custom properties so the exported
+   CODE_CARD_W / CODE_CARD_MAX_H stay the single source of the card's
+   footprint. `tokens/graphite.css` is the only file in this package that may
+   name a colour, a radius, a type size or a weight; test/firewall.test.ts
+   enforces it.
+
+   ── SCOPED ON ITSELF, NOT ON A PARENT ─────────────────────────────────────
+
+   Every rule is keyed off `.codecard`. `whiteboard.css` keys off `.wb-scope`
+   and that is right for a surface, but this is a COMPONENT: the board will
+   mount it inside a <foreignObject>, and a rail preview or a chat chip may
+   mount it somewhere else entirely. A card that only paints correctly under
+   one ancestor paints as unstyled black-on-white everywhere else, and the
+   failure is silent — the markup is all there, so every test still passes.
+
+   ── HUE BUDGET: ZERO ──────────────────────────────────────────────────────
+
+   Same as the surface it sits on, for the same reason read the other way
+   round: a card is a shape, not a verdict. The only chromatic thing here is
+   the SELECTED state, and that is the accent already on the roster spent on
+   "this is the one you picked" — never on a claim about the code.
+
+   ── NOTHING OVERFLOWS ITS BOX ─────────────────────────────────────────────
+
+   The repo has a legibility gate about exactly this, and it exists because
+   three rounds shipped green while the app was visibly broken. Four guards,
+   each against a different way a card could burst:
+
+     · the card itself is `overflow: hidden` with a max height — the last line
+       of defence, and the only one that cannot be reasoned around
+     · the name clips from the right, the path from the left (in JS — see
+       `elidePath`), and the filename never shrinks
+     · the excerpt scrolls in its own box rather than growing the card
+     · every flex child that holds text carries `min-width: 0`, because a flex
+       item's default `min-width: auto` REFUSES to shrink below its content and
+       is the single most common cause of a row that overflows a box whose own
+       overflow rules all look correct.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.codecard {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  width: var(--cc-w);
+  max-width: 100%;
+  max-height: var(--cc-max-h);
+  padding: var(--sp-8);
+  overflow: hidden;
+
+  /* --surface-2, a step above the whiteboard's own --surface-1 ground: the
+     card is ON the board, not part of it, and the ramp is how this product
+     says that without spending a hue. */
+  background: var(--surface-2);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+/* A mark you can pick up says so before you press it — `whiteboard.css` draws
+   the same distinction on its items. A card with no `onSelect` gets neither
+   the cursor nor the hover, because it is not a control. */
+.codecard[data-interactive='true'] {
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease);
+}
+
+.codecard[data-interactive='true']:hover {
+  border-color: var(--edge-strong);
+}
+
+/* ── SELECTED IS GLASS — Decision 16 ──────────────────────────────────────
+   Not an outline pill. The owner's ruling is that the chosen thing goes DEEPER
+   into the material rather than out of it, and the four layers are the ones
+   `tokens/graphite.css` composes for every other chosen thing in the product:
+   a fill thin enough that the ground reads through, blur AND saturate (a plain
+   blur greys what it samples and reads as fog), a top highlight for where the
+   light is, and a bottom inner shadow so the pane has thickness.
+
+   WHY THIS CARD MAY WEAR IT AT ALL, given Decision 14's standing limit that
+   glass goes on "the chrome's fixed, small set of controls — never a list
+   item, never a transcript row": the limit is about `backdrop-filter` costing
+   a compositing layer PER BOX, and only the selected card is glass. Selection
+   on this surface is one item at a time, so the cost is one layer regardless
+   of how many cards the board holds. A resting card is a plain fill, which is
+   why the rule below is keyed on the attribute rather than on `.codecard`.
+
+   The rim is also painted on the border, not only as an inset ring, so the
+   chosen card separates from its neighbours at the very edge where two cards
+   meet. */
+.codecard[data-selected='true'] {
+  background: var(--glass-sel);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  border-color: var(--glass-sel-edge);
+  box-shadow:
+    inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi),
+    inset 0 0 0 var(--w-hair) var(--glass-sel-edge),
+    inset 0 calc(-1 * var(--w-hair)) 0 0 var(--glass-ctl-lo);
+}
+
+/* NO :focus-visible RULE HERE, and that is deliberate. `styles/base.css`
+   paints the global ring (`outline: 2px solid var(--accent)`), and an outline
+   composes with the selected card's inset box-shadow. A local override would
+   have to re-state that shadow to avoid erasing it — which is how a focus ring
+   disappears on exactly the one card that is selected, the case where knowing
+   where focus is matters most. */
+
+/* ── THE HEAD: glyph and name ─────────────────────────────────────────────── */
+
+.codecard .cc-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+/* The board's icon rung, transcribed: three sizes, ONE stroke weight,
+   currentColor. `board.css` and `chat.css` each carry the identical block
+   under their own scope and with the same handback — all three are deleted the
+   day the shared components/Icon.tsx of the plan's §5 skeleton exists. */
+.codecard .cc-glyph {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--ink-3);
+}
+
+.codecard .cc-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-1);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-label);
+}
+
+/* ── THE PATH: mono, and elided from the LEFT ─────────────────────────────── */
+
+.codecard .cc-path {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+/* The directory part is the half that may be lost, so it is the only one that
+   shrinks. `text-overflow` here is a SECOND cut after `elidePath` has already
+   dropped whole segments — it only ever fires when the card is narrower than
+   the character budget assumed, and when it does it eats directories, never
+   the filename. */
+.codecard .cc-path-head {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* `flex: 0 0 auto` — the filename does not shrink, does not clip and does not
+   ellipsise. It is the answer to "which file?"; everything to its left is
+   context for that answer. A step brighter than the directories, so the eye
+   lands on it first. */
+.codecard .cc-path-tail {
+  flex: 0 0 auto;
+  color: var(--ink-2);
+}
+
+/* ── THE META ROW: what kind, and which lines ─────────────────────────────── */
+
+.codecard .cc-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-4);
+}
+
+.codecard .cc-kind {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Mono and tabular, like every other number this product prints: two cards
+   stacked should have their line numbers in the same columns. */
+.codecard .cc-lines {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+  color: var(--ink-3);
+}
+
+/* ── THE EXCERPT: real source, in its own scroll box ──────────────────────── */
+
+.codecard .cc-excerpt {
+  margin: 0;
+  /* Six lines. Enough to show a function's shape, short enough that the card
+     stays a card — a card that grows with its excerpt is a window, and a board
+     of windows cannot be read at a glance. Expressed off the leading rather
+     than as a number so it moves with the ramp. */
+  max-height: calc(var(--lh-11) * 6);
+  min-width: 0;
+  overflow: auto;
+  padding: var(--sp-6);
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--edge-faint);
+  border-radius: var(--r-8);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-body);
+  /* `pre`, NOT `pre-wrap`. Wrapped code lies about its own shape: a line that
+     folds reads as two statements, and indentation — the one structural cue a
+     six-line excerpt has left — stops lining up. Long lines scroll sideways in
+     this box instead, which is the honest presentation and the one every code
+     viewer in the product already uses. */
+  white-space: pre;
+  tab-size: 2;
+}
+
+/* The scroll box is a tab stop (see CodeCard.tsx), so it must show where focus
+   is. Inset, because an outline on a box flush against the card's padding
+   would be clipped by the card's own `overflow: hidden`. */
+.codecard .cc-excerpt:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent);
+}

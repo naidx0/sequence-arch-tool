@@ -1,0 +1,542 @@
+/* Chart family chrome � Graphite tokens only (Decision 22). */
+
+.seqchart {
+  /* ── THE TWO LOCALS EVERY PRIMITIVE READS ──────────────────────────────
+     `--cseries` is the series hue an arc, a key swatch or a heat cell paints
+     with, and `--ctone` is the verdict hue an item takes when the author made
+     a claim about it. Both are DEFAULTED here and overridden per item by the
+     `.s-1…6` and `.t-good|warn|bad|accent|neutral` rules in the restored block
+     below — that is the whole mechanism, and it lives on the chart root
+     because a default that sits on the item cannot be overridden by the item.
+
+     THEY WERE MISSING FOR SIX DAYS AND NOTHING SAID SO. The restore that
+     brought the primitives back filtered this rule out (its key class,
+     `seqchart`, survived the 14 September rewrite, so the filter read it as
+     already-owned), and an undefined custom property is DROPPED SILENTLY —
+     `fill: var(--cseries)` simply does not apply and the shape paints black.
+     `tools/ci/css-tokens-resolve.test.mjs` is what found it, which is the
+     argument for that gate in one line. */
+  --ctone: var(--unknown);
+  --cseries: var(--viz-baseline);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+.seqchart-hd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.seqchart-title {
+  font-size: var(--t-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  line-height: var(--lh-13);
+}
+
+.seqchart-cap {
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  line-height: var(--lh-12);
+}
+
+.seqchart-scroll {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.seqchart--plane .seqchart-scroll,
+.ai-canvas-plane .seqchart-scroll {
+  overflow: visible;
+  max-width: none;
+}
+
+.seqchart-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  color: var(--ink-2);
+}
+
+.seqchart-svg .cgrid {
+  stroke: var(--edge-faint);
+  stroke-width: 1;
+}
+
+.seqchart-svg .caxis {
+  stroke: var(--ink-3);
+  stroke-width: 1.25;
+}
+
+.seqchart-svg .ctick,
+.seqchart-svg .caxis-label,
+.seqchart-svg .cvalue {
+  fill: var(--ink-3);
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+.seqchart-svg .cseries-line {
+  fill: none !important;
+  stroke: var(--viz-1, var(--accent, #c9a227));
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.seqchart-svg .cseries-line.s-1 { stroke: var(--viz-1, var(--accent, #c9a227)); }
+.seqchart-svg .cseries-line.s-2 { stroke: var(--viz-2, #1a6fa8); }
+.seqchart-svg .cseries-line.s-3 { stroke: var(--viz-3, #ab3782); }
+.seqchart-svg .cseries-line.s-4 { stroke: var(--viz-4, var(--viz-1, #c9a227)); }
+.seqchart-svg .cseries-line.s-5 { stroke: var(--viz-5, var(--viz-2, #1a6fa8)); }
+.seqchart-svg .cseries-line.s-6 { stroke: var(--viz-6, var(--viz-3, #ab3782)); }
+
+.seqchart-svg .cdot {
+  fill: var(--viz-1, var(--accent, #c9a227));
+  stroke: none;
+}
+
+.seqchart-note {
+  margin: 0;
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}
+
+
+/* ══ RESTORED 2026-09-20 ═══════════════════════════════════════════════════
+
+   `fe6f644e` (2026-09-14, "Ship V3 fill-screen chrome") cut this sheet from 549
+   lines to 92. The 92 that survived are the newer plane/seqchart work and they
+   are untouched below — what follows is the 44 classes that went with the
+   commit and were never replaced.
+
+   THE SELECTION IS MECHANICAL, NOT A JUDGEMENT CALL. Every rule from the
+   deleted sheet whose selector names a class the current sheet ALSO styles was
+   left out, so nothing here can override the rewrite; what is restored is only
+   what nothing in this package styles at all. Checked by name across every
+   .css in packages/web2/src on 2026-09-20.
+
+   These are the chart primitives every AI Canvas visual is drawn from — boxes,
+   labels, edges, bars, arcs, the tone classes — and the four-beat teach walk.
+   Without them a canvas chart renders as unstyled divs, which is why the owner
+   had "not really checked the AI canvas in depth".
+
+   Every `var(--…)` here resolves in tokens/graphite.css today; that was checked
+   before restoring, which is what makes this a revert rather than a redesign.
+   `--cseries` and `--ctone` are declared on `.seqchart` above and overridden
+   per item by the `.s-*` / `.t-*` rules below; nothing sets them inline.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── THE HONEST FAILURE ────────────────────────────────────────────────────
+   A chart that cannot be drawn says so IN PLACE. The alternative that keeps
+   getting reached for — render nothing, or render an empty frame — is the
+   defect CLAUDE.md's "honest errors" non-negotiable exists to stop: a blank box
+   reads as "there was nothing to show", which is a different and false claim
+   from "this spec was refused, here is why". */
+.seqchart-fail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: var(--sp-12);
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--wont-edge);
+  border-radius: var(--r-14);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+}
+
+.seqchart-fail-hd {
+  color: var(--wont);
+  font-weight: var(--fw-label);
+}
+
+.seqchart-fail-list {
+  margin: 0;
+  padding-left: var(--sp-16);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+/* ── TONE — five meanings, five tokens, nothing else ───────────────────── */
+.seqchart .t-neutral { --ctone: var(--unknown); }
+
+.seqchart .t-good { --ctone: var(--fits); }
+
+.seqchart .t-warn { --ctone: var(--spills); }
+
+.seqchart .t-bad { --ctone: var(--wont); }
+
+.seqchart .t-accent { --ctone: var(--accent); }
+
+/* ── THE SPOTLIGHT ─────────────────────────────────────────────────────── */
+.seqchart[data-focus='on'] .ci[data-dim='true'] {
+  opacity: var(--board-dim-opacity);
+}
+
+.seqchart .ci[data-focused='true'] .cbox,
+.seqchart .ci[data-focused='true'] .cbar,
+.seqchart .ci[data-focused='true'] .ccard {
+  stroke: var(--accent);
+  stroke-width: var(--w-rule);
+}
+
+.seqchart .ci[data-focused='true'] .clabel {
+  fill: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+
+/* ── DRAWN PARTS ───────────────────────────────────────────────────────── */
+.seqchart .cbox {
+  fill: var(--surface-2);
+  stroke: var(--ctone);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .ccard {
+  fill: var(--surface-2);
+  stroke: var(--edge);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .cplate {
+  fill: var(--surface-1);
+  stroke: var(--edge-faint);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .cband {
+  fill: var(--surface-2);
+  stroke: var(--edge);
+  stroke-width: var(--w-hair);
+}
+
+.seqchart .clabel {
+  fill: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--fw-body);
+}
+
+.seqchart .cdetail {
+  fill: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-weight: var(--fw-body);
+}
+
+.seqchart .cbignum {
+  fill: var(--ctone);
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+  font-size: var(--t-20);
+  font-weight: var(--fw-verdict);
+}
+
+.seqchart .ccap {
+  fill: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Connectors. --w-edge is "a connector the reader is not being asked to
+   follow"; --w-flow is "a connector on the flow being read". A toned link is
+   on the flow by definition — the author said something about it. */
+.seqchart .cedge {
+  fill: none;
+  stroke: var(--flow-traced);
+  stroke-width: var(--w-edge);
+}
+
+.seqchart .cedge.t-good,
+.seqchart .cedge.t-warn,
+.seqchart .cedge.t-bad,
+.seqchart .cedge.t-accent {
+  stroke: var(--ctone);
+  stroke-width: var(--w-flow);
+}
+
+/* A back edge closes a cycle. It is DASHED for the same reason a declared
+   connector is: the evidence for the step is not continuous, it is a return. */
+.seqchart .cedge[data-back='true'] {
+  stroke-dasharray: var(--flow-dash-declared);
+}
+
+.seqchart .cedge-head {
+  fill: var(--flow-traced);
+  stroke: none;
+}
+
+.seqchart .cedge-head.t-good,
+.seqchart .cedge-head.t-warn,
+.seqchart .cedge-head.t-bad,
+.seqchart .cedge-head.t-accent {
+  fill: var(--ctone);
+}
+
+.seqchart .cedge-label {
+  fill: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-10);
+  font-weight: var(--fw-body);
+}
+
+.seqchart .cedge-label-plate {
+  fill: var(--surface-1);
+  stroke: none;
+}
+
+.seqchart .cbar {
+  fill: var(--ctone);
+  stroke: none;
+}
+
+.seqchart .cbar-track {
+  fill: var(--edge-faint);
+  stroke: none;
+}
+
+/* A DONUT SLICE IS A SERIES, NOT A CLAIM.
+   Four untoned slices painted from --ctone are four identical greys, and on a
+   ring adjacent equal fills merge into one wedge — the reader loses the
+   boundary the whole chart is made of. Slices therefore take the viz namespace,
+   which is what tokens/graphite.css says it is for. `toned` is the opt-out: an
+   item the author DID make a claim about takes the verdict hue instead, and the
+   claim outranks the series. */
+.seqchart .carc,
+.seqchart .ckey {
+  fill: var(--cseries);
+  stroke: var(--surface-1);
+  stroke-width: var(--w-hair);
+}
+
+/* THE SLICE BOUNDARY IS STRUCTURAL AND DOES NOT DEPEND ON THE HUES EITHER SIDE
+   OF IT. In the dark palette --accent and --viz-1 resolve to the SAME value, so
+   a slice the author toned `accent` sitting beside series 1 paints as one
+   continuous wedge if the only thing between them is a hairline. A --w-rule gap
+   in the surface colour separates any two neighbours, whatever they resolve to
+   — the same argument Decision 2 makes for node kinds one surface over. */
+.seqchart .carc {
+  stroke-width: var(--w-rule);
+}
+
+.seqchart .carc.toned,
+.seqchart .ckey.toned {
+  fill: var(--ctone);
+}
+
+.seqchart .cvenn {
+  fill: var(--ctone);
+  fill-opacity: 0.12;
+  stroke: var(--ctone);
+  stroke-width: var(--w-flow);
+}
+
+.seqchart .cheat {
+  stroke: var(--surface-1);
+  stroke-width: var(--w-hair);
+  fill: var(--cseries);
+}
+
+/* A HEAT CELL'S LABEL SITS ON THE FILL, SO IT CANNOT BE THE QUIET INK.
+   --ink-4 is the "barely there" rung and it is chosen for text on the SURFACE.
+   Over a cell painted at up to 0.8 of a series hue it disappears, which is how
+   a chart ends up with three cells nobody can read and a passing test. The
+   label is the loudest ink; the cell behind it is what varies. */
+.seqchart .cheat-label {
+  fill: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+}
+
+.seqchart .clane {
+  fill: var(--surface-2);
+  stroke: none;
+}
+
+.seqchart .clane-alt {
+  fill: var(--bg-base);
+  stroke: none;
+}
+
+.seqchart .cspine {
+  stroke: var(--viz-axis);
+  stroke-width: var(--w-hair);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE WALK — TeachWalk.tsx. One real input through the picture, beat by beat.
+
+   HUE BUDGET: 1. --accent marks the CURRENT beat, which is what it marks
+   everywhere else in this product (Decision 12 clause 6: purple marks what was
+   chosen). Past and future beats spend nothing — they are positions in a list,
+   not claims about the world, and Graphite law 1 says a hue is a claim.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.walk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  margin-top: var(--sp-12);
+  padding: var(--sp-10) var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background: var(--surface-2);
+}
+
+.walk:focus-visible {
+  outline: var(--w-struct) solid var(--accent);
+  outline-offset: var(--w-hair);
+}
+
+.walk-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+.walk-label {
+  flex: 0 0 auto;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-weight: var(--fw-label);
+  letter-spacing: 0.02em;
+  color: var(--ink-4);
+}
+
+/* The input is the subject of every line below it, so it keeps the ink and is
+   mono — it is a literal value, and a literal that reflows its own width as
+   the reader reads it is the thing mono exists to stop. */
+.walk-input {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-1);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.walk-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.walk-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: var(--sp-8);
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--r-8);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-3);
+}
+
+/* Fixed column so every clause starts at the same x — the number column is
+   what a reader scans down to find where they are. */
+.walk-n {
+  width: 1.5ch;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-4);
+  text-align: right;
+}
+
+/* PAST BEATS RECEDE rather than vanish: the reader needs to see where the
+   input has BEEN to understand where it is. */
+.walk-step[data-past] { color: var(--ink-4); }
+
+.walk-step[data-current] {
+  background: var(--accent-wash);
+  color: var(--ink-1);
+}
+
+.walk-step[data-current] .walk-n { color: var(--accent); }
+
+.walk-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}
+
+.walk-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-11);
+  cursor: pointer;
+}
+
+.walk-btn:hover:not(:disabled) { border-color: var(--edge-strong); color: var(--ink-1); }
+
+.walk-btn:disabled { opacity: 0.45; cursor: default; }
+
+.walk-btn:focus-visible { outline: var(--w-struct) solid var(--accent); outline-offset: var(--w-hair); }
+
+.walk-count {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   POINT AT A PART OF THE PICTURE — SeqChartView's `onSelectPart`
+
+   Owner's deferred item: "the canvas draws natively and at once, tldraw-style,
+   and the person can select a drawn part and ask about it."
+
+   THE AFFORDANCE ONLY EXISTS WHERE THE HANDLER DOES. `.seqchart-pick` wraps the
+   chart only when a caller passed `onSelectPart`, so a chart that is merely
+   being read shows no pointer, no hover and no focus ring — a control that
+   looks pressable and is not is worse than one that looks inert.
+
+   HUE BUDGET: 0. Hover and focus are the accent already in the roster
+   (Decision 12 clause 6), and "you can click this" is not a verdict.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.seqchart-pick [data-item] {
+  cursor: pointer;
+}
+
+/* The whole item lifts, not just its label: a reader aiming at a box is aiming
+   at the box. `ci` is the class itemAttrs puts on every one of them. */
+.seqchart-pick [data-item]:hover {
+  opacity: 1;
+  filter: brightness(1.18);
+}
+
+.seqchart-pick [data-item]:focus-visible {
+  outline: var(--w-struct) solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-4);
+}
+
+/* Keyboard reachability comes from tabindex on the items; without this the
+   focused item can be scrolled out of sight while still focused. */
+.seqchart-pick { scroll-behavior: smooth; }

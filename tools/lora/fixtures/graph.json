@@ -1,0 +1,19 @@
+{
+  "note": "A tiny hand-written ArchGraph, shaped like what scanRepo produces (repo root + services + a datastore + a topic + interaction edges). Fixture scale proves the LOGIC of request synthesis and filtering — it deliberately cannot prove anything about digest size, truncation or density on a real repo, which is what the corpus is for.",
+  "nodes": [
+    { "id": "repo", "kind": "repo", "label": "fixture-shop" },
+    { "id": "svc:checkout", "kind": "service", "label": "checkout", "parentId": "repo", "path": "services/checkout" },
+    { "id": "svc:catalog", "kind": "service", "label": "catalog", "parentId": "repo", "path": "services/catalog" },
+    { "id": "svc:payments", "kind": "service", "label": "payments", "parentId": "repo", "path": "services/payments" },
+    { "id": "ds:orders-db", "kind": "datastore", "label": "orders db", "parentId": "repo", "meta": { "tech": "postgres" } },
+    { "id": "topic:order-events", "kind": "topic", "label": "order events", "parentId": "repo" },
+    { "id": "file:services/checkout/index.ts", "kind": "file", "label": "index.ts", "parentId": "svc:checkout", "path": "services/checkout/index.ts" }
+  ],
+  "edges": [
+    { "id": "e:1", "srcId": "svc:checkout", "dstId": "svc:catalog", "kind": "http", "confidence": 1, "origin": "deterministic", "evidence": [] },
+    { "id": "e:2", "srcId": "svc:checkout", "dstId": "ds:orders-db", "kind": "db_write", "confidence": 1, "origin": "deterministic", "evidence": [] },
+    { "id": "e:3", "srcId": "svc:checkout", "dstId": "topic:order-events", "kind": "queue_publish", "confidence": 1, "origin": "deterministic", "evidence": [] },
+    { "id": "e:4", "srcId": "svc:payments", "dstId": "topic:order-events", "kind": "queue_consume", "confidence": 1, "origin": "deterministic", "evidence": [] },
+    { "id": "e:5", "srcId": "svc:catalog", "dstId": "ds:orders-db", "kind": "db_read", "confidence": 1, "origin": "deterministic", "evidence": [] }
+  ]
+}

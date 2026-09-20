@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>board — specimen</title>
+    <!--
+      NEVER BUILT INTO THE APP. vite.config.ts sets no build.rollupOptions.input,
+      so `vite build` emits index.html and nothing else. This document is built
+      only by boardRendered.test.ts, into a temporary directory, so that the
+      four locks that are claims about RENDERED values can be evaluated in a
+      real browser — and so a human can look at the board beside its sheet,
+      which §4.6 Tier 4 requires of every wave. boot/preview.html carries the
+      same note for the same reason.
+
+      NO WEBFONT LINK, exactly as index.html has none: the two typefaces are
+      @import-ed from node_modules by tokens/graphite.css and bundled. A
+      local-first product that blocks first paint on a CDN contradicts itself.
+
+      data-theme is pinned to dark rather than left to the system, because
+      GRAPHITE-DECISIONS.md Decision 1 defers light and a measurement taken
+      against untuned light tokens would be a measurement of work the owner has
+      deferred.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./specimen.tsx"></script>
+  </body>
+</html>

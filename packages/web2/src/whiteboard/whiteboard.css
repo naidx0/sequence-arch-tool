@@ -1,0 +1,417 @@
+/* Whiteboard — Graphite V3 (Decision 22 retired prior sheet; this owns .wb-* ) */
+
+.wb-scope.wb {
+  container-type: inline-size;
+  container-name: wb;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-ground);
+  color: var(--ink-1);
+  position: relative;
+}
+
+/* ONE ROW, like the composer foot (owner 2026-09-17: the Fit / Reset / Undo /
+   Ask / Clear words stacked into three lines in a narrow pane). Below the
+   designed width the words shorten; at the narrowest frame the row becomes
+   two DESIGNED rows, broken at the gap. It never wraps where the words
+   happen to run out. */
+.wb-tools {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-10);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background: var(--bg-base);
+  z-index: 2;
+}
+
+.wb-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  min-width: var(--icon-btn);
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+
+.wb-tool:hover {
+  background: var(--glass-hover);
+  color: var(--ink-1);
+}
+
+.wb-tool[data-on='true'],
+.wb-tool[aria-pressed='true'] {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  border-color: var(--accent-edge);
+}
+
+.wb-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.wb-tool-solid {
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  border-color: transparent;
+}
+
+.wb-tool-solid:hover {
+  opacity: 0.92;
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+}
+
+.wb-gap {
+  flex: 1;
+  min-width: var(--sp-8);
+}
+
+.wb-tools > .wb-tool,
+.wb-tools > .wb-menuwrap {
+  flex: 0 0 auto;
+}
+
+/* Step 1 (< 520px): tighter words; "Ask about this" becomes "Ask". */
+@container wb (max-width: 520px) {
+  .wb-tools {
+    gap: 2px;
+    padding: var(--sp-6) var(--sp-8);
+  }
+  .wb-tools > .wb-tool {
+    padding: 0 var(--sp-6);
+    font-size: var(--t-11);
+  }
+  .wb-tools > .wb-tool[data-testid="wb-ask"] {
+    font-size: 0;
+  }
+  .wb-tools > .wb-tool[data-testid="wb-ask"]::before {
+    content: 'Ask';
+    font-size: var(--t-11);
+  }
+}
+
+/* Step 2 (< 400px): the camera moves (Fit / Reset) step out, and the row
+   becomes two designed rows, marks above and words below, broken exactly at
+   the gap. A deliberate second row at the narrowest frame is a still frame;
+   a wrap that lands wherever the words run out is not. */
+@container wb (max-width: 400px) {
+  .wb-tools {
+    flex-wrap: wrap;
+    row-gap: var(--sp-4);
+  }
+  .wb-tools > .wb-gap {
+    flex: 0 0 100%;
+    height: 0;
+    min-width: 0;
+  }
+  .wb-tools > .wb-tool[data-testid="wb-fit"],
+  .wb-tools > .wb-tool[data-testid="wb-reset-view"] {
+    display: none;
+  }
+}
+
+.wb-canvas {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: block;
+  touch-action: none;
+  background-color: var(--bg-ground);
+}
+
+.wb-dot {
+  fill: color-mix(in srgb, var(--ink-4) 45%, transparent);
+}
+
+.wb-ink {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wb-ink.wb-draft {
+  stroke: var(--ink-3);
+  stroke-dasharray: 4 3;
+}
+
+.wb-text,
+.wb-noderef {
+  fill: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+}
+
+.wb-noderef {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  fill: var(--accent-ink);
+}
+
+.wb-hit {
+  cursor: pointer;
+}
+
+.wb-erasable {
+  cursor: crosshair;
+}
+
+.wb-sel-halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.wb-artifact-frame {
+  fill: var(--surface-1);
+  stroke: var(--edge-faint);
+  stroke-width: 1;
+}
+
+/* AI Canvas freeform plane — content floats on the dot grid; stroke only when selected. */
+.ai-canvas-plane .wb-artifact-frame {
+  fill: transparent;
+  stroke: none;
+}
+
+.ai-canvas-plane .wb-artifact-frame.is-selected {
+  stroke: var(--accent-edge, var(--accent));
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.wb-artifact-body {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: var(--sp-6);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  background: transparent;
+}
+
+.ai-canvas-plane .wb-artifact-body {
+  overflow: visible;
+  height: auto;
+  min-height: 0;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
+  padding: var(--sp-4);
+}
+
+.ai-canvas-plane .wb-artifact-chart .seqchart,
+.ai-canvas-plane .wb-artifact-block {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.ai-canvas-plane .seqchart-scroll {
+  overflow: visible;
+}
+
+.wb-artifact-chart .seqchart {
+  max-width: 100%;
+}
+
+.wb-artifact-missing {
+  margin: 0;
+  color: var(--ink-4);
+  font-size: var(--t-12);
+}
+
+.wb-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--ink-4);
+  font-size: var(--t-13);
+  text-align: center;
+  padding: var(--sp-24);
+  z-index: 1;
+}
+
+.wb-menuwrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.wb-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-4));
+  left: 0;
+  z-index: 30;
+  min-width: 148px;
+  padding: var(--sp-4);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-menuitem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  padding: var(--sp-8) var(--sp-10);
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wb-menuitem:hover,
+.wb-menuitem[aria-checked='true'] {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+.wb-picker {
+  position: absolute;
+  z-index: 25;
+  min-width: 220px;
+  max-width: min(320px, 90vw);
+  padding: var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+.wb-picker-none {
+  margin: 0;
+  font-size: var(--t-12);
+  color: var(--ink-4);
+  line-height: var(--lh-14);
+}
+
+.wb-picker-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-picker-row {
+  display: block;
+  width: 100%;
+  padding: var(--sp-8) var(--sp-10);
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wb-picker-row:hover,
+.wb-picker-row[aria-selected='true'] {
+  background: var(--surface-1);
+  color: var(--ink-1);
+}
+
+.wb-input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--bg-ground);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+}
+
+.wb-textarea {
+  height: auto;
+  min-height: 64px;
+  padding: var(--sp-8);
+  resize: vertical;
+  font-family: var(--font-sans);
+}
+
+.wb-askpanel {
+  position: absolute;
+  z-index: 25;
+  width: min(320px, 92vw);
+  padding: var(--sp-12);
+  border-radius: var(--r-14);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+
+.wb-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.wb-label {
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+
+.wb-askactions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-8);
+}
+
+.v3-whiteboard .wb-scope {
+  height: 100%;
+}
+
+/* Intent ghost — agent's last placement after a human pin. */
+.wb-intent-ghost {
+  fill: none;
+  stroke: var(--fg-mute, #888);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+  opacity: 0.45;
+  pointer-events: none;
+}
+

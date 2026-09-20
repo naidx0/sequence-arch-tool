@@ -1,0 +1,88 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   HELP
+   packages/web2/src/help/help.css
+
+   An overlay: it replaces the view, like every other expanded surface. Reading
+   type, so it is the one place in the product that is not at the working
+   density — a paragraph set at 11px is a paragraph nobody reads, and Graphite
+   law 3 governs ROW HEIGHTS rather than prose (recorded as open question 3 in
+   GRAPHITE-DECISIONS).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.hp-scope {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--surface-1);
+  color: var(--ink-1);
+}
+
+.hp-scope .hp-head {
+  display: flex;
+  align-items: center;
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.hp-scope .hp-title {
+  margin: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+}
+
+.hp-scope .hp-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-20);
+  max-width: 72ch;
+}
+
+.hp-scope .hp-h {
+  margin: 0 0 var(--sp-8);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.hp-scope .hp-chords,
+.hp-scope .hp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.hp-scope .hp-chordrow { display: flex; align-items: baseline; gap: var(--sp-10); }
+
+.hp-scope .hp-kbd {
+  flex: 0 0 auto;
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  white-space: nowrap;
+}
+
+.hp-scope .hp-item { display: flex; flex-direction: column; gap: var(--sp-2); }
+.hp-scope .hp-name { color: var(--ink-1); font-size: var(--t-12); line-height: var(--lh-12); }
+.hp-scope .hp-does { color: var(--ink-2); font-size: var(--t-12); line-height: var(--lh-12); }
+
+.hp-scope .hp-note {
+  margin: var(--sp-8) 0 0;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}

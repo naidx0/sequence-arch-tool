@@ -1,0 +1,15 @@
+services:
+  api:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://db:5432/app
+    depends_on:
+      - db
+  worker:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://db:5432/app
+    depends_on:
+      - db
+  db:
+    image: postgres:16

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.api.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.api.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.api.name }}
+    spec:
+      {{- if .Values.serviceAccounts.create }}
+      serviceAccountName: {{ .Values.api.name }}
+      {{- else }}
+      serviceAccountName: default
+      {{- end }}
+      containers:
+      - name: server
+        image: {{ .Values.api.name }}
+        env:
+        - name: DB_ADDR
+          value: {{ .Values.api.dbAddr | default "db:5432" }}
+        - name: LOG_LEVEL
+          value: {{ .Values.api.logLevel | quote }}
+        - name: REGION
+          value: {{ .Values.api.region | default "us-east-1" | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.api.name }}
+spec:
+  selector:
+    app: {{ .Values.api.name }}
+  ports:
+  - port: 80

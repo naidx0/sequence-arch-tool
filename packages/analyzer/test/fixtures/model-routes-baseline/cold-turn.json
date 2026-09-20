@@ -1,0 +1,8 @@
+{
+  "scenario": "cold-single-turn-explain",
+  "fixture": "shopfront",
+  "userQuestion": "what services call postgres?",
+  "description": "ADR-013 Phase A baseline: shopfront scan → buildDigest → buildExplainPrompt, approxTokens (chars/4).",
+  "baselineApproxTokens": 3029,
+  "recordedAt": "2026-08-05"
+}

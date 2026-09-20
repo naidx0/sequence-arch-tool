@@ -1,0 +1,161 @@
+# electron-builder configuration for @sequence/desktop.
+#
+# VERIFIED ON WINDOWS x64, and no longer on the docs alone. `--win nsis` was
+# run on a real machine and produced `release/Sequence Setup 0.1.0.exe`; the
+# unpacked app was then launched and reached the app UI, which is what proves
+# the `extraResources` assumption below rather than merely asserting it —
+# `serverPaths()` resolved `<resources>/server/packages/...` and the child
+# server started under Electron's own Node. Gate:
+#   node tools/desktop-smoke.mjs --packaged
+#
+# STILL UNVERIFIED: the mac and linux targets. dmg/zip/AppImage/deb are
+# authored from the electron-builder docs and have never been run.
+#
+# Bundling model:
+#   - `files`         → the Electron app itself (this package's compiled dist +
+#                       package.json), packed into the asar archive.
+#   - `extraResources`→ the SELF-CONTAINED server bundle produced by
+#                       `scripts/prepare-server.mjs` (analyzer dist + its real,
+#                       de-symlinked node_modules + the web dist). Copied to
+#                       `<resources>/server` OUTSIDE the asar, because the app
+#                       spawns it as a child Node process and Node must execute
+#                       real on-disk files and resolve node_modules normally.
+#     Runtime paths (see src/main.ts → serverPaths):
+#       <resources>/server/packages/analyzer/dist/cli.js
+#       <resources>/server/packages/web2/dist
+#
+# Prerequisite: run `node scripts/prepare-server.mjs` before packing (the `dist`
+# npm script does this; if you invoke electron-builder directly, run it first).
+
+appId: dev.sequence.desktop
+productName: Sequence
+copyright: Copyright © 2026 Sequence
+
+directories:
+  output: release
+  buildResources: build
+
+# Only the compiled Electron app goes into the asar. The server tree is shipped
+# via extraResources (below), not here, so it stays executable outside the asar.
+files:
+  - dist/**/*
+  - package.json
+
+extraResources:
+  - from: server-bundle
+    to: server
+    filter:
+      - "**/*"
+
+asar: true
+
+# AD-HOC SIGNING ON macOS, AND WHY THERE IS A HOOK HERE AT ALL.
+#
+# `mac.identity: null` below skips signing ENTIRELY - app-builder-lib returns
+# before it reaches any ad-hoc path (out/macPackager.js:182-189). On Apple
+# silicon an unsigned .app cannot launch: macOS reports it as "damaged", which
+# is what a person reports as a corrupted download. `scripts/adhoc-sign.mjs`
+# signs the bundle with "-" after packing, is a no-op on every other platform,
+# and stands down if a real certificate is configured.
+afterPack: scripts/adhoc-sign.mjs
+
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.png
+  # UNSIGNED, BY OWNER RULING (Max, 2026-09-10): "just create a DMG for macOS
+  # ... I don't know if we need to have an Apple developer account and pay for
+  # that". `null` is electron-builder's explicit "do not sign" — distinct from
+  # omitting the key, which makes it hunt the keychain and fail confusingly on
+  # a machine that has no certificate. Gatekeeper therefore warns on first
+  # open; the README says so, and says right-click -> Open.
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+
+win:
+
+  # THE .ICO, NOT THE PNG. Given a png, app-builder converts it with its own
+  # resizer and build/icon.ico is never read - every taskbar frame was a
+  # downscale of the 1024 master (owner walk 2026-09-17). make-ico.py packs
+  # frames rendered at their own size; this line is what ships them.
+  icon: build/icon.ico
+  # TWO WINDOWS ARTIFACTS, AND THE SECOND ONE IS THE POINT.
+  #
+  # Owner, 2026-09-19: a friend's download of 0.1.0 "was corrupted... make sure
+  # people can just fresh download with nothing else, no worries of anything
+  # else, and just literally run the product from wherever."
+  #
+  # The hosted .exe was fetched and tested on 2026-09-19 and is INTACT: MZ
+  # header, 187,852,868 bytes exactly as published, and `7za t` reports
+  # "Everything is Ok" across 17,001 files. What it is not is SIGNED - and an
+  # unsigned 180 MB NSIS installer is the shape SmartScreen blocks, that some
+  # antivirus products quarantine mid-write, and that NSIS itself then refuses
+  # with "the installer you are trying to use is corrupted or incomplete" once
+  # a single byte has been touched. Every one of those reaches the person as
+  # "it's corrupted".
+  #
+  # The zip has none of that surface. There is no installer to corrupt, no
+  # NSIS CRC to fail, nothing written outside the folder it is unpacked into,
+  # and Windows extracts it with no third-party tool. It is also the only
+  # artifact that answers "run it from wherever" literally: a USB stick, a
+  # locked-down work laptop, a machine where the person may not install
+  # anything.
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+
+# THE EXE'S OWN LABEL, WHICH IS WHAT TASK MANAGER SHOWS.
+#
+# `app-builder-lib/out/winPackager.js:129` writes the version resource's
+# FileDescription as `appInfo.description || appInfo.productName`, and
+# `appInfo.description` is this package's `package.json` description — a
+# paragraph written for someone reading the repo. So Task Manager listed the
+# running app as "Electron desktop shell for Seq…", which is the truth about
+# the package and the wrong answer to "what is this process".
+#
+# `extraMetadata` overrides the field in the PACKAGED metadata only; the
+# package.json in the tree keeps its prose, because the two are different jobs:
+# one documents the package, one labels a process in a list of processes.
+extraMetadata:
+  description: Sequence
+
+nsis:
+  oneClick: false
+  perMachine: false
+  # PER-USER, AND NOT MERELY BY DEFAULT.
+  #
+  # `perMachine: false` is only the default SELECTION. The assisted installer
+  # will still elevate and write to Program Files if it is asked to, or if it
+  # is run from an already-elevated shell — which is exactly what happened on
+  # 2026-09-14: a `/S` install landed in `C:\Program Files\Sequence`,
+  # registered itself under HKLM with `/allusers`, and left the per-user
+  # directory behind EMPTY, so anything checking the old path found a hollow
+  # folder and read it as a broken install.
+  #
+  # `allowElevation: false` removes the elevation path altogether, so the
+  # installer CANNOT reach Program Files whatever it is run from. The location
+  # stops being a thing that depends on how the installer happened to be
+  # launched.
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+
+linux:
+  category: Development
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
