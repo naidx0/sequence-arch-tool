@@ -1,0 +1,492 @@
+/* AI Canvas — Graphite V3 (Decision 22 retired prior sheet) */
+
+.ai-canvas-scope,
+.ai-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-ground);
+  color: var(--ink-1);
+}
+
+.ai-canvas-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-24);
+}
+
+.ai-canvas-empty-inner {
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-10);
+  text-align: center;
+}
+
+.ai-canvas-empty-icon {
+  color: var(--accent);
+  opacity: 0.85;
+  width: var(--control-h);
+  height: var(--control-h);
+}
+
+.ai-canvas-empty-icon svg,
+.ai-canvas-empty-inner > svg,
+.ai-canvas-empty-inner .i-14 {
+  width: var(--control-h) !important;
+  height: var(--control-h) !important;
+  max-width: var(--control-h);
+  max-height: var(--control-h);
+}
+
+/* Full-height freeform plane — SeqDraw host. */
+.ai-canvas-host {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-canvas-plane {
+  background: var(--bg-ground);
+}
+
+.ai-canvas-seqdraw {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-canvas-seqdraw .wb-root {
+  flex: 1;
+  min-height: 0;
+}
+
+.ai-canvas-host > .ai-canvas,
+.ai-canvas-host > .ai-canvas-blocks-empty {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ai-canvas-blocks-empty {
+  padding: var(--sp-16);
+  color: var(--ink-4);
+}
+
+.ai-canvas-lede {
+  margin: 0;
+  font-size: var(--t-13);
+  color: var(--ink-2);
+  line-height: var(--lh-17);
+}
+
+.ai-canvas-lede strong {
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+}
+
+.ai-canvas-lede-mono {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}
+
+.ai-canvas-agent {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-8) var(--sp-12);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  border-bottom: var(--w-hair) solid var(--accent-edge);
+}
+
+.ai-canvas-agent-icon {
+  flex-shrink: 0;
+}
+
+.ai-canvas-agent-tool {
+  margin-left: auto;
+  font-size: var(--t-11);
+  opacity: 0.8;
+}
+
+.ai-canvas-lesson {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background: var(--bg-base);
+}
+
+.ai-canvas-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-6) var(--sp-12);
+  background: var(--bg-base);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+/* `.ai-canvas-export-quiet` WAS HERE. The control went on the owner walk of
+   2026-09-16 ("Export HTML removed — freeform in-project only", AiCanvas.tsx)
+   and its rules stayed, along with a focus test asking for both. Dead style
+   for a removed control is how a stylesheet stops describing the product. */
+
+.ai-canvas-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+}
+
+.ai-canvas-block {
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: 0 0 0 var(--w-hair) var(--edge);
+  overflow: hidden;
+}
+
+.ai-canvas-block[data-canvas-status='live'],
+.ai-canvas-block[data-canvas-status='pending'] {
+  box-shadow: 0 0 0 var(--w-rule) var(--accent-edge);
+}
+
+.ai-canvas-block-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-8) var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background: var(--surface-1);
+  min-width: 0;
+}
+
+.ai-canvas-block-hd-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+/* NAMED, NOT COUNTED. This was `.ai-canvas-block-hd-kind > span:last-child`.
+   A canvas block is a DOCUMENT block (§2), so nothing about how it renders
+   may depend on position — and `aiCanvasComposition.test.tsx` derives that
+   rule from the stylesheet rather than trusting anyone to remember it. The
+   element it wanted has a name now, so the rule states what it styles. */
+.ai-canvas-block-hd-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-canvas-block-hd-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ai-canvas-block-hd-quiet {
+  flex: 0 0 auto;
+  opacity: 0.55;
+}
+
+.ai-canvas-block-hd-icon {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+.ai-canvas-block-hd-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+.ai-canvas-block-hd-status {
+  flex-shrink: 0;
+  font-size: var(--t-11);
+  color: var(--ink-4);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ai-canvas-ask-block {
+  flex-shrink: 0;
+  height: 24px;
+  max-width: 11rem;
+  padding: 0 var(--sp-8);
+  border: none;
+  border-radius: var(--r-8);
+  background: var(--glass-hover);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-11);
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.ai-canvas-ask-block:hover {
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.ai-canvas-block-body {
+  padding: var(--sp-12);
+  color: var(--ink-1);
+  font-size: var(--t-13);
+  line-height: var(--lh-17);
+}
+
+/* Plane artifacts — no card fill; prose floats on the SeqDraw ground. */
+.ai-canvas-plane .wb-artifact-block .ai-canvas-md,
+.ai-canvas-plane .wb-artifact-block {
+  background: transparent;
+}
+
+.ai-canvas-block-pending {
+  position: relative;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+}
+
+.ai-canvas-block-pending-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 12%, transparent) 50%,
+    transparent 100%
+  );
+  animation: ai-canvas-shimmer 1.4s ease-in-out infinite;
+}
+
+.ai-canvas-block-pending-label {
+  position: relative;
+  margin: 0;
+  font-size: var(--t-12);
+  color: var(--accent-ink);
+  font-weight: var(--fw-label);
+}
+
+@keyframes ai-canvas-shimmer {
+  0% { transform: translateX(-40%); }
+  100% { transform: translateX(40%); }
+}
+
+.v3-ai-canvas .ai-canvas-scope,
+.v3-ai-canvas .ai-canvas {
+  height: 100%;
+}
+
+/* A MERMAID BLOCK IS DRAWN, NOT PRINTED (MermaidBlock.tsx).
+   The drawing sits on the plane at its own width and scrolls sideways when
+   wider than the column, never clipped (the gate forbids silent clipping).
+   The source form keeps the same wrap guard as every other <pre> here. */
+.ai-canvas-mermaid-box {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.ai-canvas-mermaid-svg {
+  display: block;
+  padding: var(--sp-8) 0;
+}
+.ai-canvas-mermaid-svg svg {
+  display: block;
+  font-family: var(--font-ui);
+}
+.ai-canvas-mermaid-src {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-10);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ai-canvas-mermaid-why {
+  margin: var(--sp-4) 0 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE BLOCK BODIES — rendered since the canvas shipped, styled by nothing
+
+   Owner, 2026-09-19: "re-test our AI canvas to get our v0.1.1 ready."
+
+   `AiCanvasBlockBody.tsx` renders eight class names and this stylesheet
+   carried rules for ONE of them (`.ai-canvas-mermaid-src`). Every markdown
+   block, every inline SVG, every HTML frame and every maths block has been
+   drawing with no rule of its own — which is why `aiCanvasOverflow.test.tsx`
+   and `aiCanvasFocus.test.tsx` have been red: they read this file for
+   containers that a person can see on screen and could not find them.
+
+   The tests were right and the file was short. Each rule below exists because
+   one of them names the failure it prevents.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* PROSE. The block already sits inside a padded body, so this sets rhythm and
+   measure only — a canvas block is read at arm's length on a wide plane, and
+   unbounded line length is the thing that makes it unreadable there. */
+.ai-canvas-md {
+  font-size: var(--t-13, var(--t-12));
+  line-height: var(--lh-13, var(--lh-12));
+  color: var(--ink-1);
+}
+
+.ai-canvas-md-h {
+  margin: var(--sp-10) 0 var(--sp-4);
+  font-size: var(--t-14);
+  font-weight: var(--fw-label);
+  letter-spacing: var(--ls-ui);
+  color: var(--ink-1);
+}
+
+.ai-canvas-md-h:first-child {
+  margin-top: 0;
+}
+
+/* THE BOOK'S MEASURE, NOT AN INVENTED ONE. 68ch is `.prose` in
+   docs/brand/graphite/_core.html; CANON: "you extend Graphite, you do not
+   redesign it — the answer is already in the book." It is declared on the
+   paragraph and NOWHERE ELSE in this file: a second rule at the same
+   specificity further down would win at paint time while a reader of the
+   first still believes it. */
+.ai-canvas-md-p {
+  margin: 0 0 var(--sp-8);
+  max-width: 68ch;
+  /* A URL in prose is one unbroken token; without this it leaves the box and
+     takes the block's right edge with it. */
+  overflow-wrap: anywhere;
+}
+
+/* THE CODE BLOCK, AND THE GUARD THAT WAS MISSING.
+
+   `pre-wrap` breaks at whitespace only, so a minified line, a base64 blob or
+   a long URL has no break opportunity and escapes the container. Its sibling
+   `.ai-canvas-mermaid-src` already carried `overflow-wrap`; this one did not,
+   which is the gap `aiCanvasOverflow.test.tsx` names. */
+/* NAMED `fence`, NOT `codewrap`. A selector that CONTAINS another one's
+   name is invisible to any substring matcher — and this file is read by
+   one (`aiCanvasOverflow.test.tsx` looks a selector up by `includes`), so
+   a wrapper called `.ai-canvas-md-codewrap` answered every question asked
+   about `.ai-canvas-md-code` and hid the rule that mattered. `fence` is
+   the markdown word for it and cannot collide. */
+.ai-canvas-md-fence {
+  margin: 0 0 var(--sp-8);
+  border-radius: var(--r-8);
+  background: var(--glass-ctl);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+}
+
+.ai-canvas-md-lang {
+  display: block;
+  padding: var(--sp-4) var(--sp-10) 0;
+  font-size: var(--t-11);
+  letter-spacing: var(--ls-ui);
+  color: var(--ink-3);
+}
+
+.ai-canvas-md-code {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-10);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* NON-PROSE SCROLLS, AND NEVER CLIPS.
+
+   A drawing has a natural width and wrapping it is not an option, so the only
+   honest answers are "scroll" and "shrink". `overflow: hidden` would satisfy a
+   check for the word while silently cutting the right-hand side off a diagram
+   the agent drew — the failure the legibility gate exists for. */
+.ai-canvas-svg {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+
+.ai-canvas-svg svg {
+  display: block;
+  height: auto;
+}
+
+.ai-canvas-math-display {
+  overflow-x: auto;
+  padding: var(--sp-4) 0;
+}
+
+.ai-canvas-math-raw {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* An embedded frame is foreign content: it gets a box, a rim and nothing that
+   could leak the app's own chrome into it. */
+.ai-canvas-html-frame {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: var(--r-8);
+  background: var(--bg-base);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge-faint);
+}
+
+/* ── KEYBOARD FOCUS ───────────────────────────────────────────────────────
+   The app's ring, not a new one: the accent, on the panel ground, so it reads
+   the same here as everywhere else a control can be tabbed to. */
+.ai-canvas-ask-block:focus-visible,
+.ai-canvas-story-ctrl:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg-base),
+    0 0 0 4px var(--accent);
+}

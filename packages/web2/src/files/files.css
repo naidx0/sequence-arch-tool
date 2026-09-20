@@ -1,0 +1,739 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE FILES PANEL — the tree, the source, the diff, the field
+   packages/web2/src/files/files.css                                 item 2.1
+
+   EVERY SELECTOR IS SCOPED UNDER .files-scope, WITHOUT EXCEPTION. R7's audit of
+   v1 found roughly fifty unscoped selectors — "essentially the whole
+   .arch-rf-* family" — and the legibility gate exists because ONE stray
+   `.board-chat-input button` rule crushed a whole menu while every other check
+   in the repository stayed green. A pane that can only paint inside its own
+   root cannot do that to anybody else.
+
+   NO HEX, NO px FONT-SIZE, NO RAW font-weight, NO RAW RUNG HEIGHT.
+   tokens/graphite.css is the one file allowed to declare a colour, a size, a
+   weight or a rung, and test/firewall.test.ts fails the build over any of the
+   four. Everything below is a var(), and every var() below is a token that
+   exists — the firewall checks that too, and it had to: a reach for a 14-step
+   on the space ramp, which runs 2 4 6 8 10 12 16 and has no 14, once resolved
+   to nothing, sized a caret to zero, and passed every gate in the repository.
+   (The bad name is described rather than written out, because this rule reads
+   comments as well as declarations — as it must, since a token name written
+   down anywhere is a name waiting to be pasted.)
+
+   ── THE HUE LEDGER FOR THIS WHOLE SHEET ──────────────────────────────────
+   Three tokens, and each one is a claim about the world:
+
+     --diff-add-bg / --diff-del-bg      the book's THIRD disjoint colour
+       channel. A background WASH and an inset gutter, never a foreground —
+       the token sheet's own words, "so a removed line can never be misread as
+       'won't fit'".
+     --fits / --wont                    the diff's arithmetic, `+340 −118`, and
+       nothing else on this surface. That IS a claim about what happened, which
+       is what law 1 lets a hue pay for. review.css reached the same conclusion
+       for the same two numbers; this is the reuse, not a second argument.
+     --accent                           the focus ring, which is the substrate's
+       and is not this sheet's to choose.
+
+   AND THE THINGS THAT DELIBERATELY GET NO HUE: selection ("selection is where
+   the keyboard is, and is neutral" — sheet 11.4), a changed file (a fact, not a
+   verdict — it takes a LETTER), a disabled action (a colour change, never an
+   opacity one, following the convention whiteboard.css records).
+
+   ── NO GLASS ON A ROW, AND THAT IS DECISION 14 VERBATIM ──────────────────
+   "`backdrop-filter` costs a compositing layer per box. Glass goes on the
+   chrome's fixed, small set of controls — never a list item, never a transcript
+   row." This tree mounts up to three hundred rows. Nothing here declares
+   `backdrop-filter`, and `.files-row` is deliberately absent from Decision 16's
+   frosted-selection selector list in tokens/graphite.css.
+
+   ── COMPACT IS THE ONLY DENSITY (law 3) ──────────────────────────────────
+   Tree rows on --row-h-tool, diff lines on --diffx-line-h, controls on
+   --control-h, type at --t-10 / --t-11 / --t-12. "Airy is a defect."
+
+   THE ROWS WERE ON --row-h UNTIL 2026-09-19, which is this sheet breaking its
+   own law three lines after stating it. Owner, walking the built app: "for the
+   files, have it just condensed a little bit smaller, because right now the
+   files opens up the file directory very large."
+
+   --row-h is 30px and sheet 10 assigns it to a folder, a rail item, a menu
+   item - CHROME, a fixed small set of things. --row-h-tool is 26px and the
+   sheet's own reason for it is that "a tool call is 26px because it is a
+   footnote". A file tree is the densest list in this product: it mounts up to
+   three hundred rows and a reader SCANS it rather than reading it. Measured on
+   this repository, 56 top-level rows at 30px against 26px is 224px - about a
+   third of the pane's height, given back without losing a row.
+
+   ── WHERE THIS FILE IS IMPORTED: NOWHERE YET, AND THAT IS THE HANDBACK ────
+   `app/App.tsx` owns one ordered style block and argues the position of every
+   sheet in it — "a sheet whose position cannot be argued does not go in". This
+   lane may not edit that file. This sheet belongs BESIDE rail.css and BEFORE
+   review.css: it is a surface inside the frame, like the rail, and the review
+   overlay must still win over it. The line is
+
+       import '../files/files.css';
+
+   directly after the rail.css line. Until it is added the panel renders
+   unstyled in the app and fully styled under test, which imports it directly.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the frame ───────────────────────────────────────────────────────────
+   `min-height: 0` and `min-width: 0` on every flex and grid child that holds a
+   scroller. Without them `overflow: auto` never scrolls: the child grows to its
+   content instead, the whole column scrolls with the page, and the box the
+   reader is looking at silently extends past the window. That is the exact
+   defect the legibility gate exists to catch, and it is one missing line. */
+.files-scope {
+  display: grid;
+  grid-template-columns: minmax(0, var(--rail-w)) minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background-color: var(--bg-base);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+}
+
+/* Below this the two columns cannot both be read, so the tree goes on top and
+   the file below it. Written as a plain query rather than off --shell-bp-chat
+   because a media query cannot read a custom property — a limitation of CSS,
+   not a drift from the ramp. */
+@media (max-width: 720px) {
+  .files-scope {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 12rem) minmax(0, 1fr);
+  }
+}
+
+.files-scope .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+}
+
+.files-scope .files-i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.files-scope .files-i-14 { width: 14px; height: 14px; }
+.files-scope .files-i-12 { width: 12px; height: 12px; }
+
+/* ── the left column ─────────────────────────────────────────────────────── */
+
+.files-scope .files-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  /* Decision 21 / V3 — frosted tree column */
+  background-color: var(--glass-pane);
+  -webkit-backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  backdrop-filter: blur(var(--glass-blur-pane)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset);
+  border-right: var(--w-hair) solid var(--edge-faint);
+}
+
+/* The field never scrolls away: a filter you have to scroll back up to reach is
+   a filter nobody uses twice. */
+.files-scope .files-top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+
+.files-scope .files-fieldwrap {
+  position: relative;
+  display: block;
+}
+
+/* The glyph sits in the same 14px slot the rows use, so the search mark lands
+   on the panel's one vertical alignment rather than beside it. */
+.files-scope .files-fieldicon {
+  position: absolute;
+  left: var(--sp-8);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  pointer-events: none;
+  display: flex;
+}
+
+.files-scope .files-field {
+  width: 100%;
+  /* The compact field rung, written off the space ramp rather than as a literal
+     so it moves when the ramp does. */
+  height: var(--sp-24);
+  box-sizing: border-box;
+  padding: 0 var(--sp-8) 0 var(--sp-32);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  appearance: none;
+}
+.files-scope .files-field::placeholder { color: var(--ink-3); }
+.files-scope .files-field::-webkit-search-cancel-button { display: none; }
+
+.files-scope .files-matches {
+  margin: 0;
+  min-height: var(--lh-10);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-scope .files-treewrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── the tree ─────────────────────────────────────────────────────────────
+   The ONE scroller in this column. Both axes: a deeply indented path is wider
+   than the rail, and a tree that reflowed its rows to fit would put the
+   filename under the folder it belongs to. */
+.files-scope .files-tree {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-4);
+}
+
+/* The double ring — the page colour, then the accent — never removed. It is the
+   substrate's focus treatment and the only place this sheet spends --accent. */
+.files-scope .files-tree:focus-visible,
+.files-scope .files-field:focus-visible,
+.files-scope .files-btn:focus-visible,
+.files-scope .files-mode:focus-visible,
+.files-scope .files-editor:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ONE ROW, FOUR NON-CHROMATIC CHANNELS: height, indent, icon, type family.
+   `--files-depth` is handed to the cascade from React state as an inline custom
+   property, which is the documented way a live number reaches CSS here (the
+   shell does the same with --shell-chat-over). The indent is applied ONCE, by
+   the padding below, so it cannot compound twice through a nested container. */
+.files-scope .files-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  /* 26, the ladder's compact rung - see the header. A file row is a footnote
+     in a list of hundreds, not a menu item. */
+  height: var(--row-h-tool);
+  padding-right: var(--sp-8);
+  padding-left: calc(var(--sp-6) + var(--files-depth, 0) * var(--sp-12));
+  border-radius: var(--r-10);
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.files-scope .files-row:hover {
+  background-color: var(--state-hover);
+  color: var(--ink-1);
+}
+
+/* Decision 21 / V3 — selection is accent wash + accent ink (not a hue slab). */
+.files-scope .files-row[data-selected='true'] {
+  background-color: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* A directory is sans and a file is mono: the fourth channel, and the one that
+   survives both greyscale and a reader who cannot see the glyph. */
+.files-scope .files-row-dir {
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+}
+.files-scope .files-row-file {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-body);
+}
+
+/* The chevron's slot exists on every row, drawn or not, so every glyph in the
+   tree lands on one vertical line. A file with no slot would sit half a step
+   left of its siblings and the indent — one of the four channels — would start
+   carrying noise instead of depth. */
+.files-scope .files-twist {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+}
+
+.files-scope .files-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+  A COLLAPSED CHAIN TRUNCATES AT THE FRONT, because the identity of
+  `packages/web2/src/files` is its tail. `direction: rtl` is the only way CSS
+  puts the ellipsis on the left without measuring the string in JavaScript, and
+  the inner <bdi> keeps the path's own characters running left to right inside
+  that RTL line box.
+
+  `display: block` IS THE WHOLE FIX AND IT COST A SCREENSHOT TO FIND ONE LANE
+  OVER: text-align has no effect on a flex container, so under `direction: rtl`
+  every SHORT path packs against the right edge and the list renders as a ragged
+  right column. Every unit assertion passed; only the render showed it.
+*/
+.files-scope .files-name-tail {
+  direction: rtl;
+  text-align: left;
+}
+
+/* THE CHANGE MARK IS A LETTER AND NOT A COLOUR. "This file is modified" is a
+   fact about the world, not a verdict on it, and --fits / --wont are spent on
+   the diff's arithmetic. The letter reads at a glance, survives greyscale, and
+   is what a git user already reads; the full word rides in the row's title and
+   accessible label. */
+.files-scope .files-mark {
+  flex: 0 0 auto;
+  min-width: var(--sp-10);
+  text-align: center;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* A directory says only THAT something under it changed. A dot, because there
+   is no letter that could stand for seven files' statuses without picking a
+   winner the panel cannot justify. */
+.files-scope .files-mark-dot {
+  width: var(--dot);
+  height: var(--dot);
+  min-width: var(--dot);
+  border-radius: var(--r-full);
+  background-color: var(--ink-4);
+}
+
+/* ── the right column ────────────────────────────────────────────────────── */
+
+.files-scope .files-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--bg-base);
+}
+
+.files-scope .files-hd {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--diffx-file-hd-h);
+  padding: 0 var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge);
+  background-color: var(--surface-1);
+}
+
+.files-scope .files-hd-id {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-6);
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--ink-3);
+}
+.files-scope .files-hd-id .files-i { align-self: center; }
+
+/* The NAME is the identity and never truncates before the path does. */
+.files-scope .files-hd-name {
+  flex: 0 0 auto;
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-head);
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-scope .files-hd-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+.files-scope .files-hd-status {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── the segmented view control ──────────────────────────────────────────── */
+
+.files-scope .files-modes {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--r-10);
+  background-color: var(--surface-2);
+  border: var(--w-hair) solid var(--edge);
+}
+
+.files-scope .files-mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  height: var(--row-h);
+  min-width: var(--row-h);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.files-scope .files-mode:hover { background-color: var(--state-hover); color: var(--ink-1); }
+
+/* Chosen mode — quiet gold wash like V3 mode triggers, not a loud slab. */
+.files-scope .files-mode[aria-pressed='true'] {
+  background-color: var(--accent-wash);
+  color: var(--accent-ink);
+  border-color: var(--accent-edge);
+}
+
+/* Disabled is a COLOUR change and not an opacity one — whiteboard.css records
+   the convention, and the reason is that an opacity fade dims the label along
+   with the affordance and makes "cannot press this" read as "press this, it is
+   just quiet". */
+.files-scope .files-mode:disabled,
+.files-scope .files-btn:disabled {
+  color: var(--ink-4);
+  cursor: default;
+  background-color: transparent;
+}
+
+/* ── the action row ──────────────────────────────────────────────────────── */
+
+.files-scope .files-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-6) var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+.files-scope .files-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: var(--surface-2);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.files-scope .files-btn:hover:not(:disabled) {
+  background-color: var(--surface-3);
+  color: var(--ink-1);
+}
+
+/* ── the body, which is the second and last scroller ─────────────────────── */
+
+.files-scope .files-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: var(--sp-8);
+}
+
+.files-scope .files-note {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-4);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  max-width: var(--col-max);
+}
+.files-scope .files-note-fail { color: var(--wont); }
+.files-scope .files-note-quiet { color: var(--ink-4); }
+
+/* ── the source listing ──────────────────────────────────────────────────── */
+
+.files-scope .files-code-pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--diffx-line-h);
+  font-variant-numeric: var(--num);
+  /*
+    A LONG LINE SCROLLS HERE AND NOWHERE ELSE. Without this the widest line in
+    the file sets the width of the pane, and on a monorepo that means one
+    minified import pushes the tree and the rest of the shell sideways.
+
+    THE SCROLLBAR ITSELF IS DELIBERATELY NOT STYLED. styles/base.css already
+    declares ::-webkit-scrollbar for the whole app, and a second declaration
+    here would be a second specification of one control — the exact defect that
+    cost this project a repair cycle when twelve agents produced three
+    specifications of one thing.
+  */
+  overflow-x: auto;
+}
+
+.files-scope .files-code-line {
+  display: grid;
+  grid-template-columns: var(--diffx-num-w) 1fr;
+  gap: var(--sp-8);
+  min-height: var(--diffx-line-h);
+  white-space: pre;
+}
+
+/* ── the diff ────────────────────────────────────────────────────────────── */
+
+.files-scope .files-diff {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--diffx-line-h);
+  font-variant-numeric: var(--num);
+  overflow-x: auto;
+}
+
+.files-scope .files-diff-sum {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--nest-hd-h);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* THE DIFF'S OWN ARITHMETIC, AND THE ONLY VERDICT HUES ON THIS SHEET. A count
+   of what was added and removed is a claim about what happened, which is
+   exactly what law 1 lets a hue pay for. review.css spends the same two tokens
+   on the same two numbers. */
+.files-scope .files-stat-add { color: var(--fits); font-weight: var(--fw-label); }
+.files-scope .files-stat-del { color: var(--wont); font-weight: var(--fw-label); }
+
+.files-scope .files-diff-file {
+  margin-top: var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  overflow: hidden;
+  background-color: var(--surface-1);
+}
+
+.files-scope .files-diff-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--diffx-file-hd-h);
+  padding: 0 var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+.files-scope .files-diff-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.files-scope .files-diff-from {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+.files-scope .files-hunk-hd {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: center;
+  padding: var(--sp-2) var(--sp-8);
+  background-color: var(--diffx-hunk-bg);
+  color: var(--diffx-hunk-ink);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  border-top: var(--w-hair) solid var(--edge-faint);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.files-scope .files-hunk-sect {
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-scope .files-line {
+  display: grid;
+  grid-template-columns: var(--diffx-num-w) var(--diffx-num-w) var(--diffx-sign-w) 1fr;
+  align-items: baseline;
+  min-height: var(--diffx-line-h);
+  white-space: pre;
+}
+
+/* THE WASH IS THE BACKGROUND AND THE GUTTER IS THE BRIGHTER EDGE. The book's
+   diff channel is "background wash only, never foreground": the text of an
+   added line is the same ink as the text of a context line, because a line
+   being added is not a claim that the line is good. The 2px inset edge carries
+   the signal at a glance without spending saturation on eighty characters of
+   code. */
+.files-scope .files-line-add {
+  background-color: var(--diff-add-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-add-gutter);
+}
+.files-scope .files-line-del {
+  background-color: var(--diff-del-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-del-gutter);
+}
+
+/* MUTED IS --ink-3 AND NOT --ink-4, AND THAT IS A MEASUREMENT RATHER THAN A
+   PREFERENCE. review.css records the reading: --ink-4 measured 2.05:1 against
+   the add wash, below every legibility floor there is, on the one column that
+   says which line changed. --ink-4 is the ramp's DISABLED step; --ink-3 is its
+   quiet step and measures 5.5:1. Nothing about that was visible to a jsdom
+   assertion — both are valid token names. */
+.files-scope .files-num {
+  color: var(--ink-3);
+  text-align: right;
+  padding-right: var(--sp-6);
+  user-select: none;
+}
+
+/* THE SIGN TAKES THE GUTTER HUE ITSELF. The --diffx-*-strong pair is INTRALINE
+   emphasis — a 46%-alpha fill behind a run of characters — and used as a
+   foreground on one glyph it measured 1.19:1 one lane over: the + and the −
+   were, in practice, not on the screen. A glyph carrying the whole meaning of
+   its row gets the solid token. */
+.files-scope .files-sign {
+  color: var(--ink-3);
+  text-align: center;
+  user-select: none;
+}
+.files-scope .files-line-add .files-sign { color: var(--diff-add-gutter); }
+.files-scope .files-line-del .files-sign { color: var(--diff-del-gutter); }
+
+.files-scope .files-code-text { color: var(--ink-1); }
+
+/* RESTRAINED SYNTAX HIGHLIGHTING, AND THE HUE BUDGET IS ZERO. Which token is a
+   keyword is a claim about GRAMMAR, and spending five hues on it — on the one
+   surface whose two real hues are the add and remove washes — would stop the
+   diff's own arithmetic being the loudest thing present. The separation is the
+   ink ramp and the weight ladder, which is what the book already spends on
+   hierarchy everywhere else. `review/syntax.ts` asserts there are four classes
+   and only four; these are those four. */
+.files-scope .files-t-kw { color: var(--ink-1); font-weight: var(--fw-solid); }
+.files-scope .files-t-str { color: var(--ink-2); }
+.files-scope .files-t-num { color: var(--ink-2); }
+.files-scope .files-t-com { color: var(--ink-4); font-style: italic; }
+
+.files-scope .files-diff-tail {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  flex-wrap: wrap;
+  padding: var(--sp-8) var(--sp-4);
+  font-family: var(--font-sans);
+}
+
+/* ── the field ───────────────────────────────────────────────────────────── */
+
+.files-scope .files-edit {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  gap: var(--sp-4);
+}
+
+.files-scope .files-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  padding: var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background-color: var(--surface-1);
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  /* The field scrolls in BOTH directions rather than wrapping. A wrapped source
+     line is a line that is not the line in the file, and on a surface whose
+     whole claim is `file:line` that is the defect, not the convenience. */
+  white-space: pre;
+  overflow: auto;
+}
+
+.files-scope .files-editnote {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}

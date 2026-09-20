@@ -1,0 +1,59 @@
+{
+  "commit": "7c591f1c",
+  "before": {
+    "startedAt": "2026-09-06T21:13:44.755Z",
+    "builtAt": "2026-09-06T19:02:41.702Z",
+    "stale": false,
+    "server": {
+      "builtAt": "2026-09-06T19:02:41.702Z",
+      "sourceAt": "2026-09-06T19:02:34.824Z",
+      "stale": false
+    },
+    "client": {
+      "builtAt": "2026-09-06T12:47:10.128Z",
+      "sourceAt": "2026-09-06T12:46:50.419Z",
+      "stale": false
+    }
+  },
+  "after": {
+    "startedAt": "2026-09-06T21:13:44.755Z",
+    "builtAt": "2026-09-06T19:02:41.702Z",
+    "stale": false,
+    "server": {
+      "builtAt": "2026-09-06T19:02:41.702Z",
+      "sourceAt": "2026-09-06T19:02:34.824Z",
+      "stale": false
+    },
+    "client": {
+      "builtAt": "2026-09-06T12:47:10.128Z",
+      "sourceAt": "2026-09-06T12:46:50.419Z",
+      "stale": false
+    }
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "ask": "Which files depend on scan.ts, and what breaks if it changes?",
+      "seconds": 141,
+      "chars": 2193
+    },
+    {
+      "turn": 2,
+      "ask": "Of those, which one would I have to change first?",
+      "seconds": 123,
+      "chars": 3142
+    },
+    {
+      "turn": 3,
+      "ask": "Show me how that file uses what scan.ts returns.",
+      "seconds": 113,
+      "chars": 5352
+    }
+  ],
+  "checks": {
+    "turn 3 names scan.ts (the subject of turn 1)": true,
+    "turn 3 names a concrete dependent file": true,
+    "the reply cites evidence it read": true,
+    "a picture is on the page": false
+  }
+}

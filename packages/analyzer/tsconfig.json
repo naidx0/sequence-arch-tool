@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@sequence/api-types": ["../api-types/dist/index.d.ts"]
+    }
+  },
+  "include": ["src"]
+}

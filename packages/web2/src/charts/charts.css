@@ -1,0 +1,92 @@
+/* Chart family chrome ù Graphite tokens only (Decision 22). */
+
+.seqchart {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+.seqchart-hd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.seqchart-title {
+  font-size: var(--t-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  line-height: var(--lh-13);
+}
+
+.seqchart-cap {
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  line-height: var(--lh-12);
+}
+
+.seqchart-scroll {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.seqchart--plane .seqchart-scroll,
+.ai-canvas-plane .seqchart-scroll {
+  overflow: visible;
+  max-width: none;
+}
+
+.seqchart-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  color: var(--ink-2);
+}
+
+.seqchart-svg .cgrid {
+  stroke: var(--edge-faint);
+  stroke-width: 1;
+}
+
+.seqchart-svg .caxis {
+  stroke: var(--ink-3);
+  stroke-width: 1.25;
+}
+
+.seqchart-svg .ctick,
+.seqchart-svg .caxis-label,
+.seqchart-svg .cvalue {
+  fill: var(--ink-3);
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+.seqchart-svg .cseries-line {
+  fill: none !important;
+  stroke: var(--viz-1, var(--accent, #c9a227));
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.seqchart-svg .cseries-line.s-1 { stroke: var(--viz-1, var(--accent, #c9a227)); }
+.seqchart-svg .cseries-line.s-2 { stroke: var(--viz-2, #1a6fa8); }
+.seqchart-svg .cseries-line.s-3 { stroke: var(--viz-3, #ab3782); }
+.seqchart-svg .cseries-line.s-4 { stroke: var(--viz-4, var(--viz-1, #c9a227)); }
+.seqchart-svg .cseries-line.s-5 { stroke: var(--viz-5, var(--viz-2, #1a6fa8)); }
+.seqchart-svg .cseries-line.s-6 { stroke: var(--viz-6, var(--viz-3, #ab3782)); }
+
+.seqchart-svg .cdot {
+  fill: var(--viz-1, var(--accent, #c9a227));
+  stroke: none;
+}
+
+.seqchart-note {
+  margin: 0;
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}

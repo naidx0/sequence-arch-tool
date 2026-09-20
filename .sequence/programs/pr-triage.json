@@ -1,0 +1,162 @@
+{
+  "$note": "TEMPLATE — honest shape, not a live capability. Run with: sequence program run .sequence/programs/pr-triage.json --agent <your-local-agent-id> [--input mode=strict]. The agent nodes drive YOUR OWN local coding agent over ACP (real subprocess, real cost); the real GitHub steps (reading the diff, posting a review) require your GitHub access on your machine. This template does not itself call GitHub. Agent nodes produce a structured {stopReason,text} turn result, NOT a scalar; the branch therefore gates on a SUPPLIED typed input (mode) rather than a score parsed from agent content — automated gating on agent content (e.g. parsing a quality number) needs a future parse/command step. mode=strict routes to deep-review; the default (standard) routes to standard-review — both ends are reachable.",
+  "id": "pr-triage",
+  "name": "PR Triage",
+  "description": "Template: parallel ACP probes assess an open PR, a join agent summarizes after all probes finish, and a typed branch on the supplied \"mode\" input routes to \"deep-review\" (mode=strict) or \"standard-review\". Honestly a template — running it needs a real local agent (and, for the real GitHub steps, GitHub access); the graph itself calls nothing.",
+  "state": {
+    "shape": {
+      "intent": "json",
+      "quality": "json",
+      "conflicts": "json",
+      "summary": "json",
+      "mode": "string"
+    },
+    "initial": {
+      "intent": "",
+      "quality": "",
+      "conflicts": "",
+      "summary": "",
+      "mode": "standard"
+    }
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "title": "PR opened",
+      "kind": "start"
+    },
+    {
+      "id": "fan",
+      "title": "Probe the PR in parallel",
+      "kind": "parallel"
+    },
+    {
+      "id": "probe-intent",
+      "title": "Extract intent",
+      "kind": "agent",
+      "agent": {
+        "runtime": "acp",
+        "acp": {
+          "agentRef": "local-coding-agent"
+        },
+        "intent": "ask",
+        "outKey": "intent",
+        "prompt": "Read this pull request (title, description, and diff) and state, in one sentence, what change the author intends to make and why. Do not evaluate quality yet — only capture the intent."
+      }
+    },
+    {
+      "id": "probe-quality",
+      "title": "Assess change quality",
+      "kind": "agent",
+      "agent": {
+        "runtime": "acp",
+        "acp": {
+          "agentRef": "local-coding-agent"
+        },
+        "intent": "ask",
+        "outKey": "quality",
+        "prompt": "Assess the quality of this pull request diff: correctness, test coverage, clarity, and adherence to the surrounding code. Summarize the main quality signals and any blocking concerns in a few sentences."
+      }
+    },
+    {
+      "id": "probe-conflicts",
+      "title": "Check for conflicts",
+      "kind": "agent",
+      "agent": {
+        "runtime": "acp",
+        "acp": {
+          "agentRef": "local-coding-agent"
+        },
+        "intent": "ask",
+        "outKey": "conflicts",
+        "prompt": "Determine whether this pull request likely conflicts with the current state of the target branch (overlapping edits, stale APIs, merge markers). Explain briefly whether a conflict is likely and where."
+      }
+    },
+    {
+      "id": "summarize",
+      "title": "Summarize triage",
+      "kind": "agent",
+      "agent": {
+        "runtime": "acp",
+        "acp": {
+          "agentRef": "local-coding-agent"
+        },
+        "intent": "ask",
+        "outKey": "summary",
+        "prompt": "Given the extracted intent, the quality assessment, and the conflict assessment gathered so far, write a concise triage summary for a maintainer: what the PR does, its main risks, and a recommended next action."
+      }
+    },
+    {
+      "id": "mode-gate",
+      "title": "Review-mode gate",
+      "kind": "branch",
+      "branch": {
+        "condition": {
+          "left": "mode",
+          "op": "==",
+          "right": "strict"
+        }
+      }
+    },
+    {
+      "id": "end-deep",
+      "title": "deep-review",
+      "kind": "end"
+    },
+    {
+      "id": "end-standard",
+      "title": "standard-review",
+      "kind": "end"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-start-fan",
+      "from": "start",
+      "to": "fan",
+      "kind": "seq"
+    },
+    {
+      "id": "e-fan-intent",
+      "from": "fan",
+      "to": "probe-intent",
+      "kind": "parallel"
+    },
+    {
+      "id": "e-fan-quality",
+      "from": "fan",
+      "to": "probe-quality",
+      "kind": "parallel"
+    },
+    {
+      "id": "e-fan-conflicts",
+      "from": "fan",
+      "to": "probe-conflicts",
+      "kind": "parallel"
+    },
+    {
+      "id": "e-fan-summarize",
+      "from": "fan",
+      "to": "summarize",
+      "kind": "seq"
+    },
+    {
+      "id": "e-summarize-gate",
+      "from": "summarize",
+      "to": "mode-gate",
+      "kind": "seq"
+    },
+    {
+      "id": "e-gate-deep",
+      "from": "mode-gate",
+      "to": "end-deep",
+      "kind": "branch-true"
+    },
+    {
+      "id": "e-gate-standard",
+      "from": "mode-gate",
+      "to": "end-standard",
+      "kind": "branch-false"
+    }
+  ]
+}

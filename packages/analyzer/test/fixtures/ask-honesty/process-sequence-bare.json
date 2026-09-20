@@ -1,0 +1,17 @@
+{
+  "kind": "process-sequence",
+  "title": "Local agent harness",
+  "nodes": [
+    { "id": "proposal:core", "label": "Harness Core", "kind": "service" },
+    { "id": "proposal:ollama", "label": "Ollama", "kind": "service" }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "proposal:core",
+      "to": "proposal:ollama",
+      "family": "call",
+      "label": "infer"
+    }
+  ]
+}

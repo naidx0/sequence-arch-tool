@@ -1,0 +1,79 @@
+services:
+  gateway:
+    build: ./gateway
+    ports:
+      - "3000:3000"
+    environment:
+      ORDERS_URL: http://orders:8000
+      PAYMENTS_URL: http://payments:4000
+      SHIPPING_URL: http://shipping:8100
+      INVOICES_URL: http://invoices:8200
+    # trap: depends_on redis but gateway never talks to redis
+    depends_on:
+      - orders
+      - payments
+      - redis
+
+  orders:
+    build: ./orders
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/shop
+      REDIS_URL: redis://redis:6379
+      PAYMENTS_URL: http://payments:4000
+      INVENTORY_ADDR: inventory:50051
+    depends_on:
+      - postgres
+      - redis
+
+  payments:
+    build: ./payments
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/shop
+      STRIPE_KEY: sk_test_123
+    depends_on:
+      - postgres
+
+  notifications:
+    build: ./notifications
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+
+  inventory:
+    build: ./inventory
+    ports:
+      - "50051:50051"
+
+  shipping:
+    build: ./shipping
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/shop
+      REDIS_ADDR: redis:6379
+    depends_on:
+      - postgres
+      - redis
+
+  invoices:
+    build: ./invoices
+    environment:
+      PAYMENTS_URL: http://payments:4000
+    depends_on:
+      - postgres
+
+  edge:
+    build: ./edge
+    ports:
+      - "8080:80"
+    depends_on:
+      - gateway
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+
+  redis:
+    image: redis:7

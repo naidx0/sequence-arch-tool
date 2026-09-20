@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "kind": "service-sequence",
+  "title": "Minimal fixture",
+  "grounded": {
+    "graphId": "fixture",
+    "origin": "export"
+  },
+  "nodes": [
+    {
+      "id": "svc:a",
+      "label": "a",
+      "kind": "service",
+      "role": "participant"
+    },
+    {
+      "id": "svc:b",
+      "label": "b",
+      "kind": "service",
+      "role": "participant"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e:a-b-http",
+      "from": "svc:a",
+      "to": "svc:b",
+      "family": "http",
+      "label": "GET /"
+    }
+  ]
+}

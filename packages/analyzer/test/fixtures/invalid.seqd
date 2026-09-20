@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "kind": "service-sequence",
+  "title": "Broken fixture",
+  "grounded": {},
+  "nodes": [],
+  "edges": [
+    {
+      "id": "e:orphan",
+      "from": "svc:missing",
+      "to": "svc:b",
+      "family": "http"
+    }
+  ]
+}

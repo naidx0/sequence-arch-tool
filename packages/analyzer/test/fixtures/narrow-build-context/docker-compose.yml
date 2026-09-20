@@ -1,0 +1,18 @@
+# The reported shape (sqlfluff): one service whose build context is the repo
+# root but whose `dockerfile:` key points into `docker/development`. The r81
+# narrowing rule then roots the service at that directory — which holds a
+# Dockerfile and no code at all, so the scan ended at zero files over a repo
+# whose source sits at the root.
+services:
+  development:
+    build:
+      context: .
+      dockerfile: ./docker/development/Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:14-bullseye
+    environment:
+      - POSTGRES_PASSWORD=password
