@@ -1,0 +1,2059 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   GRAPHITE — THE TOKEN LAYER
+   packages/web2/src/tokens/graphite.css
+
+   THIS IS THE ONLY FILE IN packages/web2 THAT MAY DECLARE A COLOUR, A RADIUS,
+   A TYPE SIZE OR A SPACING VALUE. Enforced by test/firewall.test.ts (item 0.6).
+   Every other sheet and every .tsx consumes var(--…) and nothing else.
+
+   Transcribed from the book: docs/brand/graphite/_core.html §1 THE TOKEN
+   LAYER and §2 THE RAMPS. Bound by docs/brand/GRAPHITE-DECISIONS.md.
+
+   Transcribed from the BOOK, not from packages/web. docs/PIVOT-V2.md forbids
+   citing the v1 tree as precedent; docs/research/v2-architecture-and-gaps.md
+   §4.4 names product.css:1-597 as the base, but that file is itself a
+   transcription of _core.html, so this goes to the upstream source instead of
+   copying a copy.
+
+   HUE BUDGET FOR THIS SHEET — the count Graphite requires in every header:
+     5 verdict hues   --fits --spills --wont --unknown --info
+     1 accent         --accent / --accent-solid       (gold, never a verdict)
+     6 series hues    --viz-1..6                      (disjoint namespace)
+     2 diff channels  --diff-add-* --diff-del-*       (third disjoint channel)
+     5 hint hues      --hint-blue/green/orange/purple/teal   (Decision 31)
+     0 chrome hues    dividers, headings and borders are NEVER coloured
+   Every hue on screen is a claim about the world, and there are never more
+   hues than there are claims.
+
+   THREE-STATE THEMING — GRAPHITE-DECISIONS.md Decision 1:
+     :root                              → the COMPLETE light palette
+     @media (prefers-color-scheme:dark)
+       :root:not([data-theme="light"])  → system default resolves dark
+     :root[data-theme="dark"]           → an explicit choice wins
+   The dark declaration list is written twice on purpose. Plain CSS cannot
+   share one list between a media query and an attribute selector, so the
+   duplication is real; both blocks are edited together or not at all.
+
+   LIGHT IS PRESENT AND UNTUNED. Decision 1 DEFERS light, it does not waive it.
+   The values below are Graphite's own tuned light palette carried over so the
+   SHAPE is right. No Sequence surface has been checked against them and none
+   should be until the owner revisits the decision. The shape must exist from
+   day 0 or finishing light later is a re-architecture rather than a fill-in.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── TYPEFACES ─────────────────────────────────────────────────────────────
+   Item 0.1. Instrument Sans for body/prose; DM Sans for chrome/UI (OFL stand-in
+   for Neue Montreal — Decision 13 refuses shipping commercial NM); Sora for
+   display headings (--t-17+); JetBrains Mono for every number, identifier,
+   path, log line, diff line, verdict badge and provenance tag. Mono always
+   sets one step down from the sans beside it.
+
+   THESE @import LINES ARE THE WHOLE POINT OF ITEM 0.1. The book links Google
+   Fonts because a sheet must open by double-clicking it; _core.html:144-146
+   says so itself and says the APP must not — "a local-first product that
+   blocks first paint on a CDN contradicts itself." CLAUDE.md's local-first
+   non-negotiable says the same thing from the other end. These resolve to
+   .woff2 files inside node_modules, which Vite fingerprints and emits into the
+   bundle, so first paint touches no network at all. test/boot.test.ts asserts
+   zero requests to fonts.googleapis.com and fonts.gstatic.com.
+
+   packages/web shipped @fontsource-variable/inter and locked it in place with
+   a PASSING test. Instrument Sans was chosen against Inter specifically
+   because it holds its shape at the 10-11px working sizes below, where a
+   different x-height and different advance widths mean different truncation
+   and a different column fit.
+
+   Weights: the static cuts ship 400/500/600/700. Graphite's ladder asks for
+   450 body and 550 labels, which no static cut can reach — a variable face
+   could, but @fontsource-variable/instrument-sans registers the family as
+   "Instrument Sans Variable", a DIFFERENT family name from the one _core.html
+   declares. Reconciling the ladder against the static cuts belongs to item
+   2.2, which owns the type ramp. Wave 0 gets the family name right. */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
+/* SORA — the display face. Owner ruling, 2026-09-14 (Decision 13): "sora is
+   really clean and lets see if we can add that anywhere." ONE weight, 600,
+   because the only thing it sets is headings — shipping cuts nothing renders
+   is bytes in the bundle for nothing. Self-hosted through @fontsource like
+   the other two, so first paint still touches no network and boot.test.ts
+   still passes. */
+/* DM SANS — OFL stand-in for Neue Montreal (commercial; Decision 13 refuses
+   shipping NM). Tight geometric grotesk for V3 chrome / labels / tools.
+   Body prose stays Instrument Sans (--font-sans). Owner walk 2026-09-16. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §1 THE COMPLETE LIGHT PALETTE
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  color-scheme: light;
+
+  /* ground + surfaces */
+  --bg-ground: #EFEFF0; --bg-base: #F6F6F7;
+  --ground-hi: #FFFFFF; --ground-mid: #F6F6F7; --ground-lo: #EFEFF0;
+  --surface-1: #FBFBFC; --surface-2: #FFFFFF; --surface-3: #FFFFFF; --surface-4: #FFFFFF;
+  --edge: rgba(19,19,21,.11); --edge-strong: rgba(19,19,21,.20); --edge-faint: rgba(19,19,21,.06);
+
+  /* ink */
+  --ink-1: #131315; --ink-2: #4C4D53; --ink-3: #6C6D75; --ink-4: #9A9BA2;
+  --ink-body: #4C4D53;
+
+  /* interaction overlays — light moves DOWNWARD (darker). A hovered light row
+     that gets lighter is the classic light-mode failure. */
+  --state-hover: rgba(19,19,21,.045); --state-press: rgba(19,19,21,.085);
+  --state-selected: rgba(184,134,11,.09);
+
+  /* accent — Graphite gold (Decision 22–23). Picked by elimination: green, amber, red, blue
+     and grey are each already spoken for by a meaning, so the accent can never
+     be mistaken for a verdict. It carries the product's own voice — send,
+     selection, focus — never good, bad, warning or info. */
+  --accent: #C9A227; --accent-solid: #B8860B; --accent-on-solid: #FFFFFF;
+  --accent-wash: rgba(184,134,11,.12); --accent-edge: rgba(184,134,11,.40);
+  /* Native chosen-tab / mode wash — slightly stronger than --accent-wash so a
+     selected control reads without becoming an opaque slab (Draft A / Decision 18). */
+  --accent-wash-2: rgba(184,134,11,.20);
+  --accent-rim: rgba(201,162,39,.45);
+  /* THE CHOSEN FILL. Declared HERE as well as in the two dark blocks because
+     Decision 1's contract is that dark may only OVERRIDE a token, never
+     introduce one — a token that exists in one theme and not the other paints
+     nothing at all in the state it is missing from, and `graphite.test.ts`
+     refuses it. Light moves DOWNWARD: a chosen row here goes darker than its
+     ground, where in dark it goes brighter. */
+  --accent-chosen: rgba(184,134,11,.18);
+  --accent-chosen-edge: rgba(184,134,11,.52);
+  /* THE INK THAT SITS ON THE CHOSEN FILL, and the reason it is its own token
+     rather than a second use of --accent-on-solid: the two fills are not the
+     same kind of surface any more (Decision 30). --accent-on-solid is the ink
+     on the ONE SOLID — Send — and that fill is opaque in both accents, so its
+     ink is decided by the accent's own lightness. --accent-chosen is a
+     TRANSLUCENT fill over the ground, and under white it is thin enough
+     (.12 alpha) that dark ink on it would be near-black on charcoal. Every
+     call site that paints on --accent-chosen names this token, so the pair
+     moves together and cannot be split by a later edit to one of them. */
+  --accent-chosen-ink: #FFFFFF;
+  /* Selected chrome ink (tabs / loaded session / mode) — brighter than wash. */
+  --accent-ink: #8B6914;
+  /* User bubble fill — accent at wash strength, never a verdict hue. */
+  --user-bubble: rgba(184,134,11,.14);
+
+  /* semantic — verdicts. THIS IS THE WHOLE HUE BUDGET. */
+  --fits: #0C7B53; --spills: #8F5A00; --wont: #C2352F; --unknown: #6C6D75; --info: #1667A8;
+  --info-bright: #1667A8;
+  /* ── THE SIX SURFACE HUES — Decision 16 ────────────────────────────────
+     Owner, 2026-09-14: "more colors like yellow, blue, any colors similar to
+     stuff like purple on the rainbow index."
+
+     IDENTITY, NOT DECORATION, which is the only reason law 1 permits them: a
+     hue here makes no CLAIM about anything — it says WHICH surface, exactly as
+     the three mode hues say which mode. A reader learns "Architecture is the
+     blue one" and stops reading six labels to find it.
+
+     Walked round the wheel FROM the accent rather than picked: violet stays on
+     Chat because the accent is already the app's own colour, and the other five
+     step away from it in order. None is a tone hue (fits/spills/wont/info), so
+     none can be mistaken for a verdict. They are used at wash strength only —
+     a tab is tinted, never filled. */
+  --surface-hue-chat: #C9A227;
+  --surface-hue-architecture: #C9A227;
+  --surface-hue-whiteboard: #C9A227;
+  --surface-hue-ai-canvas: #C9A227;
+  --surface-hue-terminal: #C9A227;
+  --surface-hue-browser: #C9A227;
+  --ground-wash: linear-gradient(180deg, rgba(0,0,0,.02) 0%, transparent 60%);
+  --mix-wash: 10%; --mix-edge: 38%;
+
+  /* semantic — data visualisation. A separate namespace, never mixed with the
+     verdict vocabulary, so a chart with six series does not spend the verdict
+     budget. --viz-* are for SERIES, not for meaning. */
+  --viz-1: #C9A227; --viz-2: #1A6FA8; --viz-3: #AB3782;
+  --viz-4: #0B7566; --viz-5: #845E0C; --viz-6: #4A56C4;
+  --viz-baseline: #6C6D75;
+  --viz-band: rgba(184,134,11,.09); --viz-grid: rgba(19,19,21,.07);
+  --viz-axis: rgba(19,19,21,.16); --viz-crosshair: rgba(19,19,21,.30);
+
+  /* diff — background wash only, never foreground. A third disjoint channel,
+     so a removed line can never be misread as "won't fit". */
+  --diff-add-bg: rgba(12,123,83,.10); --diff-add-gutter: #0C7B53;
+  --diff-del-bg: rgba(194,53,47,.09); --diff-del-gutter: #C2352F;
+
+  /* utility */
+  --selection-bg: rgba(184,134,11,.20);
+  --scrollbar-thumb: rgba(19,19,21,.18); --scrollbar-thumb-hover: rgba(19,19,21,.30);
+  --scrim: rgba(19,19,21,.36);
+
+  /* elevation — light separates by shadow + hairline ring, never by tone,
+     which is why surfaces 2, 3 and 4 are all #FFFFFF above. */
+  --e0: none;
+  --e1: 0 0 0 1px rgba(19,19,21,.05), 0 1px 2px rgba(19,19,21,.06);
+  --e2: 0 0 0 1px rgba(19,19,21,.06), 0 2px 8px rgba(19,19,21,.08);
+  /* The same two steps expressed as a FILTER, for the one card whose outline
+     no box can follow. box-shadow is drawn on the border box, so on the agent
+     kind — whose shape is a clip-path chamfer — it would paint a rectangular
+     shadow under a cut corner and announce the lie. drop-shadow() follows the
+     alpha of what is actually painted. The hairline ring half of --e1 is
+     dropped because the agent already draws its own outline plate. */
+  --e1-drop: drop-shadow(0 1px 2px rgba(19,19,21,.06));
+  --e2-drop: drop-shadow(0 2px 8px rgba(19,19,21,.08));
+  --e3: 0 0 0 1px rgba(19,19,21,.07), 0 8px 24px rgba(19,19,21,.10);
+  --e4: 0 0 0 1px rgba(19,19,21,.08), 0 20px 48px rgba(19,19,21,.14);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §2 THE RAMPS — theme-invariant below this line
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Three-face stack (owner walk 2026-09-16):
+       1. Instrument Sans — body / prose (--font-sans)
+       2. DM Sans — chrome / tools / labels (--font-ui; OFL ≈ Neue Montreal)
+       3. Sora — display headings (--font-display; Decision 13)
+     Plus JetBrains Mono for paths, ids, logs. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --font-ui: "Inter", var(--font-sans);
+  /* ── THE DISPLAY FACE ──────────────────────────────────────────────────
+     Decision 13. Sora, and ONLY at --t-17 and above.
+
+     MEASURED before it was placed, on this repo's own strings: Sora is 10-13%
+     WIDER than Instrument Sans at every working size (`askPipeline.ts` at
+     --t-11: 219px → 242px). The paragraph above records that Instrument Sans
+     beat Inter precisely because "different advance widths mean different
+     truncation and a different column fit", and a face that costs 10% of
+     every rail row and every tool row would fail that test outright.
+
+     So it is not the UI face and must never become one. It sets the places
+     that have room and where nothing truncates: the boot title, the h1/h2
+     of an answer, the sessions rail “Chats” heading, Settings title, and
+     the context-ring panel title. Below --t-17 chrome uses DM Sans
+     (--font-ui); body prose stays Instrument Sans. */
+  --font-display: "Inter", var(--font-ui);
+  --num: tabular-nums lining-nums;
+
+  /* type scale — COMPACT is the only mode. There is no size above 26px and no
+     size below 10px. Body weight 450, headings 600, labels and controls 550,
+     solid buttons 600, verdicts 700. Mono always sets one step down from the
+     sans beside it. Line height is PAIRED TO SIZE, never a role ratio — the
+     ratios are deliberately non-uniform (--t-17/--lh-17 = 1.29,
+     --t-14/--lh-14 = 1.50), so every line-height is read off this ladder and
+     never computed. */
+  --t-10: 10px; --lh-10: 14px;
+  --t-11: 11px; --lh-11: 15px;
+  --t-12: 12px; --lh-12: 16px;
+  --t-13: 13px; --lh-13: 18px;
+  --t-14: 14px; --lh-14: 21px;
+  --t-15: 15px; --lh-15: 23px;
+  --t-17: 17px; --lh-17: 22px;
+  --t-20: 20px; --lh-20: 26px;
+  --t-26: 26px; --lh-26: 30px;
+
+  /* WEIGHT RAMP — the handback item 0.1 left for this item, closed.
+     styles/base.css says it in the file: "Body weight is 450 per Graphite …
+     reconciling the ladder is item 2.2's, which owns the type ramp."
+
+     Graphite's prose ladder asks for body 450, labels and controls 550,
+     headings 600, solid buttons 600, verdicts 700. @fontsource/instrument-sans
+     ships the STATIC cuts 400 / 500 / 600 / 700, and CSS Fonts 4 font-matching
+     does not round to the nearest. For a desired weight in [400,500] it walks
+     UPWARD to 500 first, and for a weight above 500 it walks upward first. So a
+     declared 450 paints 500 and a declared 550 paints 600 — which lands labels
+     and headings on the same 600 and erases the one distinction the middle of
+     the ladder exists to draw.
+
+     THE TOKENS THEREFORE SAY WHAT ACTUALLY PAINTS. This is not a re-tune, it is
+     sheet 03's rule applied to weight instead of radius: the entry silhouette
+     was rewritten from --r-full --r-14 --r-14 --r-full to square because
+     "square is what ships", and 450 is a value nothing ships. Three steps in,
+     three steps out, and the ladder holds at a size where a half step would not
+     have been visible anyway. Reversing this needs the VARIABLE face, which
+     registers under the family name "Instrument Sans Variable" — a different
+     family from the one the book declares — so it is a typeface decision, not a
+     number to edit here. */
+  --fw-body: 400; --fw-label: 500; --fw-head: 600; --fw-solid: 600; --fw-verdict: 700;
+
+  /* ── THE ONE TRACKING VALUE — Decision 31 ──────────────────────────────
+     Owner, 2026-09-18, on the built app: "look at Apple's soft fonts, soft
+     edges, soft borders, and implement that logic."
+
+     A UI LABEL IS SET TIGHTER THAN PROSE, and that is the whole of it. Apple's
+     own interface faces carry a small negative tracking at control sizes so a
+     two-word label reads as one object rather than as letters in a row; at
+     11-13px Instrument Sans set at 0 reads a half step loose beside them.
+     -0.005em is a HAIR — 0.065px at 13px — which is the point: anything a
+     reader can name as "tracked" is a typographic effect, and this is meant to
+     be invisible and only felt.
+
+     ONE VALUE, NOT A RAMP. A second step would immediately need a rule saying
+     which labels get which, and there is no such distinction to draw. Prose
+     never takes it: --ls-ui is for labels on controls, never for a sentence. */
+  --ls-ui: -0.005em;
+
+  /* spacing — 4px base, named for pixels. The assignments are BINDING, not
+     illustrative: 2 icon-to-label · 4 inside chips · 6 button gaps · 8 row
+     padding · 10 button horizontal padding · 12 card and composer padding ·
+     16 panel padding · 20 transcript sides · 24 page header · 32 between page
+     sections · 40 between major sections · 56 page bottom. The scale SKIPS
+     14, 18, 28, 36 and 48 — a 14px gap is an invented number. */
+  --sp-2: 2px; --sp-4: 4px; --sp-6: 6px; --sp-8: 8px; --sp-10: 10px; --sp-12: 12px;
+  --sp-16: 16px; --sp-20: 20px; --sp-24: 24px; --sp-32: 32px; --sp-40: 40px; --sp-56: 56px;
+
+  /* radius — SIX steps, and only six. Apple-like rounding is a stated
+     priority. --r-6, --r-12, --r-16 and --r-20 DO NOT EXIST; writing one
+     yields an invalid border-radius and a square corner, deliberately.
+       --r-4    inline code chips, colour swatches, keycaps, checkbox
+       --r-8    icon buttons, tool rows, kv rows, file headers, tab pills, menu items
+       --r-10   buttons, rail rows, thread rows, run rows, code blocks, inputs, menus
+       --r-14   panels, cards, NODE CARDS, chart frames, empty states, stages,
+                AND THE COMPOSER (Decision 31 — "soft edges" read as Apple's,
+                and at --r-18 the composer was the roundest box on the surface
+                while being the one a person spends the most time inside)
+       --r-18   the window, the user bubble, page header, dialogs
+       --r-full pills, dots, avatars, the plus button, THE CIRCULAR SEND BUTTON
+     Two rules travel with the ramp. NEVER NEST EQUAL RADII: inner radius =
+     outer minus its inset, so a --r-18 composer with --sp-10 padding holds a
+     --r-8 selector. THE PILL IS RESERVED: --r-full means "this is a state or a
+     label", never "this is an interactive container". */
+  --r-4: 4px; --r-8: 8px; --r-10: 10px; --r-14: 14px; --r-18: 18px;
+  --r-full: 999px;
+
+  /* The single sanctioned sub-4px radius: budget segments (8px tall) and chart
+     legend keys (3px tall), where --r-4 would round a 3px key into a lozenge
+     and destroy the difference between a swatch and a rule. It is the ONLY
+     place a radius below 4px is allowed. */
+  --r-bar: 2px;
+
+  /* layout constants — these are tokens too. Wave 2's Shell.tsx writes
+      --rail-w and --pane-w as inline custom properties from React state and
+      the three regions respond entirely in CSS. React owns two numbers; CSS
+      owns the layout. DECISION 5 (2026-08-24c): --pane-w is now the CENTRE
+      chat column and may reach 720 (the reading measure --col-max already
+      sets); the sessions sidebar keeps --rail-w's clamp pair on the left;
+      the board pane is the flexible remainder on the right. */
+  /* --col-max is the READING COLUMN: the widest line of CONTENT the transcript
+     draws, centred in whatever pane it is given. 720 → 960 (owner, 2026-09-02
+     PM). The number is the code measure, not a round one: the widest thing the
+     transcript renders is a code or diff line, mono at --t-13 where 1ch ≈ 0.6em
+     ≈ 7.8px, and 120 columns — the conventional limit a diff is written to — is
+     936px, which lands on 960 at the 8px grid. THREE MEASURES AGREE THERE, and
+     that agreement is the reason the number is safe: prose at 96ch measures
+     959px in the running app (measured on the real face at --t-15, where 1ch is
+     about 0.67em — not the 0.5em rule of thumb), a 120-column diff is 936px, and
+     the grid gives 960. The column is therefore never much wider than the text
+     it holds, which is the whole of the second defect the owner reported —
+     widening the window must add LINE LENGTH, never dead space beside a
+     paragraph. Raising this token without raising the prose cap re-opens it;
+     proseMeasure.test.ts fails if the two drift apart. Prose keeps its own 96ch
+     cap inside that and stays left-aligned with everything else, which is the
+     Claude/Codex shape the owner named: the COLUMN is centred and capped, the
+     content inside it is not individually centred. */
+  --rail-w: 280px; --pane-w: 392px; --col-max: 960px;
+  /* THE CHAT PANE STOPS HERE. --col-max plus the transcript's own --sp-20 of
+     padding on each side: the widest the chat can be before every further pixel
+     is dead space beside a line that has already hit its measure. Past it the
+     frame's extra width belongs to the board and the canvases. Owner, 2026-09-02
+     PM: "it doesn't stretch the whole way. It just stretches a certain amount to
+     fulfil, and then it fills with the architecture boards on the side." */
+  --pane-w-cap: 1000px;
+  /* --menu-w exists because sheet 01 forbids borrowing a resize clamp as a
+     convenient specimen width. A popup menu and a path field are not a pane at
+     its narrowest drag; they only happened to want the same number. The number
+     IS the same 320 the clamp is, and saying so is the point: it is a
+     coincidence, not a derivation, and a name is what stops the next reader
+     treating it as one. */
+  --menu-w: 320px;
+  --menu-w-sm: 140px;
+  /* THE FOUR RUNGS LAW 3 NAMES, each with its own token: "Thread rows 28px,
+     tool rows 26px, controls 28px, icon buttons 26px". A tool row and an
+     icon button share a VALUE and are not the same rung - one is a line of
+     text, the other a target - so borrowing `--icon-btn` for a tool row
+     would make them move together the day only one of them should. */
+  --row-h: 30px; --row-h-thread: 28px; --row-h-tool: 26px;
+  --control-h: 28px; --icon-btn: 26px;
+  /* THE LARGE RUNG — Decision 12. The owner, 2026-09-13: "the buttons make
+     bigger". Not a re-tune of --control-h: the 28/26 ladder is what a tool row
+     and a rail row sit on, and moving it would move every row. This is a
+     SECOND rung for the controls a person is meant to FIND and PRESS — the
+     send button, the plus, the model picker, the workspace pills, the teach
+     cards. 32 is the next step on the 4px grid past --control-h; 30 is the
+     icon target one step down from it, the same relation 28 has to 26. */
+  --control-h-lg: 32px; --icon-btn-lg: 30px;
+  /* A DOOR — Decision 16. Owner, 2026-09-14: "just find a way to make some
+     buttons bigger — specific, settings, sessions, settings and rails inside of
+     settings with big buttons."
+
+     The fixed entrances (Sessions, Search, New chat, Settings, a settings pane
+     tab) are a different KIND of control from the rows they sit among: you
+     press them to go somewhere, and they were the same size as the twenty
+     thread rows above them. --target-min (24px) is a FLOOR for a hit area and
+     was never a size to reach for; this is the rung above --control-h-lg, and
+     the only one anything navigational should use. */
+  --control-h-door: 36px;
+  --topbar-h: 44px; --dot: 6px;
+
+  /* THE HIT-TARGET FLOOR, AND IT IS NOT A SIZE RUNG. WCAG 2.2 AA 2.5.8's
+     minimum is 24x24 CSS px, and the note above is the reason this is its own
+     name rather than a reuse of --icon-btn: a control's DRAWN size and the area
+     that can be HIT are different questions, and they must be free to move
+     apart. --icon-btn is 26 and passes today; the day a sheet asks for a 20px
+     glyph, the glyph shrinks and the target must not.
+
+     Measured 2026-09-02: the chat/board resizer was 8 x 639 — the smallest
+     target on screen and the only one a reader DRAGS — and ten board buttons
+     were 26 BOARD units, which is 13 CSS px at 0.504 zoom. Graphite law 3
+     ("compact is the only density") governs how much ink sits in how much room;
+     a hit area is not ink, so honouring this floor costs the design nothing.
+     docs/research/hit-targets-on-a-zoomable-surface.md has both measurements. */
+  --target-min: 24px;
+
+  /* resize bounds. --pane-w-max rose 640 → 720 with Decision 5: the chat is
+     the centre primary and may reach roughly half the frame at 1280 against
+     the board floor (shellModel.ts boardFloor). */
+  --rail-w-min: 216px; --rail-w-max: 400px;
+  --pane-w-min: 320px; --pane-w-max: 720px;
+  --col-min: 420px;
+
+  /* motion */
+  --dur-1: 110ms; --dur-2: 170ms; --ease: cubic-bezier(.2,.7,.3,1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §3 DERIVED WASHES AND EDGES
+   One derivation, both themes, driven by --mix-*. Written once rather than ten
+   times, so a change to --fits cannot leave a wash behind on last year's hue.
+   NEVER MIX YOUR OWN.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --fits-wash: color-mix(in srgb, var(--fits) var(--mix-wash), transparent);
+  --fits-edge: color-mix(in srgb, var(--fits) var(--mix-edge), transparent);
+  --spills-wash: color-mix(in srgb, var(--spills) var(--mix-wash), transparent);
+  --spills-edge: color-mix(in srgb, var(--spills) var(--mix-edge), transparent);
+  --wont-wash: color-mix(in srgb, var(--wont) var(--mix-wash), transparent);
+  --wont-edge: color-mix(in srgb, var(--wont) var(--mix-edge), transparent);
+  --unknown-wash: color-mix(in srgb, var(--unknown) var(--mix-wash), transparent);
+  --unknown-edge: color-mix(in srgb, var(--unknown) var(--mix-edge), transparent);
+  --info-wash: color-mix(in srgb, var(--info) var(--mix-wash), transparent);
+  --info-edge: color-mix(in srgb, var(--info) var(--mix-edge), transparent);
+  --accent-solid-hover: color-mix(in srgb, var(--accent-solid) 86%, white 14%);
+  --accent-solid-press: color-mix(in srgb, var(--accent-solid) 88%, black 12%);
+
+  /* ── THE THREE MODES WEAR THREE HUES — owner, 2026-09-13 ───────────────
+     "Add colours for each mode: plan yellow, build red, teach purple. Simple."
+
+     THIS SPENDS VERDICT HUES ON CHROME, and that is the cost, named here
+     rather than discovered later. Law 1 says a hue is a claim about the world
+     and reserves amber for `spills` and red for `wont`; these three chips now
+     carry those hues while meaning something about the SESSION instead.
+
+     It is defensible, and the reason is the same law read the other way: a
+     mode IS a claim about the world — about what this turn may do to your
+     repository. "Writes files and runs commands without asking" is the most
+     dangerous state this product has, and red is the most truthful thing the
+     control can say about it. Three identical purple chips would have been the
+     less honest design.
+
+     WHAT KEEPS IT FROM COLLIDING with a verdict: this hue appears on ONE
+     control, in one fixed place, always with the mode's name written inside
+     it, and never on the board or in a chart where `--wont` and `--spills`
+     make their claims about the repository.
+
+     DERIVED, NEVER INVENTED — each is a mix of a token that already exists, so
+     a retune of `--wont` or `--spills` moves these with it, and both themes
+     get their values from this one derivation. The fills are darkened rather
+     than used raw: `--spills` and `--wont` are light hues chosen to be read AS
+     ink on a dark ground, and white text on them at full strength fails.
+     Mixing toward black buys the contrast the label needs. */
+  /* SUPERSEDED BY DECISION 31, AND KEPT AS ALIASES RATHER THAN DELETED. The
+     three chips took the hint family below, which spends no verdict hue at
+     all — so the cost this block names is paid back. They resolve through the
+     hints, so a sheet that reaches for one gets the same colour the chip is
+     actually wearing rather than a second answer.
+
+     THEY HAVE A CALL SITE AGAIN since Decision 34: the composer's mode pill
+     wears `--mode-<key>-fill` / `--mode-<key>-edge`. That is what these names
+     are for — a surface that means "the Plan mode's colour" should say so,
+     rather than naming a hue that happens to be Plan's today. */
+  --mode-teach-fill: var(--hint-purple-wash);
+  --mode-teach-edge: var(--hint-purple-rim);
+  --mode-plan-fill: var(--hint-blue-wash);
+  --mode-plan-edge: var(--hint-blue-rim);
+  /* YELLOW SINCE 2026-09-19, and not a taste call. Owner: "I don't like the
+     green colour - use yellow for build instead of green." Green was Build
+     AND green was the DONE mark on a todo row
+     (`chat.css .todo-row[data-status='done'] .todo-mark`), so one hue was
+     making two claims, which law 1 forbids by counting. Build is also the
+     mode that writes files and runs commands without asking, and caution is
+     what yellow means everywhere else a person has used a computer. */
+  --mode-build-fill: var(--hint-yellow-wash);
+  --mode-build-edge: var(--hint-yellow-rim);
+
+  /* ── THE HINT FAMILY — Decision 31 ─────────────────────────────────────
+     Owner, 2026-09-18, on the built app: "the different modes, like Build,
+     Plan, Teach, should be coloured; the smarts and the effort levels should be
+     coloured; the context ring could be coloured; the goal icon can have a
+     colour. Small — not standing out… Our goal is like Apple: macOS liquid
+     glass, black, white, and the Apple famous blue."
+
+     A HINT IS A GLYPH AND A RIM, NEVER A FILLED BUTTON. The hue arrives at
+     ~1px of stroke and at a .14 wash behind it; nothing in this family paints
+     a control. That is what "small — not standing out" means in numbers, and
+     it is also what keeps Send the only solid on the surface.
+
+     LAW 1 IS SATISFIED BY COUNTING, NOT BY ASKING PERMISSION. Every hue on
+     screen is a claim, and there are never more hues than claims. Each of
+     these five names exactly one claim and nothing else:
+
+       blue    WHICH MODE — Plan. And, on the ring, WHICH WINDOW: how full the
+               model's context is. Both are "where you are", never a verdict.
+       yellow  WHICH MODE — Build. Caution, which is what Build is: the mode
+               that writes files and runs commands without asking.
+       purple  WHICH MODE — Teach. And the deepest reasoning level.
+       orange  A RUN IS HAPPENING — the goal's target and its Running pill.
+       green   WORK THAT IS BEHIND YOU — the done mark on a todo row, and
+               nothing else. It held Build as well until 2026-09-19, which was
+               one hue making two claims; the owner's "use yellow for build"
+               is what separated them.
+       teal    reserved for the seventh claim; declared so the family is
+               complete and a later surface does not invent a hue for a gap.
+
+     They are DISJOINT from the verdicts. A verdict says what the repository
+     is; a hint says which control you are looking at, and the two never meet
+     on one element. That disjointness is what the earlier mode mapping (plan
+     yellow from --spills, build red from --wont) could not claim, which is why
+     Decision 31 replaces it rather than extending it.
+
+     THE VALUES ARE APPLE'S OWN SYSTEM COLOURS, light cuts here and the vivid
+     dark cuts in §4/§5 — the pair the platform publishes, so neither theme is
+     a hand-tuned guess. Light is untuned per Decision 1; the SHAPE is what
+     this block owes it. */
+  --hint-blue: #007AFF;
+  --hint-blue-wash: rgba(0,122,255,.14);
+  --hint-blue-rim: rgba(0,122,255,.35);
+  --hint-blue-fill: rgba(0,122,255,.20);
+  --hint-green: #34C759;
+  --hint-green-wash: rgba(52,199,89,.14);
+  --hint-green-rim: rgba(52,199,89,.35);
+  --hint-green-fill: rgba(52,199,89,.20);
+  --hint-yellow: #FFCC00;
+  --hint-yellow-wash: rgba(255,204,0,.14);
+  --hint-yellow-rim: rgba(255,204,0,.35);
+  --hint-yellow-fill: rgba(255,204,0,.20);
+  --hint-orange: #FF9500;
+  --hint-orange-wash: rgba(255,149,0,.14);
+  --hint-orange-rim: rgba(255,149,0,.35);
+  --hint-orange-fill: rgba(255,149,0,.20);
+  --hint-purple: #AF52DE;
+  --hint-purple-wash: rgba(175,82,222,.14);
+  --hint-purple-rim: rgba(175,82,222,.35);
+  --hint-purple-fill: rgba(175,82,222,.20);
+  --hint-teal: #32ADE6;
+  --hint-teal-wash: rgba(50,173,230,.14);
+  --hint-teal-rim: rgba(50,173,230,.35);
+  --hint-teal-fill: rgba(50,173,230,.20);
+
+  /* six run-state roles, each an explicit alias of a token that already
+     exists. An alias, never a new hue. */
+  --st-neutral: var(--ink-3); --st-active: var(--info); --st-attention: var(--accent);
+  --st-stalled: var(--spills); --st-failed: var(--wont); --st-done: var(--fits);
+  --st-archived-opacity: .6;
+
+  /* ── GLASS — Decision 12 ───────────────────────────────────────────────
+     The owner, 2026-09-13: "more glass, more frosted". A frosted surface is
+     the surface token at partial alpha over a blur, so it is DERIVED here —
+     one derivation, both themes — and never mixed by hand in a sheet. Three
+     strengths and one blur radius; a sheet that wants a fourth is asking for
+     a fifth surface, which is a token conversation, not a local alpha.
+       --glass        the composer and floating menus over the transcript
+       --glass-pane   a whole pane (rail, board frame) over the ground
+       --glass-edge   the hairline a frosted box needs to hold its shape
+     backdrop-filter costs a compositing layer per box; it is spent on the
+     composer, the popups and the panes, never on every row. */
+  --glass: color-mix(in srgb, var(--surface-2) 62%, transparent);
+  --glass-pane: color-mix(in srgb, var(--surface-1) 70%, transparent);
+  --glass-edge: color-mix(in srgb, var(--edge-strong) 80%, var(--accent-edge) 20%);
+  --glass-blur: 20px;
+
+  /* ── A GLASS CONTROL — Decision 14 ──────────────────────────────────────
+     Owner, 2026-09-14: "add liquid glass button for a lot of things, and from
+     there use more transparency but MORE COLOR."
+
+     The three tokens above frost a BOX — the composer, a menu, a pane. A
+     control is smaller and needs two things they do not carry: a fill thin
+     enough that what is behind it stays visible, and a TOP HIGHLIGHT, which is
+     the whole difference between "translucent rectangle" and "glass". Light
+     falls on the top edge of a physical pane; without that line a frosted
+     button reads as a smudge.
+
+     TINTED WITH THE ACCENT, WHICH IS WHERE "MORE COLOR" COMES FROM AND WHY IT
+     COSTS NOTHING. Law 1 counts HUES, not surfaces: this is the same indigo
+     already on the roster, used on more of them. It is never a verdict, and no
+     new hue enters the budget.
+
+     --glass-ctl       the resting fill: thin, so the ground reads through
+     --glass-ctl-hover one step up, still translucent
+     --glass-ctl-hi    the top highlight; a control without it is not glass
+     --glass-ctl-edge  the hairline, accent-tinted so the colour reaches the rim
+     --glass-ctl-blur  smaller than --glass-blur: a 28px control blurred at 18px
+                       samples most of what is under it and goes flat, and it
+                       costs a compositing layer on every one of them. */
+  /* NEUTRAL, NOT TINTED — and this is the correction that made the material
+     read at all. Owner, 2026-09-14: "TTOO MUCH PURPLE HUE EVERYWEHRE, more
+     darker charcoal or something like that" and "still seeing 0 frosted glass
+     like from apple macOS and iOS native things".
+
+     Those are ONE fault, not two. The first version of these tokens tinted
+     every control with `--accent`, so a purple film sat on every button in the
+     product — and because the tint was opaque enough to see, it was the tint
+     you saw INSTEAD of the material. Apple's material is the other way round:
+     the pane itself is a neutral scrim, and all of its colour is borrowed from
+     whatever is behind it. That is why theirs looks like glass and a tinted
+     rectangle never does.
+
+     So the fill is white-at-low-alpha over a charcoal ground, the rim is
+     neutral, and the COLOUR now comes only from `--ground-wash` showing
+     through. One consequence worth stating: the controls change hue as they
+     move across the app, which is what glass does and what a tint cannot. */
+  /* RAISED, 2026-09-14 — Decision 17; KEPT under Decision 18. Owner: "ADD
+     FROSTED GLASS AND LIQUID GLASS TO ALL OF OUR BUTTONS … START WITH
+     TRANSPARENCY AND OPAQUENESS." Then: pick Native, keep the glass, darken
+     the room.
+
+     .055 is a fill you cannot see. Over a dark ground it composites to within
+     two or three L* of the ground itself, so every "glass" button was the ground
+     with a hairline round it — which is exactly what he kept reporting and what
+     the screenshots show. A frosted pane has BODY: it is visibly lighter than
+     what it sits on, and that body is the first thing the eye reads as glass,
+     before the blur or the rim.
+
+     .13 resting / .20 hovered is the range where the pane reads as a pane and
+     the ground still comes through it. Decision 18 darkens the ladder under
+     these fills rather than thinning them — a light-gray film behind glass is
+     worse than near-black; the contrast the owner asked for lives in the ROOM. */
+  --glass-ctl: rgba(255,255,255,.13);
+  --glass-ctl-hover: rgba(255,255,255,.20);
+  --glass-ctl-hi: rgba(255,255,255,.22);
+  --glass-ctl-edge: rgba(255,255,255,.20);
+  /* 20px, not 10. Measured against the macOS reference the owner named: a
+     10px blur still shows the SHAPE of what is behind it, which reads as a
+     translucent window. Frosted means you can see light and colour but not
+     form. */
+  --glass-ctl-blur: 20px;
+
+  /* ── THE SHEEN, FROM THE OWNER'S REFERENCE IMAGE ───────────────────────
+     Owner, 2026-09-14, handing over a photo of a frosted composer: "take the
+     photo of the chatbox as our source of truth; not the colors but the logic,
+     transparency and so on."
+
+     Read off it, and each one is a thing we were missing:
+
+       1. THE PANE IS LIGHTER THAN ITS GROUND. Ours was a DARK surface fill at
+          74% — which reads as a dark box that happens to be see-through, not as
+          glass. A real frosted pane scatters light TOWARD you, so it sits above
+          its background in lightness whatever colour that background is. This
+          is the single largest difference and the reason the material never
+          landed.
+       2. A DIAGONAL SHEEN. Light arrives from one side; the pane is brightest
+          where it enters and falls off across the face. A flat translucent fill
+          has no direction and reads as a sticker.
+       3. A SOFT BRIGHT RIM rather than a hairline — the lit edge of a thick
+          pane, which is what gives it a thickness you can see.
+
+     The colours are deliberately NOT taken from the image (his instruction):
+     these are white at low alpha, so the hue is whatever `--ground-wash` puts
+     behind them. */
+  --glass-pane-fill: rgba(255,255,255,.055);
+  /* V3 aliases — same recipe as ctl / pane; surfaces may name either. */
+  --glass-hover: rgba(255,255,255,.075);
+  --glass-press-hover: rgba(255,255,255,.095);
+  --glass-fill-2: rgba(255,255,255,.040);
+  --glass-blur-pane: 24px;
+  --glass-blur-bar: 20px;
+  --glass-blur-input: 18px;
+  --glass-sheen: linear-gradient(152deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 44%, transparent 72%);
+  --glass-rim: rgba(255,255,255,.26);
+  /* Balanced glass thickness — hi + lo together so selected controls never read
+     as top-lit only. Sheets compose these; one recipe, no half-lit buttons. */
+  --glass-inset:
+    inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi),
+    inset 0 calc(-1 * var(--w-hair)) 0 0 var(--glass-ctl-lo);
+  --glass-sel-inset:
+    inset 0 0 0 var(--w-hair) var(--glass-sel-edge),
+    inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi),
+    inset 0 calc(-1 * var(--w-hair)) 0 0 var(--glass-ctl-lo);
+
+  /* ── WHY THERE WAS NO GLASS, MEASURED — Decision 16 ─────────────────────
+     Owner, 2026-09-14, after Decision 14 shipped: "im still not seeing real
+     liquid glass on any buttons anywhere no frosted glass".
+
+     He was right and the cause is arithmetic, not taste. Measured in the running
+     app: behind every control carrying `backdrop-filter` sat ONE uniform fill,
+     `background-image: none`, all the way up the tree to `body`. **A blur of a
+     uniform colour returns that same colour.** Every frosted control in the
+     product was a flat translucent tint doing a no-op blur — the effect was
+     never visible because there was nothing behind it to be visible.
+
+     Frosted glass needs three things this had none of:
+
+       1. A GROUND THAT VARIES, or the blur has no work to do. `--ground-wash`
+          below is that, and it is also the honest answer to "more colors but
+          no ONE color": the colour lives in the ROOM, and each control refracts
+          whatever it happens to sit over. Nothing on a control makes a claim,
+          so law 1's hue budget is untouched — these are lights, not verdicts.
+
+          FOUR OF THEM, NOT ONE. Owner, 2026-09-14: "im still seeing too much
+          use of purple, i want more colors but no ONE color." Violet, cyan,
+          rose and blue, each in a different corner, so a control in the rail
+          refracts something different from one in the composer. None is a tone
+          hue (fits/spills/wont/info) — a verdict colour in the room would make
+          every surface look like it was judging something.
+       2. SATURATION, not just blur. Real frosted material pulls colour THROUGH
+          it; a plain blur greys everything it samples. `saturate()` is the
+          single largest reason a pane reads as glass rather than as fog.
+       3. THICKNESS. A top highlight says where the light is; a bottom inner
+          shadow says the pane has depth. One without the other reads as a
+          sticker. Decision 14 shipped the highlight alone. */
+  --glass-ctl-sat: 1.9;
+  --glass-ctl-lo: rgba(0,0,0,.28);
+
+  /* ── A CHOSEN THING IS GLASS TOO — Decision 16 ──────────────────────────
+     Owner, 2026-09-14: "im not seeing enough frosted or liquid glass around
+     everywhere, especially when you click on something like the purple buttons
+     in that chat side rail, same with the chrome tab selector and the plan,
+     build and teach modes."
+
+     Every selected state in the product painted a FLAT fill of
+     `--state-selected` — the sidebar row, the settings row, the pressed shell
+     button, the palette item, the draw toggle. Decision 14 made the RESTING
+     controls glass and left the chosen ones as slabs, so clicking something
+     took it OUT of the material rather than deeper into it. That is backwards:
+     the chosen thing is the one the eye should rest on, and a slab is what it
+     was before there was a material at all.
+
+     Thinner than the old flat fill (.34 → .26) because it is now sitting over
+     a blur rather than over whatever happened to be underneath, and the blur
+     carries the weight the opacity used to. */
+  /* A CHOSEN CONTROL IS BRIGHTER GLASS, NOT PURPLE GLASS. Same correction as
+     above: the accent tint was the thing being seen, and "too much purple"
+     is what a hue spent on every state looks like. Depth and light say
+     "chosen"; the hue is left for the few places that mean something by it. */
+  --glass-sel: rgba(255,255,255,.22);
+  --glass-sel-edge: rgba(255,255,255,.32);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §4 DARK — system default
+
+   LIFTED OFF BLACK, 2026-09-13, by the owner: "the black app is a little
+   hard on the eyes at the moment, I want a lighter gray" — and, in the same
+   walk, "I like the purples, can we accentuate that more and more". Two
+   changes, recorded in GRAPHITE-DECISIONS.md Decision 12:
+
+     THE GROUND. #08080A / #0D0D0F was near-black; the well is now #1B1B1F
+     under a #202025 ground, and every surface rises with it so the four
+     steps keep the intervals Decision 11's perceptual floor measured (6, 10,
+     10 units). Faint ink and the edges lift a step for the same reason:
+     ink-4 on the new surface-1 measures 3.1:1 (was 2.3:1 on the old), and a
+     hairline at .09 alpha on a lighter ground was no longer a hairline.
+
+     THE ACCENT. Indigo moved toward violet, and then DEEPER on the owner's
+     second look the same day ("a deeper purple would be much nicer, as well
+     as contrasting on that"): --accent #E8C547 reads 5.9:1 on --bg-base;
+     --accent-solid #C9A227 holds white at 5.8:1, a step more than the old
+     solid had. The selected state is an accent wash rather than a white
+     one, because a selected row is the product's own voice and grey said
+     nothing, and the wash and edge are stronger than the first cut so a
+     selected thing contrasts with the things beside it.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    /* Decision 21 — Draft V3 Graphite skin is the product SoT (Apple-first
+       harness, Graphite re-token). Room ladder from Decision 20; glass alphas
+       and wash recipe taken from draft-v3-macos-harness.html [data-skin=graphite]. */
+    /* Decision 21 + owner walk 2026-09-16 — deeper ground, quieter wash.
+       Keep rail/titlebar/foot on --bg-base so chrome is one depth (not near-black
+       header vs bright glass rail). Edit together with :root[data-theme="dark"]. */
+    --bg-ground: #12131A; --bg-base: #181A20;
+    --ground-hi: #1C1E26; --ground-mid: #16181F; --ground-lo: #12131A;
+    --surface-1: #1E2028; --surface-2: #272930; --surface-3: #31333B; --surface-4: #3B3D46;
+    --edge: rgba(255,255,255,.12); --edge-strong: rgba(255,255,255,.22); --edge-faint: rgba(255,255,255,.06);
+    --ink-1: #F6F7FA; --ink-2: #C0C2CB; --ink-3: #9A9CA6; --ink-4: #787A84;
+    /* Body text step matching V3 --ink-1; keep --ink-1 as brightest (sheet 01). */
+    --ink-body: #E6E7ED;
+    --state-hover: rgba(255,255,255,.075); --state-press: rgba(255,255,255,.095);
+    --state-selected: rgba(232,197,71,.28);
+    --accent: #E8C547; --accent-solid: #C9A227; --accent-on-solid: #FFFFFF;
+    --accent-wash: rgba(232,197,71,.16); --accent-edge: rgba(232,197,71,.58);
+    --accent-wash-2: rgba(232,197,71,.22);
+    --accent-rim: rgba(245,230,163,.42);
+  --accent-chosen: rgba(201,162,39,.72);
+  --accent-chosen-edge: rgba(245,230,163,.80);
+  --accent-chosen-ink: #FFFFFF;
+    --accent-ink: #F5E6A3;
+    --user-bubble: rgba(232,197,71,.18);
+    --fits: #74D6A4; --spills: #E6C46B; --wont: #F47C7C; --unknown: #8A8B93; --info: #6FB5E8;
+    --info-bright: #89C2ED;
+    /* THE HINT FAMILY IN DARK — Decision 31. Apple's vivid dark cuts, which is
+       why they are restated here rather than inherited: the light cuts on :root
+       are three to five steps darker and would sink into the ground.
+       THE WASH AND THE RIM ARE QUIETER UNDER GOLD (.10 / .28) than under the
+       white accent (.14 / .35, §5b). A hint has to be the only hue on the
+       control it sits on; with a gold accent beside it there is already one, so
+       the hint steps back rather than competing. */
+    --hint-blue: #0A84FF;
+    --hint-blue-wash: rgba(10,132,255,.10);
+    --hint-blue-rim: rgba(10,132,255,.28);
+    --hint-blue-fill: rgba(10,132,255,.20);
+    --hint-green: #30D158;
+    --hint-green-wash: rgba(48,209,88,.10);
+    --hint-green-rim: rgba(48,209,88,.28);
+    --hint-green-fill: rgba(48,209,88,.20);
+    --hint-yellow: #FFD60A;
+    --hint-yellow-wash: rgba(255,214,10,.10);
+    --hint-yellow-rim: rgba(255,214,10,.28);
+    --hint-yellow-fill: rgba(255,214,10,.20);
+    --hint-orange: #FF9F0A;
+    --hint-orange-wash: rgba(255,159,10,.10);
+    --hint-orange-rim: rgba(255,159,10,.28);
+    --hint-orange-fill: rgba(255,159,10,.20);
+    --hint-purple: #BF5AF2;
+    --hint-purple-wash: rgba(191,90,242,.10);
+    --hint-purple-rim: rgba(191,90,242,.28);
+    --hint-purple-fill: rgba(191,90,242,.20);
+    --hint-teal: #64D2FF;
+    --hint-teal-wash: rgba(100,210,255,.10);
+    --hint-teal-rim: rgba(100,210,255,.28);
+    --hint-teal-fill: rgba(100,210,255,.20);
+  /* Decision 20/21: tab identity = label + glyph. Compat tokens map to accent. */
+  --surface-hue-chat: #E8C547;
+  --surface-hue-architecture: #E8C547;
+  --surface-hue-whiteboard: #E8C547;
+  --surface-hue-ai-canvas: #E8C547;
+  --surface-hue-terminal: #E8C547;
+  --surface-hue-browser: #E8C547;
+    /* Quieter room wash — less grey film over ink. */
+    --ground-wash: radial-gradient(ellipse 75% 55% at 12% 2%, rgba(255,255,255,.028) 0%, transparent 52%), radial-gradient(ellipse 65% 45% at 88% 98%, rgba(255,255,255,.018) 0%, transparent 48%), linear-gradient(168deg, var(--ground-hi) 0%, var(--ground-mid) 40%, var(--ground-lo) 100%);
+    --mix-wash: 10%; --mix-edge: 46%;
+    --viz-1: #E8C547; --viz-2: #5EA8DC; --viz-3: #E07BB4;
+    --viz-4: #4ECFB0; --viz-5: #D6A45A; --viz-6: #9AA3FF;
+    --viz-baseline: #8A8B93;
+    --viz-band: rgba(232,197,71,.14); --viz-grid: rgba(255,255,255,.055);
+    --viz-axis: rgba(255,255,255,.14); --viz-crosshair: rgba(255,255,255,.28);
+    --diff-add-bg: rgba(116,214,164,.12); --diff-add-gutter: #74D6A4;
+    --diff-del-bg: rgba(244,124,124,.12); --diff-del-gutter: #F47C7C;
+    --selection-bg: rgba(232,197,71,.34);
+    --scrollbar-thumb: rgba(255,255,255,.14); --scrollbar-thumb-hover: rgba(255,255,255,.24);
+    --scrim: rgba(4,4,6,.64);
+    --e0: none;
+    --e1: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.40);
+    --e2: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.45);
+    --e1-drop: drop-shadow(0 1px 2px rgba(0,0,0,.40));
+    --e2-drop: drop-shadow(0 4px 12px rgba(0,0,0,.45));
+    --e3: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 32px rgba(0,0,0,.50);
+    --e4: inset 0 1px 0 rgba(255,255,255,.10), 0 24px 64px rgba(0,0,0,.60);
+    /* V3 thinner frost — pane .055, ctl hover .075/.095, blur 24/20/18, sat 1.8 */
+    --glass-ctl: rgba(255,255,255,.075);
+    --glass-ctl-hover: rgba(255,255,255,.095);
+    --glass-ctl-hi: rgba(255,255,255,.16);
+    --glass-ctl-edge: rgba(255,255,255,.085);
+    --glass-ctl-lo: rgba(0,0,0,.34);
+    --glass-ctl-blur: 18px;
+    --glass-ctl-sat: 1.8;
+    --glass-pane-fill: rgba(255,255,255,.055);
+    --glass-hover: rgba(255,255,255,.075);
+    --glass-press-hover: rgba(255,255,255,.095);
+    --glass-fill-2: rgba(255,255,255,.040);
+    --glass-blur-pane: 24px;
+    --glass-blur-bar: 20px;
+    --glass-blur-input: 18px;
+    --glass-sel: rgba(255,255,255,.10);
+    --glass-sel-edge: rgba(255,255,255,.20);
+    --glass: color-mix(in srgb, var(--surface-1) 55%, transparent);
+    --glass-pane: rgba(255,255,255,.055);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §5 DARK — an explicit choice wins
+   Same list as §4. Edited together or not at all.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* Decision 21 — same V3 Graphite skin as the media block. Edit together.
+     Owner walk 2026-09-16: deepen ground; keep chrome (titlebar/rail/foot) on
+     --bg-base so nothing reads near-black while another pane stays glass-bright. */
+  --bg-ground: #12131A; --bg-base: #181A20;
+  --ground-hi: #1C1E26; --ground-mid: #16181F; --ground-lo: #12131A;
+  --surface-1: #1E2028; --surface-2: #272930; --surface-3: #31333B; --surface-4: #3B3D46;
+  --edge: rgba(255,255,255,.12); --edge-strong: rgba(255,255,255,.22); --edge-faint: rgba(255,255,255,.06);
+  --ink-1: #F6F7FA; --ink-2: #C0C2CB; --ink-3: #9A9CA6; --ink-4: #787A84;
+  --ink-body: #E6E7ED;
+  --state-hover: rgba(255,255,255,.075); --state-press: rgba(255,255,255,.095);
+  --state-selected: rgba(232,197,71,.28);
+  --accent: #E8C547; --accent-solid: #C9A227; --accent-on-solid: #FFFFFF;
+  --accent-wash: rgba(232,197,71,.16); --accent-edge: rgba(232,197,71,.58);
+  --accent-wash-2: rgba(232,197,71,.22);
+  --accent-rim: rgba(245,230,163,.42);
+  --accent-chosen: rgba(201,162,39,.72);
+  --accent-chosen-edge: rgba(245,230,163,.80);
+  --accent-chosen-ink: #FFFFFF;
+  --accent-ink: #F5E6A3;
+  --user-bubble: rgba(232,197,71,.18);
+  --fits: #74D6A4; --spills: #E6C46B; --wont: #F47C7C; --unknown: #8A8B93; --info: #6FB5E8;
+  --info-bright: #89C2ED;
+  /* THE HINT FAMILY IN DARK — Decision 31. Same list as §4; edited together. */
+  --hint-blue: #0A84FF;
+  --hint-blue-wash: rgba(10,132,255,.10);
+  --hint-blue-rim: rgba(10,132,255,.28);
+  --hint-blue-fill: rgba(10,132,255,.20);
+  --hint-green: #30D158;
+  --hint-green-wash: rgba(48,209,88,.10);
+  --hint-green-rim: rgba(48,209,88,.28);
+  --hint-green-fill: rgba(48,209,88,.20);
+  --hint-yellow: #FFD60A;
+  --hint-yellow-wash: rgba(255,214,10,.10);
+  --hint-yellow-rim: rgba(255,214,10,.28);
+  --hint-yellow-fill: rgba(255,214,10,.20);
+  --hint-orange: #FF9F0A;
+  --hint-orange-wash: rgba(255,159,10,.10);
+  --hint-orange-rim: rgba(255,159,10,.28);
+  --hint-orange-fill: rgba(255,159,10,.20);
+  --hint-purple: #BF5AF2;
+  --hint-purple-wash: rgba(191,90,242,.10);
+  --hint-purple-rim: rgba(191,90,242,.28);
+  --hint-purple-fill: rgba(191,90,242,.20);
+  --hint-teal: #64D2FF;
+  --hint-teal-wash: rgba(100,210,255,.10);
+  --hint-teal-rim: rgba(100,210,255,.28);
+  --hint-teal-fill: rgba(100,210,255,.20);
+  --surface-hue-chat: #E8C547;
+  --surface-hue-architecture: #E8C547;
+  --surface-hue-whiteboard: #E8C547;
+  --surface-hue-ai-canvas: #E8C547;
+  --surface-hue-terminal: #E8C547;
+  --surface-hue-browser: #E8C547;
+  --ground-wash: radial-gradient(ellipse 75% 55% at 12% 2%, rgba(255,255,255,.028) 0%, transparent 52%), radial-gradient(ellipse 65% 45% at 88% 98%, rgba(255,255,255,.018) 0%, transparent 48%), linear-gradient(168deg, var(--ground-hi) 0%, var(--ground-mid) 40%, var(--ground-lo) 100%);
+  --mix-wash: 10%; --mix-edge: 46%;
+  --viz-1: #E8C547; --viz-2: #5EA8DC; --viz-3: #E07BB4;
+  --viz-4: #4ECFB0; --viz-5: #D6A45A; --viz-6: #9AA3FF;
+  --viz-baseline: #8A8B93;
+  --viz-band: rgba(232,197,71,.14); --viz-grid: rgba(255,255,255,.055);
+  --viz-axis: rgba(255,255,255,.14); --viz-crosshair: rgba(255,255,255,.28);
+  --diff-add-bg: rgba(116,214,164,.12); --diff-add-gutter: #74D6A4;
+  --diff-del-bg: rgba(244,124,124,.12); --diff-del-gutter: #F47C7C;
+  --selection-bg: rgba(232,197,71,.34);
+  --scrollbar-thumb: rgba(255,255,255,.14); --scrollbar-thumb-hover: rgba(255,255,255,.24);
+  --scrim: rgba(4,4,6,.64);
+  --e0: none;
+  --e1: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.40);
+  --e2: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.45);
+  --e1-drop: drop-shadow(0 1px 2px rgba(0,0,0,.40));
+  --e2-drop: drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  --e3: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 32px rgba(0,0,0,.50);
+  --e4: inset 0 1px 0 rgba(255,255,255,.10), 0 24px 64px rgba(0,0,0,.60);
+  --glass-ctl: rgba(255,255,255,.075);
+  --glass-ctl-hover: rgba(255,255,255,.095);
+  --glass-ctl-hi: rgba(255,255,255,.16);
+  --glass-ctl-edge: rgba(255,255,255,.085);
+  --glass-ctl-lo: rgba(0,0,0,.34);
+  --glass-ctl-blur: 18px;
+  --glass-ctl-sat: 1.8;
+  --glass-pane-fill: rgba(255,255,255,.055);
+  --glass-hover: rgba(255,255,255,.075);
+  --glass-press-hover: rgba(255,255,255,.095);
+  --glass-fill-2: rgba(255,255,255,.040);
+  --glass-blur-pane: 24px;
+  --glass-blur-bar: 20px;
+  --glass-blur-input: 18px;
+  --glass-sel: rgba(255,255,255,.10);
+  --glass-sel-edge: rgba(255,255,255,.20);
+  --glass: color-mix(in srgb, var(--surface-1) 55%, transparent);
+  --glass-pane: rgba(255,255,255,.055);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §5b WHITE ACCENT + THINNER GLASS — AN EXPERIMENT, OFF BY DEFAULT
+   GRAPHITE-DECISIONS.md Decision 29.
+
+   The owner, 2026-09-18: "I'm still a little bit iffy about this goldish
+   yellow and dark gray vibe. I think it'd be cleaner if it was white instead
+   of yellow, and a bit more transparency on the liquid glass. I want to
+   experiment with it."
+
+   THE WORD THAT SHAPES THIS BLOCK IS "EXPERIMENT". Nothing above this line
+   changes. Gold is still what the app paints with no attribute set, so every
+   screenshot, every contrast measurement and every owner walk taken against
+   Graphite so far still describes what ships. The variant is one attribute —
+   `document.documentElement.dataset.accent = 'white'` — and removing the
+   attribute is the entire rollback.
+
+   ── WHY THIS SELECTOR, AND NOT THE OBVIOUS ONES ────────────────────────────
+
+   NOT inside `@media (prefers-color-scheme: dark)`, and NOT written with
+   `[data-theme="dark"]` in the selector. graphite.test.ts collects the two
+   dark lists by exactly those two signatures and asserts them byte-identical
+   (§4 and §5 are one list written twice). A variant block caught by either
+   filter would be compared against a block that has no variant in it, and the
+   lock that exists to catch real drift would start failing on a block that is
+   not drift. `:not([data-theme="light"])` names the same intent — dark, or
+   whatever the machine defaults to — without tripping either collector, and
+   carries enough specificity (two attributes) to land after §4 and §5.
+
+   DARK ONLY, because Decision 1 defers light. A white accent over the untuned
+   light palette is white on near-white, which is not a thing to ask an owner
+   to look at. A machine that has chosen light gets gold, and that is correct
+   until light is tuned.
+
+   ── WHAT IS AND IS NOT OVERRIDDEN ──────────────────────────────────────────
+
+   The accent family, the glass family and the hint family (Decision 31), and
+   nothing else. Specifically NOT overridden, because they already derive and
+   would double-apply:
+     --accent-solid-hover / --accent-solid-press  color-mix off --accent-solid
+     --glass-edge                                 mixes --accent-edge, follows
+   --glass-inset and --glass-sel-inset WERE in that list and are not any more:
+   Decision 31 zeroes the two bevel halves they compose, so left alone they
+   would paint nothing. They are rewritten below as the soft ring that replaces
+   the bevel.
+   The verdict hues, the series hues and the diff channels are untouched: the
+   accent was never a verdict, and swapping it cannot be allowed to become a
+   way to restate one.
+
+   ── THE CONTRAST THAT HAD TO BE CHECKED ────────────────────────────────────
+
+   A white accent inverts the ink on every accent FILL. Gold could carry white
+   text; #E9EAF0 cannot. So --accent-on-solid goes to #131315, which is what
+   makes the Send button (--accent-solid fill, --accent-on-solid glyph) legible
+   at all — measured 15.5:1. The gold it replaces measures 2.4:1 on the same
+   button (#FFFFFF on #C9A227), so this variant is not trading contrast away
+   for a look; it is the first version of that button that passes.
+
+   The chosen fill went the other way and took its ink with it. Decision 29's
+   first cut made --accent-chosen a NEAR-OPAQUE white (.74) so that
+   --accent-on-solid, a near-black, could be read on it. The owner looked at
+   that and asked for the opposite — *"a little bit darker, with the transparent
+   liquid glass on the chosen stuff… nice and transparent with a bit of the
+   frosted, not opaque"* — so the fill is now .12 and the ink on it is
+   --accent-chosen-ink, which is the top ink under white and stays #FFFFFF under
+   gold. --accent-on-solid keeps its one job: the ink on the ONE SOLID, Send.
+
+   ── THE GLASS, AND THE SECOND TUNING (Decision 30) ─────────────────────────
+
+   "A bit more transparency" is one instruction with two halves, and doing only
+   the first half makes glass worse, not thinner: a pane that passes more light
+   and scatters it no harder stops being frosted and becomes a dirty window.
+   Decision 29 thinned every fill to ~65% and paid for it with +4px of blur.
+
+   THE SECOND WALK PUT THE CONTROLS BACK UP, and only the controls. At .05 a
+   button had no body at all — the owner asked for "frosted, not opaque… same
+   with the chat elements, the Send button, around those white elements", which
+   is a fill you can see lit from inside, not an absence. So the control family
+   sits in the .10–.14 band the plan names (walk-4-white-glass-plan.md §1),
+   keeps the +4px blur. THE TOP HIGHLIGHT DOES NOT COME BACK WITH THEM. The
+   owner looked at the built app and said the glass was "looking more shiny
+   rather than clean and transparent (transparency is #1)", so --glass-ctl-hi
+   drops to .06 and --glass-ctl-lo with it: what makes a surface read as glass
+   here is the blur and the hairline, never a reflection. The PANE fills stay
+   thin: a pane is a sheet of glass, a control is an object made of it.
+
+   ── AND THE THIRD (Decision 31): .06 WAS STILL A LINE ──────────────────────
+
+   *"I'm not looking for a metallic shine, I'm looking for liquid glass… the
+   chat box as well."* Thinning the seam kept its SHAPE — one lit row at the
+   top, one dark row at the bottom, which is a bevel and therefore metal. Both
+   halves are zero now and the light is a half-pixel ring instead, which cannot
+   land on a pixel row and so reads as scatter rather than as an edge. The
+   numbers and the reason are at the tokens themselves, below.
+
+   ── CHOSEN VERSUS NOT CHOSEN, IN THREE CHANNELS ────────────────────────────
+
+   *"People can tell what's chosen and what's not."* A chosen control differs
+   from the one beside it by all three of:
+
+     FILL   +.08 alpha — a chosen tab at .12 against the .04 a neighbour shows
+            under the cursor, and nothing at all at rest. Over --bg-base that
+            composites to the same charcoal step the plan describes as "the
+            surface one step darker": .12 white over #181A20 is #343640.
+     RIM    .28 against .12 — --accent-chosen-edge against the hairline every
+            resting control carries (--glass-ctl-edge, --edge).
+     INK    --fw-head against --fw-label, and --ink-1 against --ink-2/3.
+
+   One channel alone is a preference; three together is a state. graphite.test.ts
+   locks the three DELTAS rather than these colours, so the look can be tuned
+   again without the guarantee being retuned with it.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root[data-accent="white"]:not([data-theme="light"]) {
+  /* THE ACCENT IS THE TOP INK. Not a new hue — the hue budget in this sheet's
+     header is unchanged, because white is the absence of one. */
+  --accent: #F6F7FA;
+  --accent-solid: #E9EAF0;
+  --accent-on-solid: #131315;
+  /* THE GLOW WASHES — .06 to .10, the band the plan names. Above it a wash
+     stops being a glow and starts being a panel. */
+  --accent-wash: rgba(255,255,255,.08);
+  --accent-wash-2: rgba(255,255,255,.10);
+  --accent-edge: rgba(255,255,255,.28);
+  --accent-rim: rgba(255,255,255,.28);
+  /* THE CHOSEN PAIR. .12 is inside the frosted band AND +.08 over the .04 a
+     neighbour shows under the cursor; the rim is the loud half of the state. */
+  --accent-chosen: rgba(255,255,255,.12);
+  --accent-chosen-edge: rgba(255,255,255,.28);
+  --accent-chosen-ink: #F6F7FA;
+  --accent-ink: #FFFFFF;
+  /* The three accent-derived fills that carry a literal gold rather than a
+     var(). Left gold they would be the only yellow left on screen, which would
+     answer the owner's question with a contradiction. */
+  --user-bubble: rgba(255,255,255,.07);
+  --state-selected: rgba(255,255,255,.12);
+  --selection-bg: rgba(255,255,255,.20);
+
+  /* THE PANES STAY THIN — a sheet of glass, seen through. */
+  --glass: color-mix(in srgb, var(--surface-1) 36%, transparent);
+  --glass-pane: rgba(255,255,255,.036);
+  --glass-pane-fill: rgba(255,255,255,.036);
+  --glass-fill-2: rgba(255,255,255,.030);
+  /* THE CONTROLS HAVE A BODY — .10 to .14, blurred. "Frosted, not opaque" is
+     the fill and the blur; a reflection is neither, and is not part of it. */
+  --glass-ctl: rgba(255,255,255,.10);
+  --glass-ctl-hover: rgba(255,255,255,.14);
+  /* ── LIQUID GLASS, NOT METAL — Decision 31 ─────────────────────────────
+     Owner, 2026-09-18, on the built app: "I'm not looking for a metallic
+     shine, I'm looking for liquid glass… the chat box as well."
+
+     DECISION 30 THINNED THE SEAM; IT DID NOT REMOVE THE LINE, and a line is the
+     thing being reported. A 1px inset at the top edge and a 1px dark inset at
+     the bottom are a BEVEL, and a bevel is how a renderer draws MACHINED METAL
+     — one lit edge, one shadowed edge, a solid between them. At .06 it was a
+     quiet bevel; it was still a bevel, and at 1x it still snaps to a hard
+     pixel row that the eye reads as a chrome edge.
+
+     So under white there is no directional line at all. Both halves go to zero
+     and the light arrives two ways instead:
+
+       THE HAIRLINE   rgba(255,255,255,.10) — one alpha all the way round, so
+                      the edge has no top and no bottom. .08-.12 is the band:
+                      below .08 a control loses its shape against the pane,
+                      above .12 the ring starts to read as a stroke someone
+                      drew rather than as where the glass ends.
+       THE INNER LIGHT  inset 0 0 0 .5px rgba(255,255,255,.06) — a HALF-pixel
+                      ring, which is the whole point: a half pixel cannot land
+                      on one row of pixels, so it antialiases into a soft glow
+                      round the entire edge instead of drawing a line across
+                      the top of it. That is light scattering inside a thick
+                      translucent body, which is what liquid glass is.
+
+     --glass-ctl-hi and --glass-ctl-lo are kept at zero rather than deleted
+     because five sheets compose them by hand (chat.css, settings.css, and the
+     inset tokens below); zeroing the TOKEN removes the bevel from all of them
+     at once, which a per-sheet edit would not. */
+  --glass-ctl-hi: rgba(255,255,255,0);
+  --glass-ctl-lo: rgba(0,0,0,0);
+  --glass-rim: rgba(255,255,255,.10);
+  --glass-ctl-edge: rgba(255,255,255,.10);
+  /* ONE HAIRLINE, ONE ALPHA. --edge is the neutral ramp's hairline and
+     --glass-ctl-edge is the glass family's; a control sitting next to a divider
+     drawn at a different strength is the seam a reader reads as two materials.
+     graphite.test.ts already required these two to agree, so this moves with
+     the line above rather than being a second decision. */
+  --edge: rgba(255,255,255,.10);
+  /* THE TWO INSET RECIPES ARE OVERRIDDEN HERE, which §5b's header used to say
+     they would not be. They composed --glass-ctl-hi/-lo, so with both at zero
+     they would paint nothing at all and every control would lose its body —
+     the soft ring is what replaces the bevel, so it has to be written where
+     the bevel was. */
+  --glass-inset: inset 0 0 0 .5px rgba(255,255,255,.06);
+  --glass-sel-inset:
+    inset 0 0 0 var(--w-hair) var(--glass-sel-edge),
+    inset 0 0 0 .5px rgba(255,255,255,.06);
+
+  /* THE HINT FAMILY AT FULL STRENGTH — Decision 31. Under gold the washes sit
+     at .10 and the rims at .28 because the accent is already spending a hue;
+     white spends none, so a hint is the ONLY colour on the chrome and can be
+     read at the strength the family is designed for. The hues themselves do
+     not move: a hue names a claim, and the claim does not change with the
+     accent. */
+  --hint-blue-wash: rgba(10,132,255,.14);
+  --hint-blue-rim: rgba(10,132,255,.35);
+  --hint-green-wash: rgba(48,209,88,.14);
+  --hint-green-rim: rgba(48,209,88,.35);
+  --hint-yellow-wash: rgba(255,214,10,.14);
+  --hint-yellow-rim: rgba(255,214,10,.35);
+  --hint-orange-wash: rgba(255,159,10,.14);
+  --hint-orange-rim: rgba(255,159,10,.35);
+  --hint-purple-wash: rgba(191,90,242,.14);
+  --hint-purple-rim: rgba(191,90,242,.35);
+  --hint-teal-wash: rgba(100,210,255,.14);
+  --hint-teal-rim: rgba(100,210,255,.35);
+  /* The quiet wash a NOT-chosen thing shows under the cursor. It is the other
+     half of the +.08 the chosen fill is locked to, so it moves with it. */
+  --glass-hover: rgba(255,255,255,.04);
+  --glass-press-hover: rgba(255,255,255,.06);
+
+  /* ONE STEP MORE BLUR, everywhere a fill was thinned. */
+  --glass-blur: 24px;
+  --glass-blur-pane: 28px;
+  --glass-blur-bar: 24px;
+  --glass-blur-input: 22px;
+  --glass-ctl-blur: 22px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §5c THE BLUE ACCENT — LOVABLE IS THE SOURCE OF TRUTH (Decision 32)
+
+   Owner, 2026-09-18, on his own Ramp Kit (usebastion.io/design): "I like
+   Lovable a lot in terms of their colors, their fonts, everything… it's a dark
+   gray, it's a clean film, and the components are very easy to read. Let's take
+   Lovable for every type of AI engineering task and implement that as our base
+   app… set all of those Lovable tokens and themes as our source of truth."
+
+   THE KIT'S LOVABLE ENTRY, READ OFF ITS OWN THEME CLASS (.t-lovable, dark):
+     bg #1D1D1C · surface #272726 · line #353533 · fg #FFFFFF · fg2 #E1E1E0 ·
+     muted #A6A6A4 · accent #1F55F1 · font Inter · radius 8px · shadow
+     0 1px 2px rgba(0,0,0,.06) · blur none · loader "pulse" · prefers: prompt
+     modes, thinking steps, tool card, tasks capsules, approval questions,
+     context ring, status toast, loading ring, streaming cursor.
+
+   WHAT IS TAKEN AS-IS: the greys, the inks, the blue, the face, the radius.
+   WHAT IS NOT: "blur none". The owner put transparency first the same evening
+   ("I like the liquid glass a little bit more"), so the controls stay the
+   Decision 31 material — a thin white fill, blurred, one hairline, a half-pixel
+   ring — and they now sit on Lovable's room instead of a navy one. The kit's
+   brand gradient ring on the composer is Lovable's brand, not this product's;
+   the composer takes a one-hue blue rim on focus instead.
+
+   THE ROOM IS NEUTRAL. #181A20 was blue by two points and read as "a metallic
+   hint of navy" (owner). Lovable's ladder is grey with one point of warmth,
+   so a frosted control over it refracts grey, which is what a clean film is.
+
+   ONE BLUE, TWO CUTS. #1F55F1 is 2.95:1 over #1D1D1C — a fill, never a mark.
+   So the SOLID is Lovable's blue with white on it (5.7:1), and everything that
+   is READ in blue — a glyph, a rim, the Plan hint, the ring's arc — takes a
+   lighter cut of the same hue: #4C7DFF measures 4.58:1 over --bg-base and the
+   text cut #6B93FF measures 5.1:1 over --surface-2. The hue budget in this
+   sheet's header is unchanged: --hint-blue IS the accent's hue here, because
+   Lovable spends one blue on both "press this" and "you are in Plan", and a
+   second blue beside it would be the one thing on screen that is not Lovable.
+
+   CHOSEN STAYS NEUTRAL, as under white: a brighter piece of the same glass, a
+   .28 rim and the heading weight. The Lovable chip that is "on" is a lighter
+   surface, not a blue one; blue is spent on Send and on the hints only.
+
+   RADII FOLLOW THE KIT: 8 on a button, 10 on a card, 12 on the window, 6 on a
+   chip. Softer than the 14/18 the ramp shipped with, sharper than Apple.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root[data-accent="blue"]:not([data-theme="light"]) {
+  /* THE ROOM — Lovable's greys, one point warm, no navy. */
+  --bg-ground: #1A1A19; --bg-base: #1D1D1C;
+  --ground-hi: #201F1E; --ground-mid: #1D1D1C; --ground-lo: #1A1A19;
+  --surface-1: #232322; --surface-2: #272726; --surface-3: #2E2E2D; --surface-4: #363635;
+  --edge: rgba(255,255,255,.10); --edge-strong: rgba(255,255,255,.18); --edge-faint: rgba(255,255,255,.05);
+  --ink-1: #FFFFFF; --ink-2: #E1E1E0; --ink-3: #A6A6A4; --ink-4: #7C7C7A;
+  --ink-body: #E1E1E0;
+
+  /* THE BLUE — the solid is Lovable's; the marks take the lighter cut. */
+  --accent: #4C7DFF;
+  --accent-solid: #1F55F1;
+  --accent-on-solid: #FFFFFF;
+  --accent-ink: #6B93FF;
+  --accent-wash: rgba(31,85,241,.14);
+  --accent-wash-2: rgba(31,85,241,.20);
+  --accent-edge: rgba(76,125,255,.40);
+  --accent-rim: rgba(76,125,255,.40);
+  /* CHOSEN IS NEUTRAL GLASS, +.08 fill, a .28 rim (the three-channel lock). */
+  --accent-chosen: rgba(255,255,255,.12);
+  --accent-chosen-edge: rgba(255,255,255,.28);
+  --accent-chosen-ink: #FFFFFF;
+  --user-bubble: rgba(255,255,255,.07);
+  --state-selected: rgba(255,255,255,.12);
+  --selection-bg: rgba(31,85,241,.38);
+  --surface-hue-chat: #4C7DFF;
+  --surface-hue-architecture: #4C7DFF;
+  --surface-hue-whiteboard: #4C7DFF;
+  --surface-hue-ai-canvas: #4C7DFF;
+  --surface-hue-terminal: #4C7DFF;
+  --surface-hue-browser: #4C7DFF;
+
+  /* ONE SOFT SHADOW, no inset top light — the kit's 0 1px 2px, scaled for a
+     dark room where .06 black is invisible. A lit top edge is the bevel
+     Decision 31 removed; it does not come back in the shadow. */
+  --e1: 0 1px 2px rgba(0,0,0,.24);
+  --e2: 0 2px 8px rgba(0,0,0,.28);
+  --e3: 0 8px 24px rgba(0,0,0,.36);
+
+  /* THE GLASS — Decision 31's material, unchanged: thin fill, blur, hairline,
+     half-pixel ring, no directional seam. */
+  --glass: color-mix(in srgb, var(--surface-1) 36%, transparent);
+  --glass-pane: rgba(255,255,255,.036);
+  --glass-pane-fill: rgba(255,255,255,.036);
+  --glass-fill-2: rgba(255,255,255,.030);
+  --glass-ctl: rgba(255,255,255,.10);
+  --glass-ctl-hover: rgba(255,255,255,.14);
+  --glass-ctl-hi: rgba(255,255,255,0);
+  --glass-ctl-lo: rgba(0,0,0,0);
+  --glass-rim: rgba(255,255,255,.10);
+  --glass-ctl-edge: rgba(255,255,255,.10);
+  --glass-inset: inset 0 0 0 .5px rgba(255,255,255,.06);
+  --glass-sel-inset:
+    inset 0 0 0 var(--w-hair) var(--glass-sel-edge),
+    inset 0 0 0 .5px rgba(255,255,255,.06);
+  --glass-hover: rgba(255,255,255,.04);
+  --glass-press-hover: rgba(255,255,255,.06);
+  --glass-blur: 24px;
+  --glass-blur-pane: 28px;
+  --glass-blur-bar: 24px;
+  --glass-blur-input: 22px;
+  --glass-ctl-blur: 22px;
+
+  /* THE HINTS — blue is the accent's own hue; the other four keep Apple's
+     dark cuts. Wash .14, rim .35, and the FILL at .22: the fill is what a
+     chosen mode chip is made of (owner: "make the button showcase that
+     colour as well, instead of just a border around"). */
+  --hint-blue: #4C7DFF;
+  --hint-blue-wash: rgba(76,125,255,.14);
+  --hint-blue-rim: rgba(76,125,255,.35);
+  --hint-blue-fill: rgba(76,125,255,.22);
+  --hint-green-wash: rgba(48,209,88,.14);
+  --hint-green-rim: rgba(48,209,88,.35);
+  --hint-green-fill: rgba(48,209,88,.22);
+  --hint-yellow-wash: rgba(255,214,10,.14);
+  --hint-yellow-rim: rgba(255,214,10,.35);
+  --hint-yellow-fill: rgba(255,214,10,.22);
+  --hint-orange-wash: rgba(255,159,10,.14);
+  --hint-orange-rim: rgba(255,159,10,.35);
+  --hint-orange-fill: rgba(255,159,10,.22);
+  --hint-purple-wash: rgba(191,90,242,.14);
+  --hint-purple-rim: rgba(191,90,242,.35);
+  --hint-purple-fill: rgba(191,90,242,.22);
+  --hint-teal-wash: rgba(100,210,255,.14);
+  --hint-teal-rim: rgba(100,210,255,.35);
+  --hint-teal-fill: rgba(100,210,255,.22);
+
+  /* THE RADII — the kit's 8. */
+  --r-8: 6px; --r-10: 8px; --r-14: 10px; --r-18: 12px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §6 THE BOARD — Sequence's declared extensions
+   Transcribed from docs/brand/graphite/_core.html §3.
+
+   These are in the BOOK. They are not this item's design work; they are the
+   half of the substrate the Wave 0 scaffold stopped short of, and §4.4 of the
+   plan names both halves ("§1 the token layer and §2 declared extensions") as
+   the base this file copies.
+
+   Graphite's own standard for an extension, restated so it travels with the
+   block: a derivation of an existing token, or a shipped constraint the book
+   does not model, each NAMED AND JUSTIFIED IN PLACE. It is NOT a licence for a
+   new colour, radius, type size or spacing value. Graphite has no board, no
+   canvas, no node, no edge and no containment; Sequence's whole product is one
+   canvas. That gap — not taste — is what every declaration below pays for.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+
+  /* ── STROKE WIDTHS ───────────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite has no stroke-width token at all — its icon
+     class writes a literal 1.5. A board genuinely needs the scale, because on a
+     canvas an EDGE and a BORDER are different objects drawn in the same paint,
+     and "1px" appearing in both means neither can be tuned without moving the
+     other. Five widths, each with one job. */
+  --w-hair: 1px;      /* a resting border: node cards, panels, chips */
+  --w-edge: 1.2px;    /* a connector the reader is not being asked to follow */
+  --w-flow: 1.5px;    /* a connector on the flow being read; matches the icon stroke */
+  --w-struct: 1.5px;  /* a structural boundary: a module wall, a containment edge */
+  --w-rule: 2px;      /* a claim drawn as a line: the selection ring, a budget rule */
+
+  /* ── NODE-KIND CHANNELS — GRAPHITE-DECISIONS.md Decision 2 ───────────────
+     CANNOT BE INHERITED: Graphite has no architecture canvas and therefore no
+     concept of a node kind. It also, correctly, has nowhere to put one — its
+     verdict namespace is a closed budget of claims, and its viz namespace is
+     "for SERIES, not for meaning". v1 spent five hues on kinds, four of them
+     byte-identical to its own status vocabulary, so the downstream half of
+     every board read as a wall of passed and warning.
+
+     THERE IS NO COLOUR TOKEN IN THIS BLOCK, AND A TEST SAYS SO TWICE — once
+     structurally (no literal, no reference outside the neutral allowlist) and
+     once by measuring the chroma of everything these tokens resolve to, in both
+     themes. Kind is carried by silhouette, border style, border weight, neutral
+     tone and an icon: four non-chromatic channels and one glyph. Every pair of
+     kinds differs in at least three of them, which is what makes the greyscale
+     invariant hold rather than merely be asserted. Hue on a node is reserved
+     for what the node IS DOING: verdict, risk, error, selection, focus.
+
+     SILHOUETTE — read at a zoom too far out for a label. CORNER RADIUS ALONE IS
+     TOO WEAK A CHANNEL: four of the six kinds used to be four rounded rectangles
+     differing only in a number the renderer was free to discard, so the six get
+     six genuinely different OUTLINES instead.
+       entry      capsule left end against a hard square right edge   the way in
+       service    rounded rect, --r-14                     the default runtime thing
+       module     rounded rect --r-14 with a top-left tab   a container of other nodes
+       datastore  cylinder: flat sides, elliptical top and bottom  it holds still
+       topic      stadium, both ends fully round           a lane something flows along
+       agent      rounded rect, chamfered top-right corner  an actor, not a deployment
+
+     EACH TOKEN IS WRITTEN AS WHAT ACTUALLY PAINTS. The old entry token read
+     --r-full --r-14 --r-14 --r-full, which on a 160x96 card sums 1998 against 96
+     on the left side: f = 0.048, and the two --r-14 corners painted at 0.67px,
+     i.e. square. The token asserted a value the renderer threw away. It now says
+     square, because square is what ships.
+     Two of the six are shapes border-radius cannot express, so they are DRAWN
+     rather than declared — the module's tab is an added bordered element, the
+     agent's chamfer is cut out of a two-layer plate. Neither is faked with a
+     radius that will not render.
+     BORDER STYLE — solid means the analyzer saw it stand there; dashed means it
+     is a boundary drawn around things; dotted means it is ambient, sampled, not
+     held. WEIGHT is the WEAKEST channel in the set and no pair of kinds may ever
+     rely on it alone: a 1.5px border snaps to 1px on a 1x display, so --w-hair
+     and --w-struct are indistinguishable there. TONE is weaker still, and
+     deliberately so — it carries containment depth first (a module recedes
+     behind its members) and is not asked to separate every kind on its own. */
+
+  --arch-sil-entry: var(--r-full) 0 0 var(--r-full);
+  --arch-sil-service: var(--r-14);
+  --arch-sil-module: var(--r-14);
+  --arch-sil-store: 50% / var(--r-14);
+  --arch-sil-topic: var(--r-full);
+  --arch-sil-agent: var(--r-4);
+
+  /* the two outlines a radius cannot express. The chamfer is a clip, cut at
+     --sp-16 so it is a fixed bite out of the corner at every card size; the tab
+     is an added element and carries its own two dimensions off the space ramp. */
+  --arch-clip-agent: polygon(0 0, calc(100% - var(--sp-16)) 0, 100% var(--sp-16), 100% 100%, 0 100%);
+  /* QUIETER, per Decision 11 — the tab shrinks, it does not go.
+     32x12 on a 160px card read as a label; 24x8 still reads as a folder and
+     stops competing with the card's own content at reading zoom, which is the
+     noise the ruling was about. It costs no channel: `drawn` is categorical, so
+     a smaller tab separates module from service exactly as a larger one did.
+     Removing it entirely was measured and declined — see the Decision 11
+     addendum — because it puts module/service on the invariant's floor. */
+  --arch-tab-w: var(--sp-24);
+  --arch-tab-h: var(--sp-8);
+
+  --arch-style-entry: dashed;   --arch-weight-entry: var(--w-hair);
+  --arch-style-service: solid;  --arch-weight-service: var(--w-hair);
+  --arch-style-module: dashed;  --arch-weight-module: var(--w-struct);
+  --arch-style-store: solid;    --arch-weight-store: var(--w-struct);
+  --arch-style-topic: dotted;   --arch-weight-topic: var(--w-hair);
+  /* agent's outline is PAINTED, not bordered — a drawn plate cannot carry a
+     dash pattern, so solid is the truth rather than a preference. The pair it
+     could be confused with, store, is separated by icon, silhouette and tone. */
+  --arch-style-agent: solid;    --arch-weight-agent: var(--w-struct);
+
+  --arch-tone-entry: var(--surface-2);
+  --arch-tone-service: var(--surface-2);
+  --arch-tone-module: var(--surface-1);
+  --arch-tone-store: var(--surface-2);
+  --arch-tone-topic: var(--surface-2);
+  --arch-tone-agent: var(--surface-3);
+
+  /* Shipped geometry constraints the book does not model. The card's height is
+     content-driven and this is a FLOOR: a one-line card must be a one-line card,
+     not a 96px block box holding one 16px line over 60px of dead ground. */
+  --arch-card-w: 160px;
+  --arch-card-min-h: 96px;
+
+  /* ── EDGE PROOF STATE ────────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite has no connector of any kind, and this is the
+     one place on the board where colour IS permitted. A drawn connector between
+     two nodes is DATA — a chart series with two endpoints — not chrome. Law 1
+     governs chrome; a series is governed by the viz namespace.
+     Three states, three aliases, no new hue. TRACED is the majority and the
+     reference everything else is read against, so it takes --viz-baseline, which
+     is exactly what that token means on a chart. ON-FLOW is selection, which is
+     the product's own voice, so it takes --accent. DECLARED is a claim from
+     config that the source could not confirm, so it is --unknown — IT IS NEVER
+     --wont, because red means failed or blocked and a claim nobody could check
+     has not failed at anything. The dash patterns matter as much as the colour
+     and are why the three states survive greyscale: a trace is continuous
+     because it was observed continuously, and a declaration is broken because
+     the evidence is. */
+  --flow-traced: var(--viz-baseline);
+  --flow-onflow: var(--accent);
+  --flow-declared: var(--unknown);
+  --flow-dash-traced: none;
+  --flow-dash-declared: 5 4;
+  /* DERIVED — the weakest connector, and an ALIAS rather than a new hue. This
+     sheet's budget is unchanged: --ink-4 is already spoken for as the quietest
+     ink, and an aggregate of imports is the quietest thing the board draws.
+
+     The DOT is what carries the distinction in greyscale, which is the rule
+     the other three follow: `1 5` with the round linecap paints actual dots,
+     visibly not the 5 4 dash `declared` uses. A reader who cannot receive the
+     hue still sees three different connectors. */
+  --flow-derived: var(--ink-4);
+  --flow-dash-derived: 1 5;
+
+  /* ── THE BOARD FIELD ─────────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite draws no infinite plane. The field is a DOT
+     grid, one grid and only one — two grids at different pitches beat against
+     each other and neither reads. Pitch is --sp-24, straight off the space ramp;
+     the dot is one hairline wide. The ink is --edge rather than --viz-grid
+     because a 1px dot at 24px pitch carries far less weight than a continuous
+     hairline, and --edge is where the two match perceptually. The field lives
+     INSIDE the camera transform: if it does not pan and scale with the content
+     it is a backdrop, not a board. */
+  --board-field-ink: var(--edge);
+  --board-field-pitch: var(--sp-24);
+  --board-field-dot: var(--w-hair);
+
+  /* ── CANVAS SELECTION ────────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite selects rows, not objects in a plane, and has
+     no marquee. Selection OUTRANKS every other carrier and must be MORE visible
+     than the state it replaces, never less — the defect being fixed dropped a
+     selected node's border to 1.54:1 and dimmed everything else below 3:1. Fill
+     plus a --w-rule accent ring at full strength. Dimming reuses
+     --st-archived-opacity: Graphite already decided what "receded but still
+     readable" is worth, and it is .6, not .4. */
+  --board-select-fill: var(--state-selected);
+  --board-select-edge: var(--accent);
+  --board-marquee-fill: var(--accent-wash);
+  --board-marquee-edge: var(--accent-edge);
+  --board-dim-opacity: var(--st-archived-opacity);
+
+  /* ── CONTAINMENT AND NESTING ─────────────────────────────────────────────
+     CANNOT BE INHERITED: "nesting" returns zero hits across all forty Graphite
+     pages. Sequence has parentId on ArchNode and memberIds on diagram groups.
+     Depth is carried by TONE, one step per level, and it stops at three: past
+     that the ramp repeats and the border style has to carry it instead. That
+     ceiling is stated rather than discovered. The header height is the 24px
+     component height Graphite already uses for its chip, small button, segment
+     and rail head — not a new rung. The inset is --sp-4 for one reason: a module
+     wall is --r-18, and 18 minus 4 is 14, which is exactly the service card's
+     silhouette. Radii nest correctly by arithmetic, not by eye. */
+  --nest-0: var(--bg-ground);   /* the board ground itself */
+  --nest-1: var(--surface-1);   /* a module wall */
+  --nest-2: var(--surface-2);   /* a node inside a module */
+  --nest-3: var(--surface-3);   /* a part inside a node */
+  --nest-inset: var(--sp-4);
+  --nest-hd-h: 24px;
+
+  /* ── SEQUENTIAL RAMP — DELETED, AND THE DELETION IS THE POINT ────────────
+     A five-step heat ramp derived from --viz-2 used to live here. No sheet used
+     it and no board surface used it. An ungoverned five-step hue ramp sitting in
+     the substrate is the exact hole through which kind-by-hue comes back: five
+     slots, six kinds, and a reader who assumes a ramp must mean an ordering.
+     Decision 2 says kind is carried by icon, silhouette, border and neutral
+     tone. If a real heat surface is ever specified, it arrives WITH the surface
+     that justifies it and with a written meaning for each step — not before. */
+
+  /* ── CAMERA MOTION ───────────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite ships two durations because nothing in it
+     moves further than a hover. A camera flying to fit, a panel sliding, and a
+     playback hop stepping from node to node are three durations a 170ms ceiling
+     cannot express. --dur-1 and --dur-2 still govern every control; these three
+     govern the canvas only. */
+  --seq-dur-panel: 180ms;
+  --seq-dur-cam: 240ms;
+  --seq-dur-hop: 400ms;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §7 THE ELEVEN UNSHEETED SURFACES
+   docs/research/v2-architecture-and-gaps.md §5.6.
+
+   THIS SECTION IS THE ONLY PART OF THIS FILE THAT IS NOT TRANSCRIPTION.
+   Everything above came out of docs/brand/graphite/. Everything below is
+   designed here, because §5.6 grepped all twelve sheets and the substrate and
+   found: "repo picker" 0 files, "breakpoint" 0, "three-pane" 0, "coverage" 0,
+   "settings" 1 hit and it is an icon name. Its closing line is the instruction
+   this section follows: "Budget the design time or write the sheets. The
+   dangerous state is thinking the book covers them."
+
+   THE STANDARD IS §3's, UNCHANGED. A geometry value the book has no slot for,
+   or an alias of a token that already resolves in all three theme states. NOT a
+   new colour, a new radius, a new type size or a new spacing value. THE HUE
+   BUDGET IN THIS FILE'S HEADER IS UNCHANGED BY THIS SECTION: every colour below
+   is a var() reference, and a test fails the build on a literal one.
+
+   Two of the eleven turned out to need almost nothing, and that is reported
+   rather than padded — a token invented to make a list look complete is the
+   thing this discipline exists to stop.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+
+  /* ── 1. THE THREE-PANE SHELL: geometry, resizers, collapse, breakpoints ──
+     CANNOT BE INHERITED: Graphite draws one window at one width. "breakpoint"
+     is zero hits across the whole book, "three-pane" zero, and the substrate's
+     resize clamps (--rail-w-min and friends) describe a drag range without ever
+     saying what happens when the frame itself is too small to hold three
+     columns. Plan §2.3 and risk R9 both say to decide this in the model layer
+     before any CSS, which means the two numbers have to be tokens the shell
+     reads, not media queries scattered through component sheets.
+
+     THE TWO WIDTHS ARE ALIASES, NOT NEW NUMBERS. §2.3 draws the chat at "~380px"
+     and the rail at "~280px"; the book already declares 392 and 280 and both
+     land inside those approximations, so the tilde resolves to the book rather
+     than to a new pair of literals. Same for the top bar: §2.3's ASCII says
+     40px, the book says 44px, and the book wins — a disagreement of four pixels
+     between a diagram and a measured sheet is not a decision, it is a diagram.
+
+     The grip is split in two on purpose. A 4px painted line is what the eye
+     wants between two panes and a 4px pointer target is a usability defect, so
+     the hit area is declared separately and is 10px off the space ramp. */
+  --shell-bp-rail: 1100px;   /* below this the sessions sidebar stops being a column */
+  --shell-bp-chat: 820px;    /* below this the chat stops being a column */
+  --shell-canvas-min: 50%;   /* superseded by shellModel.ts boardFloor (Decision 5); kept for readers */
+  --shell-chat-w: var(--pane-w);
+  --shell-rail-w: var(--rail-w);
+  --shell-topbar-h: var(--topbar-h);
+  --shell-grip-w: var(--sp-4);
+  --shell-grip-hit: var(--sp-10);
+  --shell-grip-ink: var(--edge);
+  --shell-grip-ink-active: var(--accent);
+  --shell-scrim: var(--scrim);
+  --shell-overlay-e: var(--e4);
+  --shell-dur-collapse: var(--seq-dur-panel);
+
+  /* ── 2. THE ATTACH DIALOG ────────────────────────────────────────────────
+     CANNOT BE INHERITED: the book's dialog is "a decision that stops the world"
+     and is capped at 420px because every specimen of it asks one question. The
+     attach dialog is a BROWSER — recents, a browse-root callout, crumbs, a
+     scrolling directory list and a per-row scannable tag — and 420px truncates
+     a path before it reaches the second crumb. It is a reading column, so it
+     takes the reading column's width, and its list height is ten rows of the
+     ramp rather than a chosen pixel count.
+
+     THE FIVE §3.2 ERRORS SPLIT TWO WAYS, NOT FIVE. 403 jail escape, 404 missing
+     and 400 home-dir-itself are refusals: the path cannot be attached at all.
+     422 no-manifests is not — the directory exists, it is readable, it simply is
+     not a repo, and the user's next move is to browse one level up rather than
+     to give up. Rendering those two classes in the same red teaches that the
+     product is broken when it is working correctly, so the soft failure takes
+     the warning hue. This is the same distinction the scannable tag draws one
+     screen earlier, and it takes the same two tokens. */
+  --attach-w: var(--col-max);
+  --attach-list-h: calc(var(--row-h) * 10);
+  --attach-crumb-h: var(--nest-hd-h);
+  --attach-tag-repo: var(--fits);     /* "scannable" IS a claim about the world */
+  --attach-tag-plain: var(--unknown);
+  --attach-fail-ink: var(--wont);     /* 403 / 404 / 400 — the path is refused */
+  --attach-fail-soft-ink: var(--spills); /* 422 — a real directory that is not a repo */
+
+  /* ── 3. SETTINGS ─────────────────────────────────────────────────────────
+     CANNOT BE INHERITED, AND ALMOST NOTHING IS NEEDED — which is the honest
+     finding, not a gap. "settings" is one hit across the whole book and it is an
+     icon name in sheet 09. But a settings page is rows, sections and inputs, and
+     the book specifies all three; the ramps carry it. Exactly two things are
+     missing, and both are literals the book writes inside a component rather
+     than tokens a page can read:
+       - the label column. _core.html §5 fixes a key-value row's key at a flat
+         96px. A settings form is that row at scale, so the number is PROMOTED to
+         a token rather than re-typed at forty call sites. It is written as an
+         arithmetic on the space ramp so it cannot drift off it.
+       - a row with a description under its label, which no book specimen draws.
+         Derived as the row height plus one line of the 11px leading, so it moves
+         when either does. */
+  --settings-w: calc(var(--menu-w) * 2 + var(--sp-56));
+  --settings-h: calc(var(--row-h) * 21);
+  --settings-label-w: calc(var(--sp-32) * 3);
+  --settings-row-h: calc(var(--row-h) + var(--lh-11));
+
+  /* ── 4. THE COVERAGE CHIP ────────────────────────────────────────────────
+     CANNOT BE INHERITED: "coverage" is zero hits across the book, and §5.4 calls
+     this "the product's single differentiating chip" — the one surface that says
+     "answered from 296 of 2,326 edges · analyzer only".
+
+     THE RULING THAT MATTERS HERE IS THAT COVERAGE IS NOT A VERDICT. A ratio is
+     data; the reflex is to redden a low one, and that reflex is wrong twice
+     over. It spends the verdict budget on something that is making no claim
+     about the world, and it tells the user their answer is bad when the honest
+     reading of a small denominator is "here is exactly how much was looked at".
+     So the fill comes from the viz namespace, where a series lives, and the
+     track is an edge rather than a wash so a zero-coverage chip still draws its
+     own outline instead of vanishing.
+
+     The measured/declared split reuses the edge-proof aliases deliberately: it
+     is literally the same distinction one level up. An answer assembled from
+     traced edges and an answer assembled from declared ones differ in exactly
+     the way two edges differ, and giving that difference a second vocabulary
+     would be two names for one fact.
+
+     Height and radius are the book's own chip: 24px, and the sanctioned sub-4px
+     radius that exists precisely so an 8px-tall bar is a bar and not a lozenge. */
+  --cov-h: var(--nest-hd-h);
+  --cov-bar-h: var(--sp-8);
+  --cov-bar-r: var(--r-bar);
+  --cov-track: var(--edge-faint);
+  --cov-fill: var(--viz-baseline);
+  --cov-measured: var(--flow-traced);
+  --cov-declared: var(--flow-declared);
+  --cov-missed: var(--ink-4);
+
+  /* ── 5. THE TOPOLOGY-PROPOSAL GATE (canvas state S4) ─────────────────────
+     CANNOT BE INHERITED: §5.6 names this one explicitly — sheet 12's "The gate"
+     is drawn for a RUN, a thing that already happened and is reporting. S4 is a
+     ghost layer over a grounded document: nodes and edges that do not exist yet,
+     that never merge into the .seqd without a click, and that must be
+     distinguishable from the real board at a glance or invariant 1 is broken.
+
+     THE GHOST IS ACCENT, NOT A VERDICT. A proposal is the product speaking —
+     the same voice as selection and send — and it is neither good nor bad until
+     someone decides. Its dash is the DECLARED dash, reused rather than invented,
+     and the reuse is the argument: a proposed edge carries exactly the evidence
+     a declared edge carries, which is none from source. Its opacity is the
+     book's own "receded but still readable".
+
+     ACCEPT IS NOT --fits AND DENY IS NOT --wont. Both of those are verdicts
+     about the world, and accepting a proposal is the user acting, not the
+     analyzer concluding. Accept is the solid accent button the book already
+     specifies for a committing action; deny is a quiet button, because declining
+     a proposal is not a failure and reddening it would teach that it was.
+
+     The bar height is derived — one control plus its padding on both sides. It
+     comes out equal to the top bar, and that IS a coincidence rather than a
+     derivation, which is exactly why it is written as the arithmetic and not as
+     an alias of it. The book's --menu-w carries the same warning in its own
+     comment. */
+  --ghost-ink: var(--accent);
+  --ghost-fill: var(--accent-wash);
+  --ghost-edge: var(--accent-edge);
+  --ghost-dash: var(--flow-dash-declared);
+  --ghost-opacity: var(--st-archived-opacity);
+  --gate-h: calc(var(--control-h) + var(--sp-8) * 2);
+  --gate-bg: var(--surface-3);
+  --gate-edge: var(--edge-strong);
+  --gate-accept: var(--accent-solid);
+  --gate-deny-ink: var(--ink-2);
+
+  /* ── 6. THE SESSION LIST ─────────────────────────────────────────────────
+     CANNOT BE INHERITED, AND LIKE SETTINGS IT NEEDS ALMOST NOTHING. The book's
+     run row is a session row with different words in it, and the six run-state
+     roles and the archived opacity already exist as aliases. One thing is
+     missing: the height of a TWO-LINE row. The book writes 38px as a literal in
+     two separate components — the two-line chip and the run row — and a third
+     caller is the point at which a repeated literal becomes a token. Written as
+     space-ramp arithmetic so it cannot drift off the ramp. */
+  --row-h-two: calc(var(--sp-32) + var(--sp-6));
+  --session-row-h: var(--row-h-two);
+  --session-w: var(--pane-w);
+  --session-meta-ink: var(--ink-3);
+
+  /* ── 7. EXPORT ───────────────────────────────────────────────────────────
+     CANNOT BE INHERITED: the book has a download glyph and no export surface.
+     The one thing export needs that no dialog in the book needs is an ASPECT
+     RATIO, because what it previews is a rendered board and a board is an image
+     with proportions, not a form that grows to its content. 16:9 is a choice and
+     is recorded as one: the destination for an exported board is a README or a
+     slide, and both are 16:9. The padding is real geometry that ships inside the
+     produced file — a board exported flush to its bounding box reads as
+     cropped — so it is a token rather than a render-local constant. */
+  --export-w: var(--col-max);
+  --export-preview-ratio: 16 / 9;
+  --export-pad: var(--sp-24);
+  --export-bg: var(--nest-0);
+
+  /* ── 8. THE DIFF INSPECTOR ───────────────────────────────────────────────
+     CANNOT BE INHERITED: the book's diff is a wash and a 2px inset gutter, sized
+     by three flexbox literals for a TRAINING-METRICS delta list. §5.6 says so in
+     as many words — "the diff inspector adapted from a training-metrics
+     context". A source diff adds four things that context never had: hunk
+     headers, intraline runs, per-line review comments and a per-file header. The
+     three literals are promoted unchanged, because they are right and because a
+     promoted literal is traceable in a way a re-derived one is not; the four
+     additions are new.
+
+     THE NAMESPACE IS DELIBERATELY DISJOINT FROM THE BOOK'S DIFF CHANNEL. Those
+     four tokens are one of the three disjoint colour channels the header counts,
+     and a name that merged into them would make the hue budget uncountable.
+
+     The intraline emphasis is derived through the existing --mix-* discipline
+     rather than mixed by hand, so a change to the gutter hue cannot leave the
+     emphasis behind on last year's colour. The comment edge is the accent: a
+     line comment is the user speaking, not a verdict on the line. */
+  --diffx-num-w: calc(var(--sp-32) + var(--sp-2));
+  --diffx-sign-w: var(--sp-16);
+  --diffx-line-h: var(--lh-13);
+  --diffx-gutter-w: var(--w-rule);
+  --diffx-file-hd-h: var(--control-h);
+  --diffx-hunk-bg: var(--surface-1);
+  --diffx-hunk-ink: var(--ink-3);
+  --diffx-add-strong: color-mix(in srgb, var(--diff-add-gutter) var(--mix-edge), transparent);
+  --diffx-del-strong: color-mix(in srgb, var(--diff-del-gutter) var(--mix-edge), transparent);
+  --diffx-comment-edge: var(--accent-edge);
+
+  /* ── 9. THE STALENESS BAR ────────────────────────────────────────────────
+     CANNOT BE INHERITED: the book has no notion of a document that has stopped
+     being true. §3.1's rule is that staleness is EXPLICIT and never a silent lie
+     — a write returns stale:true and the canvas says so.
+
+     IT IS --spills AND IT IS NOT --wont, and the whole design of the state slice
+     turns on that: a stale graph is still a graph and still paints. Red says
+     "this is broken", which is the precise misreading the bar exists to prevent;
+     the board below it is still the best available picture and still worth
+     reading. Amber says "no longer current", which is what happened.
+
+     The height is derived as one control plus padding, and comes out equal to
+     the top bar by arithmetic. That is a coincidence, not a derivation, and is
+     written out rather than aliased for the same reason --menu-w is. */
+  --stale-h: calc(var(--control-h) + var(--sp-8) * 2);
+  --stale-ink: var(--spills);
+  --stale-wash: var(--spills-wash);
+  --stale-edge: var(--spills-edge);
+
+  /* ── 10. NOTIFICATIONS ───────────────────────────────────────────────────
+     CANNOT BE INHERITED: zero hits for "toast" and zero for "notification"
+     across all twelve sheets and the substrate. The book's four transient
+     surfaces are all summoned by the user — a menu, a tooltip, a popover, a
+     dialog. A notification is the only surface in the product that appears
+     because something happened, and its two governing numbers have no analogue
+     in a book where nothing arrives unasked.
+
+     THE WIDTH IS A NEW NAMED LITERAL AND IS DELIBERATELY NOT AN ALIAS. It is the
+     same 320 as the popup menu and the narrowest pane drag, and the book's own
+     --menu-w comment is an instruction about exactly this case: a coincidence
+     gets its own name so the next reader does not treat it as a derivation and
+     tie two unrelated surfaces together.
+
+     THE DWELL IS THE ONE PLACE THIS SHEET EXCEEDS THE MOTION RAMP, AND IT IS NOT
+     MOTION. --dur-1 and --dur-2 are transition durations and top out at 170ms; a
+     dwell is how long a message stays readable, and 170ms of dwell is not a
+     notification, it is a flicker. Six seconds is the interval, not the
+     animation — the animation still uses --dur-2. */
+  --toast-w: 320px;
+  --toast-h: calc(var(--control-h) + var(--sp-8) * 2);
+  --toast-gap: var(--sp-8);
+  --toast-inset: var(--sp-16);
+  --toast-dwell: 6000ms;
+  --toast-ink-info: var(--info);
+  --toast-ink-done: var(--fits);
+  --toast-ink-fail: var(--wont);
+
+  /* ── 11. THE PERMISSION CONTROL ──────────────────────────────────────────
+     CANNOT BE INHERITED: grep for "permission" across all twelve sheets and the
+     substrate returns ZERO hits. Item 2.1 recorded the same result independently.
+     The whole surface is design work.
+
+     DECISION 2, ONE SURFACE OVER. The three modes are ordered by how much the
+     agent may do without asking, and the reflex for an escalation is
+     green / amber / red. That reflex spends three of the five verdict hues on a
+     control that is making no claim about the world — the identical defect
+     Decision 2 fixed on the board, where five hues went on node kinds and four
+     of them collided with the status vocabulary. So escalation here is carried
+     NON-CHROMATICALLY: by a count of dots, by the mode's own word, and by
+     nothing else. The dots are ink.
+
+     The fourth token is the one item 2.8 needs: a mode Settings has not enabled
+     is not merely inactive, it is unavailable, and the two states must not paint
+     the same. Only "propose" is honest today. Height is the control ladder and
+     radius is the book's segmented control, so a permission control cannot drift
+     off compact. */
+  --perm-h: var(--control-h);
+  --perm-r: var(--r-10);
+  --perm-active-ink: var(--ink-1);
+  --perm-active-bg: var(--surface-3);
+  --perm-idle-ink: var(--ink-3);
+  --perm-locked-ink: var(--ink-4);
+  --perm-risk-ink: var(--ink-2);
+  --perm-dot: var(--dot);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE CHOSEN THING IS FROSTED, WHEREVER IT LIVES — Decision 16
+
+   One block, a list of selectors, the same argument as Decision 14's: what
+   makes glass read as one material is that every pane of it IS one material.
+   These are the places the product says "this is the one you PICKED" — a
+   pressed control, a palette item, the board's draw toggle.
+
+   THE SESSION ROW IS NOT ONE OF THEM, and that is a rule with a test behind it.
+   `SessionsPanel.test.tsx`: "a resting session row spends no black — the active
+   thread is marked by the ramp, not by an inset shadow." The owner said the
+   same thing on 2026-09-14 — the current session "should just be darkened", not
+   glow — and the gate caught the glass being put on it. A thread you are
+   READING is not a button you are pressing; it is where you are, and where you
+   are is said with the ramp.
+
+   They painted a flat `--state-selected` slab. Decision 14 frosted the RESTING
+   controls and left the chosen ones flat, so clicking something took it OUT of
+   the material instead of deeper into it — backwards, because the chosen thing
+   is the one the eye should rest on.
+
+   LIVES IN graphite.css, NOT in six scoped stylesheets, because it is a
+   statement about the MATERIAL rather than about any surface. A scoped copy per
+   file is six places for the frosting to drift.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.rail-scope .rail-row[data-selected='true'],
+.shell-btn[aria-pressed='true'],
+.shell-cmd-item[aria-selected='true'],
+.rv-scope .rv-icon-btn[aria-pressed='true'],
+.board-scope .drawtoggle[data-on='true'] {
+  background: var(--glass-sel);
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-sel-inset);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE ROOM, AND THE MATERIAL IN IT — Decision 16
+
+   `--ground-wash` is painted on the app shell so every frosted control has
+   something behind it to refract. Without this the blur is arithmetic with no
+   effect (see the note beside --glass-ctl-sat), which is exactly what the owner
+   kept reporting.
+
+   FIXED, NOT SCROLLING. `background-attachment: fixed` keeps the lights still
+   while content moves over them: a wash that scrolls reads as an object on the
+   page, and a wash that sits still reads as the room the page is in.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body {
+  background-color: var(--bg-base);
+  background-image: var(--ground-wash);
+  background-attachment: fixed;
+}
+
+/* `.shell` paints the same room in shell.css, which loads after this file and
+   would otherwise win with its own flat fill. Order, not specificity. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE GLASS RECIPE, IN ONE PLACE — Decision 16
+
+   Every frosted control composes exactly these four layers. Decision 14 shipped
+   1, 2 and 3 and the material still did not read, because layer 2 had nothing
+   to work on (see --glass-ctl-sat) and layer 4 did not exist.
+
+     1. a fill thin enough that the ground reads through
+     2. blur AND SATURATE — saturate is what pulls colour through a frosted
+        pane; a plain blur greys what it samples and reads as fog
+     3. a top highlight: where the light is
+     4. a bottom inner shadow: the pane has thickness. Without it, a translucent
+        box is a sticker rather than glass.
+
+   ── WHY THE SELECTORS ARE DOUBLED ─────────────────────────────────────────
+   `.shell-btn.shell-btn` is not a typo and not cargo-cult. This file is
+   imported BEFORE every scoped stylesheet, so a plain `.shell-btn` rule here
+   loses to `shell.css`'s own `.shell-btn` on order alone — which is precisely
+   what happened on the first attempt: the recipe was written, the build was
+   green, and the running app still showed `blur(10px)` with no saturate and no
+   bottom edge, because a later file had already set those properties.
+
+   Doubling the class raises specificity to (0,2,0) so the shared recipe wins by
+   CONSTRUCTION rather than by whoever happens to be imported last. The
+   alternative — copying four layers into four scoped files — is the drift this
+   block exists to prevent, and it is the reason Decision 14 said glass is
+   defined once.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.glassy.glassy,
+.shell-btn.shell-btn,
+.shell-repo.shell-repo,
+.shell-hint.shell-hint,
+.shell-wpill-group.shell-wpill-group,
+.chat-scope .iconbtn.iconbtn,
+.walk-btn.walk-btn,
+.sessions-scope .sessions-act.sessions-act {
+  backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  -webkit-backdrop-filter: blur(var(--glass-ctl-blur)) saturate(var(--glass-ctl-sat));
+  box-shadow: var(--glass-inset);
+}
+
+/* A disabled control is not a pane of glass, because it is not a control.
+   Doubled for the same reason, and one step higher so it beats the recipe. */
+.chat-scope .iconbtn.iconbtn[disabled],
+.walk-btn.walk-btn:disabled,
+.sessions-scope .sessions-act.sessions-act[disabled] {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DECISION 17 — CHARCOAL, AND COLOUR ONLY WHERE IT MEANS SOMETHING
+
+   Owner, 2026-09-14, on the build: "the random hue everywhere is so bad. I just
+   want a clear charcoal gray light background, codex like … purposeful colors,
+   liquid glass everywhere … Purple hue only on, like, buttons and stuff, not
+   entire sections or cards or huge things."
+
+   THE RAINBOW WAS MINE AND IT WAS A WORKAROUND. Decision 16 put four coloured
+   lights on the ground because `backdrop-filter` has nothing to blur over a
+   flat fill — true, and the wrong fix. Glass does not need coloured light; it
+   needs CONTRAST between the pane and what is behind it, a specular top edge,
+   and depth. Those are all neutral. The wash is one soft vertical lift now —
+   the way a lit room falls off — and the app is charcoal again.
+
+   WHERE COLOUR IS ALLOWED TO GO, and nowhere else:
+     · a BUTTON the person presses
+     · a SELECTION — the thing they picked
+     · a TOOL's own state
+   Not a section. Not a card. Not a pane. Not the ground. A hue on something
+   large is decoration; on something you press it is information.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* A PRESSABLE THING IS PURPLE — Decision 17. The accent earns its place on the
+   controls and gives it up everywhere else. */
+.chat-scope .sendbtn,
+.shell-wpill-group[data-on='true'],
+.sessions-new-chat,
+.shell-rail-act[data-selected='true'],
+.shell-rail-act-sel {
+  border-color: var(--accent-edge);
+}
+
+/* COOL HOVER — owner: "button should be clear, clickable, cool hover
+   animation". One transition, shared, so every control in the product answers
+   the pointer the same way. The lift is 1px and the light comes up: enough to
+   feel, not enough to move the layout. */
+.shell-btn,
+.shell-repo,
+.shell-hint,
+.shell-wpill-group,
+.chat-scope .iconbtn,
+.chat-scope .sendbtn,
+.walk-btn,
+.sessions-scope .sessions-act,
+.shell-rail-act {
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+
+.shell-btn:hover,
+.shell-repo:hover,
+.shell-hint:hover,
+.shell-wpill-group:hover,
+.chat-scope .iconbtn:hover:not([disabled]),
+.walk-btn:hover:not(:disabled),
+.sessions-scope .sessions-act:hover:not([disabled]),
+.shell-rail-act:hover {
+  transform: translateY(calc(-1 * var(--w-hair)));
+}
+
+/* Pressing puts it back down — a control that lifts and never returns reads as
+   broken rather than as pressed. */
+.shell-btn:active,
+.shell-repo:active,
+.shell-wpill-group:active,
+.chat-scope .iconbtn:active:not([disabled]),
+.chat-scope .sendbtn:active:not([disabled]),
+.walk-btn:active:not(:disabled),
+.sessions-scope .sessions-act:active:not([disabled]),
+.sessions-scope .sessions-new-chat:active:not([disabled]),
+.shell-rail-act:active {
+  transform: translateY(0) scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-btn:hover,
+  .shell-repo:hover,
+  .shell-hint:hover,
+  .shell-wpill-group:hover,
+  .chat-scope .iconbtn:hover:not([disabled]),
+  .walk-btn:hover:not(:disabled),
+  .sessions-scope .sessions-act:hover:not([disabled]),
+  .shell-rail-act:hover,
+  .shell-btn:active,
+  .shell-repo:active,
+  .shell-wpill-group:active,
+  .chat-scope .iconbtn:active:not([disabled]),
+  .chat-scope .sendbtn:active:not([disabled]),
+  .walk-btn:active:not(:disabled),
+  .sessions-scope .sessions-act:active:not([disabled]),
+  .sessions-scope .sessions-new-chat:active:not([disabled]),
+  .shell-rail-act:active {
+    transform: none;
+  }
+}

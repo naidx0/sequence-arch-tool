@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant edge
+    participant notifications
+    participant gateway
+    participant invoices
+    participant orders
+    participant shipping
+    participant inventory
+    participant payments
+    participant topic_order_created as topic:order.created
+    participant postgres
+    edge->>gateway: /api/
+    notifications->>topic_order_created: consume order.created
+    gateway->>invoices: GET /invoices/*
+    gateway->>orders: GET /orders/*, POST /orders
+    gateway->>shipping: GET /shipments/*
+    gateway->>payments: GET /payments/*
+    invoices->>payments: POST /charge
+    invoices->>postgres: db, read invoices
+    orders->>inventory: grpc
+    orders->>payments: POST /charge
+    orders->>topic_order_created: publish order.created
+    orders->>postgres: db, read orders, table orders, write orders
+    shipping->>topic_order_created: consume order.created
+    shipping->>postgres: db, read shipments, write shipments
+    payments->>postgres: db, read orders, read payments, write payments

@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "mode": "design",
+  "scannedAt": "",
+  "repoRoot": "",
+  "repoName": "ticketing",
+  "nodes": [
+    { "id": "repo", "kind": "repo", "label": "ticketing" },
+    {
+      "id": "svc:gateway",
+      "kind": "service",
+      "label": "gateway",
+      "parentId": "repo",
+      "meta": { "language": "ts", "framework": "express" }
+    },
+    {
+      "id": "svc:api",
+      "kind": "service",
+      "label": "api",
+      "parentId": "repo",
+      "meta": { "language": "py", "framework": "fastapi" }
+    },
+    {
+      "id": "svc:worker",
+      "kind": "service",
+      "label": "worker",
+      "parentId": "repo",
+      "meta": { "language": "ts" }
+    },
+    {
+      "id": "ds:postgres",
+      "kind": "datastore",
+      "label": "postgres",
+      "parentId": "repo",
+      "meta": { "tech": "postgres" }
+    },
+    {
+      "id": "ds:redis",
+      "kind": "datastore",
+      "label": "redis",
+      "parentId": "repo",
+      "meta": { "tech": "redis" }
+    },
+    {
+      "id": "topic:ticket.created",
+      "kind": "topic",
+      "label": "ticket.created",
+      "parentId": "ds:redis"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e:gateway->api:get",
+      "srcId": "svc:gateway",
+      "dstId": "svc:api",
+      "kind": "http",
+      "confidence": 1,
+      "origin": "design",
+      "evidence": [],
+      "detail": { "method": "GET", "pathPattern": "/tickets/*" }
+    },
+    {
+      "id": "e:gateway->api:post",
+      "srcId": "svc:gateway",
+      "dstId": "svc:api",
+      "kind": "http",
+      "confidence": 1,
+      "origin": "design",
+      "evidence": [],
+      "detail": { "method": "POST", "pathPattern": "/tickets" }
+    },
+    {
+      "id": "e:api->postgres",
+      "srcId": "svc:api",
+      "dstId": "ds:postgres",
+      "kind": "db_access",
+      "confidence": 1,
+      "origin": "design",
+      "evidence": [],
+      "detail": { "table": "tickets" }
+    },
+    {
+      "id": "e:api->ticket.created:pub",
+      "srcId": "svc:api",
+      "dstId": "topic:ticket.created",
+      "kind": "queue_publish",
+      "confidence": 1,
+      "origin": "design",
+      "evidence": [],
+      "detail": { "topic": "ticket.created" }
+    },
+    {
+      "id": "e:worker->ticket.created:sub",
+      "srcId": "svc:worker",
+      "dstId": "topic:ticket.created",
+      "kind": "queue_consume",
+      "confidence": 1,
+      "origin": "design",
+      "evidence": [],
+      "detail": { "topic": "ticket.created" }
+    }
+  ],
+  "warnings": []
+}

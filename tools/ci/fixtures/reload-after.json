@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "sessionId": "session-2999",
+  "turns": [
+    {
+      "role": "assistant",
+      "text": "The brief.ts file defines a few small helper functions.",
+      "work": [
+        {
+          "id": "step:teach-mode",
+          "group": "reason",
+          "verb": "Taught this as a lesson",
+          "status": "done",
+          "outcome": null,
+          "identifier": null,
+          "provenance": null,
+          "from": "step:start",
+          "opens": null
+        }
+      ]
+    }
+  ]
+}

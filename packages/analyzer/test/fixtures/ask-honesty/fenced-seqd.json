@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "kind": "service-sequence",
+  "title": "Travel insurer",
+  "grounded": { "graphId": "chat:proposal", "origin": "design" },
+  "nodes": [{ "id": "proposal:ceo", "label": "CEO", "kind": "service" }],
+  "edges": []
+}

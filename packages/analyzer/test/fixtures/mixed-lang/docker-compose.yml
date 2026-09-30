@@ -1,0 +1,14 @@
+services:
+  # ONE service whose source tree is genuinely two languages: a Django-shaped
+  # Python API and a React/TypeScript UI in the same build context. Every other
+  # fixture here is single-language per service, so nothing exercised the case
+  # the owner actually described ("60% Python / 30% React").
+  portal:
+    build: ./portal
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/portal
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16

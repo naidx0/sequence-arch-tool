@@ -1,0 +1,10 @@
+sequenceDiagram
+    participant gateway
+    participant worker
+    participant api
+    participant postgres
+    participant topic_ticket_created as topic:ticket.created
+    gateway->>api: GET /tickets/*, POST /tickets
+    worker->>topic_ticket_created: consume ticket.created
+    api->>postgres: table tickets
+    api->>topic_ticket_created: publish ticket.created

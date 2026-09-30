@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{{TITLE}}</title>
+<style>
+:root{color-scheme:dark;--bg:#12141a;--surface:#1a1d24;--edge:#2a2f38;--ink:#e8eaed;--ink2:#a8adb8;--accent:#7c93ff}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+.wrap{max-width:960px;margin:0 auto;padding:24px 20px 48px}
+h1{font-size:18px;font-weight:600;margin:0 0 20px;color:var(--ink2)}
+.story-nav{margin-bottom:24px;padding:16px;border:1px solid var(--edge);border-radius:10px;background:var(--surface)}
+.story-title{font-size:12px;color:var(--ink2);margin-bottom:10px}
+.story-steps{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.story-steps button{border:1px solid var(--edge);background:transparent;color:var(--ink2);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer}
+.story-steps button.active,.story-steps button:hover{border-color:var(--accent);color:var(--ink)}
+.story-controls{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:11px;color:var(--ink2)}
+.story-controls button{border:1px solid var(--edge);background:var(--surface);color:var(--ink);padding:4px 12px;border-radius:6px;cursor:pointer}
+.block{margin-bottom:20px;border:1px solid var(--edge);border-radius:10px;background:var(--surface);overflow:hidden;scroll-margin-top:16px}
+.block.active{box-shadow:0 0 0 1px var(--accent)}
+.block-hd{padding:8px 14px;border-bottom:1px solid var(--edge);font-size:11px;color:var(--ink2)}
+.block-bd{padding:14px;font-size:13px}
+.block-bd pre.src{margin:0;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:11px;color:var(--ink2)}
+footer{margin-top:32px;font-size:10px;color:var(--ink2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>{{TITLE}}</h1>
+{{STORY_NAV}}
+{{BLOCKS}}
+<footer>Exported from Sequence AI Canvas</footer>
+</div>
+{{STORY_SCRIPT}}
+</body>
+</html>
