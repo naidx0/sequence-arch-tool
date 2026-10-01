@@ -1,0 +1,58 @@
+{
+  "about": "Draw-language A/B questions over the shopfront fixture (packages/analyzer/test/fixtures/shopfront). Every expectPath hop is a real edge of its scan; the driver re-checks that before any call. expectPath is one chain of paths, or a list of chains when the honest answer branches.",
+  "questions": [
+    {
+      "id": "get-order",
+      "kind": "request flow",
+      "question": "Draw how a request to fetch an order travels from the gateway's entry file to the database.",
+      "focus": ["gateway/src/index.ts", "ds:postgres"],
+      "expectPath": ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"]
+    },
+    {
+      "id": "charge-payment",
+      "kind": "request flow",
+      "question": "When the orders service charges a payment, which files does the call pass through until the payment is stored?",
+      "focus": ["orders/app/routes.py", "ds:postgres"],
+      "expectPath": ["orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/db.js", "ds:postgres"]
+    },
+    {
+      "id": "invoice-read",
+      "kind": "data path",
+      "question": "Trace the invoice data: how does a request for an invoice that arrives at the edge proxy reach the rows it reads?",
+      "focus": ["edge/default.conf", "ds:postgres"],
+      "expectPath": ["edge/default.conf", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"]
+    },
+    {
+      "id": "order-event",
+      "kind": "data path",
+      "question": "Where does the orders service publish the order-created event? Draw the path from the route handler to the topic.",
+      "focus": ["orders/app/routes.py", "topic:order.created"],
+      "expectPath": ["orders/app/routes.py", "orders/app/events.py", "topic:order.created"]
+    },
+    {
+      "id": "who-calls-payments",
+      "kind": "what calls X",
+      "question": "What calls payments/src/index.js? Draw every caller with an arrow to it.",
+      "focus": ["payments/src/index.js"],
+      "expectPath": [
+        ["gateway/src/routes/payments.ts", "payments/src/index.js"],
+        ["orders/app/payments_client.py", "payments/src/index.js"],
+        ["invoices/src/main/java/shop/invoices/PaymentClient.java", "payments/src/index.js"]
+      ]
+    },
+    {
+      "id": "stock-check",
+      "kind": "short 2-hop",
+      "question": "How does the orders service check stock? Keep it short.",
+      "focus": ["orders/app/routes.py", "inventory/server.py"],
+      "expectPath": ["orders/app/routes.py", "orders/app/inventory_client.py", "inventory/server.py"]
+    },
+    {
+      "id": "shipment-lookup",
+      "kind": "request flow",
+      "question": "Draw how the gateway looks up a shipment, from its entry file to where the shipment is stored.",
+      "focus": ["gateway/src/index.ts", "shipping/main.go"],
+      "expectPath": ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go", "ds:postgres"]
+    }
+  ]
+}

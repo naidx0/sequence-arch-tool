@@ -1,0 +1,308 @@
+{
+  "_about": "Every number in report/README.md and its charts. Sources: lab/log.md entries (dated), tools/bench/agent-context-bench.mjs run 2026-09-30, sequence scan timings 2026-09-30, packages/analyzer/dist/eval/grade.js run 2026-09-30, download-smoke run 36785720006.",
+  "releaseBank": {
+    "source": "lab/log.md, release bank v1: 36 conversations x 2 turns = 72 turns per snapshot, sealed",
+    "points": [
+      {
+        "label": "Sealing (f5b08f50)",
+        "date": "2026-09-24",
+        "fullAnswer": 39,
+        "turnSeconds": 14.0
+      },
+      {
+        "label": "Repo-pointing (787871ef)",
+        "date": "2026-09-25",
+        "fullAnswer": 83,
+        "turnSeconds": 10.1
+      },
+      {
+        "label": "Bare \"it\" (9f810373)",
+        "date": "2026-09-25",
+        "fullAnswer": 86,
+        "turnSeconds": 9.8
+      },
+      {
+        "label": "Same code, rerun (pinned)",
+        "date": "2026-09-25",
+        "fullAnswer": 89,
+        "turnSeconds": 9.2
+      },
+      {
+        "label": "No shape bounce (753a2c3d)",
+        "date": "2026-09-26",
+        "fullAnswer": 90,
+        "turnSeconds": 7.8
+      }
+    ]
+  },
+  "window": {
+    "source": "tools/bench/agent-context-bench.mjs --buckets, 2026-09-30 (report/raw/agent-context-bench-buckets-2026-09-30.json)",
+    "buckets": [
+      50000,
+      100000,
+      150000,
+      200000
+    ],
+    "dumpTokens": [
+      50000,
+      100000,
+      150000,
+      200000
+    ],
+    "sequenceTokens": [
+      3535,
+      3535,
+      3535,
+      3535
+    ],
+    "needles": {
+      "depths": {
+        "start": 0,
+        "middle": 104709,
+        "late": 399477
+      },
+      "inWindow": {
+        "50000": [
+          true,
+          false,
+          false
+        ],
+        "100000": [
+          true,
+          false,
+          false
+        ],
+        "150000": [
+          true,
+          true,
+          false
+        ],
+        "200000": [
+          true,
+          true,
+          false
+        ]
+      }
+    }
+  },
+  "bigRepo": {
+    "source": "tools/bench/agent-context-bench.mjs --json, 2026-09-30, over the Sequence checkout: the walk stops at 10,000 files and 428 of them match the question's words",
+    "rows": [
+      {
+        "label": "Read all 428 matching files",
+        "tokens": 4925988
+      },
+      {
+        "label": "grep + read, capped at 6 files",
+        "tokens": 18465
+      },
+      {
+        "label": "Sequence, first question",
+        "tokens": 1887
+      },
+      {
+        "label": "Sequence, follow-up",
+        "tokens": 929
+      }
+    ],
+    "monorepo": {
+      "nodes": 1329,
+      "edges": 3499,
+      "wholeMapTokens": 23442,
+      "scopedPromptTokens": 2818,
+      "window": 200000
+    },
+    "filesSearched": 10000,
+    "matchingFiles": 428
+  },
+  "scan": {
+    "source": "node packages/analyzer/dist/cli.js scan <repo> [--no-cache], 2026-09-30, Windows 11, RTX 2060 Super box; cold = median of 3 --no-cache runs, cached = third plain run; ml-harness: 1 of 5 repeat scans hit the cache",
+    "rows": [
+      {
+        "repo": "shopfront (fixture)",
+        "files": 42,
+        "nodes": 36,
+        "edges": 40,
+        "coldMs": 561,
+        "cachedMs": 453
+      },
+      {
+        "repo": "premai (web site)",
+        "files": 183,
+        "nodes": 124,
+        "edges": 38,
+        "coldMs": 875,
+        "cachedMs": 451
+      },
+      {
+        "repo": "sequence",
+        "files": 2558,
+        "nodes": 1329,
+        "edges": 3499,
+        "coldMs": 6475,
+        "cachedMs": 552
+      },
+      {
+        "repo": "ml-harness",
+        "files": 3890,
+        "nodes": 1158,
+        "edges": 3629,
+        "coldMs": 7672,
+        "cachedMs": null
+      }
+    ]
+  },
+  "charts": {
+    "source": "lab/log.md 2026-09-26: concept chart names its hops (v1, 55 pairs), hops in the caption (v2, 7 items x 3 judges), fit to frame width (60 renders)",
+    "conceptV1": {
+      "wins": 40,
+      "losses": 0,
+      "ties": 15
+    },
+    "conceptV2": {
+      "wins": 21,
+      "losses": 0,
+      "ties": 0
+    },
+    "fitWidth": {
+      "cutLabelsOff": 6,
+      "cutLabelsOn": 4,
+      "overlaps": 0
+    }
+  },
+  "locate": {
+    "source": "grade.js 2026-09-30; lab/log.md 2026-09-25 set 17",
+    "edgePrecision": 100,
+    "edgeRecall": 100,
+    "groundTruthEdges": 15,
+    "fixtures": 11,
+    "fixtureCoverage": 100,
+    "productModeOff": 15,
+    "productModeOn": 22,
+    "productModeOf": 35
+  },
+  "downloads": {
+    "source": "GitHub Actions run 36785720006 on naidx0/sequence-arch-tool, 2026-09-30",
+    "rows": [
+      {
+        "platform": "Windows",
+        "build": "Installer",
+        "pass": true
+      },
+      {
+        "platform": "Windows",
+        "build": "Portable zip",
+        "pass": true
+      },
+      {
+        "platform": "macOS Apple silicon",
+        "build": "arm64 dmg",
+        "pass": true
+      },
+      {
+        "platform": "macOS Intel",
+        "build": "x64 dmg",
+        "pass": true
+      }
+    ]
+  },
+  "findTheFix": {
+    "source": "tools/bench/find-the-fix.mjs, 2026-10-01, report/raw/find-the-fix-*.json; registered in lab/log.md before the run",
+    "repos": [
+      {
+        "repo": "codeforge",
+        "commits": 194,
+        "A_grep": 64,
+        "B_sequence": 3,
+        "D_lexical": 36,
+        "C_topology": 53
+      },
+      {
+        "repo": "ml-harness",
+        "commits": 150,
+        "A_grep": 22,
+        "B_sequence": 9,
+        "D_lexical": 15,
+        "C_topology": 16
+      }
+    ]
+  },
+  "agentAB": {
+    "source": "tools/bench/agent-ab (bash agent, qwen3.5:4b on Ollama, local, $0), sealed set arch-questions-v1 sha256 cdbd6fa7, 2 runs per arm, report/raw/agent-ab-*.jsonl",
+    "runs": {
+      "plainF1": [
+        0.082,
+        0.091
+      ],
+      "sequenceF1": [
+        0.238,
+        0.191
+      ]
+    },
+    "pooled": {
+      "delta": 0.128,
+      "se": 0.051,
+      "n": 36
+    },
+    "byType": [
+      {
+        "type": "who calls",
+        "plain": 0.08,
+        "sequence": 0.18
+      },
+      {
+        "type": "what breaks",
+        "plain": 0.02,
+        "sequence": 0.19
+      },
+      {
+        "type": "request path",
+        "plain": 0.15,
+        "sequence": 0.28
+      }
+    ],
+    "byRepo": [
+      {
+        "repo": "shopfront",
+        "plain": 0.09,
+        "sequence": 0.07
+      },
+      {
+        "repo": "ml-harness",
+        "plain": 0.08,
+        "sequence": 0.37
+      },
+      {
+        "repo": "premai",
+        "plain": 0.1,
+        "sequence": 0.2
+      }
+    ],
+    "cost": {
+      "plainTokens": [
+        1158,
+        2328
+      ],
+      "sequenceTokens": [
+        6789,
+        9152
+      ],
+      "plainSeconds": [
+        4.0,
+        2.7
+      ],
+      "sequenceSeconds": [
+        7.8,
+        6.9
+      ],
+      "plainCommands": [
+        1.19,
+        1.33
+      ],
+      "sequenceCommands": [
+        3.81,
+        3.64
+      ]
+    }
+  }
+}

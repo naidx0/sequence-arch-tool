@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>boot — dev preview</title>
+    <!--
+      DEV ONLY. This document is never built: vite.config.ts sets no
+      build.rollupOptions.input, so `vite build` emits index.html and nothing
+      else. It exists so item 2.4's seven boot states and four dialog states can
+      be LOOKED AT — the plan's Tier 4, which no wave ships without. See the
+      header of preview.tsx. It is deleted at item 2.3, when <Shell/> hosts the
+      boot surface and the whole app opens at /.
+
+      No webfont link here for the same reason index.html has none: the two
+      typefaces are @import-ed from node_modules by tokens/graphite.css and
+      bundled. There is nothing to fetch.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./preview.tsx"></script>
+  </body>
+</html>

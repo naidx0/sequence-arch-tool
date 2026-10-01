@@ -1,0 +1,16 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  {{- if .Values.istio.enabled }}
+  annotations: {{ toYaml .Values.annotations }}
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        image: {{if .Values.global.registry}}{{ .Values.global.registry }}/{{end}}shop/api
+        ports:
+        - containerPort: {{ .Values.api.containerPort }}
+{{- end }}

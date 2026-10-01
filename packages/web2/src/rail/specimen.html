@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>index rail — specimen</title>
+    <!--
+      NEVER BUILT INTO THE APP. vite.config.ts sets no build.rollupOptions.input,
+      so `vite build` emits index.html and nothing else. This document is built
+      only by railRendered.test.ts, into a temporary directory, so that the locks
+      that are claims about RENDERED values — three row heights, one indent step,
+      one accent mark — can be evaluated in a real browser, and so a human can
+      look at the rail beside sheet 11, which §4.6 Tier 4 requires of every wave.
+      canvas/specimen.html and boot/preview.html carry the same note for the same
+      reason.
+
+      NO WEBFONT LINK, exactly as index.html has none: the two typefaces are
+      @import-ed from node_modules by tokens/graphite.css and bundled. A
+      local-first product that blocks first paint on a CDN contradicts itself.
+
+      data-theme is pinned to dark rather than left to the system, because
+      GRAPHITE-DECISIONS.md Decision 1 defers light and a measurement taken
+      against untuned light tokens would be a measurement of work the owner has
+      deferred.
+
+      THE COLUMN IS 280px WIDE — --rail-w, sheet 11.1's default. Measuring the
+      rail inside a full-width page would be measuring a column the product
+      never draws, and truncation, wrapping and overflow are exactly the defects
+      that only appear at the real width.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./specimen.tsx"></script>
+  </body>
+</html>

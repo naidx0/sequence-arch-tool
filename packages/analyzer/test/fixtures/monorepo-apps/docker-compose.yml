@@ -1,0 +1,17 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on: [redis]
+  arq_worker:
+    build:
+      context: .
+      dockerfile: books_worker/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on: [redis]
+  redis:
+    image: redis:7

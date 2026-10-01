@@ -1,0 +1,167 @@
+{
+  "measured_at": "2026-09-30T23:54:34.486Z",
+  "method": "static approxTokens (chars/4); dump window filled from this repo source; shopfront needles planted at start / ~100k / ~150k; Sequence prompt re-measured, not grown",
+  "usd_spent": 0,
+  "buckets": [
+    50000,
+    100000,
+    150000,
+    200000
+  ],
+  "shopfront_sequence": {
+    "explain_prompt_tokens": 3535,
+    "digest_tokens": 2185,
+    "board_intact": {
+      "has_orders": true,
+      "has_payments": true,
+      "has_postgres": true,
+      "orders_payments_edge": true,
+      "orders_postgres_edge": true
+    }
+  },
+  "recommendations": {
+    "ask": "Add a recommendations service: it reads order history from postgres, is called from orders after insert_order, and gateway exposes GET /recommendations. Do not invent a redis edge from gateway.",
+    "wantsAskFileResearch": false,
+    "digest_tokens": 2185,
+    "prompt_tokens": 3653,
+    "prompt_chars": 14611,
+    "board_has_orders": true,
+    "board_has_recommendations": false,
+    "gateway_redis_edge": false
+  },
+  "dump_window": {
+    "total_source_files_available": 20000,
+    "total_tokens_accumulated": 400694,
+    "reached_200k": true,
+    "needle_depths": {
+      "START": 0,
+      "MIDDLE": 104709,
+      "LAST50K": 399477
+    },
+    "snapshots": [
+      {
+        "bucket": 50000,
+        "dump_tokens": 50000,
+        "filled": true,
+        "files_in_window": 31,
+        "needles_in_window": {
+          "START": true,
+          "MIDDLE": false,
+          "LAST50K": false
+        },
+        "needle_depths": {
+          "START": 0,
+          "MIDDLE": 104709,
+          "LAST50K": 399477
+        },
+        "last_50k_of_200k": false
+      },
+      {
+        "bucket": 100000,
+        "dump_tokens": 100000,
+        "filled": true,
+        "files_in_window": 48,
+        "needles_in_window": {
+          "START": true,
+          "MIDDLE": false,
+          "LAST50K": false
+        },
+        "needle_depths": {
+          "START": 0,
+          "MIDDLE": 104709,
+          "LAST50K": 399477
+        },
+        "last_50k_of_200k": false
+      },
+      {
+        "bucket": 150000,
+        "dump_tokens": 150000,
+        "filled": true,
+        "files_in_window": 61,
+        "needles_in_window": {
+          "START": true,
+          "MIDDLE": true,
+          "LAST50K": false
+        },
+        "needle_depths": {
+          "START": 0,
+          "MIDDLE": 104709,
+          "LAST50K": 399477
+        },
+        "last_50k_of_200k": true
+      },
+      {
+        "bucket": 200000,
+        "dump_tokens": 200000,
+        "filled": true,
+        "files_in_window": 61,
+        "needles_in_window": {
+          "START": true,
+          "MIDDLE": true,
+          "LAST50K": false
+        },
+        "needle_depths": {
+          "START": 0,
+          "MIDDLE": 104709,
+          "LAST50K": 399477
+        },
+        "last_50k_of_200k": true
+      }
+    ],
+    "files_used": 61,
+    "first_files": [
+      ".agents\\skills\\agency-loop\\INSTALL.md",
+      ".agents\\skills\\agency-loop\\SKILL.md",
+      ".agents\\skills\\anti-ui-slop\\SKILL.md",
+      ".agents\\skills\\autonomous-loop\\SKILL.md",
+      ".agents\\skills\\better-ui\\agents\\openai.yaml",
+      ".agents\\skills\\better-ui\\animations.md",
+      ".agents\\skills\\better-ui\\enter-exit.md",
+      ".agents\\skills\\better-ui\\icon-transitions.md"
+    ],
+    "last_files": [
+      ".agents\\skills\\impeccable\\reference\\quieter.md",
+      ".agents\\skills\\impeccable\\reference\\routing.md",
+      ".agents\\skills\\impeccable\\reference\\shape.md",
+      ".agents\\skills\\impeccable\\reference\\typeset.md",
+      ".agents\\skills\\impeccable\\reference\\visualize.md",
+      ".agents\\skills\\impeccable\\scripts\\command-metadata.json",
+      ".agents\\skills\\impeccable\\scripts\\data\\font-index-failures.json",
+      ".agents\\skills\\impeccable\\scripts\\data\\font-index.json"
+    ]
+  },
+  "sequence_vs_dump_by_bucket": [
+    {
+      "bucket": 50000,
+      "sequence_shopfront_prompt_tokens": 3535,
+      "sequence_recs_prompt_tokens": 3653,
+      "sequence_digest_tokens": 2185,
+      "dump_tokens": 50000,
+      "dump_filled": true
+    },
+    {
+      "bucket": 100000,
+      "sequence_shopfront_prompt_tokens": 3535,
+      "sequence_recs_prompt_tokens": 3653,
+      "sequence_digest_tokens": 2185,
+      "dump_tokens": 100000,
+      "dump_filled": true
+    },
+    {
+      "bucket": 150000,
+      "sequence_shopfront_prompt_tokens": 3535,
+      "sequence_recs_prompt_tokens": 3653,
+      "sequence_digest_tokens": 2185,
+      "dump_tokens": 150000,
+      "dump_filled": true
+    },
+    {
+      "bucket": 200000,
+      "sequence_shopfront_prompt_tokens": 3535,
+      "sequence_recs_prompt_tokens": 3653,
+      "sequence_digest_tokens": 2185,
+      "dump_tokens": 200000,
+      "dump_filled": true
+    }
+  ]
+}

@@ -1,0 +1,1322 @@
+[
+ {
+  "label": "code",
+  "question": "How do the React components get the theme: context, props, or CSS variables?"
+ },
+ {
+  "label": "code",
+  "question": "Can you explain the build targets and which one CI runs?"
+ },
+ {
+  "label": "code",
+  "question": "What would break if I renamed the id field to uuid in the User model?"
+ },
+ {
+  "label": "code",
+  "question": "what is the feature store doing in the pipeline, and when is it read vs written"
+ },
+ {
+  "label": "product",
+  "question": "are the workout plans made by real trainers or generated?"
+ },
+ {
+  "label": "product",
+  "question": "does the transcription thing work with accents? mine is strong"
+ },
+ {
+  "label": "code",
+  "question": "Why does the Android app crash on rotation in the settings screen?"
+ },
+ {
+  "label": "product",
+  "question": "As a teacher, how would I use this quiz platform in class, step by step?"
+ },
+ {
+  "label": "product",
+  "question": "how private are the journal entries? could the company read them"
+ },
+ {
+  "label": "code",
+  "question": "what does the yield in a pytest fixture do exactly"
+ },
+ {
+  "label": "code",
+  "question": "What happens if two users edit the same document at once? How are conflicts resolved in the sync code?"
+ },
+ {
+  "label": "code",
+  "question": "how would i refactor the giant switch in `renderCell` into something cleaner"
+ },
+ {
+  "label": "code",
+  "question": "my PR broke `test_timezone_offsets`, what is it asserting exactly?"
+ },
+ {
+  "label": "code",
+  "question": "How are database connections pooled, and what's the max pool size?"
+ },
+ {
+  "label": "product",
+  "question": "Honest opinion: is this open-source alternative mature enough to replace our paid ticketing system?"
+ },
+ {
+  "label": "product",
+  "question": "So what's the end result I get after the pipeline runs: a dashboard, an email, a CSV?"
+ },
+ {
+  "label": "code",
+  "question": "how is pagination implemented in the api, cursor or offset?"
+ },
+ {
+  "label": "product",
+  "question": "Can I export my data if I decide to leave this CRM later?"
+ },
+ {
+  "label": "product",
+  "question": "how reliable is the status page service from a customer's point of view, does it ever go down itself"
+ },
+ {
+  "label": "product",
+  "question": "Could you summarize what the product promises, and whether it seems to deliver on it?"
+ },
+ {
+  "label": "product",
+  "question": "what does a player actually do in this game, like what's the loop"
+ },
+ {
+  "label": "code",
+  "question": "Which module owns the business rules for discounts, and how is it tested?"
+ },
+ {
+  "label": "code",
+  "question": "What's the flow of a push notification from backend trigger to the phone?"
+ },
+ {
+  "label": "code",
+  "question": "Why is `Vec::with_capacity` used in `collect_tokens` instead of `Vec::new`?"
+ },
+ {
+  "label": "product",
+  "question": "My boss asked me whether we should switch our team to this static site generator. What would you tell her?"
+ },
+ {
+  "label": "product",
+  "question": "what are people mostly using this podcast transcription tool for?"
+ },
+ {
+  "label": "code",
+  "question": "Is there a reason the image resizing happens synchronously in the upload handler?"
+ },
+ {
+  "label": "product",
+  "question": "How does a user recover their account if they lose their phone with the 2FA app?"
+ },
+ {
+  "label": "product",
+  "question": "Does this tool collect analytics or telemetry about how I use it? Can I turn it off?"
+ },
+ {
+  "label": "code",
+  "question": "Could you walk me through what happens inside `handle_webhook` when Stripe retries the same event?"
+ },
+ {
+  "label": "code",
+  "question": "where do the feature flags get evaluated, client or server"
+ },
+ {
+  "label": "code",
+  "question": "What does the `simd` feature in Cargo.toml toggle in the code?"
+ },
+ {
+  "label": "code",
+  "question": "Why is React.memo not preventing rerenders of the list items?"
+ },
+ {
+  "label": "product",
+  "question": "Does the meal planner account for allergies and diets like vegan or keto?"
+ },
+ {
+  "label": "product",
+  "question": "Does the language-learning app actually help you speak, or is it mostly flashcards?"
+ },
+ {
+  "label": "code",
+  "question": "What's the purpose of the `Result<T, E>` wrapper in lib/errors.ts?"
+ },
+ {
+  "label": "code",
+  "question": "Where's the logging configured, and why do debug logs show up in prod?"
+ },
+ {
+  "label": "code",
+  "question": "Explain the difference between `Store.get` and `Store.peek` in cache.py."
+ },
+ {
+  "label": "product",
+  "question": "If our clinic uses this appointment system, does it meet health privacy rules like HIPAA?"
+ },
+ {
+  "label": "product",
+  "question": "Does the budgeting app connect directly to my bank, and is that risky?"
+ },
+ {
+  "label": "product",
+  "question": "Explain like I'm five: what does the chatbot in this repo do for a shop owner?"
+ },
+ {
+  "label": "product",
+  "question": "How does pricing scale if my app suddenly gets 10x more users?"
+ },
+ {
+  "label": "code",
+  "question": "Explain the state machine in OrderStatus.kt. Which transitions are illegal?"
+ },
+ {
+  "label": "code",
+  "question": "Why does `resolve_path` behave differently on Windows vs Linux?"
+ },
+ {
+  "label": "code",
+  "question": "Walk me through what docker-compose.yml starts and how the services find each other."
+ },
+ {
+  "label": "code",
+  "question": "how does the collision detection avoid checking every pair of objects"
+ },
+ {
+  "label": "product",
+  "question": "can i self host it or only use their cloud"
+ },
+ {
+  "label": "code",
+  "question": "Why does the currency formatting on the frontend round differently from the backend's version?"
+ },
+ {
+  "label": "code",
+  "question": "How does the CLI parse subcommands and where would I add a new one?"
+ },
+ {
+  "label": "code",
+  "question": "How does level_loader.cpp parse the Tiled JSON map?"
+ },
+ {
+  "label": "product",
+  "question": "As a student, would spending a weekend on this game engine teach me anything useful for jobs?"
+ },
+ {
+  "label": "code",
+  "question": "Explain how the GraphQL resolvers batch lookups with DataLoader here."
+ },
+ {
+  "label": "code",
+  "question": "What happens in app/main.py if the model file fails to download at startup?"
+ },
+ {
+  "label": "code",
+  "question": "Why is `Enemy.update` iterating backwards over the array?"
+ },
+ {
+  "label": "product",
+  "question": "What does a newcomer need installed before trying the demo?"
+ },
+ {
+  "label": "code",
+  "question": "Explain `reconcile()` in the orchestrator. Why does it loop until no changes?"
+ },
+ {
+  "label": "code",
+  "question": "Explain the `useDebounce` hook. Why does it return a ref?"
+ },
+ {
+  "label": "code",
+  "question": "What does `strict: true` in tsconfig.json change for this codebase, and would turning it off hide bugs?"
+ },
+ {
+  "label": "product",
+  "question": "What do users see when they first open the app?"
+ },
+ {
+  "label": "code",
+  "question": "How are random seeds set so experiments are reproducible?"
+ },
+ {
+  "label": "product",
+  "question": "I'm evaluating vendors. What are the main limitations of this document search product I should know before buying?"
+ },
+ {
+  "label": "code",
+  "question": "how do i profile why the page takes 4 seconds to render"
+ },
+ {
+  "label": "code",
+  "question": "Where is the rate limiter applied, middleware or per-route?"
+ },
+ {
+  "label": "product",
+  "question": "Is this library production-ready or still an experiment?"
+ },
+ {
+  "label": "product",
+  "question": "how do refunds work for buyers on the ticketing marketplace"
+ },
+ {
+  "label": "code",
+  "question": "what's this lru_cache doing on a method, won't that leak self?"
+ },
+ {
+  "label": "code",
+  "question": "Where does the app read environment variables, and what happens if one is missing?"
+ },
+ {
+  "label": "code",
+  "question": "where are the api keys loaded from and could they end up in logs?"
+ },
+ {
+  "label": "product",
+  "question": "What's the learning curve like for designers switching to this prototyping tool?"
+ },
+ {
+  "label": "product",
+  "question": "what are the minimum specs for the vr game"
+ },
+ {
+  "label": "code",
+  "question": "how does the `db_session` fixture in conftest.py roll back between tests?"
+ },
+ {
+  "label": "code",
+  "question": "Can you explain the training loop in train.py, especially the gradient accumulation part?"
+ },
+ {
+  "label": "code",
+  "question": "Why does the semaphore in crawler.py get acquired but not released on timeout?"
+ },
+ {
+  "label": "product",
+  "question": "what would a typical day using this scheduling tool look like for a nurse?"
+ },
+ {
+  "label": "code",
+  "question": "How would you speed up the nightly batch job that recomputes all user scores?"
+ },
+ {
+  "label": "product",
+  "question": "what does this thing actually do, in one sentence?"
+ },
+ {
+  "label": "code",
+  "question": "How is localization handled? Where do the translated strings live and how are they looked up?"
+ },
+ {
+  "label": "code",
+  "question": "Why is float32 used for embeddings in the index but float64 in the scorer?"
+ },
+ {
+  "label": "code",
+  "question": "Is `hash_password` in auth/crypto.py using a proper KDF or just sha256?"
+ },
+ {
+  "label": "code",
+  "question": "how does the plugin system discover and load plugins at startup"
+ },
+ {
+  "label": "product",
+  "question": "Is this game single player or can I play with friends online?"
+ },
+ {
+  "label": "code",
+  "question": "how does `merge_intervals` handle touching intervals like [1,2] and [2,3]?"
+ },
+ {
+  "label": "code",
+  "question": "Where is the input sanitized before rendering user comments as HTML?"
+ },
+ {
+  "label": "code",
+  "question": "What does `parseArgs` in cli/main.go do with unknown flags?"
+ },
+ {
+  "label": "code",
+  "question": "What does the Gradle build do differently for the release variant?"
+ },
+ {
+  "label": "product",
+  "question": "I'm a manager with no tech background. If we adopted this invoicing tool, what would my team actually get out of it day to day?"
+ },
+ {
+  "label": "code",
+  "question": "Why does `git_diff_stats()` return zero for binary files?"
+ },
+ {
+  "label": "product",
+  "question": "Is this a tool for individuals or is it sold to companies?"
+ },
+ {
+  "label": "product",
+  "question": "Does it integrate with Slack and Google Calendar?"
+ },
+ {
+  "label": "product",
+  "question": "What would I show a customer in a five minute demo of this product?"
+ },
+ {
+  "label": "product",
+  "question": "Tell me in plain words what \"self-hosted\" means for me as the person running this wiki."
+ },
+ {
+  "label": "code",
+  "question": "Why is the Dockerfile copying package.json before the rest of the source?"
+ },
+ {
+  "label": "product",
+  "question": "What does a finished map from this hiking-route planner look like?"
+ },
+ {
+  "label": "product",
+  "question": "do i need an account to use this or can i just download and go"
+ },
+ {
+  "label": "product",
+  "question": "What sort of results should I expect from the resume screener: a score, a ranking, comments?"
+ },
+ {
+  "label": "product",
+  "question": "What does onboarding look like for a new restaurant signing onto this ordering platform?"
+ },
+ {
+  "label": "code",
+  "question": "Where does the app do N+1 queries, and how would I fix it with eager loading?"
+ },
+ {
+  "label": "code",
+  "question": "Why is the `useEffect` in Dashboard.tsx firing twice on mount?"
+ },
+ {
+  "label": "product",
+  "question": "walk me through what happens from the moment a customer signs up to when they get their first delivery"
+ },
+ {
+  "label": "product",
+  "question": "Is there a trial period before I have to pay?"
+ },
+ {
+  "label": "product",
+  "question": "If I'm a freelance writer, what would this grammar tool do for me that my word processor doesn't?"
+ },
+ {
+  "label": "product",
+  "question": "Is it free? or do i need to pay for some plan to use the sync feature"
+ },
+ {
+  "label": "product",
+  "question": "what will the report look like after i run the survey analysis, like is it a pdf or charts or what"
+ },
+ {
+  "label": "code",
+  "question": "Why does the regex in validators.py reject valid emails with a plus sign?"
+ },
+ {
+  "label": "code",
+  "question": "what does webpack.config.js do with the splitChunks option"
+ },
+ {
+  "label": "code",
+  "question": "how are tests organized, unit vs integration, and how do I run just one?"
+ },
+ {
+  "label": "code",
+  "question": "how do the unit tests mock the http client"
+ },
+ {
+  "label": "product",
+  "question": "Hello, I am new here. Could you please explain what is the purpose of this project and who uses it?"
+ },
+ {
+  "label": "code",
+  "question": "How does the renderer batch draw calls for sprites?"
+ },
+ {
+  "label": "product",
+  "question": "Is the dating app's matching based on anything real or just random?"
+ },
+ {
+  "label": "product",
+  "question": "are there ads in the app"
+ },
+ {
+  "label": "code",
+  "question": "how is the dataset split into train/val/test, is there leakage between them?"
+ },
+ {
+  "label": "product",
+  "question": "Hi! My grandmother wants to video-call family. Is this app simple enough for her?"
+ },
+ {
+  "label": "product",
+  "question": "Could this replace our current spreadsheet workflow for tracking inventory, or is it more of an add-on?"
+ },
+ {
+  "label": "code",
+  "question": "eli5 the reducer in store/cartSlice.js"
+ },
+ {
+  "label": "product",
+  "question": "why pick the paid version of this font manager when free ones exist"
+ },
+ {
+  "label": "product",
+  "question": "Can you give me the elevator pitch for this repo as if I were a VC?"
+ },
+ {
+  "label": "code",
+  "question": "what does `normalize_row` return when a column is missing, None or empty string?"
+ },
+ {
+  "label": "code",
+  "question": "how does the CI pipeline cache dependencies between runs"
+ },
+ {
+  "label": "product",
+  "question": "Does the parental-control app let kids know they're being monitored?"
+ },
+ {
+  "label": "product",
+  "question": "Why should my startup use this feature-flag service instead of building our own?"
+ },
+ {
+  "label": "product",
+  "question": "is this safe to install on my work laptop? IT is strict"
+ },
+ {
+  "label": "code",
+  "question": "what's the recursion in `flatten_tree` going to do with a 10k-deep tree"
+ },
+ {
+  "label": "code",
+  "question": "Why is the sort key using a tuple with negated values?"
+ },
+ {
+  "label": "product",
+  "question": "Who is this recipe app meant for, home cooks or restaurants?"
+ },
+ {
+  "label": "code",
+  "question": "is the ThreadPoolExecutor in downloader.py bounded, or can it spawn unlimited threads?"
+ },
+ {
+  "label": "code",
+  "question": "how does the auth refresh token rotation work end to end"
+ },
+ {
+  "label": "product",
+  "question": "how does signing up work? email, google login, phone number?"
+ },
+ {
+  "label": "product",
+  "question": "how does this compare to Zapier honestly"
+ },
+ {
+  "label": "product",
+  "question": "Does this password manager send my vault anywhere or is everything stored on my laptop?"
+ },
+ {
+  "label": "product",
+  "question": "Is the chess trainer good for beginners or does it assume you already know openings?"
+ },
+ {
+  "label": "code",
+  "question": "How does error handling propagate from the data access code up to the HTTP layer?"
+ },
+ {
+  "label": "product",
+  "question": "Would you recommend this to a first-year CS student as a first open-source project to get involved with, and why?"
+ },
+ {
+  "label": "product",
+  "question": "whats the catch? it says free and open source but someone has to pay for servers"
+ },
+ {
+  "label": "product",
+  "question": "gimme the tl;dr on why people love or hate this editor"
+ },
+ {
+  "label": "product",
+  "question": "what kind of businesses get the most out of the forecasting tool?"
+ },
+ {
+  "label": "code",
+  "question": "Why are there two versions of `serialize`, one in json_io.py and one in codec.py?"
+ },
+ {
+  "label": "product",
+  "question": "Is it worth learning this data-viz library in 2026 or is everyone moving elsewhere?"
+ },
+ {
+  "label": "product",
+  "question": "What guarantees does the backup service give that I won't lose my data?"
+ },
+ {
+  "label": "product",
+  "question": "As an investor, what problem is this logistics dashboard solving that customers would pay for?"
+ },
+ {
+  "label": "code",
+  "question": "how does the diff algorithm in the editor compute minimal changes"
+ },
+ {
+  "label": "code",
+  "question": "How does the game loop keep physics at a fixed timestep while rendering at variable fps?"
+ },
+ {
+  "label": "product",
+  "question": "my team is 3 people and we ship a mobile app, is this crash reporter overkill for us"
+ },
+ {
+  "label": "product",
+  "question": "I just want to know: can this app help me stop procrastinating, or is it a glorified todo list?"
+ },
+ {
+  "label": "product",
+  "question": "eli5 what this fitness tracker app is for"
+ },
+ {
+  "label": "product",
+  "question": "i'm a hobby photographer, what would this raw converter give me that lightroom doesnt"
+ },
+ {
+  "label": "product",
+  "question": "Can I use the generated images commercially?"
+ },
+ {
+  "label": "product",
+  "question": "Who's the target customer for the fleet-tracking product: truck companies, delivery apps, or individuals?"
+ },
+ {
+  "label": "code",
+  "question": "What's `schema.prisma` defining for the Order and OrderItem relation, one-to-many?"
+ },
+ {
+  "label": "code",
+  "question": "What's the purpose of the .PHONY line in the Makefile?"
+ },
+ {
+  "label": "product",
+  "question": "how accurate are the predictions this crop-yield model gives farmers?"
+ },
+ {
+  "label": "code",
+  "question": "How does the caching layer decide when to evict entries?"
+ },
+ {
+  "label": "product",
+  "question": "why would anyone use a terminal-based email client in this day and age"
+ },
+ {
+  "label": "code",
+  "question": "Is there a race condition in the job queue worker when two workers grab the same row?"
+ },
+ {
+  "label": "code",
+  "question": "Is `Matrix::inverse` numerically stable, or should it use LU decomposition?"
+ },
+ {
+  "label": "product",
+  "question": "How much does it cost to run this self-hosted analytics tool per month for a small blog?"
+ },
+ {
+  "label": "product",
+  "question": "What does the user do if the payment fails during checkout in this store?"
+ },
+ {
+  "label": "product",
+  "question": "Is there a mobile version of this web dashboard?"
+ },
+ {
+  "label": "code",
+  "question": "why do the tests in tests/test_ingest.py pass locally but fail on CI"
+ },
+ {
+  "label": "code",
+  "question": "Can you explain how the undo stack works, command pattern or snapshots?"
+ },
+ {
+  "label": "code",
+  "question": "Why is the p99 latency on the search endpoint so much higher than p50?"
+ },
+ {
+  "label": "product",
+  "question": "do u need to be good at math to use the stats app"
+ },
+ {
+  "label": "code",
+  "question": "what does the `--dry-run` flag actually skip in deploy.sh"
+ },
+ {
+  "label": "code",
+  "question": "Could you explain why `compute_loss` detaches the target tensor?"
+ },
+ {
+  "label": "code",
+  "question": "How does ProfileView.swift get notified when the user object changes?"
+ },
+ {
+  "label": "product",
+  "question": "Would a non-programmer be able to use this automation tool, or is it really for developers?"
+ },
+ {
+  "label": "product",
+  "question": "who maintains this project and is it likely to still be around in two years?"
+ },
+ {
+  "label": "product",
+  "question": "As a product manager, which feature of this app would you say is the killer one?"
+ },
+ {
+  "label": "product",
+  "question": "Is the home energy monitor going to actually save me money?"
+ },
+ {
+  "label": "code",
+  "question": "The `Tokenizer.encode` method is slow on long inputs. Where's the bottleneck?"
+ },
+ {
+  "label": "product",
+  "question": "Is the translation quality good enough for legal documents?"
+ },
+ {
+  "label": "product",
+  "question": "How does the tool present its results to non-technical stakeholders?"
+ },
+ {
+  "label": "code",
+  "question": "What does the `@retry` decorator in tasks/sync.py do when the exception isn't in the allowlist?"
+ },
+ {
+  "label": "code",
+  "question": "How does the mobile app queue offline writes and sync them later?"
+ },
+ {
+  "label": "code",
+  "question": "Why is there both a repository and a service layer? Isn't that redundant?"
+ },
+ {
+  "label": "product",
+  "question": "Does this photo editor keep copies of my pictures on its servers?"
+ },
+ {
+  "label": "code",
+  "question": "where's the entry point of this library, like what gets exported from the package root"
+ },
+ {
+  "label": "code",
+  "question": "What data structure backs the leaderboard, and why is it a skip list?"
+ },
+ {
+  "label": "product",
+  "question": "what kind of computer do I need to run this image upscaler, does it need a gpu"
+ },
+ {
+  "label": "code",
+  "question": "How are migrations ordered and applied in this Django project?"
+ },
+ {
+  "label": "code",
+  "question": "how does the inventory system in the game store items, array of slots or a dict?"
+ },
+ {
+  "label": "code",
+  "question": "walk me thru how the ETL job dedupes records before writing to the warehouse"
+ },
+ {
+  "label": "product",
+  "question": "pls tell me simple what this music app do, english not my first language"
+ },
+ {
+  "label": "code",
+  "question": "I see memory growing forever in the websocket server. Where might listeners be leaking?"
+ },
+ {
+  "label": "code",
+  "question": "how does the bloom filter pick its number of hash functions"
+ },
+ {
+  "label": "code",
+  "question": "The `Player` class in player.gd has both velocity and speed fields. What's the difference?"
+ },
+ {
+  "label": "code",
+  "question": "How is state persisted between runs in the CLI, a file, sqlite, something else?"
+ },
+ {
+  "label": "code",
+  "question": "Explain how the build turns TypeScript into the bundle. Which config files are involved?"
+ },
+ {
+  "label": "code",
+  "question": "How does the embedded Lua scripting get sandboxed?"
+ },
+ {
+  "label": "code",
+  "question": "Is the binary search in `lower_bound` off by one when the array is empty?"
+ },
+ {
+  "label": "product",
+  "question": "Is this weather app just another weather app or does it do something special?"
+ },
+ {
+  "label": "product",
+  "question": "Who would NOT benefit from this product?"
+ },
+ {
+  "label": "product",
+  "question": "is my kid's data safe in this homework helper app? who can see it"
+ },
+ {
+  "label": "code",
+  "question": "the service worker caches stale js after deploy. what controls that"
+ },
+ {
+  "label": "product",
+  "question": "how is this different from just using Google Translate?"
+ },
+ {
+  "label": "code",
+  "question": "What does index.ts in the sdk package re-export and why are some things kept internal?"
+ },
+ {
+  "label": "code",
+  "question": "The flaky test `test_concurrent_upload` fails 1 in 10 runs. What's nondeterministic about it?"
+ },
+ {
+  "label": "product",
+  "question": "Which user problem was this project originally built to fix?"
+ },
+ {
+  "label": "product",
+  "question": "what's the pitch here? why does this exist"
+ },
+ {
+  "label": "product",
+  "question": "Which operating systems can I install this on? Windows, Mac, Linux, phones?"
+ },
+ {
+  "label": "product",
+  "question": "how many players can join a match at once?"
+ },
+ {
+  "label": "code",
+  "question": "Could someone explain the Kafka consumer group config and why auto-commit is disabled?"
+ },
+ {
+  "label": "product",
+  "question": "Does the app work offline, like on a plane?"
+ },
+ {
+  "label": "code",
+  "question": "can u explain what the liveness probe in k8s/deployment.yaml is checking"
+ },
+ {
+  "label": "product",
+  "question": "How much of my phone's battery will the running tracker eat?"
+ },
+ {
+  "label": "code",
+  "question": "how does the request get from the router to the database in this express app"
+ },
+ {
+  "label": "product",
+  "question": "How many steps does it take to go from raw spreadsheet to a shared chart in this app?"
+ },
+ {
+  "label": "code",
+  "question": "how is the dataloader shuffling handled when training on multiple gpus"
+ },
+ {
+  "label": "product",
+  "question": "Can the kids' reading app be used without me supervising?"
+ },
+ {
+  "label": "code",
+  "question": "What's the role of the scheduler trait in the async runtime here?"
+ },
+ {
+  "label": "product",
+  "question": "Why would someone pick this note-taking app over Notion or Obsidian?"
+ },
+ {
+  "label": "code",
+  "question": "what's the lifecycle of a request in the Flask app from WSGI to response"
+ },
+ {
+  "label": "product",
+  "question": "what languages does the subtitle generator support?"
+ },
+ {
+  "label": "code",
+  "question": "What does vite.config.ts proxy in dev mode?"
+ },
+ {
+  "label": "product",
+  "question": "If I upload my bank statements to this budgeting tool, where do they end up?"
+ },
+ {
+  "label": "product",
+  "question": "if i stop paying do i lose all my files"
+ },
+ {
+  "label": "code",
+  "question": "how does `bisect_commits` pick the next commit to test"
+ },
+ {
+  "label": "code",
+  "question": "The `EventBus.emit` call seems to swallow exceptions from handlers. Intended?"
+ },
+ {
+  "label": "code",
+  "question": "what's the point of the `__slots__` in models/point.py"
+ },
+ {
+  "label": "code",
+  "question": "in utils/retry.ts the backoff looks wrong, it never waits longer than 2s. bug?"
+ },
+ {
+  "label": "product",
+  "question": "Is it accessible for blind users, screen readers etc?"
+ },
+ {
+  "label": "product",
+  "question": "Is the game suitable for a 10 year old? violence, chat with strangers?"
+ },
+ {
+  "label": "code",
+  "question": "where is the jwt verified? i cant find it"
+ },
+ {
+  "label": "product",
+  "question": "What would convince a hospital to adopt this triage assistant?"
+ },
+ {
+  "label": "product",
+  "question": "how long does it take to get set up for a first time user?"
+ },
+ {
+  "label": "code",
+  "question": "Explain the attention mask construction in model/transformer.py."
+ },
+ {
+  "label": "product",
+  "question": "What does the product do with the voice recordings after it transcribes them?"
+ },
+ {
+  "label": "product",
+  "question": "what happens to my saved game if I switch phones"
+ },
+ {
+  "label": "code",
+  "question": "What's the time complexity of `find_shortest_path` in pathfinding.rs?"
+ },
+ {
+  "label": "code",
+  "question": "What does the pre-commit config run, and why is it so slow?"
+ },
+ {
+  "label": "product",
+  "question": "Do I need an internet connection for the voice assistant to understand me?"
+ },
+ {
+  "label": "product",
+  "question": "is there any risk the smart-lock companion app could lock me out of my own house?"
+ },
+ {
+  "label": "product",
+  "question": "whats the diffrence between the free tier and pro in this app"
+ },
+ {
+  "label": "product",
+  "question": "Is this CLI worth learning if I already know make and bash scripts?"
+ },
+ {
+  "label": "code",
+  "question": "The CSV parser chokes on quoted newlines. Which part handles quoting?"
+ },
+ {
+  "label": "product",
+  "question": "From a user's perspective, what are the steps to publish a blog post with this CMS?"
+ },
+ {
+  "label": "product",
+  "question": "can this handle a team of 200 people or is it only for small groups"
+ },
+ {
+  "label": "product",
+  "question": "What's the difference between this and the big cloud provider's own tool for the same job?"
+ },
+ {
+  "label": "product",
+  "question": "If I'm a small nonprofit, is there a discount or a free version?"
+ },
+ {
+  "label": "product",
+  "question": "How long until I see value after installing this code-quality bot on my team's repos?"
+ },
+ {
+  "label": "product",
+  "question": "hi, I just got pointed at this project and have no idea what it is. what does it actually do?"
+ },
+ {
+  "label": "product",
+  "question": "As a manager I need to decide whether my team should adopt this tool. What is it for and why does it exist?"
+ },
+ {
+  "label": "product",
+  "question": "eli5 pls. what is this thing"
+ },
+ {
+  "label": "product",
+  "question": "Hello, I am student in data science, english is not my first language. Please can you explain what the user is receiving at the end when using this product?"
+ },
+ {
+  "label": "product",
+  "question": "what is this app supposed to be, from a customer's point of view"
+ },
+ {
+  "label": "product",
+  "question": "I'm a teacher putting together a lesson on how online stores work, and a colleague suggested this codebase as an example. Could you tell me what the product is and who it's meant to serve?"
+ },
+ {
+  "label": "product",
+  "question": "Investor here. Tell me what this shop does and why anyone would build it like this."
+ },
+ {
+  "label": "product",
+  "question": "so ive been handed this repo on my first day and honestly i dont know if its a real store or a demo or what, and my lead just said 'figure out the product' which isnt super helpful, so like what is it and what does it give the people who use it"
+ },
+ {
+  "label": "product",
+  "question": "What is this project and what does it produce?"
+ },
+ {
+  "label": "product",
+  "question": "explain like im five what this does"
+ },
+ {
+  "label": "product",
+  "question": "why does this exist? there are way better text generators out there"
+ },
+ {
+  "label": "product",
+  "question": "Good afternoon. I run a small team of analysts and one of them wants to spend time on this. Could you summarise what it is and what the end result looks like for the person running it?"
+ },
+ {
+  "label": "product",
+  "question": "What problem is this product solving, and for whom?"
+ },
+ {
+  "label": "product",
+  "question": "hey so what do i get if i install this. like what shows up on my screen"
+ },
+ {
+  "label": "product",
+  "question": "Im a CS student, thesis on software architecture. is this tool usefull for me or is it for companies"
+ },
+ {
+  "label": "product",
+  "question": "Blunt question: why should anyone care about this over the dozen other AI code tools?"
+ },
+ {
+  "label": "code",
+  "question": "Teach me how makemore works — bit by bit, visually."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a bigram is and how this repo counts them."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how sampling from a counts table generates a name, step by step."
+ },
+ {
+  "label": "code",
+  "question": "Teach me why the dot marker is used at both ends of a name here."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how the one-layer neural net in this repo relates to the counts table."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what negative log likelihood measures in nn_bigram.py."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the full data flow point to point: names file to generated name. Show the flow visually."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what would break if names.txt were empty — walk the code."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how random.choices implements weighted sampling in this repo."
+ },
+ {
+  "label": "code",
+  "question": "Teach me softmax as it appears in this training loop."
+ },
+ {
+  "label": "code",
+  "question": "I uploaded a lecture transcript. Teach me the lesson it describes using the real code here, bit by bit."
+ },
+ {
+  "label": "code",
+  "question": "Using my attached transcript, teach me the punchline it mentions — that counting IS learning — with evidence from this repo."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the math of gradient descent as used in this repo."
+ },
+ {
+  "label": "code",
+  "question": "Teach me why the softmax gradient is probs minus one-hot, grounded in nn_bigram.py."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a probability distribution over 27 characters means concretely here."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how row-normalization turns counts into probabilities in sampling.py."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what the learning rate does in this training loop, and what too-large looks like."
+ },
+ {
+  "label": "code",
+  "question": "Teach me matrix indexing: why one-hot input times W just selects a row."
+ },
+ {
+  "label": "code",
+  "question": "I attached a law primer. Teach me the doctrine of consideration from it, one point at a time."
+ },
+ {
+  "label": "code",
+  "question": "From my attached article: teach me why past consideration is no consideration."
+ },
+ {
+  "label": "code",
+  "question": "From the attached primer, teach me the peppercorn rule and what courts refuse to weigh."
+ },
+ {
+  "label": "code",
+  "question": "Using the attached primer, teach me the difference between a bargain and a gratuitous promise."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the architecture of this system point to point — walk one order from entry to database, visually."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what the gateway service does, from its real code."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how the services here communicate — queues vs HTTP."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a datastore node is in this graph and which services touch it."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the invoices flow bit by bit with a visual."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how docker-compose declares these services and how the scan reads it."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how harness engineering works, using this repository as the example — in depth, visually, bit by bit."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what an evidence ledger is in this codebase and why it exists."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the verify contract: what it demands and when."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how the prose-diff salvage works and the failure it answers."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what the round budget is and how the loop spends it."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how tool calls are parsed from fenced blocks here."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the teach contract itself — how this very lesson is being graded."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what the architecture digest is and how it is budgeted."
+ },
+ {
+  "label": "code",
+  "question": "Teach me big-O of building the counts table versus sampling one name."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a dict-based string interner (stoi/itos) is and why both directions exist."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what makes a service boundary real versus cosmetic, using two services here."
+ },
+ {
+  "label": "code",
+  "question": "Teach me idempotency using the payment flow in this repo as the example."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a jail (path sandbox) is, from the real jail code here."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how SSE streaming works in this server, step by step."
+ },
+ {
+  "label": "code",
+  "question": "Fetch https://en.wikipedia.org/wiki/Bigram and teach me bigrams: the article definition first, then this repo as the living example."
+ },
+ {
+  "label": "code",
+  "question": "Fetch https://en.wikipedia.org/wiki/Markov_chain and teach me how this repo is a tiny Markov chain."
+ },
+ {
+  "label": "code",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo."
+ },
+ {
+  "label": "code",
+  "question": "Fetch https://en.wikipedia.org/wiki/Model_Context_Protocol and teach me what MCP is and where this repo implements one."
+ },
+ {
+  "label": "code",
+  "question": "Teach me, Feynman-style, how I would explain this bigram model to a 12-year-old — still grounded in the real files."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the difference between a benchmark score and product quality, using the bench tools in this repo."
+ },
+ {
+  "label": "code",
+  "question": "Teach me where this tiny model fails — names it can never produce — from the code."
+ },
+ {
+  "label": "code",
+  "question": "Quiz-teach me: show one service, ask me what I think it calls, then reveal the truth with evidence."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how this repo tests itself — the shape of one locking test."
+ },
+ {
+  "label": "code",
+  "question": "Teach me about polynomials."
+ },
+ {
+  "label": "code",
+  "question": "Teach me why a derivative is a limit."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a logarithm actually does."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how to complete the square, step by step."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what makes a function continuous."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the difference between mean and median."
+ },
+ {
+  "label": "code",
+  "question": "Teach me why dividing by zero is undefined."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what gradient descent is, from scratch."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what overfitting means and how you spot it."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how a neural network learns, in plain terms."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the difference between precision and recall."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a loss function is for."
+ },
+ {
+  "label": "code",
+  "question": "Teach me why we split data into train and test."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a hash table is and why it is fast."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how a binary search works, step by step."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what big-O notation is really saying."
+ },
+ {
+  "label": "code",
+  "question": "Teach me the difference between a stack and a queue."
+ },
+ {
+  "label": "code",
+  "question": "Teach me what a race condition is."
+ },
+ {
+  "label": "code",
+  "question": "Teach me how garbage collection decides what to free."
+ },
+ {
+  "label": "code",
+  "question": "Teach me why immutability makes concurrency easier."
+ }
+]

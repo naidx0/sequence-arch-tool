@@ -1,0 +1,29 @@
+# sequence scan timings, 2026-09-30, Windows 11 (ms wall clock; cold = --no-cache; warm = default cache)
+shopfront files=42 cold1 rc=0 ms=570
+shopfront files=42 cold2 rc=0 ms=561
+shopfront files=42 cold3 rc=0 ms=561
+shopfront files=42 warm1 rc=0 ms=571
+shopfront files=42 warm2 rc=0 ms=452
+shopfront files=42 warm3 rc=0 ms=453
+premai files=183 cold1 rc=0 ms=912
+premai files=183 cold2 rc=0 ms=875
+premai files=183 cold3 rc=0 ms=869
+premai files=183 warm1 rc=0 ms=894
+premai files=183 warm2 rc=0 ms=457
+premai files=183 warm3 rc=0 ms=451
+ml-harness files=3890 cold1 rc=0 ms=8477
+ml-harness files=3890 cold2 rc=0 ms=7556
+ml-harness files=3890 cold3 rc=0 ms=7672
+ml-harness files=3890 warm1 rc=0 ms=7949
+ml-harness files=3890 warm2 rc=0 ms=7871
+ml-harness files=3890 warm3 rc=0 ms=618
+sequence files=2558 cold1 rc=0 ms=6655
+sequence files=2558 cold2 rc=0 ms=6475
+sequence files=2558 cold3 rc=0 ms=6456
+sequence files=2558 warm1 rc=0 ms=6675
+sequence files=2558 warm2 rc=0 ms=556
+sequence files=2558 warm3 rc=0 ms=552
+ml-harness warm4 ms=7707
+ml-harness warm5 ms=7683
+ml-harness warm6 ms=7899
+# graph sizes: shopfront 36 nodes/40 edges, premai 124/38, ml-harness 1158/3629, sequence 1329/3499

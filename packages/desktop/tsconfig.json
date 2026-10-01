@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    // The Electron main + preload processes are CommonJS-friendly, and spawning
+    // the analyzer (ESM) as a CHILD PROCESS means this package never has to
+    // import ESM into CJS. So override the workspace-wide NodeNext/ESM defaults
+    // and emit plain CommonJS with classic Node resolution here.
+    "module": "CommonJS",
+    "moduleResolution": "Node"
+  },
+  "include": ["src"]
+}

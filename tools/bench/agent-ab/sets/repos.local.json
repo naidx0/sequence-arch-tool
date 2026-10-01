@@ -1,0 +1,5 @@
+{
+  "shopfront": "packages/analyzer/test/fixtures/shopfront",
+  "ml-harness": "../../../GitHub/ml-harness",
+  "premai": "../../../../../Projects/premai"
+}

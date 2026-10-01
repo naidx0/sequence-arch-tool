@@ -1,0 +1,17 @@
+# The reported shape (spring-projects/spring-petclinic): a compose file that
+# declares ONLY prebuilt datastore images. There is no `build:` anywhere, so
+# compose discovery finds no app service — while the repo around it is a whole
+# Java application.
+services:
+  mysql:
+    image: mysql:9.7
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=shop
+  postgres:
+    image: postgres:18.4
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=shop
