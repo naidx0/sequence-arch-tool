@@ -1,12 +1,38 @@
-# Sequence
+<p align="center">
+  <img src="packages/desktop/build/icon.svg" width="104" alt="Sequence logo">
+</p>
+
+<h1 align="center">Sequence</h1>
+
+<p align="center"><b>A live map of your codebase, with a source line for every arrow.</b></p>
+
+<p align="center">
+  <a href="https://github.com/naidx0/sequence-arch-tool/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/naidx0/sequence-arch-tool?label=release&color=2f6feb"></a>
+  <a href="https://github.com/naidx0/sequence-arch-tool/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/naidx0/sequence-arch-tool/total?color=2f6feb"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
+  <img alt="Platform: Windows and macOS" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey">
+  <img alt="Runs locally" src="https://img.shields.io/badge/runs-100%25%20local-black">
+</p>
+
+<p align="center">
+  <a href="https://www.usebastion.io/media/sequence/demo.mp4"><img src="report/media/sequence-demo.gif" width="900" alt="Sequence attaches a sample shop repository, draws its services and the calls between them, then zooms in on the traced edges"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/naidx0/sequence-arch-tool/releases/latest"><b>Download</b></a> ·
+  <a href="https://www.usebastion.io/products/sequence">Product page</a> ·
+  <a href="report/media/sequence-full.mp4">Full 72-second demo</a> ·
+  <a href="report/README.md">How it was measured</a> ·
+  <a href="https://www.usebastion.io">Bastion</a>
+</p>
 
 Sequence reads a codebase and draws its architecture: the services, the files, the databases, and the
 lines between them. Then you can ask it questions, and it answers from that map instead of from a
 model's guess. It runs on your own machine, free, with a local model or one you connect.
 
-[![Sequence building the map of a sample shop, then answering a question about it](report/media/sequence-build-poster.jpg)](report/media/sequence-full.mp4)
-
-[Watch the demo](report/media/sequence-full.mp4) (72 s: attach a repository, watch the map get built, then ask it something) · [Download for Windows or macOS](https://trysequence.app/#download) · [How it was measured](report/README.md)
+The clip above is 14 seconds of the [product demo](https://www.usebastion.io/media/sequence/demo.mp4)
+(click it for the whole video). The [72-second demo](report/media/sequence-full.mp4) in this repository
+attaches a repository, watches the map get built, then asks it something.
 
 ---
 
@@ -49,6 +75,37 @@ flowchart LR
 
 Other agents can use the same map. Sequence ships an MCP server with `who_calls`, `impact` and
 `path_between`, so Codex, Claude Code or your own agent can ask the map the same questions.
+
+## Results at a glance
+
+Every number below is from the [field report](report/README.md) on the 0.1.3 release, which redraws
+its charts from [`report/data.json`](report/data.json). Each was measured against a baseline on a
+question set frozen before the run.
+
+| What was measured | Before | With Sequence | n | Source |
+|---|---:|---:|---|---|
+| Architecture answers, same local agent (F1) | 0.09 | **0.21** | 36 sealed questions, 2 runs per arm, +0.128 at 2.5 SE | [report §6](report/README.md#6-the-same-agent-with-and-without-sequence) |
+| Full answers on the release question bank | 39% | **90%** | 72 turns per snapshot | [report §2](report/README.md#2-answer-quality-and-speed) |
+| Average answer time | 14.0 s | **7.8 s** | the same 72 turns | [report §2](report/README.md#2-answer-quality-and-speed) |
+| Prompt tokens for one question | 4.9M | **1,887** | every matching file (428) vs one map slice | [report §4](report/README.md#4-large-codebases) |
+| Repeat scan, served from cache | 6.47 s | **0.55 s** | 2,558 files, 1,329 nodes, 3,499 edges | [report §3](report/README.md#3-memory) |
+| Labelled service connections found | | **15 of 15** | reference repository, none invented | [report §5](report/README.md#5-finding-the-right-files-and-connections) |
+
+The weak spot is measured too: Sequence's own file picker finds a file a real fix touched 3% to 9% of
+the time, where grep finds 22% to 64% ([report §5](report/README.md#finding-the-fix-in-real-history)).
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><a href="report/media/screen-map.png"><img src="report/media/screen-map.png" alt="The Architecture board for the shopfront sample: Edge, Gateway, Invoices, Payments, Orders, Inventory, Notifications, Shipping and a Postgres database"></a><br><sub><b>The map.</b> Open a folder and the Architecture board draws its services, stores and topics from the code.</sub></td>
+    <td width="50%"><a href="report/media/screen-traced-edges.png"><img src="report/media/screen-traced-edges.png" alt="Zoomed board: each service card reads SERVICE TRACED, and edges are labelled with routes such as GET /orders/* and topics such as publish order.created"></a><br><sub><b>Edges with evidence.</b> Every card says how it was traced; every edge carries the route, call or topic it came from.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="report/media/screen-inside-a-service.png"><img src="report/media/screen-inside-a-service.png" alt="Inside the orders service: main.py, routes.py, db.py, events.py, inventory_client.py and payments_client.py with their imports"></a><br><sub><b>Inside a service.</b> Open one service to see its modules and how they call each other.</sub></td>
+    <td width="50%"><a href="report/media/screen-impact.png"><img src="report/media/screen-impact.png" alt="Review panel: an unstaged diff of payments/src/index.js beside an Impact column listing what breaks, edges grounded on a changed line, and functions changed with their callers"></a><br><sub><b>Impact of a change.</b> A diff beside what it breaks: the edges grounded on a changed line and who calls the changed functions.</sub></td>
+  </tr>
+</table>
 
 ## What that buys you
 
@@ -112,9 +169,17 @@ words against file names but not file contents, and that is the next fix.
 
 ## Download
 
-Get the installer from [trysequence.app](https://trysequence.app/#download) or the
-[releases page](../../releases): Windows (installer or portable zip) and macOS (Apple silicon or
-Intel). Each build was downloaded and launched on a fresh machine before release.
+| Platform | File | Size |
+|---|---|---|
+| **Windows**, installer | [`Sequence.Setup.0.1.3.exe`](https://github.com/naidx0/sequence-arch-tool/releases/download/v0.1.3/Sequence.Setup.0.1.3.exe) | about 107 MB |
+| **Windows**, portable | [`Sequence-0.1.3-win.zip`](https://github.com/naidx0/sequence-arch-tool/releases/download/v0.1.3/Sequence-0.1.3-win.zip) | about 144 MB |
+| **macOS**, Apple silicon | [`Sequence-0.1.3-arm64.dmg`](https://github.com/naidx0/sequence-arch-tool/releases/download/v0.1.3/Sequence-0.1.3-arm64.dmg) | about 129 MB |
+| **macOS**, Intel | [`Sequence-0.1.3.dmg`](https://github.com/naidx0/sequence-arch-tool/releases/download/v0.1.3/Sequence-0.1.3.dmg) | about 136 MB |
+
+Checksums are in [`SHASUMS256.txt`](https://github.com/naidx0/sequence-arch-tool/releases/download/v0.1.3/SHASUMS256.txt).
+Every version is on the [releases page](https://github.com/naidx0/sequence-arch-tool/releases); you can also
+download from [trysequence.app](https://trysequence.app/#download). Each build was downloaded
+and launched on a fresh machine before release.
 
 The builds aren't signed yet, so your system will warn you the first time:
 
@@ -152,3 +217,10 @@ This public copy is built from the private working repository, one commit per re
 anything shaped like a key would end up in the tree. `CHANGELOG.md` lists what each release changed.
 
 Licence: [`LICENSE`](LICENSE). Third-party notices: [`docs/THIRD-PARTY-NOTICES.md`](docs/THIRD-PARTY-NOTICES.md).
+
+---
+
+<p align="center">
+  <a href="https://www.usebastion.io"><img src="report/media/bastion-mark.svg" width="40" alt="Bastion"></a><br>
+  <sub>Sequence is a <a href="https://www.usebastion.io">Bastion</a> product. More on the <a href="https://www.usebastion.io/products/sequence">product page</a>.</sub>
+</p>
