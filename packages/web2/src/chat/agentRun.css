@@ -1,0 +1,982 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   AGENT RUNS IN CHAT, THEIR CARDS, THE TOASTS AND THE STARTERS
+   packages/web2/src/chat/agentRun.css
+
+   Graphite (docs/brand/graphite/_core.html). Cards fold to a 32 px header and
+   open in place over 160 ms; 8 px radius, 1 px border. Type is 10/11/12 px on
+   the 4 px grid. Accent marks only focus, selection and live state: a running
+   card's status word and the focus ring. Verdict hues stay on verdicts
+   (failed, denied) and the diff's signs.
+
+   Every rule is keyed off its own block class, never off `.chat-scope`, so
+   the toasts (drawn into document.body) are styled where they land.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Icon sizes are scoped per surface (chat.css, board.css); the toasts live in
+   document.body, outside every scope, so these blocks size their own. */
+.agrun .i-14,
+.agtoast .i-14 {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.agrun .i-12,
+.agtoast .i-12,
+.agstarter .i-12 {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+/* ── one run ─────────────────────────────────────────────────────────── */
+
+.agrun {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+
+.agrun-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+  height: var(--sp-24);
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+
+.agrun-glyph {
+  display: inline-flex;
+  color: var(--ink-2);
+}
+
+.agrun-who {
+  font-weight: var(--fw-label);
+  color: var(--ink-1);
+}
+
+.agrun-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+  max-width: 50%;
+  height: 20px;
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agrun-status {
+  margin-left: auto;
+}
+
+.agrun[data-status='running'] .agrun-status {
+  color: var(--accent-ink);
+}
+
+.agrun[data-status='failed'] .agrun-status {
+  color: var(--wont);
+}
+
+.agrun-dur {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-variant-numeric: tabular-nums;
+}
+
+.agrun-prompt {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink-1);
+}
+
+.agrun-msg {
+  min-width: 0;
+  color: var(--ink-1);
+}
+
+.agrun-wait {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+
+.agrun-error {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  border: var(--w-hair) solid var(--wont-edge);
+  border-radius: 8px;
+  background: var(--wont-wash);
+  color: var(--ink-1);
+}
+
+/* The agent could not rejoin this chat's thread: said once, quietly. */
+/* ── the composer around an agent (S2b, agentComposer.tsx) ───────────────
+   The header is the Ramp Kit's top bar: the agent in the label weight, its
+   model in mono, a spacer, then the ring and "25% ctx · $0.04". */
+
+.agchat-hd {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: 32px;
+  padding: 0 var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: var(--t-12);
+}
+
+.agchat-who {
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+  text-transform: capitalize;
+}
+
+.agchat-model {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+
+.agchat-sp {
+  flex: 1;
+}
+
+.agchat-usage {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.agstrip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  max-height: 144px;
+  overflow: auto;
+}
+
+.agstrip-subs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin: 0;
+  font-size: var(--t-11);
+  color: var(--ink-2);
+}
+
+.agstrip-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+/* What the agent is doing now: a live dot, the words, Stop. No shimmer and
+   no loader here: the running row in the thread carries the one loader. */
+.agstrip-now {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin: 0;
+  min-height: var(--row-h-thread);
+  font-size: var(--t-12);
+  color: var(--ink-1);
+}
+
+.agstrip-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: var(--r-full);
+  background: var(--accent);
+}
+
+.agstrip-doing {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── S2b Ramp Kit parts in the thread ────────────────────────────────────
+   The thinking fold ("Thought for 12.2 s"), and the state dot and the one
+   loader (S4's braille) on a running card. */
+
+.agthought {
+  display: flex;
+  flex-direction: column;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+}
+
+.agthought-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--row-h-thread);
+  padding: 0 var(--sp-12);
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  text-align: left;
+}
+
+.agthought-hd:disabled {
+  cursor: default;
+}
+
+.agthought-time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.agthought-body {
+  margin: 0;
+  padding: 0 var(--sp-12) var(--sp-8);
+  color: var(--ink-3);
+  white-space: pre-wrap;
+}
+
+.agcard-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: var(--r-full);
+  background: var(--ink-4, var(--ink-3));
+}
+
+.agcard[data-status='running'] .agcard-dot {
+  background: var(--accent);
+}
+
+.agcard[data-status='done'] .agcard-dot,
+.agcard[data-status='allowed'] .agcard-dot {
+  background: var(--fits);
+}
+
+.agcard[data-status='failed'] .agcard-dot,
+.agcard[data-status='denied'] .agcard-dot {
+  background: var(--wont);
+}
+
+.agcard[data-status='waiting'] .agcard-dot {
+  background: var(--accent-ink);
+}
+
+.agcard-loader {
+  display: inline-flex;
+  flex: none;
+}
+
+/* The block cursor on streaming agent text is S4's one rule,
+   `.chat-scope .prose[data-streaming]::after` (chat.css). */
+
+.agmodels {
+  display: contents;
+}
+
+.agmodels-efforts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-8);
+}
+
+/* ── a run of tool calls, folded (S2b) ───────────────────────────────── */
+
+.agfold {
+  min-width: 0;
+}
+
+.agfold-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  min-height: var(--row-h-thread);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.agfold-row:hover {
+  background: var(--state-hover);
+}
+
+.agfold-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.agfold-sum {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agfold-failed {
+  color: var(--wont);
+  font-size: var(--t-11);
+}
+
+.agfold-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding: var(--sp-4) 0 0 var(--sp-16);
+}
+
+.agrun-note {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+
+/* ── recovery (RecoveryCard.tsx): what to do about a failed run ───────── */
+
+.agrecover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+.agrecover-why {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-12);
+}
+
+.agrecover-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-8);
+}
+
+.agrecover-term {
+  height: 220px;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ── the folding card ────────────────────────────────────────────────── */
+
+.agcard {
+  min-width: 0;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--surface-1);
+  overflow: hidden;
+}
+
+.agcard-hd {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 32px;
+}
+
+.agcard-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--sp-8);
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.agcard-toggle:hover {
+  background: var(--state-hover);
+}
+
+.agcard-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.agcard-caret,
+.agcard-glyph {
+  display: inline-flex;
+  flex: none;
+  color: var(--ink-3);
+}
+
+.agcard-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-1);
+}
+
+.agcard-status {
+  flex: none;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+
+.agcard[data-status='running'] .agcard-status,
+.agcard[data-status='waiting'] .agcard-status {
+  color: var(--accent-ink);
+}
+
+.agcard[data-status='failed'] .agcard-status,
+.agcard[data-status='denied'] .agcard-status {
+  color: var(--wont);
+}
+
+.agcard-dur {
+  flex: none;
+  min-width: 36px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.agcard-acts {
+  display: flex;
+  flex: none;
+  gap: var(--sp-4);
+  padding-right: var(--sp-4);
+}
+
+/* A closed card holding a question: the gate gets its own row under the
+   title, so three answers never crowd the title and status out of a 32 px
+   header in a narrow chat column. */
+.agcard-hd:has(> .agcard-acts .aggate) {
+  flex-wrap: wrap;
+  height: auto;
+}
+
+.agcard-hd:has(> .agcard-acts .aggate) > .agcard-acts {
+  flex-basis: 100%;
+  padding: 0 var(--sp-8) var(--sp-8) calc(var(--sp-8) + 12px + var(--sp-6));
+}
+
+.agcard-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-8);
+  border-top: 1px solid var(--edge);
+  animation: agcard-open 160ms var(--ease) both;
+}
+
+@keyframes agcard-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agcard-body,
+  .agtoast {
+    animation: none;
+  }
+}
+
+.agcard-note {
+  margin: 0;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+
+.agcard-out {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  white-space: pre;
+  color: var(--ink-2);
+}
+
+/* ── a diff inside a card ────────────────────────────────────────────── */
+
+.agdiff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+.agdiff-file {
+  min-width: 0;
+}
+
+.agdiff-path {
+  display: flex;
+  gap: var(--sp-8);
+  margin: 0 0 var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-1);
+}
+
+.agdiff-count {
+  color: var(--ink-3);
+}
+
+.agdiff-lines {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: var(--r-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  white-space: pre;
+}
+
+.agdiff-line {
+  display: block;
+  padding: 0 var(--sp-8);
+  color: var(--ink-2);
+}
+
+.agdiff-line[data-kind='add'] {
+  background: var(--diff-add-bg);
+  box-shadow: inset 2px 0 0 var(--diff-add-gutter);
+}
+
+.agdiff-line[data-kind='del'] {
+  background: var(--diff-del-bg);
+  box-shadow: inset 2px 0 0 var(--diff-del-gutter);
+}
+
+/* ── the plan ────────────────────────────────────────────────────────── */
+
+.agplan {
+  margin: 0;
+  padding-left: var(--sp-20);
+  font-size: var(--t-12);
+}
+
+.agplan-step[data-status='completed'] {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+
+.agplan-step[data-status='in_progress'] {
+  color: var(--ink-1);
+}
+
+/* ── buttons ─────────────────────────────────────────────────────────── */
+
+.agbtn {
+  height: 24px;
+  padding: 0 var(--sp-8);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+
+.agbtn.is-compact {
+  height: 20px;
+  padding: 0 var(--sp-6);
+  font-size: var(--t-10);
+}
+
+.agbtn:hover {
+  background: var(--state-hover);
+}
+
+.agbtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.agbtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.agbtn-allow {
+  border-color: var(--fits-edge);
+}
+
+.agbtn-deny {
+  border-color: var(--wont-edge);
+}
+
+.agbtn-quiet {
+  border-color: transparent;
+  background: none;
+  color: var(--ink-3);
+}
+
+/* ── the approval gate (ApprovalGate.tsx) ─────────────────────────────────
+   The Ramp Kit's Approval Gate row: Allow once (the safest yes, primary),
+   Always for <prefix>, Deny, each with its key; 8 px between answers, 6 px
+   on a header. Recoloured through our tokens: allow in the fits family,
+   deny in the wont family, the key cap in the quiet ink. */
+
+.aggate {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.aggate.is-compact {
+  gap: var(--sp-4);
+}
+
+.agbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  white-space: nowrap;
+}
+
+.agbtn.is-primary {
+  background: var(--fits-wash);
+  color: var(--fits);
+}
+
+/* Always is a yes that lasts: the allow family's edge, without the fill. */
+.agbtn-always {
+  border-color: var(--fits-edge);
+}
+
+.agbtn-prefix {
+  font-family: var(--font-mono);
+}
+
+.agkbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border: 1px solid var(--edge);
+  border-radius: var(--r-4);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: 1;
+}
+
+.agbtn.is-compact .agkbd {
+  min-width: 12px;
+  height: 12px;
+  padding: 0 2px;
+}
+
+/* ── toasts ──────────────────────────────────────────────────────────── */
+
+.agtoasts {
+  position: fixed;
+  right: var(--toast-inset, 16px);
+  bottom: var(--toast-inset, 16px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--toast-gap, 8px);
+  width: min(var(--toast-w, 320px), calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.agtoast {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-12);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--surface-1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  pointer-events: auto;
+  animation: agcard-open 160ms var(--ease) both;
+}
+
+.agtoast[data-kind='approval'] {
+  border-color: var(--accent-rim);
+}
+
+.agtoast[data-kind='error'] {
+  border-color: var(--wont-edge);
+}
+
+.agtoast-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin: 0;
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+
+.agtoast-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.agtoast-text {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+}
+
+.agtoast-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin-top: var(--sp-4);
+}
+
+.agtoast-x {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+/* ── empty-chat starters ─────────────────────────────────────────────── */
+
+.agstarters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  margin-top: auto;
+}
+
+.agstarter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--sp-12);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.agstarter:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+
+.agstarter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.agstarter-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* S6: "Show all" under a body the server cut to 8 KB (AgentRunThread ShowAll). */
+.agcard-capped {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin-top: var(--sp-6);
+}
+
+/* ── a failed or stopped run (R10): one quiet row, no card ───────────── */
+.agnote {
+  margin: 6px 0 2px;
+  font-size: var(--t-12-5);
+  color: var(--b-ink3);
+}
+.agnote-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.agnote-mark {
+  display: inline-flex;
+  align-self: center;
+  color: var(--b-ink3);
+}
+.agnote[data-tone='warn'] .agnote-mark {
+  color: var(--b-ink2);
+}
+.agnote-text {
+  color: var(--b-ink2);
+}
+.agnote-acts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.agnote-act {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--b-ink3);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--b-edge2);
+  text-underline-offset: 3px;
+}
+.agnote-act:hover,
+.agnote-act.is-primary {
+  color: var(--b-acc);
+}
+.agnote-done {
+  color: var(--b-ink3);
+}
+.agnote-details > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--b-ink3);
+}
+.agnote-details > summary::-webkit-details-marker {
+  display: none;
+}
+.agnote-details[open] > summary {
+  color: var(--b-ink2);
+}
+.agnote-pre {
+  flex: 1 1 100%;
+  margin: 4px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-11-5);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 7.5em;
+  overflow: auto;
+  color: var(--b-ink3);
+}
+.agnote .agrecover-term {
+  margin-top: 6px;
+}
+
+/* ── R11: the watchdog row is a calm film with a colour hierarchy ─────────
+   The key fact in ink-1, the detail in ink-2, the actions as quiet film
+   buttons; everything centred on one line. */
+.agnote[data-watch='film'] {
+  margin: var(--sp-6) 0 var(--sp-4);
+  padding: var(--sp-6) var(--sp-10);
+  border-radius: var(--r-10);
+  background: color-mix(in srgb, var(--b-ink1) 4%, transparent);
+  box-shadow: inset 0 0 0 var(--w-hair) color-mix(in srgb, var(--b-ink1) 7%, transparent);
+}
+.agnote[data-watch='film'][data-tone='warn'] {
+  background: color-mix(in srgb, var(--b-acc) 5%, transparent);
+}
+.agnote[data-watch='film'] .agnote-row,
+.agnote[data-watch='film'] .agnote-acts {
+  align-items: center;
+}
+.agnote[data-watch='film'] .agnote-text {
+  color: var(--b-ink1);
+}
+.agnote-detail {
+  color: var(--b-ink3);
+}
+.agnote[data-watch='film'] .agnote-acts {
+  margin-left: auto;
+  gap: var(--sp-4);
+}
+.agnote[data-watch='film'] .agnote-act {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--sp-24);
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-8);
+  background: color-mix(in srgb, var(--b-ink1) 6%, transparent);
+  color: var(--b-ink2);
+  text-decoration: none;
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.agnote[data-watch='film'] .agnote-act:hover {
+  background: color-mix(in srgb, var(--b-ink1) 11%, transparent);
+  color: var(--b-ink1);
+}
+.agnote[data-watch='film'] .agnote-act.is-primary {
+  background: color-mix(in srgb, var(--b-acc) 14%, transparent);
+  color: var(--b-ink1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .agnote[data-watch='film'] .agnote-act {
+    transition: none;
+  }
+}

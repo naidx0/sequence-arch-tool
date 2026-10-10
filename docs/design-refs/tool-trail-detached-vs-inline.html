@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tool trail — detached vs inline</title>
+<style>
+  :root {
+    --bg: #16171a; --panel: #1d1f23; --edge: #2b2e34;
+    --ink-1: #e8e6e3; --ink-2: #a8a6a1; --ink-3: #6f6d68;
+    --accent: #5b8def; --fits: #4ba765; --mono: ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink-1); font: 14px/1.55 -apple-system, "Segoe UI", sans-serif; padding: 32px; }
+  h1 { font-size: 15px; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; }
+  .sub { color: var(--ink-3); font-size: 12px; margin-bottom: 28px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1180px; }
+  .col h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-3); margin-bottom: 12px; }
+  .chat { background: var(--panel); border: 1px solid var(--edge); border-radius: 10px; padding: 20px 22px; }
+  .q { background: #26282e; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--ink-2); margin-bottom: 18px; max-width: 85%; margin-left: auto; }
+  .answer p { margin: 0 0 12px; color: var(--ink-1); }
+  .answer p.dim { color: var(--ink-3); font-size: 13px; }
+
+  /* ── DETACHED (current): trail lives in its own block, above the answer ── */
+  .trail { border: 1px solid var(--edge); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; background: #191b1e; }
+  .trail .head { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); margin-bottom: 8px; }
+  .row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; font-size: 12px; }
+  .row .v { color: var(--ink-2); }
+  .row .id { font-family: var(--mono); font-size: 11px; color: var(--ink-1); }
+  .row .out { margin-left: auto; font-size: 11px; color: var(--ink-3); }
+  .row .out.ok { color: var(--fits); }
+
+  /* ── INLINE (proposed): quiet indented rows woven into the answer ── */
+  .inline-block { margin: 0 0 12px 20px; padding-left: 14px; border-left: 2px solid var(--edge); }
+  .inline-block .row { padding: 2px 0; font-size: 12px; }
+  .inline-block .row .v { color: var(--ink-3); }
+  .inline-block .row .id { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+  .inline-block .row .out { margin-left: auto; font-size: 11px; color: var(--ink-3); }
+  .inline-block .row .out.ok { color: var(--fits); }
+  .note { margin-top: 22px; font-size: 12px; color: var(--ink-3); max-width: 1180px; }
+  .note b { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<h1>Tool trail: detached vs inline</h1>
+<div class="sub">Same answer, same five tool calls, past-tense verbs per sheet 12.2. Only the placement differs.</div>
+
+<div class="cols">
+  <div class="col">
+    <h2>A — Detached trail (today)</h2>
+    <div class="chat">
+      <div class="q">Where does auth get checked in this repo?</div>
+      <div class="trail">
+        <div class="head">Work</div>
+        <div class="row"><span class="v">Searched</span><span class="id">*auth* *.ts</span><span class="out ok">7 hits</span></div>
+        <div class="row"><span class="v">Read</span><span class="id">middleware/session.ts</span><span class="out">120 lines</span></div>
+        <div class="row"><span class="v">Read</span><span class="id">middleware/jwt.ts</span><span class="out">86 lines</span></div>
+        <div class="row"><span class="v">Read</span><span class="id">routes/api.ts</span><span class="out ok">checked</span></div>
+      </div>
+      <div class="answer">
+        <p>Auth is checked in two places. <code>middleware/session.ts</code> validates the cookie session on every <code>/api</code> route; <code>middleware/jwt.ts</code> handles bearer tokens for the webhook endpoints only.</p>
+        <p class="dim"><code>routes/api.ts</code> mounts both, session first — so a valid session cookie bypasses the JWT check.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <h2>B — Inline (proposed)</h2>
+    <div class="chat">
+      <div class="q">Where does auth get checked in this repo?</div>
+      <div class="answer">
+        <p>Auth is checked in two places. <code>middleware/session.ts</code> validates the cookie session on every <code>/api</code> route; <code>middleware/jwt.ts</code> handles bearer tokens for the webhook endpoints only.</p>
+        <div class="inline-block">
+          <div class="row"><span class="v">Searched</span><span class="id">*auth* *.ts</span><span class="out ok">7 hits</span></div>
+          <div class="row"><span class="v">Read</span><span class="id">middleware/session.ts</span><span class="out">120 lines</span></div>
+          <div class="row"><span class="v">Read</span><span class="id">middleware/jwt.ts</span><span class="out">86 lines</span></div>
+          <div class="row"><span class="v">Read</span><span class="id">routes/api.ts</span><span class="out ok">checked</span></div>
+        </div>
+        <p class="dim"><code>routes/api.ts</code> mounts both, session first — so a valid session cookie bypasses the JWT check.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <b>The trade:</b> detached keeps the answer clean and the work auditable as one block, but it reads as a separate surface — the eye jumps between trail and answer to connect a claim to its evidence. Inline puts each claim's evidence <i>inside</i> the paragraph flow (quiet, indented, dimmer), so the work reads as part of the answer — but the answer text starts higher and the rows interrupt it.
+</div>
+</body>
+</html>

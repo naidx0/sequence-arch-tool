@@ -1,0 +1,210 @@
+From 4d5ae3037b626ab7cec0b8c6c793efb653dd3927 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 14:51:38 -0400
+Subject: [PATCH 05/37] Cloud patch 0018a (drop invented links, app half),
+ hand-ported at head, with the zero-link refusal
+
+port.mjs could not place two hunks (executeProposeChart grew tidy/step passes in Slices 10-12).
+Flagged SEQUENCE_CHART_DROP_INVENTED_LINKS=1. 4 tests; the zero-link test fails without its line.
+---
+ packages/analyzer/src/server/askTools.ts      | 63 +++++++++++-
+ .../src/test/chart-drop-invented.test.ts      | 99 +++++++++++++++++++
+ 2 files changed, 159 insertions(+), 3 deletions(-)
+ create mode 100644 packages/analyzer/src/test/chart-drop-invented.test.ts
+
+diff --git a/packages/analyzer/src/server/askTools.ts b/packages/analyzer/src/server/askTools.ts
+index 80f3e9cf..f441a211 100644
+--- a/packages/analyzer/src/server/askTools.ts
++++ b/packages/analyzer/src/server/askTools.ts
+@@ -4257,7 +4257,18 @@ function executeProposeChart(
+   const knownEdges = liftedEdgeKeys(ctx.graph ?? undefined);
+   const tidied = tidyChartLinks(tidyChartItems(stems.raw));
+   const stepped = tidyChartSteps(tidied.raw);
+-  const result = validateChart(stepped.raw, known, knownEdges);
++  let result = validateChart(stepped.raw, known, knownEdges);
++  let leftOut: string[] = [];
++  if (!result.ok && chartDropInventedLinksEnabled()) {
++    const trimmed = withoutInventedLinks(stepped.raw, result.problems);
++    if (trimmed !== undefined) {
++      const again = validateChart(trimmed.raw, known, knownEdges);
++      if (again.ok) {
++        result = again;
++        leftOut = trimmed.leftOut;
++      }
++    }
++  }
+   if (!result.ok) {
+     const lines = result.problems.slice(0, 6).map((p) => `${p.path || '(root)'}: ${p.message}`);
+     return {
+@@ -4293,15 +4304,61 @@ function executeProposeChart(
+       (stepped.dropped.length > 0
+         ? ` — left out steps to items the chart does not have: ${stepped.dropped.join('; ')}`
+         : '') +
+-      (stepped.offFlow ? ` — left out steps: they play only on ${FLOW_KINDS.join(', ')}` : ''),
++      (stepped.offFlow ? ` — left out steps: they play only on ${FLOW_KINDS.join(', ')}` : '') +
++      (leftOut.length > 0 ? `, left out ${leftOut.length} invented link(s)` : ''),
+     content:
+       `### propose_chart: drew a ${chart.kind} titled "${chart.title}" with ` +
+       `${chart.items.length} item(s)${chart.links?.length ? ` and ${chart.links.length} link(s)` : ''}` +
+       `${chart.steps?.length ? ` and ${chart.steps.length} step(s) the reader can play` : ''}. ` +
+-      'The reader can see it; do not restate the whole picture in prose.',
++      'The reader can see it; do not restate the whole picture in prose.' +
++      (leftOut.length > 0
++        ? ` Left out ${leftOut.length} link(s) the repository does not have (${leftOut.join('; ')}); ` +
++          'do not describe them as real connections.'
++        : ''),
+   };
+ }
+ 
++/**
++ * INVENTED LINKS, DROPPED IN CODE, WHEN ON. `SEQUENCE_CHART_DROP_INVENTED_LINKS=1`
++ * turns a chart refused ONLY for links between real parts that the scan lacks
++ * into the same chart without those links, instead of a refusal the model has
++ * to redraw.
++ *
++ * Measured live on MiniCPM5 (sequence-lab log, 2026-09-23): on the hard shopfront
++ * set, with this repair on, DOT and path charts ground on 76% and 83% of fresh
++ * answers against 43% for JSON; without it no language beats JSON. The cloud
++ * stand-in found asking again deletes real branches (hop coverage 0.907 vs 0.971).
++ *
++ * Anything else stays a refusal: a part the scan lacks, an ambiguous name, a
++ * malformed chart, and a chart whose EVERY link was invented, because boxes
++ * joined to nothing no longer draw what was asked (25 of 210 repaired MiniCPM5
++ * charts). The model is told which links were left out, so its prose does not
++ * describe them as real.
++ */
++export function chartDropInventedLinksEnabled(): boolean {
++  return process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS === '1';
++}
++
++function withoutInventedLinks(
++  raw: unknown,
++  problems: readonly { path: string; message: string }[],
++): { raw: unknown; leftOut: string[] } | undefined {
++  if (raw === null || typeof raw !== 'object' || problems.length === 0) return undefined;
++  const links = (raw as { links?: unknown }).links;
++  if (!Array.isArray(links)) return undefined;
++  const drop = new Set<number>();
++  const leftOut: string[] = [];
++  for (const p of problems) {
++    const at = /^links\[(\d+)\]$/.exec(p.path);
++    const edge = /^no edge (\S+) -> (\S+) in this repository/.exec(p.message);
++    if (!at || !edge) return undefined;
++    drop.add(Number(at[1]));
++    leftOut.push(`${edge[1]} -> ${edge[2]}`);
++  }
++  if (drop.size >= links.length) return undefined;
++  return { raw: { ...(raw as object), links: links.filter((_, i) => !drop.has(i)) }, leftOut };
++}
++
+ /**
+  * A LINK TO AN ITEM THE CHART DOES NOT HAVE IS DROPPED, NOT A REFUSAL.
+  *
+diff --git a/packages/analyzer/src/test/chart-drop-invented.test.ts b/packages/analyzer/src/test/chart-drop-invented.test.ts
+new file mode 100644
+index 00000000..f3e1a5f7
+--- /dev/null
++++ b/packages/analyzer/src/test/chart-drop-invented.test.ts
+@@ -0,0 +1,99 @@
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import path from 'node:path';
++import { test } from 'node:test';
++import { fileURLToPath } from 'node:url';
++import { scanRepo } from '../scan.js';
++import { resolveInRepo } from '../server/jail.js';
++import { executeAskTool } from '../server/askTools.js';
++
++/**
++ * INVENTED LINKS DROPPED IN CODE (SEQUENCE_CHART_DROP_INVENTED_LINKS=1).
++ *
++ * A chart refused only for links the scan lacks is drawn without them, and the
++ * model is told which ones were left out. Anything else is still refused, and
++ * with the flag off nothing changes.
++ */
++
++const here = path.dirname(fileURLToPath(import.meta.url));
++const SHOPFRONT = path.join(here, '..', '..', 'test', 'fixtures', 'shopfront');
++const GATEWAY = 'file:gateway/src/routes/orders.ts';
++const ORDERS = 'file:orders/app/routes.py';
++
++async function ctx() {
++  const root = fs.realpathSync(SHOPFRONT);
++  const graph = await scanRepo(SHOPFRONT, { cluster: true });
++  return {
++    graph,
++    resolveReadable: (rel: string) => resolveInRepo(root, rel),
++    repoRoot: root,
++    designMode: false,
++    question: 'how does an order get in?',
++    canvasToolsEnabled: true,
++  } as unknown as Parameters<typeof executeAskTool>[2];
++}
++
++async function withFlag<T>(value: string | undefined, fn: () => Promise<T> | T): Promise<T> {
++  const before = process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS;
++  if (value === undefined) delete process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS;
++  else process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS = value;
++  try {
++    return await fn();
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS;
++    else process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS = before;
++  }
++}
++
++/* gateway -> orders is scanned; the callback orders -> gateway is invented. */
++const ARGS = {
++  kind: 'data-flow',
++  title: 'How an order gets in',
++  items: [
++    { id: 'g', label: 'Gateway route', nodeId: GATEWAY },
++    { id: 'o', label: 'Orders API', nodeId: ORDERS },
++    { id: 'p', label: 'the customer' },
++  ],
++  links: [
++    { from: 'g', to: 'o', label: 'the order' },
++    { from: 'o', to: 'g', label: 'a callback' },
++    { from: 'o', to: 'p', label: 'a receipt' },
++  ],
++};
++
++test('flag on: an invented link between real parts is left out, the rest is drawn, and the model is told', async () => {
++  const c = await ctx();
++  const r = await withFlag('1', () => executeAskTool('propose_chart', ARGS, c));
++  assert.equal(r.ok, true, r.evidence);
++  assert.deepEqual(r.chart?.items.map((i) => i.id), ['g', 'o', 'p']);
++  assert.deepEqual(r.chart?.links?.map((l) => `${l.from}>${l.to}:${l.label}`), ['g>o:the order', 'o>p:a receipt']);
++  assert.match(String(r.content), new RegExp(`Left out 1 link\\(s\\) .*${ORDERS} -> ${GATEWAY}.*do not describe them as real`));
++  assert.match(r.evidence, /left out 1 invented link/);
++});
++
++test('flag off: the same chart is refused, as before', async () => {
++  const c = await ctx();
++  const r = await withFlag(undefined, () => executeAskTool('propose_chart', ARGS, c));
++  assert.equal(r.ok, false);
++  assert.match(r.evidence, /no edge file:orders\/app\/routes\.py -> file:gateway/);
++});
++
++test('flag on: a part the scan lacks is still refused, not dropped', async () => {
++  const c = await ctx();
++  const ghost = {
++    ...ARGS,
++    items: [...ARGS.items, { id: 'x', label: 'ghost', nodeId: 'file:src/nope.ts' }],
++    links: [...ARGS.links, { from: 'g', to: 'x' }],
++  };
++  const r = await withFlag('1', () => executeAskTool('propose_chart', ghost, c));
++  assert.equal(r.ok, false);
++  assert.match(r.evidence, /nope\.ts/);
++});
++
++test('flag on: a chart whose every link is invented is still refused, not drawn as boxes', async () => {
++  const c = await ctx();
++  const allInvented = { ...ARGS, items: ARGS.items.slice(0, 2), links: [{ from: 'o', to: 'g', label: 'a callback' }] };
++  const r = await withFlag('1', () => executeAskTool('propose_chart', allInvented, c));
++  assert.equal(r.ok, false);
++  assert.match(r.evidence, /no edge file:orders\/app\/routes\.py -> file:gateway/);
++});
+-- 
+2.51.1.windows.1
+

@@ -1,0 +1,16 @@
+{
+"p003": {"visual":"2","clipped":"none","why":"Picture 2 adds a caption naming what travels (default.conf calls invoices.ts via /api/), while picture 1 shows only the bare edge."},
+"p010": {"visual":"2","clipped":"none","why":"Picture 2 states the payload on the edge (GET /payments/*), picture 1 shows only unlabeled boxes and arrows."},
+"p013": {"visual":"1","clipped":"both","why":"Picture 1 explains the calls and routes travelling each edge; both truncate the InvoiceController node label with an ellipsis."},
+"p020": {"visual":"1","clipped":"both","why":"Picture 1 lists which callers hit index.js with which routes, clarifying the blast radius; both truncate payments_client and PaymentClient labels."},
+"p030": {"visual":"2","clipped":"both","why":"Picture 2 explains the GET /invoices/* call and the postgres read; both truncate the InvoiceController label."},
+"p037": {"visual":"2","clipped":"both","why":"Picture 2 names the HTTP routes on each edge, which is what communication method the person asked about; both truncate InvoiceController."},
+"p040": {"visual":"1","clipped":"none","why":"Picture 1 adds the caption saying default.conf calls invoices.ts via /api/, picture 2 has no edge meaning."},
+"p047": {"visual":"1","clipped":"none","why":"Picture 1 names the traffic (GET /payments/*), picture 2 is just unlabeled boxes."},
+"p057": {"visual":"2","clipped":"both","why":"Picture 2 states the routes travelling in and out of invoices.ts; both truncate the InvoiceController label."},
+"p067": {"visual":"1","clipped":"both","why":"Picture 1 explains the GET call and the postgres read; both truncate the InvoiceController label."},
+"p074": {"visual":"1","clipped":"both","why":"Picture 1 labels what each connection carries; both truncate InvoiceController."},
+"p077": {"visual":"2","clipped":"both","why":"Picture 2 explains the calls on each edge; both truncate the InvoiceController label."},
+"p084": {"visual":"2","clipped":"both","why":"Picture 2 lists the three callers and their routes into index.js, showing the blast radius; both truncate client node labels."},
+"p094": {"visual":"1","clipped":"both","why":"Picture 1 captions the routes on each edge; both truncate the InvoiceController label."}
+}

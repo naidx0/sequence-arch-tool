@@ -1,0 +1,26 @@
+From e2b3d0e18215583db8105fc307dc24d538bda4b2 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 03:06:34 -0400
+Subject: [PATCH 32/37] Bench: arm guard3 also turns product mode on (its first
+ run left it off)
+
+---
+ tools/bench/product-question-ab.mjs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/bench/product-question-ab.mjs b/tools/bench/product-question-ab.mjs
+index 424b8ed8..ba85c770 100644
+--- a/tools/bench/product-question-ab.mjs
++++ b/tools/bench/product-question-ab.mjs
+@@ -31,7 +31,7 @@ const ARM = arg('--arm', 'off');
+ const RUNS = Number(arg('--runs', '1'));
+ const OUT = arg('--out', path.join(root, 'tools/bench/out', `product-question-${ARM}.json`));
+ /* Arms: off (neither flag), on (product mode), guard (product mode + repeat guard). */
+-if (ARM === 'on' || ARM === 'guard') process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
++if (ARM === 'on' || ARM === 'guard' || ARM === 'guard3') process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
+ else delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+ if (ARM === 'guard' || ARM === 'guard3') process.env.SEQUENCE_TEACH_REPEAT_GUARD = '1';
+ else delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
+-- 
+2.51.1.windows.1
+

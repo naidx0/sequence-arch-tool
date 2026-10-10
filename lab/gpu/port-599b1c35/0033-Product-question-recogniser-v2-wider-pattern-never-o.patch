@@ -1,0 +1,100 @@
+From ef27dd9a34072b6e7fe8a6bb6a6695dbff7eb9b2 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 04:39:54 -0400
+Subject: [PATCH 33/37] Product-question recogniser v2: wider pattern, never on
+ a question naming a file, sticky for the rest of a product conversation
+
+v1 caught 5 of 24 sealed blind questions. v2 catches 15 of those 24 (now seen, so the next check
+uses a new sealed set) and flags 1 of the 74 teach-bench questions.
+---
+ packages/analyzer/src/server/askPipeline.ts   | 43 ++++++++++++++++---
+ .../src/test/teach-product-mode.test.ts       | 18 ++++++++
+ 2 files changed, 56 insertions(+), 5 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index d2859190..d2b8b77e 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -2450,15 +2450,48 @@ export function mutatingToolRefusal(name: string | undefined, teach: boolean): s
+  * the start of its own last answer so it does not send it again. The file-chart
+  * floor and the derived file check-in stay out of such a turn.
+  */
+-const PRODUCT_QUESTION =
+-  /\b(?:what(?:'s| is| does)\b[^?]{0,60}\b(?:product|app|do|for)\b|the (?:actual )?(?:product|app)\b|product flow|why (?:does )?(?:it|this|the app) exi\w*|adv\w{0,4}ages?|how (?:does )?(?:it|this|the app) works?|away from the (?:actual )?(?:files|code))/i;
++/*
++ * RECOGNISER v2 (2026-09-24). v1 was fitted to the owner's three questions and
++ * fired on 5 of 24 questions in a sealed blind set: "whats shopfront? is it a
++ * real store", "what's the point of it existing", "who is this for" all missed.
++ * Wider: what/who/why/point/problem/versus-questions about the thing itself.
++ * And STICKY: once a conversation has asked a product question, its follow-ups
++ * ("show that on the canvas", "walk me thru what happens") stay in product mode,
++ * until a question names a file.
++ */
++const PRODUCT_QUESTION = new RegExp(
++  [
++    String.raw`\bwhat(?:'s|s| is| does| do)\b[^?.!]{0,40}\b(?:product|app|this|it|thing|tool)\b`,
++    String.raw`\bwhat(?:'s|s| is| are)\s+(?!the\b|a\b|an\b)[a-z][\w-]*\s*(?:\?|$|,|and\b|for\b)`,
++    String.raw`\bwho\b[^?]{0,30}\b(?:for|use|uses|using)\b`,
++    String.raw`\b(?:point|purpose) of\b`,
++    String.raw`\bwhat problem\b`,
++    String.raw`\bwhy (?:would|should|do|does) (?:i|you|anyone|someone|it|this)\b`,
++    String.raw`\bwhy (?:does )?(?:it|this|the app) exi\w*`,
++    String.raw`\b(?:instead of|over|vs\.?|versus) (?:just )?(?:asking|using|a normal|chatgpt|an? )`,
++    String.raw`\bthe (?:actual )?(?:product|app)\b`,
++    String.raw`\bproduct flow\b`,
++    String.raw`\badv\w{0,4}ages?\b`,
++    String.raw`\bhow (?:does )?(?:it|this|the app) works?\b`,
++    String.raw`\baway from the (?:actual )?(?:files|code)\b`,
++    String.raw`\bis it an? (?:real|product|tool|demo|training|learning)\b`,
++    String.raw`\bexplain (?:it )?like i'?m\b`,
++  ].join('|'),
++  'i',
++);
++/** A question that names a file or code is about code, whatever else it says. */
++const NAMES_CODE = /`[^`]+`|\b[\w-]+\.(?:py|ts|tsx|js|jsx|go|java|rs|json|toml|ya?ml|mjs|cjs)\b/i;
+ 
+ export function isProductQuestion(question: string): boolean {
+-  return PRODUCT_QUESTION.test(question);
++  return !NAMES_CODE.test(question) && PRODUCT_QUESTION.test(question);
+ }
+ 
+-export function teachProductTurn(input: { teach?: boolean; question: string }): boolean {
+-  return process.env.SEQUENCE_TEACH_PRODUCT_MODE === '1' && input.teach === true && isProductQuestion(input.question);
++export function teachProductTurn(input: { teach?: boolean; question: string; historyLines?: readonly string[] }): boolean {
++  if (process.env.SEQUENCE_TEACH_PRODUCT_MODE !== '1' || input.teach !== true) return false;
++  if (NAMES_CODE.test(input.question)) return false;
++  if (isProductQuestion(input.question)) return true;
++  /* Sticky: an earlier question in this conversation was a product question. */
++  return (input.historyLines ?? []).some((l) => l.startsWith('User: ') && isProductQuestion(l.slice('User: '.length)));
+ }
+ 
+ export function renderProductQuestionInstructions(historyLines?: readonly string[]): string {
+diff --git a/packages/analyzer/src/test/teach-product-mode.test.ts b/packages/analyzer/src/test/teach-product-mode.test.ts
+index c80d3c0d..33ce88cb 100644
+--- a/packages/analyzer/src/test/teach-product-mode.test.ts
++++ b/packages/analyzer/src/test/teach-product-mode.test.ts
+@@ -59,3 +59,21 @@ test('the new-only fallback sends only the sentences the last answer did not hav
+     else process.env.SEQUENCE_TEACH_REPEAT_FALLBACK = before;
+   }
+ });
++
++test('recogniser v2: wider questions count, a question naming a file does not, and a started conversation stays in product mode', () => {
++  assert.ok(isProductQuestion('whats shopfront? is it a real store or a demo'));
++  assert.ok(isProductQuestion("what's the point of it existing lol"));
++  assert.ok(isProductQuestion('who is this for?'));
++  assert.ok(!isProductQuestion('what does routes.py do?'));
++  const before = process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++  process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
++  try {
++    const history = ['User: who is this for?', 'Assistant: For shop owners.'];
++    assert.equal(teachProductTurn({ teach: true, question: 'show that on the canvas pls', historyLines: history }), true);
++    assert.equal(teachProductTurn({ teach: true, question: 'show that on the canvas pls', historyLines: [] }), false);
++    assert.equal(teachProductTurn({ teach: true, question: 'now open routes.py', historyLines: history }), false);
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++    else process.env.SEQUENCE_TEACH_PRODUCT_MODE = before;
++  }
++});
+-- 
+2.51.1.windows.1
+

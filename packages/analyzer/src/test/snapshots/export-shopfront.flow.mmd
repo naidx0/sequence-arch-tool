@@ -1,0 +1,47 @@
+flowchart TD
+    subgraph Services
+        edge["edge"]
+        inventory["inventory"]
+        notifications["notifications"]
+        gateway["gateway"]
+        invoices["invoices"]
+        orders["orders"]
+        payments["payments"]
+        shipping["shipping"]
+    end
+    subgraph Datastores
+        postgres[("postgres")]
+    end
+    subgraph Topics
+        topic_order_created{{"topic:order.created"}}
+    end
+    edge -->|/api/| gateway
+    notifications -->|consume order.created| topic_order_created
+    gateway -->|GET /invoices/*| invoices
+    gateway -->|GET /orders/*, POST /orders| orders
+    gateway -->|GET /payments/*| payments
+    gateway -->|GET /shipments/*| shipping
+    invoices -->|POST /charge| payments
+    invoices -->|db, read invoices| postgres
+    orders -->|grpc| inventory
+    orders -->|POST /charge| payments
+    orders -->|db, read orders, table orders, write orders| postgres
+    orders -->|publish order.created| topic_order_created
+    payments -->|db, read orders, read payments, write payments| postgres
+    shipping -->|db, read shipments, write shipments| postgres
+    shipping -->|consume order.created| topic_order_created
+    linkStyle 0 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 1 stroke:#d98a2b,stroke-width:2px;
+    linkStyle 2 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 3 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 4 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 5 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 6 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 7 stroke:#2e9e5b,stroke-width:2px;
+    linkStyle 8 stroke:#7b53c9,stroke-width:2px;
+    linkStyle 9 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 10 stroke:#2e9e5b,stroke-width:2px;
+    linkStyle 11 stroke:#d98a2b,stroke-width:2px;
+    linkStyle 12 stroke:#2e9e5b,stroke-width:2px;
+    linkStyle 13 stroke:#2e9e5b,stroke-width:2px;
+    linkStyle 14 stroke:#d98a2b,stroke-width:2px;

@@ -1,0 +1,501 @@
+/* The model menu's own rows (round 7): an agent that could not list its models. */
+.s2-caps-err {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+.s2-caps-err-text {
+  margin: 0 10px;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+  overflow-wrap: anywhere;
+}
+.s2-caps-err .s2-btn {
+  margin-left: 10px;
+}
+
+/* ── the composer chip and its one popup (round 10) ───────────────────── */
+.s2-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* ── THE ONE PILL (round 11, owner 2026-10-08) ─────────────────────────────
+   [mode icon] [provider icon] [model nickname]: one plain pill, two buttons, one ink.
+   No tint, no circle, no divider. The mode icon takes the ink of the model text, so the pill reads as one thing.
+   The pill takes at most half of the composer row (the send cluster keeps the rest);
+   the mode half never shrinks, the model name ellipsises (its full name is the button's title).
+   The send button, the + and the pill outline are the same in every mode. */
+.s2-cb > .s2-anchor:has(> .s2-pillbar) {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(var(--menu-w), 50%);
+}
+/* The empty state is an action and keeps its whole label: it never shrinks. */
+.s2-cb > .s2-anchor:has(> .s2-pillbar[data-action='connect']) {
+  flex: none;
+  max-width: none;
+}
+:root .s2-comp .s2-cb .s2-pill.s2-pillbar,
+.s2-pill.s2-pillbar {
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 auto;
+  gap: 0;
+  padding: 0 var(--sp-2);
+  cursor: default;
+}
+:root .s2-comp .s2-cb .s2-pill.s2-pillbar:hover,
+:root .s2-comp .s2-cb .s2-pill.s2-pillbar[aria-expanded='true'] {
+  background: var(--comp-glass);
+  border-color: var(--comp-glass-edge);
+}
+.s2-pillbar .s2-pb {
+  display: inline-flex;
+  align-items: center;
+  height: calc(100% - var(--sp-4));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease);
+}
+.s2-pillbar .s2-pb:hover,
+.s2-pillbar .s2-pb[aria-expanded='true'] {
+  background: var(--comp-glass-hover);
+}
+.s2-pillbar .s2-pb:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 0;
+}
+/* Even rhythm: the gap mode icon to provider icon is the two pads that meet there (4 + 4),
+   and the gap provider icon to name is the same 8, so the three sit on one line at even distances. */
+.s2-pillbar .s2-pb-mode {
+  flex: none;
+  padding: 0 var(--sp-4);
+}
+.s2-pillbar .s2-pb-model {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-8) 0 var(--sp-4);
+}
+.s2-pill-model .s2-pill-l {
+  min-width: 0;
+}
+.s2-pill-model .s2-brand {
+  flex: none;
+}
+/* The empty state keeps its whole label. */
+.s2-pill-model[data-action='connect'] .s2-pill-l {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* ── THE MODE ICON (round 11) ─────────────────────────────────────────────
+   A plain icon in the neutral ink: no circle, no tint, no colour per mode. */
+.s2-mode-ico {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* The one neutral ink the pill's model text and the row names use (--b-ink1); no colour per mode. */
+  color: var(--b-ink1);
+}
+/* The small mode menu and the popup's Mode rows: the icon keeps the column the circle used to hold. */
+.s2-menu-modes {
+  width: 372px;
+  max-width: calc(100vw - var(--sp-32));
+}
+/* A mode's description is ONE line (owner, 2026-10-08: Smart wrapped). The copy is short enough to fit
+   both menus at every width; nowrap is the backstop, the e2e asserts nothing is cut. */
+:root .s2-mi-mode .s2-mi-note {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-mi-mode .s2-mode-ico {
+  width: var(--sp-20);
+  margin-right: var(--sp-2);
+}
+/* The popup: opens upward, never wider than the window. The room above is its height (set from the
+   measured space); inside, the body scrolls and the foot (reasoning, add) stays pinned.
+   The default room is declared on :root so the token resolves in every theme state (graphite.test);
+   ModelMenu sets the measured value inline on the menu on open and resize, which wins there. */
+:root {
+  --s2-menu-max: calc(100vh - var(--sp-56) - var(--sp-56));
+}
+.s2-menu.s2-menu-up.s2-menu-right.s2-menu-model {
+  width: var(--menu-w);
+  max-width: calc(100vw - var(--sp-32));
+  max-height: var(--s2-menu-max);
+  overflow: hidden;
+}
+.s2-menu-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* A soft fade at the foot of the scrolling part, only while there is more below it. */
+.s2-menu-body::after {
+  content: "";
+  flex: none;
+  position: sticky;
+  bottom: 0;
+  height: var(--sp-24);
+  margin-top: calc(var(--sp-24) * -1);
+  background: linear-gradient(to bottom, transparent, var(--b-float));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.s2-menu-model[data-more='true'] .s2-menu-body::after {
+  opacity: 1;
+}
+.s2-menu-foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--b-edge);
+  background: var(--b-float);
+}
+.s2-mi-mode .s2-mi-note {
+  flex: 1 1 0;
+}
+.s2-mi-mode .s2-mi-name {
+  max-width: 45%;
+}
+.s2-group-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s2-group-h .s2-brand {
+  width: 12px;
+  height: 12px;
+}
+.s2-modes .s2-gh {
+  display: flex;
+  align-items: center;
+}
+
+/* ── the reasoning slider: Faster … Smarter, a dotted track, a sliding pill, "Recommended" under its dot ── */
+.s2-rt {
+  position: relative;
+  margin: var(--sp-2) var(--sp-10) var(--sp-8);
+  font-size: var(--t-11);
+  line-height: 1.2;
+}
+.s2-rt-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--sp-6);
+  color: var(--b-ink3);
+}
+.s2-rt-track {
+  position: relative;
+  height: var(--control-h);
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--b-ink1) 9%, transparent);
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+}
+.s2-rt-rail {
+  position: absolute;
+  inset: 0 14px;
+}
+.s2-rt-dot {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--rt-x) * 100%);
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.s2-rt-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -14px;
+  /* To the dot's centre, then past it by the thumb's radius (9px) and 3px of padding: the thumb sits INSIDE the blue. */
+  width: calc(var(--rt-x) * 100% + 14px + 12px);
+  border-radius: var(--r-full);
+  background: var(--accent-solid);
+  pointer-events: none;
+}
+.s2-rt-fill[data-empty='true'] {
+  width: 0;
+}
+.s2-rt[data-ready='true'] .s2-rt-fill {
+  transition: width var(--dur-3) var(--ease);
+}
+.s2-rt-dot::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--b-ink1) 34%, transparent);
+  transition: background-color var(--dur-3) var(--ease);
+}
+.s2-rt-dot:hover::before {
+  background: color-mix(in srgb, var(--b-ink1) 60%, transparent);
+}
+/* Dots the fill has reached read as light ticks on the accent. */
+.s2-rt-fill ~ .s2-rt-dot.is-reached::before {
+  background: color-mix(in srgb, var(--accent-on-solid) 70%, transparent);
+}
+.s2-rt-thumb {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--rt-x) * 100%);
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: var(--accent-on-solid);
+  /* A hairline ring as well as a shadow: a white thumb on a light-theme track needs a visible edge. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--b-ink1) 22%, transparent), 0 1px 3px color-mix(in srgb, black 35%, transparent);
+}
+.s2-rt[data-ready='true'] .s2-rt-thumb {
+  transition: left var(--dur-3) var(--ease);
+}
+.s2-rt-thumb.is-unset {
+  opacity: 0.6;
+}
+.s2-rt[data-dragging='true'] .s2-rt-thumb,
+.s2-rt[data-dragging='true'] .s2-rt-fill {
+  transition: none;
+}
+.s2-rt-thumb:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--b-bg), 0 0 0 4px var(--b-acc);
+}
+.s2-rt-under {
+  position: relative;
+  height: 1.2em;
+  margin: var(--sp-6) 14px 0;
+}
+.s2-rt-rec {
+  position: absolute;
+  left: calc(var(--rt-x) * 100%);
+  transform: translateX(calc(var(--rt-x) * -100%));
+  color: var(--b-ink2);
+  white-space: nowrap;
+}
+/* The header: "Effort" quiet, the chosen level bright beside it, a small help mark at the right. */
+.s2-effort .s2-menu-gh.s2-effort-gh {
+  gap: var(--sp-6);
+  font-size: var(--t-12);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.s2-effort-gh .s2-effort-word {
+  color: var(--b-ink3);
+}
+.s2-effort-gh .s2-effort-now {
+  font-size: inherit;
+  font-weight: var(--fw-solid);
+  color: var(--b-ink1);
+}
+.s2-effort-help {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--b-edge2);
+  border-radius: 50%;
+  color: var(--b-ink3);
+  font-size: var(--t-10);
+  line-height: 1;
+  cursor: help;
+}
+@media (prefers-reduced-motion: reduce) {
+  .s2-rt-thumb,
+  .s2-rt-fill,
+  .s2-rt-dot::before {
+    transition: none;
+  }
+}
+/* The one quiet line said when a saved Ask is carried over as Plan. */
+.s2-modenote {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin: 0 0 var(--sp-8);
+  padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-12);
+  border-radius: var(--r-full);
+  background: var(--b-s2);
+  border: 1px solid var(--b-edge);
+  color: var(--b-ink2);
+  font-size: var(--t-12);
+}
+.s2-modenote-t {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The grey note on the selected row sat at 4.4:1 on its accent film (UX audit #20): one step up. */
+.s2-mi.is-on .s2-mi-note {
+  color: var(--b-ink2);
+}
+
+/* A failure in the menu (components/FailureNote): the menu's own inks. */
+.s2-failnote .failure-note-details {
+  color: var(--b-ink3);
+}
+
+/* ── ROUND 12 (Jaden): the mode icon and the agent icon are one box ────────
+   Same 16 px square, same centre, on one line; the glyph fills its box the same
+   way (the brand marks and the mode glyphs both stretch to the box, so neither
+   sits small or off-centre in it). */
+:root {
+  --pill-ico: var(--sp-16);
+}
+.s2-pillbar .s2-mode-ico,
+.s2-pillbar .s2-brand,
+.s2-pillbar .s2-pb > .s2-i {
+  width: var(--pill-ico);
+  height: var(--pill-ico);
+  flex: none;
+}
+.s2-pillbar .s2-mode-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-pillbar .s2-mode-ico > .s2-i {
+  width: 100%;
+  height: 100%;
+}
+.s2-pillbar .s2-brand > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The mode glyphs fill their 16 px box the way the agent mark does: a 24-grid line glyph draws about
+   a third smaller than a brand mark in the same box, so it is scaled up about its own centre (the
+   box, and so the centre line, do not move). Measured in e2e/r12-look-shots.mjs. */
+.s2-pillbar .s2-mode-ico > .s2-i,
+.s2-mi-mode .s2-mode-ico > .s2-i {
+  transform: scale(var(--mode-glyph-scale));
+}
+:root {
+  --mode-glyph-scale: 1.22;
+}
+
+/* ── ROUND 13 (S5; Jaden: agent icon and mode icon the same size, the same padding to the text and to the
+   pill's top and bottom borders; "the selected Full auto icon is not centred in its circle, give the
+   button room and centre it") ─────────────────────────────────────────────────────────────────────
+   Both buttons are one 24 px tall and carry the 16 px glyph with the same 4 px of room on every side that
+   touches it. The mode button is a square 24 px (a circle on hover), so its glyph sits at the centre of the
+   circle; the model button starts with the same 4 px, so the agent mark has exactly the room the mode
+   glyph has. */
+:root {
+  --pill-pb-h: var(--sp-24);
+  --pill-ico-pad: var(--sp-4);
+}
+.s2-pillbar .s2-pb {
+  height: var(--pill-pb-h);
+}
+.s2-pillbar .s2-pb-mode {
+  width: var(--pill-pb-h);
+  padding: 0;
+  justify-content: center;
+}
+.s2-pillbar .s2-pb-model {
+  padding: 0 var(--sp-8) 0 var(--pill-ico-pad);
+}
+
+/* ── 0.1.5 G1: the picker opens and closes smoothly (the owner: "a smoothing animation") ──────────────
+   Both composer menus open upward, so they rise into place from their bottom edge (the .s2-menu default
+   drops from above, which reads backwards for a menu below its content). Closing plays the reverse,
+   faster, while ModelMenu keeps the closing menu on the page (useExitPresence, data-state='closing').
+   A chosen row eases its fill and its check pops in. Existing durations and curves only; reduced motion
+   turns all of it off (and the closing menu is then removed at once). */
+.s2-menu-up.s2-menu-model,
+.s2-menu-up.s2-menu-modes {
+  animation: s2-rise var(--dur-3) var(--ease-enter);
+}
+.s2-menu-up.s2-menu-model[data-state='closing'],
+.s2-menu-up.s2-menu-modes[data-state='closing'] {
+  animation: s2-sink var(--dur-2) var(--ease-exit) forwards;
+  pointer-events: none;
+}
+@keyframes s2-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--sp-6)) scale(0.98);
+  }
+}
+@keyframes s2-sink {
+  to {
+    opacity: 0;
+    transform: translateY(var(--sp-4)) scale(0.98);
+  }
+}
+.s2-menu-model .s2-mi-model,
+.s2-menu-modes .s2-mi-model {
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.s2-menu-model .s2-mi-model.is-on > svg[data-icon='check'],
+.s2-menu-modes .s2-mi-model.is-on > svg[data-icon='check'] {
+  animation: s2-check-in var(--dur-2) var(--ease-enter);
+}
+@keyframes s2-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s2-menu-up.s2-menu-model,
+  .s2-menu-up.s2-menu-modes,
+  .s2-menu-up.s2-menu-model[data-state='closing'],
+  .s2-menu-up.s2-menu-modes[data-state='closing'],
+  .s2-menu-model .s2-mi-model.is-on > svg[data-icon='check'],
+  .s2-menu-modes .s2-mi-model.is-on > svg[data-icon='check'] {
+    animation: none;
+  }
+  .s2-menu-model .s2-mi-model,
+  .s2-menu-modes .s2-mi-model {
+    transition: none;
+  }
+}
+
+/* 0.1.5 G1: an agent's unreadable list is said inside its own group, under its row: the sentence and the
+   Retry start where the row's name starts (row inset, the icon slot, the gap), not at the menu's edge. */
+:root {
+  --s2-mi-name-x: calc(var(--sp-4) + var(--sp-24) + var(--sp-8));
+}
+.s2-menu-sec > .s2-caps-err .s2-caps-err-text {
+  margin: 0 var(--sp-8) 0 var(--s2-mi-name-x);
+}
+.s2-menu-sec > .s2-caps-err .s2-btn {
+  margin-left: var(--s2-mi-name-x);
+}

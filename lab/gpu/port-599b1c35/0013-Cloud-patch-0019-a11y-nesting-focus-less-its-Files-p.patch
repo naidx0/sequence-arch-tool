@@ -1,0 +1,544 @@
+From b5a0199d158b0002e784bb3a20c421884f7fee0f Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 15:00:48 -0400
+Subject: [PATCH 13/37] Cloud patch 0019-a11y-nesting-focus, less its
+ Files-pane collapse
+
+Head already folds a narrow Files pane into a rail (@container files-pane, 420px), so the
+filespane hunk, its container line and its test are dropped. The focus-ring test now reads
+v3.css with CRLF normalised (it failed on the Windows checkout). 3 files, 50/50.
+---
+ packages/web2/src/canvas/NodeCard.test.tsx    | 109 ++++++++++++++-
+ packages/web2/src/canvas/NodeCard.tsx         |  30 ++++-
+ packages/web2/src/canvas/board.css            |  24 +++-
+ .../src/terminal/terminalFocusRing.test.ts    |  38 ++++++
+ packages/web2/src/v3/V3SessionsRail.tsx       |  41 ++++--
+ packages/web2/src/v3/railRowNesting.test.tsx  | 124 ++++++++++++++++++
+ packages/web2/src/v3/v3.css                   |  28 ++++
+ 7 files changed, 369 insertions(+), 25 deletions(-)
+ create mode 100644 packages/web2/src/terminal/terminalFocusRing.test.ts
+ create mode 100644 packages/web2/src/v3/railRowNesting.test.tsx
+
+diff --git a/packages/web2/src/canvas/NodeCard.test.tsx b/packages/web2/src/canvas/NodeCard.test.tsx
+index 4fee16e5..ec82d524 100644
+--- a/packages/web2/src/canvas/NodeCard.test.tsx
++++ b/packages/web2/src/canvas/NodeCard.test.tsx
+@@ -1,3 +1,6 @@
++import { readFileSync } from 'node:fs';
++import { resolve } from 'node:path';
++
+ import { fireEvent, render, screen } from '@testing-library/react';
+ import { ReactFlowProvider } from '@xyflow/react';
+ import { describe, expect, it, vi } from 'vitest';
+@@ -324,17 +327,117 @@ describe('item 3.5 — one click, one action', () => {
+   });
+ 
+   it('is a real control, so the keyboard can reach it', () => {
++    /* The control is the card's own select button (0019: a control may not
++       contain a control), a real <button> in the tab order, inside the card. */
+     const { container } = draw(service);
+     const card = container.querySelector('[data-testid="board-node"]')!;
+-    expect(card.getAttribute('role')).toBe('button');
+-    expect(card.getAttribute('aria-pressed')).toBe('false');
++    const control = card.querySelector('[data-testid="board-node-select"]')!;
++    expect(control.tagName).toBe('BUTTON');
++    expect(control.getAttribute('aria-pressed')).toBe('false');
++    expect(control.getAttribute('aria-label')).toBe('checkout');
+   });
+ 
+   it('says it is selected in the accessibility tree as well as in paint', () => {
+     const { container } = draw(service, { selected: true });
+     const card = container.querySelector('[data-testid="board-node"]')!;
+     expect(card.classList.contains('sel')).toBe(true);
+-    expect(card.getAttribute('aria-pressed')).toBe('true');
++    expect(card.querySelector('[data-testid="board-node-select"]')!.getAttribute('aria-pressed')).toBe('true');
++  });
++});
++
++/* ══════════════════════════════════════════════════════════════════════════
++   0019 — NO CONTROL INSIDE A CONTROL (axe nested-interactive, serious ×9).
++   The card was a div[role=button][tabindex=0] wrapping its own open button: a
++   screen reader flattens a button's children, and the card's Enter handler
++   took Enter from the open button, so the keyboard could select a card but
++   never open one. The card is now a plain box that keeps its mouse gestures;
++   the keyboard control is a sibling of the open button, not its parent.
++   ══════════════════════════════════════════════════════════════════════════ */
++const INTERACTIVE =
++  'button, a[href], input, select, textarea, [role="button"], [role="link"], [role="checkbox"], [tabindex]:not([tabindex="-1"])';
++function nestedControls(root: Element): string[] {
++  return [...root.querySelectorAll(INTERACTIVE)]
++    .filter((el) => {
++      const outer = el.parentElement?.closest(INTERACTIVE);
++      return outer != null && root.contains(outer);
++    })
++    .map((el) => el.getAttribute('data-testid') ?? el.tagName);
++}
++
++describe('0019 — the card holds no control inside another', () => {
++  it('has no interactive element inside another, with the open button drawn', () => {
++    const { container } = draw(service, { openable: true, onOpen: vi.fn() });
++    expect(container.querySelector('[data-testid="board-node-expand"]')).not.toBeNull();
++    expect(nestedControls(container)).toEqual([]);
++    const card = container.querySelector('[data-testid="board-node"]')!;
++    expect(card.getAttribute('role')).toBeNull();
++    expect(card.getAttribute('tabindex')).toBeNull();
++  });
++
++  it('puts the select control first in the tab order, then the open button', () => {
++    const { container } = draw(service, { openable: true, onOpen: vi.fn() });
++    const stops = [...container.querySelectorAll('button')].map((b) => b.getAttribute('data-testid'));
++    expect(stops).toEqual(['board-node-select', 'board-node-expand']);
++  });
++
++  it('selects on Enter and Space from its control, with the modifier held', () => {
++    const onSelect = vi.fn();
++    const { container } = draw(service, { onSelect });
++    const control = container.querySelector('[data-testid="board-node-select"]')!;
++    expect(fireEvent.keyDown(control, { key: 'Enter' })).toBe(false); // default prevented: no second, synthetic click
++    expect(onSelect).toHaveBeenLastCalledWith('svc:checkout', false);
++    fireEvent.keyDown(control, { key: ' ' });
++    expect(onSelect).toHaveBeenCalledTimes(2);
++    fireEvent.keyDown(control, { key: 'Enter', shiftKey: true });
++    expect(onSelect).toHaveBeenLastCalledWith('svc:checkout', true);
++    fireEvent.keyDown(control, { key: 'a' });
++    expect(onSelect).toHaveBeenCalledTimes(3);
++  });
++
++  it('leaves Enter on the open button to the open button — it does not select instead', () => {
++    const onSelect = vi.fn();
++    const onOpen = vi.fn();
++    const { container } = draw(service, { openable: true, onOpen, onSelect });
++    const expand = container.querySelector('[data-testid="board-node-expand"]')!;
++    // Not default-prevented, so the browser turns it into the button's click.
++    expect(fireEvent.keyDown(expand, { key: 'Enter' })).toBe(true);
++    expect(fireEvent.keyDown(expand, { key: ' ' })).toBe(true);
++    expect(onSelect).not.toHaveBeenCalled();
++    fireEvent.click(expand);
++    expect(onOpen).toHaveBeenCalledWith('svc:checkout');
++    expect(onSelect).not.toHaveBeenCalled();
++  });
++
++  it('keeps the mouse on the card: click selects once, double-click opens, right-click menus', () => {
++    const onSelect = vi.fn();
++    const onOpen = vi.fn();
++    const onMenu = vi.fn();
++    const { container } = draw(service, { openable: true, onOpen, onSelect, onMenu });
++    const title = container.querySelector('[data-testid="board-node-title"]')!;
++    fireEvent.click(title, { shiftKey: true });
++    expect(onSelect).toHaveBeenCalledTimes(1);
++    expect(onSelect).toHaveBeenLastCalledWith('svc:checkout', true);
++    fireEvent.doubleClick(title);
++    expect(onOpen).toHaveBeenCalledWith('svc:checkout');
++    fireEvent.contextMenu(title, { clientX: 5, clientY: 6 });
++    expect(onMenu).toHaveBeenCalledWith('svc:checkout', { x: 5, y: 6 });
++  });
++
++  it('a click that reaches the select control (a screen reader\'s) selects through the card', () => {
++    const onSelect = vi.fn();
++    const { container } = draw(service, { onSelect });
++    (container.querySelector('[data-testid="board-node-select"]') as HTMLElement).click();
++    expect(onSelect).toHaveBeenCalledTimes(1);
++    expect(onSelect).toHaveBeenLastCalledWith('svc:checkout', false);
++  });
++
++  it('never intercepts the pointer, and rings the card on keyboard focus (READS THE STYLESHEET)', () => {
++    const css = readFileSync(resolve(__dirname, 'board.css'), 'utf8');
++    const base = /\.board-scope \.node \.nd-hit \{([^}]*)\}/.exec(css)?.[1] ?? '';
++    expect(base).toMatch(/pointer-events:\s*none/);
++    expect(base).toMatch(/position:\s*absolute/);
++    const ring = /\.board-scope \.node \.nd-hit:focus-visible \{([^}]*)\}/.exec(css)?.[1] ?? '';
++    expect(ring).toMatch(/var\(--accent\)/);
+   });
+ });
+ 
+diff --git a/packages/web2/src/canvas/NodeCard.tsx b/packages/web2/src/canvas/NodeCard.tsx
+index eb6d3bd9..4ef17260 100644
+--- a/packages/web2/src/canvas/NodeCard.tsx
++++ b/packages/web2/src/canvas/NodeCard.tsx
+@@ -366,6 +366,11 @@ export function NodeCard({
+     onMenu(node.id, { x: event.clientX, y: event.clientY });
+   }
+ 
++  /* Enter and Space on the card's own control select, with the modifier held,
++     exactly as a click does. It is bound to THAT control and not to the card,
++     so a keystroke on the open button (or on anything the anatomy wall draws)
++     is that control's own: the card used to take Enter from its children and
++     select instead of opening. */
+   function keyPick(event: KeyboardEvent) {
+     if (event.key !== 'Enter' && event.key !== ' ') return;
+     event.preventDefault();
+@@ -395,10 +400,20 @@ export function NodeCard({
+     );
+   }
+ 
++  /* NO CONTROL INSIDE A CONTROL. The card used to be a `div[role=button]` with
++     the open button inside it, which axe rates serious (nested-interactive):
++     a screen reader flattens a button's children, so the open button was not
++     announced, and the card swallowed Enter meant for it. Now the card itself
++     is a plain group that keeps every MOUSE gesture it had (click, shift-click,
++     double-click, right-click, drag — they land where they always landed),
++     and the KEYBOARD / assistive-technology control is `.nd-hit`: a real
++     button laid over the card with `pointer-events: none`, so it never
++     intercepts a pointer, draws the focus ring around the whole card, and sits
++     BESIDE the open button rather than around it. A click it receives from a
++     screen reader bubbles to the card's own onClick, the same path a mouse
++     click takes. */
+   return (
+     <div
+-      role="button"
+-      tabIndex={0}
+       className={classes}
+       data-testid="board-node"
+       data-node-id={node.id}
+@@ -410,14 +425,21 @@ export function NodeCard({
+       /* Only ever written as a REFUSAL. Marking the grounded case too would put
+          a tag on ten cards out of eleven and hide the one that matters. */
+       data-grounded={node.grounded === false ? 'false' : undefined}
+-      aria-pressed={selected}
+       onClick={pick}
+-      onKeyDown={keyPick}
+       onDoubleClick={open}
+       onContextMenu={menu}
+     >
+       <InertHandles />
+ 
++      <button
++        type="button"
++        className="nd-hit"
++        data-testid="board-node-select"
++        aria-label={node.label}
++        aria-pressed={selected}
++        onKeyDown={keyPick}
++      />
++
+       {show.icon ? (
+         <span className="nd-ic" data-testid="board-node-icon">
+           <BoardIcon name={headerIcon(node.label, node.present)} size={14} />
+diff --git a/packages/web2/src/canvas/board.css b/packages/web2/src/canvas/board.css
+index fc1416bc..167950c6 100644
+--- a/packages/web2/src/canvas/board.css
++++ b/packages/web2/src/canvas/board.css
+@@ -836,13 +836,29 @@
+    competing for one property. And the gap band is --nest-0, the board's own
+    ground, not --bg-base: the app-wide focus rule is right everywhere except
+    here, where the ground is different. */
+-.board-scope .node:focus-visible {
++/* THE CARD IS NOT THE FOCUSABLE THING ANY MORE — `.nd-hit` is (see NodeCard:
++   a control may not contain a control). It is a transparent button laid
++   exactly over the card's border box, so its ring IS the card's ring, drawn
++   in the same geometry as before: a gap band, then the accent. It takes no
++   pointer events, so every mouse gesture still lands on the card below it.
++   The selected variant repeats the flush selection edge first, because the
++   gap band would otherwise paint over it. */
++.board-scope .node .nd-hit {
++  position: absolute;
++  inset: calc(var(--arch-weight) * -1);
++  margin: 0;
++  padding: 0;
++  border: 0;
++  border-radius: inherit;
++  background: transparent;
++  pointer-events: none;
++}
++.board-scope .node .nd-hit:focus-visible {
+   outline: none;
+-  box-shadow: var(--e1), 0 0 0 var(--w-rule) var(--nest-0), 0 0 0 4px var(--accent);
++  box-shadow: 0 0 0 var(--w-rule) var(--nest-0), 0 0 0 4px var(--accent);
+ }
+-.board-scope .node.sel:focus-visible {
++.board-scope .node.sel .nd-hit:focus-visible {
+   box-shadow:
+-    var(--e2),
+     0 0 0 var(--w-rule) var(--board-select-edge),
+     0 0 0 4px var(--nest-0),
+     0 0 0 6px var(--accent);
+diff --git a/packages/web2/src/terminal/terminalFocusRing.test.ts b/packages/web2/src/terminal/terminalFocusRing.test.ts
+new file mode 100644
+index 00000000..2d6af200
+--- /dev/null
++++ b/packages/web2/src/terminal/terminalFocusRing.test.ts
+@@ -0,0 +1,38 @@
++import { readFileSync } from 'node:fs';
++import { resolve } from 'node:path';
++
++import { describe, expect, it } from 'vitest';
++
++/**
++ * 0019 — THE TERMINAL WEARS A FOCUS RING.
++ *
++ * The accessibility audit (WCAG 2.4.7): the terminal is a tab stop, and
++ * `.terminal-pane-surface { outline: none }` in v3.css took away the app's
++ * ring, so keyboard focus on it was invisible (0/1 focus-visible in Chromium).
++ *
++ * jsdom has no layout or focus-visible heuristics, so these READ THE
++ * STYLESHEET, as filesHeaderFit and railWorkspaceNewChat do. The measurement in
++ * Chromium is the audit probe (a real Tab onto the terminal, then the computed
++ * outline).
++ */
++/* Line endings normalised: a Windows checkout (autocrlf) would otherwise hide the cleared rule below. */
++const css = readFileSync(resolve(__dirname, '..', 'v3', 'v3.css'), 'utf8').replace(/\r\n/g, '\n');
++const base = readFileSync(resolve(__dirname, '..', 'styles', 'base.css'), 'utf8');
++
++describe('the terminal focus ring', () => {
++  it('draws a :focus-visible ring on the terminal surface', () => {
++    const m = /\.terminal-pane-surface:focus-visible[^{]*\{([^}]*)\}/.exec(css);
++    expect(m, '.terminal-pane-surface:focus-visible has a rule').toBeTruthy();
++    expect(m![1]).toMatch(/outline:\s*2px solid var\(--accent\)/);
++  });
++
++  it('is the same ring as the app-wide one in base.css', () => {
++    expect(base).toMatch(/:focus-visible \{ outline: 2px solid var\(--accent\)/);
++  });
++
++  it('comes after the rule that clears the outline, so it wins the cascade', () => {
++    const cleared = css.indexOf('.terminal-pane-surface,\n.v3-terminal pre {');
++    expect(cleared).toBeGreaterThanOrEqual(0);
++    expect(css.indexOf('.terminal-pane-surface:focus-visible')).toBeGreaterThan(cleared);
++  });
++});
+diff --git a/packages/web2/src/v3/V3SessionsRail.tsx b/packages/web2/src/v3/V3SessionsRail.tsx
+index 782f2bc2..1addbcc8 100644
+--- a/packages/web2/src/v3/V3SessionsRail.tsx
++++ b/packages/web2/src/v3/V3SessionsRail.tsx
+@@ -639,8 +639,6 @@ export function V3SessionsRail({
+           .filter(Boolean)
+           .join(' ')}
+         data-pinned={entry.pinned ? 'true' : 'false'}
+-        role="button"
+-        tabIndex={0}
+         onClick={(e) => {
+           if (renaming) return;
+           if (pickMode || e.ctrlKey || e.metaKey) {
+@@ -652,19 +650,34 @@ export function V3SessionsRail({
+           if (repoPath) void onCatalogClick(repoPath, entry.id);
+           else void onGeneralClick(entry.id);
+         }}
+-        onKeyDown={(e) => {
+-          if (renaming) return;
+-          if (e.key === 'Enter' || e.key === ' ') {
+-            e.preventDefault();
+-            if (pickMode) {
+-              togglePick(key);
+-              return;
+-            }
+-            if (repoPath) void onCatalogClick(repoPath, entry.id);
+-            else void onGeneralClick(entry.id);
+-          }
+-        }}
+       >
++        {/* NO CONTROL INSIDE A CONTROL. The row used to be a `div[role=button]`
++            holding the pin, the actions button and the rename field, which axe
++            rates serious (nested-interactive) and which took Enter from every
++            one of them: Enter on the pin or on "Chat actions" opened the chat
++            instead. The row keeps its mouse click; the keyboard and screen
++            reader control is this button, laid over the row with
++            `pointer-events: none` so a pointer still lands where it did, and
++            sitting beside the other controls rather than around them. */}
++        <button
++          type="button"
++          className="v3-session-hit"
++          data-testid="v3-session-hit"
++          aria-label={sessionTitle(entry)}
++          aria-current={loaded ? 'true' : undefined}
++          onKeyDown={(e) => {
++            if (renaming) return;
++            if (e.key === 'Enter' || e.key === ' ') {
++              e.preventDefault();
++              if (pickMode) {
++                togglePick(key);
++                return;
++              }
++              if (repoPath) void onCatalogClick(repoPath, entry.id);
++              else void onGeneralClick(entry.id);
++            }
++          }}
++        />
+         {pickMode ? (
+           <input
+             type="checkbox"
+diff --git a/packages/web2/src/v3/railRowNesting.test.tsx b/packages/web2/src/v3/railRowNesting.test.tsx
+new file mode 100644
+index 00000000..7f21a9e1
+--- /dev/null
++++ b/packages/web2/src/v3/railRowNesting.test.tsx
+@@ -0,0 +1,124 @@
++/* ══════════════════════════════════════════════════════════════════════════
++   0019 — A RAIL ROW HOLDS NO CONTROL INSIDE ANOTHER
++   packages/web2/src/v3/railRowNesting.test.tsx
++
++   The accessibility audit (axe, nested-interactive, serious): `.v3-session`
++   was a div[role=button][tabindex=0] wrapping the pin button and the "Chat
++   actions" button. A screen reader flattens a button's children, and the
++   row's own Enter handler took Enter from both: Enter on the pin, or on "Chat
++   actions", opened the chat instead. The row now keeps its mouse click, and
++   its keyboard control is a sibling of the pin and the menu, not their parent.
++   ══════════════════════════════════════════════════════════════════════════ */
++
++import { fireEvent, render, screen, waitFor } from '@testing-library/react';
++import { describe, expect, it } from 'vitest';
++
++import { createSessionsClient } from '../sessions/sessionsClient';
++import { createStore, StoreProvider } from '../state';
++import { V3SessionsRail } from './V3SessionsRail';
++
++const HOME = 'session-home';
++const OTHER = 'session-other';
++
++const index = {
++  version: 1,
++  activeId: HOME,
++  sessions: [HOME, OTHER].map((id) => ({
++    id,
++    title: id === HOME ? 'Home chat' : 'Other chat',
++    createdAt: '2026-09-17T09:00:00.000Z',
++    updatedAt: '2026-09-17T09:00:00.000Z',
++  })),
++};
++
++function mount() {
++  const calls: string[] = [];
++  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
++    const url = String(input);
++    const method = (init?.method ?? 'GET').toUpperCase();
++    if (url === '/api/sessions' && method === 'GET') {
++      return new Response(JSON.stringify({ index, scope: 'workspace', repos: [] }), {
++        status: 200,
++        headers: { 'content-type': 'application/json' },
++      });
++    }
++    calls.push(`${method} ${url}`);
++    if (url.startsWith('/api/sessions/')) {
++      return new Response(
++        JSON.stringify({ index, chat: { version: 1, sessionId: OTHER, turns: [] }, meta: {} }),
++        { status: 200, headers: { 'content-type': 'application/json' } },
++      );
++    }
++    return new Response('{}', { status: 404, headers: { 'content-type': 'application/json' } });
++  }) as typeof fetch;
++  const store = createStore({});
++  const view = render(
++    <StoreProvider store={store}>
++      <V3SessionsRail client={createSessionsClient(fetchImpl)} />
++    </StoreProvider>,
++  );
++  return { calls, ...view };
++}
++
++const INTERACTIVE =
++  'button, a[href], input, select, textarea, [role="button"], [role="link"], [role="checkbox"], [tabindex]:not([tabindex="-1"])';
++
++async function otherRow(container: HTMLElement): Promise<HTMLElement> {
++  await waitFor(() => expect(screen.getByText('Other chat')).toBeTruthy());
++  return screen.getByText('Other chat').closest('.v3-session') as HTMLElement;
++}
++
++describe('0019 — the sessions rail row', () => {
++  it('has no interactive element inside another', async () => {
++    const { container } = mount();
++    const row = await otherRow(container);
++    expect(row.getAttribute('role')).toBeNull();
++    expect(row.getAttribute('tabindex')).toBeNull();
++    const nested = [...container.querySelectorAll('.v3-session')].flatMap((r) =>
++      [...r.querySelectorAll(INTERACTIVE)].filter((el) => {
++        const outer = el.parentElement?.closest(INTERACTIVE);
++        return outer != null && r.contains(outer);
++      }),
++    );
++    expect(nested).toEqual([]);
++  });
++
++  it('keeps a keyboard control per row, named by the chat, first in the row’s tab order', async () => {
++    const { container } = mount();
++    const row = await otherRow(container);
++    const buttons = [...row.querySelectorAll('button')];
++    expect(buttons[0]!.getAttribute('data-testid')).toBe('v3-session-hit');
++    expect(buttons[0]!.getAttribute('aria-label')).toBe('Other chat');
++    const home = screen.getByText('Home chat').closest('.v3-session')!;
++    expect(home.querySelector('[data-testid="v3-session-hit"]')!.getAttribute('aria-current')).toBe('true');
++    expect(buttons[0]!.getAttribute('aria-current')).toBeNull();
++  });
++
++  it('opens the chat on Enter from the row control, as before', async () => {
++    const { container, calls } = mount();
++    const row = await otherRow(container);
++    const hit = row.querySelector('[data-testid="v3-session-hit"]')!;
++    expect(fireEvent.keyDown(hit, { key: 'Enter' })).toBe(false);
++    await waitFor(() => expect(calls.some((c) => c.includes(OTHER))).toBe(true));
++  });
++
++  it('leaves Enter on the pin and on "Chat actions" to those buttons — it does not open the chat', async () => {
++    const { container, calls } = mount();
++    const row = await otherRow(container);
++    const pin = row.querySelector('.v3-pin')!;
++    const more = row.querySelector('.v3-session-more')!;
++    // Not default-prevented, so the browser turns each into its own button's click.
++    expect(fireEvent.keyDown(pin, { key: 'Enter' })).toBe(true);
++    expect(fireEvent.keyDown(more, { key: 'Enter' })).toBe(true);
++    expect(fireEvent.keyDown(more, { key: ' ' })).toBe(true);
++    await new Promise((r) => setTimeout(r, 20));
++    expect(calls).toEqual([]);
++  });
++
++  it('still opens the chat on a mouse click anywhere on the row', async () => {
++    const { container, calls } = mount();
++    const row = await otherRow(container);
++    fireEvent.click(row.querySelector('.v3-session-title')!);
++    await waitFor(() => expect(calls.some((c) => c.includes(OTHER))).toBe(true));
++  });
++});
+diff --git a/packages/web2/src/v3/v3.css b/packages/web2/src/v3/v3.css
+index f88fce43..45f09f1a 100644
+--- a/packages/web2/src/v3/v3.css
++++ b/packages/web2/src/v3/v3.css
+@@ -928,6 +928,7 @@
+ .v3-rail-section.is-collapsed .v3-rail-section-body { display: none; }
+ 
+ .v3-session {
++  position: relative;
+   display: flex;
+   align-items: center;
+   gap: var(--sp-8);
+@@ -951,6 +952,22 @@
+   color: var(--ink-1);
+ }
+ 
++/* The row's keyboard control (see V3SessionsRail: a control may not contain a
++   control). A transparent button over the whole row that takes no pointer
++   events, so the mouse still lands on the row, the pin and the menu exactly as
++   before. It covers the row's box exactly, so the app's own ring (base.css
++   `:focus-visible`) lands where the row's ring used to. */
++.v3-session-hit {
++  position: absolute;
++  inset: 0;
++  margin: 0;
++  padding: 0;
++  border: 0;
++  border-radius: inherit;
++  background: transparent;
++  pointer-events: none;
++}
++
+ .v3-session.is-loaded {
+   background: var(--state-selected, var(--glass-sel));
+   color: var(--ink-1);
+@@ -4456,6 +4473,17 @@
+   outline: none;
+ }
+ 
++/* The terminal is a tab stop (it takes keystrokes for the shell), so it wears
++   the app's focus ring like every other stop — base.css `:focus-visible`, the
++   2px accent — which the `outline: none` above had removed. Inset, because the
++   pane clips anything drawn outside its scroller. Keyboard focus only: a click
++   into the terminal to type does not ring it. */
++.terminal-pane-surface:focus-visible,
++.v3-terminal pre:focus-visible {
++  outline: 2px solid var(--accent);
++  outline-offset: -2px;
++}
++
+ .browser-pane,
+ .v3-browser-pane {
+   flex: 1;
+-- 
+2.51.1.windows.1
+

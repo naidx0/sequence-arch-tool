@@ -1,0 +1,705 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE PAGES THE SHELL DID NOT REACH (round 9, ask 32: "nothing left behind")
+   packages/web2/src/shell2/pages.css
+
+   Search, Help, Review, Rewind, Activity, the keys dialog, the command palette
+   and the terminal and browser panes were drawn before the reskin: square
+   panels with a hairline header bar inside a panel, 8px controls, uppercase
+   tracked labels. This sheet moves them onto the shell2 look without touching
+   their markup or behaviour: one floating rounded card (B's .dlg), a quiet
+   title with no bar, soft glass pills for controls, rounded inputs and rows,
+   low shadow. Every value is a shell2 / Ramp Kit token (--b-* is defined on
+   .s2, and every surface below lives inside it); no colour is invented here.
+
+   Settings and Open project keep their own cards (data-kind settings|attach).
+   Loaded from V3OverlayHost so it lands after v3.css and edits.css.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the overlay card ───────────────────────────────────────────────────── */
+.s2 .v3-overlay-scrim:not([data-kind='settings']):not([data-kind='attach']) {
+  background: var(--scrim, rgba(10, 10, 10, 0.45));
+  animation: s2-fade var(--dur-2) var(--ease);
+}
+.s2 .v3-overlay-scrim:not([data-kind='settings']):not([data-kind='attach']) .v3-overlay-panel {
+  /* the shared pop-up frame (edits.css, ROUND 8: ONE POPOVER); only the padding is the panel's own */
+  border-radius: var(--pop-r);
+  background: var(--pop-fill);
+  border: 1px solid var(--pop-edge);
+  box-shadow: var(--pop-shadow);
+  padding: 22px;
+  min-width: min(520px, 92vw);
+  animation: s2-pop var(--dur-2) var(--ease-enter);
+}
+.s2 .v3-overlay-scrim[data-kind='review'] .v3-overlay-panel,
+.s2 .v3-overlay-scrim[data-kind='activity'] .v3-overlay-panel {
+  width: min(1040px, 94vw);
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+}
+.s2 .v3-overlay-scrim[data-kind='search'] .v3-overlay-panel {
+  width: min(680px, 92vw);
+}
+.s2 .v3-overlay-scrim[data-kind='help'] .v3-overlay-panel {
+  width: min(680px, 92vw);
+}
+.s2 .v3-overlay-scrim:not([data-kind='settings']):not([data-kind='attach']) .v3-overlay-close {
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  width: var(--icon-btn-lg);
+  height: var(--icon-btn-lg);
+  border-radius: var(--r-10);
+  background: transparent;
+  color: var(--b-ink2);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.s2 .v3-overlay-close:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2 .v3-overlay-close:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+
+/* the inner scopes lose their own panel: one card, not a card in a card */
+.s2 .v3-overlay-panel .se-scope,
+.s2 .v3-overlay-panel .hp-scope,
+.s2 .v3-overlay-panel .rv-scope,
+.s2 .v3-overlay-panel .rewind-scope,
+.s2 .v3-overlay-panel .ac-scope {
+  background: transparent;
+  padding: 0;
+  height: auto;
+}
+
+/* title row: a quiet heading, no bar and no rule */
+.s2 .se-scope .se-head,
+.s2 .hp-scope .hp-head {
+  height: auto;
+  padding: 0 40px 12px 0;
+  border: 0;
+}
+.s2 .se-scope .se-title,
+.s2 .hp-scope .hp-title,
+.s2 .rewind-scope .rewind-title,
+.s2 .keys-help-title {
+  font-size: var(--t-16);
+  line-height: 22px;
+  font-weight: var(--fw-head);
+  color: var(--b-ink1);
+  letter-spacing: -0.01em;
+}
+
+/* small section labels: sentence case, no tracking */
+.s2 .hp-scope .hp-h,
+.s2 .keys-help-group-title {
+  font-size: var(--t-11-5);
+  font-weight: var(--fw-label);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--b-ink3);
+}
+
+/* ── controls: soft glass pills and rounded inputs ──────────────────────── */
+.s2 .se-scope .se-btn,
+.s2 .rewind-scope .rewind-turn-btn,
+.s2 .rewind-scope .rewind-scope-btn,
+.s2 .rv-scope .rv-btn,
+.s2 .rv-scope .rv-hunk-revert,
+.s2 .rv-scope .rv-seg {
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink1);
+  font-weight: var(--fw-label);
+  box-shadow: none;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.s2 .se-scope .se-btn:hover:not(:disabled),
+.s2 .rewind-scope .rewind-turn-btn:hover:not(:disabled),
+.s2 .rewind-scope .rewind-scope-btn:hover,
+.s2 .rv-scope .rv-btn:hover:not(:disabled),
+.s2 .rv-scope .rv-hunk-revert:hover,
+.s2 .rv-scope .rv-seg:hover {
+  background: var(--b-glass-hover);
+  border-color: var(--glass-ctl-edge-hover);
+  color: var(--b-ink1);
+}
+.s2 .rv-scope .rv-btn-solid {
+  background: var(--b-ink1);
+  color: var(--b-bg);
+  border-color: transparent;
+}
+.s2 .rv-scope .rv-btn-solid:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--b-ink1) 88%, var(--b-bg));
+  color: var(--b-bg);
+}
+.s2 .se-scope .se-btn:disabled,
+.s2 .rv-scope .rv-btn:disabled {
+  background: transparent;
+  border-color: var(--b-edge);
+  color: var(--ink-4);
+}
+.s2 .rewind-scope .rewind-scope-btn[data-selected='true'],
+.s2 .rv-scope .rv-seg[aria-pressed='true'] {
+  background: var(--b-accw);
+  border-color: transparent;
+  color: var(--b-acc);
+}
+.s2 .rv-scope .rv-seg {
+  border-color: transparent;
+  background: transparent;
+  color: var(--b-ink2);
+}
+.s2 .rv-scope .rv-seg[data-served='no'] {
+  border-style: solid;
+  border-color: var(--b-edge);
+}
+.s2 .se-scope .se-btn:focus-visible,
+.s2 .rv-scope .rv-btn:focus-visible,
+.s2 .rv-scope .rv-seg:focus-visible,
+.s2 .rewind-scope .rewind-turn-btn:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+
+.s2 .se-scope .se-input,
+.s2 .rv-scope .rv-field,
+.s2 .rv-scope .rv-compose-field {
+  height: var(--control-h-lg);
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink1);
+  font-size: var(--t-12-5);
+}
+.s2 .rv-scope .rv-compose-field {
+  height: auto;
+  padding: var(--sp-8) var(--sp-12);
+  border-radius: 12px;
+}
+.s2 .se-scope .se-input:focus-visible,
+.s2 .rv-scope .rv-field:focus,
+.s2 .rv-scope .rv-compose-field:focus {
+  outline: none;
+  border-color: var(--b-acc);
+  box-shadow: 0 0 0 3px var(--b-accw);
+}
+.s2 .se-scope .se-btn {
+  height: var(--control-h-lg);
+  padding: 0 14px;
+  font-size: var(--t-12);
+}
+
+/* notes: a soft card, not a boxed paragraph */
+.s2 .se-scope .se-note,
+.s2 .rv-scope .rv-failure,
+.s2 .rv-scope .rv-gap,
+.s2 .rewind-scope .rewind-banner {
+  border: 1px solid var(--b-edge);
+  border-radius: 14px;
+  background: var(--b-s1);
+  margin: var(--sp-8) 0 0;
+  padding: var(--sp-12) 14px;
+  color: var(--b-ink2);
+  font-size: var(--t-12);
+  line-height: 18px;
+}
+.s2 .se-scope .se-note-fail,
+.s2 .rv-scope .rv-failure {
+  border-color: var(--wont-edge);
+  background: color-mix(in srgb, var(--b-del) 8%, var(--b-s1));
+  color: var(--b-ink1);
+}
+.s2 .se-scope .se-form {
+  padding: 0;
+  border: 0;
+}
+.s2 .se-scope .se-answer {
+  padding: var(--sp-12) 0 0;
+}
+
+/* ── help, keys ─────────────────────────────────────────────────────────── */
+.s2 .hp-scope .hp-body {
+  padding: 0;
+  max-width: none;
+  gap: var(--sp-16);
+}
+.s2 .hp-scope .hp-kbd,
+.s2 .keys-help-kbd {
+  border-radius: 8px;
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink1);
+  box-shadow: none;
+}
+.s2 .keys-help {
+  width: min(600px, 92vw);
+}
+.s2 .keys-help-close {
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink2);
+}
+.s2 .keys-help-close:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2 .keys-help-row {
+  border-top: 0;
+  padding: var(--sp-6) 0;
+  border-radius: 10px;
+}
+.s2 .keys-help-row:hover {
+  background: var(--b-glass);
+}
+.s2 .keys-help-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── rewind ─────────────────────────────────────────────────────────────── */
+.s2 .rewind-scope {
+  gap: var(--sp-12);
+}
+.s2 .rewind-scope .rewind-row,
+.s2 .rewind-scope .rewind-turn {
+  border-radius: 14px;
+  border: 1px solid var(--b-edge);
+  background: var(--b-s1);
+  padding: var(--sp-10) var(--sp-12);
+}
+.s2 .rewind-scope .rewind-row:hover {
+  background: var(--b-glass-hover);
+}
+.s2 .rewind-scope .rewind-row[data-selected='true'] {
+  border-color: var(--b-acc);
+  background: var(--b-accw);
+}
+.s2 .rewind-scope .rewind-subtitle {
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+  font-weight: var(--fw-label);
+}
+
+/* ── review ─────────────────────────────────────────────────────────────── */
+.s2 .v3-overlay-panel .rv-scope {
+  height: min(720px, calc(100vh - 80px));
+}
+.s2 .rv-scope .rv-scopebar {
+  padding: 14px 56px var(--sp-10) var(--sp-16);
+  border-bottom: 1px solid var(--b-edge);
+  gap: var(--sp-4);
+}
+.s2 .rv-scope .rv-head {
+  background: transparent;
+  border-bottom: 1px solid var(--b-edge);
+}
+.s2 .rv-scope .rv-file {
+  border-radius: 16px;
+  background: var(--b-s1);
+  border-color: var(--b-edge);
+}
+.s2 .rv-scope .rv-file-hd {
+  background: transparent;
+  border-bottom-color: var(--b-edge);
+}
+.s2 .rv-scope .rv-impact {
+  background: var(--b-s1);
+  border-left: 1px solid var(--b-edge);
+}
+.s2 .rv-scope .rv-impact-hd {
+  background: transparent;
+}
+.s2 .rv-scope .rv-actions {
+  border-top: 1px solid var(--b-edge);
+}
+.s2 .rv-scope .rv-icon-btn {
+  border-radius: var(--r-8);
+}
+
+/* ── activity ───────────────────────────────────────────────────────────── */
+.s2 .ac-scope {
+  background: transparent;
+}
+.s2 .ac-scope .ac-head {
+  padding: 18px 56px 12px 22px;
+  border-bottom: 1px solid var(--b-edge);
+  background: transparent;
+}
+.s2 .ac-scope .ac-title {
+  font-size: var(--t-16);
+  font-weight: var(--fw-head);
+  line-height: 22px;
+}
+.s2 .ac-scope .ac-btn {
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink1);
+  font-weight: var(--fw-label);
+}
+.s2 .ac-scope .ac-btn:hover:not(:disabled) {
+  background: var(--b-glass-hover);
+  border-color: var(--glass-ctl-edge-hover);
+}
+.s2 .ac-scope .ac-btn[data-primary='true'],
+.s2 .ac-scope .ac-btn-primary,
+.s2 .ac-scope .ac-btn-solid {
+  background: var(--b-ink1);
+  color: var(--b-bg);
+  border-color: transparent;
+}
+.s2 .ac-scope .ac-note {
+  border-radius: 14px;
+}
+.s2 .ac-scope .ac-input,
+.s2 .ac-scope .ac-field {
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+}
+
+/* ── terminal and browser panes: the chrome around the content ──────────── */
+.s2 .terminal-pane,
+.s2 .browser-pane {
+  background: transparent;
+}
+.s2 .terminal-pane-chrome {
+  margin: var(--sp-8) var(--sp-8) 0;
+  padding: var(--sp-6) var(--sp-12);
+  border: 1px solid var(--b-edge);
+  border-radius: var(--r-full);
+  background: var(--b-s1);
+  align-self: flex-start;
+  max-width: calc(100% - 16px);
+}
+.s2 .terminal-pane-surface {
+  padding: var(--sp-12) var(--sp-16);
+}
+.s2 .browser-pane {
+  gap: var(--sp-10);
+}
+.s2 .browser-pane-url {
+  height: var(--control-h-lg);
+  padding: 0 14px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+}
+.s2 .browser-pane-url:focus-visible {
+  outline: none;
+  border-color: var(--b-acc);
+  box-shadow: 0 0 0 3px var(--b-accw);
+}
+.s2 .browser-pane-fetch {
+  height: var(--control-h-lg);
+  padding: 0 14px;
+  border-radius: var(--r-full);
+  background: var(--b-ink1);
+  color: var(--b-bg);
+}
+.s2 .browser-pane-body {
+  border-radius: 16px;
+  background: var(--b-s1);
+  box-shadow: none;
+  border: 1px solid var(--b-edge);
+  padding: var(--sp-12) var(--sp-16);
+}
+
+/* ── first run: one floating card on the ground, not a bare page ────────── */
+.fr-root .fr-col {
+  max-width: 640px;
+  padding: 32px 32px 28px;
+  border-radius: 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--edge-strong);
+  box-shadow: var(--e3);
+  margin-block: auto;
+}
+.fr-root .fr-title {
+  font-weight: var(--fw-head);
+  letter-spacing: -0.02em;
+}
+.fr-root .fr-h {
+  font-size: var(--t-11-5);
+}
+.fr-root .fr-agent,
+.fr-root .fr-last {
+  border-radius: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--edge);
+}
+.fr-root .fr-repos {
+  border-radius: 16px;
+  border: 1px solid var(--edge);
+  padding: var(--sp-6);
+}
+.fr-root .fr-repo {
+  border-radius: 12px;
+}
+.fr-root .fr-btn,
+.fr-root .fr-ghost {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-full);
+  font-size: var(--t-12);
+}
+.fr-root .fr-btn {
+  border: 1px solid var(--glass-ctl-edge);
+  background: var(--glass-ctl);
+}
+.fr-root .fr-btn:hover {
+  background: var(--glass-ctl-hover);
+}
+.fr-root .fr-btn.fr-primary,
+.fr-root .fr-last .fr-primary {
+  height: var(--control-h-lg);
+  border-color: transparent;
+  background: var(--ink-1);
+  color: var(--bg-base);
+  font-weight: var(--fw-label);
+}
+.fr-root .fr-btn.fr-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink-1) 88%, var(--bg-base));
+  opacity: 1;
+}
+.fr-root .fr-code {
+  border-radius: 10px;
+}
+
+/* ── review: side by side, and its toolbar ──────────────────────────────── */
+.rv-scope .rv-difftools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin-left: auto;
+}
+.rv-scope .rv-difftools + .rv-totals {
+  margin-left: var(--sp-8);
+}
+.rv-scope .rv-viewseg {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--edge);
+  background: var(--glass-ctl);
+}
+.rv-scope .rv-viewbtn {
+  height: 22px;
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.rv-scope .rv-viewbtn:hover {
+  color: var(--ink-1);
+}
+.rv-scope .rv-viewbtn[aria-checked='true'],
+.rv-scope .rv-viewbtn[aria-pressed='true'] {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.rv-scope .rv-wrapbtn {
+  border: 1px solid var(--edge);
+}
+.rv-scope .rv-viewbtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* One grid per hunk, two columns wide: every row's old cell and new cell sit
+   side by side, both columns are as wide as the widest line on either side,
+   and the diff's own overflow scrolls them as one. Notes span both. */
+.rv-scope .rv-split {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr);
+}
+.rv-scope .rv-diff[data-wrap='on'] .rv-split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.rv-scope .rv-sc {
+  display: grid;
+  grid-template-columns: var(--diffx-num-w) var(--icon-btn) var(--diffx-sign-w) 1fr;
+  align-items: baseline;
+  min-height: var(--diffx-line-h);
+  min-width: 0;
+  white-space: pre;
+}
+.rv-scope .rv-sc-new {
+  border-left: 1px solid var(--edge);
+}
+.rv-scope .rv-diff[data-wrap='on'] .rv-sc,
+.rv-scope .rv-diff[data-wrap='on'] .rv-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rv-scope .rv-sc-add {
+  background: var(--diff-add-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-add-gutter);
+}
+.rv-scope .rv-sc-del {
+  background: var(--diff-del-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-del-gutter);
+}
+.rv-scope .rv-sc-empty {
+  background: var(--surface-1);
+}
+.rv-scope .rv-sc-add .rv-sign {
+  color: var(--diff-add-gutter);
+}
+.rv-scope .rv-sc-del .rv-sign {
+  color: var(--diff-del-gutter);
+}
+.rv-scope .rv-split-notes {
+  grid-column: 1 / -1;
+}
+
+/* ── approvals: the proposal card and the plan card ─────────────────────── */
+.s2 .editapproval {
+  border-radius: 18px;
+  border-color: var(--b-edge);
+  background: var(--b-s1);
+  padding: 14px;
+  gap: var(--sp-10);
+}
+.s2 .editapproval-title {
+  font-weight: var(--fw-head);
+  color: var(--b-ink1);
+}
+.s2 .editapproval-file {
+  border-radius: 14px;
+  border-color: var(--b-edge);
+}
+.s2 .editapproval-hunk-hd {
+  background: transparent;
+  border-top: 1px solid var(--b-edge);
+  border-bottom: 1px solid var(--b-edge);
+}
+.s2 .editapproval-act {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background-color: var(--b-glass);
+  box-shadow: none;
+  color: var(--b-ink1);
+  font-size: var(--t-12);
+  transform: none;
+}
+.s2 .editapproval-act:hover {
+  background-color: var(--b-glass-hover);
+  border-color: var(--glass-ctl-edge-hover);
+  transform: none;
+}
+.s2 .editapproval-act:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+.s2 .editapproval-act-accept {
+  background-color: var(--b-accs);
+  border-color: transparent;
+  color: var(--accent-on-solid);
+}
+.s2 .editapproval-act-accept:hover {
+  background-color: var(--accent-solid-hover);
+  border-color: transparent;
+}
+.s2 .editapproval-act-reject {
+  color: var(--b-del);
+  border-color: var(--b-glassedge);
+}
+.s2 .editapproval-act-reject:hover {
+  background-color: color-mix(in srgb, var(--b-del) 10%, transparent);
+}
+.s2 .planready-steps li::marker {
+  color: var(--b-ink3);
+}
+
+/* ── the worktree panel and chip ────────────────────────────────────────── */
+.s2 .wt-panel {
+  border-radius: 20px;
+  border: 1px solid var(--b-edge2);
+  background: var(--b-s2);
+  box-shadow: var(--b-lift);
+  padding: var(--sp-12) var(--sp-16) var(--sp-16);
+}
+.s2 .wt-panel-x {
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  border-radius: var(--r-8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2 .wt-panel-x:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2 .wt-btn {
+  min-height: var(--control-h-lg);
+  padding: 0 14px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+}
+.s2 .wt-btn:hover:not(:disabled) {
+  background: var(--b-glass-hover);
+  border-color: var(--glass-ctl-edge-hover);
+}
+.s2 .wt-btn.is-primary {
+  background: var(--b-ink1);
+  border-color: transparent;
+  color: var(--b-bg);
+}
+.s2 .wt-btn.is-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--b-ink1) 88%, var(--b-bg));
+}
+.s2 .wt-btn.is-danger {
+  color: var(--b-del);
+  border-color: var(--wont-edge);
+}
+.s2 .wt-files {
+  padding: var(--sp-8) var(--sp-12);
+  border-radius: 12px;
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge);
+}
+.s2 .wt-removal {
+  border-top-color: var(--b-edge);
+}
+
+/* ── the queued prompts above the composer ──────────────────────────────── */
+.s2 .pq {
+  border-radius: 16px;
+  border-color: var(--b-edge);
+  background: var(--b-s1);
+  padding: var(--sp-8) var(--sp-12);
+}
+.s2 .pq-row {
+  border-top-color: var(--b-edge);
+}
+.s2 .pq-btn {
+  border-radius: var(--r-8);
+}
+.s2 .pq-btn:hover:not(:disabled) {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2 .pq-edit {
+  border-radius: 12px;
+}

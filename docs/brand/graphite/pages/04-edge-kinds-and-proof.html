@@ -1,0 +1,658 @@
+<section class="page" data-page-num="04" data-page-title="Edges: what they mean, and how sure we are">
+
+  <!-- ── ARROWHEADS ────────────────────────────────────────────────────────
+       Declared once for the whole sheet and referenced by every specimen
+       below. Graphite has no connector and therefore no marker; a head is not
+       a new component, it is the terminal 6px of a stroke, and it takes the
+       stroke's own token by name so a head can never disagree with the line
+       it sits on. Head geometry: 6px long, 5px wide, in user space, so it
+       does not grow when the camera zooms. Closed = something lands here.
+       Open = nothing lands. No head at all = the direction was never
+       established, and this book will not point an arrow it cannot support.
+       ──────────────────────────────────────────────────────────────────── -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <marker id="s04-ah-traced" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--flow-traced)"/></marker>
+    <marker id="s04-ah-onflow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--flow-onflow)"/></marker>
+    <marker id="s04-ah-declared" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--flow-declared)"/></marker>
+    <marker id="s04-ah-open-traced" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M.6.5 5.4 2.5.6 4.5" fill="none" stroke="var(--flow-traced)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <marker id="s04-ah-open-onflow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M.6.5 5.4 2.5.6 4.5" fill="none" stroke="var(--flow-onflow)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <marker id="s04-ah-ink" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--ink-3)"/></marker>
+    <marker id="s04-ah-open-ink" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M.6.5 5.4 2.5.6 4.5" fill="none" stroke="var(--ink-3)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <marker id="s04-ah-v1" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--viz-1)"/></marker>
+    <marker id="s04-ah-v2" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--viz-2)"/></marker>
+    <marker id="s04-ah-v3" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--viz-3)"/></marker>
+    <marker id="s04-ah-v5" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 6 2.5 0 5Z" fill="var(--viz-5)"/></marker>
+  </defs></svg>
+
+  <div class="pagehead">
+    <span class="num">Sheet 04 &middot; The board</span>
+    <h1>Edges: what they mean, and how sure we are</h1>
+    <p class="lede">An edge answers two questions at once, and they must never be asked in the same
+    channel. <b>How sure are we?</b> is a claim about the world &mdash; it takes the stroke. <b>What
+    kind of call is this?</b> is an identity &mdash; it takes the label. Sequence spent seven hues
+    answering the second question and had nothing left to answer the first, so a board full of
+    confident colour could not tell you which of its lines anyone had actually verified.</p>
+    <p class="lede">This is the one place on the board where colour is permitted at all, and the
+    exemption is narrow: it covers the drawn connector and nothing else that touches it.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-exemption">
+    <div class="sec-head">
+      <span class="eyebrow">04.1</span>
+      <h2>Why a connector may carry colour when chrome may not</h2>
+      <span class="tail">law 1, and its boundary</span>
+    </div>
+
+    <p class="note">
+      Law 1's targets are dividers, headings, section rules, borders and panel edges &mdash; the
+      furniture a reader looks <em>past</em>. A drawn connector between two nodes is not furniture.
+      It is the data itself, the way a chart series is, and refusing it colour would be like refusing
+      a chart a second line. That is the whole argument, and it does not extend one pixel further:
+      the plaque's border stays <span class="inline-code">--edge</span>, the card's border stays
+      <span class="inline-code">--edge</span>, the field's dots stay
+      <span class="inline-code">--edge</span>.
+    </p>
+
+    <div class="dev"><b>Departure, declared.</b> Every other surface in this book obeys "chrome is
+    never coloured" without exception. The board's connectors are the one sanctioned exemption, and
+    they are held to the namespace split in 04.2 in exchange for it. Anything that is <em>not</em> a
+    connector on the canvas &mdash; including the connector's own label plaque &mdash; is chrome and
+    gets no hue.</div>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="scrollx">
+        <div class="boardfield" style="padding:var(--sp-12);width:464px">
+          <div style="display:flex;align-items:center">
+            <div class="node n-service" style="min-height:auto;height:54px">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div>
+            </div>
+            <div style="position:relative;flex:0 0 120px;height:54px">
+              <svg class="edgespec" viewBox="0 0 120 54" width="120" height="54" aria-hidden="true"><path class="edgeline e-traced" d="M0 27H114" marker-end="url(#s04-ah-traced)"/></svg>
+            </div>
+            <div class="node n-store" style="min-height:auto;height:54px">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+              <div class="nd-t">orders</div>
+            </div>
+          </div>
+        </div>
+        </div>
+        <p class="why">The hue is on the connector. Both cards keep an <span class="inline-code">--edge</span>
+        border, the field keeps <span class="inline-code">--board-field-ink</span>, and the only
+        coloured thing in the frame is the one thing that is data.</p>
+      </div>
+
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="panel tight" style="border-color:var(--fits)">
+          <div style="font-size:var(--t-11);color:var(--ink-3);font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase">Downstream</div>
+          <hr style="border-top:1px solid var(--fits);margin:var(--sp-8) 0">
+          <div style="font-size:var(--t-12);color:var(--ink-2)">A panel edge and a rule, in the colour that means <em>passed</em>.</div>
+        </div>
+        <p class="why">A coloured divider and a coloured verdict are the same signal to someone
+        scanning, and the divider wins by volume. This is the shape of the shipped defect: on the
+        <b>default <span class="inline-code">layered</span> arch layout</b>
+        (<span class="inline-code">archLayout.ts:105</span>,
+        <span class="inline-code">'elk.direction': 'RIGHT'</span>) datastores and topics pile on
+        the right, so the downstream half of every board read as a wall of green and amber that
+        means <em>passed</em> and <em>warning</em> everywhere else in the product. Not every board
+        flows that way &mdash; <span class="inline-code">graph/layout.ts:114</span> lays the
+        plain-English board out <span class="inline-code">DOWN</span> &mdash; and the pile-up is
+        the point rather than the compass bearing: a layered layout collects sinks at the far end
+        of whichever axis it runs on.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-split">
+    <div class="sec-head">
+      <span class="eyebrow">04.2</span>
+      <h2>The namespace split &mdash; binding</h2>
+      <span class="tail">proof takes the stroke &middot; identity takes the label</span>
+    </div>
+
+    <p class="note">
+      Two vocabularies, two channels, and no overlap. <b>Proof state</b> &mdash; traced, on-flow,
+      declared-but-unconfirmed &mdash; is a claim about the world, so it takes the claim tokens and
+      it takes the stroke. <b>Family or protocol</b> &mdash; http, grpc, queue, db, import &mdash;
+      is an identity, so it takes the label plaque and it never touches the stroke. A reader should
+      be able to answer "has anyone checked this?" without knowing a single protocol, and answer
+      "what protocol is this?" without knowing a single colour.
+    </p>
+
+    <div class="panel">
+      <table class="tk">
+        <thead><tr><th>Channel</th><th>Answers</th><th>Vocabulary</th></tr></thead>
+        <tbody>
+          <tr><td class="k">stroke colour</td><td>How sure are we? &mdash; and it carries two values, not three</td><td class="v">--flow-onflow &middot; --flow-traced, which --flow-declared repeats</td></tr>
+          <tr><td class="k">stroke dash</td><td>How sure are we? &mdash; restated without hue</td><td class="v">--flow-dash-traced / --flow-dash-declared</td></tr>
+          <tr><td class="k">stroke width</td><td>How sure are we? &mdash; weakest, reinforces only</td><td class="v">--w-edge / --w-flow</td></tr>
+          <tr><td class="k">arrowhead</td><td>Does anything land, and do we know which way?</td><td class="v">closed / open / none</td></tr>
+          <tr><td class="k">label plaque</td><td>What kind of call is this?</td><td class="v">.edgetag &middot; mono --t-10</td></tr>
+          <tr><td class="k">&mdash;</td><td><b>Never:</b> family or protocol on the stroke</td><td class="v">retired</td></tr>
+        </tbody>
+      </table>
+      <p class="caption">Seven protocol hues were retired to write this table and they stay retired.
+      They are not moved to <span class="inline-code">--viz-*</span>: that namespace is for series,
+      and a protocol is not a series.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="boardfield" style="padding:var(--sp-12)">
+          <div class="specimens column" style="gap:var(--sp-8)">
+            <svg class="edgespec" viewBox="0 0 220 12" width="220" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--viz-1)" stroke-width="var(--w-edge)" d="M2 6H214" marker-end="url(#s04-ah-v1)"/></svg>
+            <svg class="edgespec" viewBox="0 0 220 12" width="220" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--viz-2)" stroke-width="var(--w-edge)" d="M2 6H214" marker-end="url(#s04-ah-v2)"/></svg>
+            <svg class="edgespec" viewBox="0 0 220 12" width="220" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--viz-3)" stroke-width="var(--w-edge)" d="M2 6H214" marker-end="url(#s04-ah-v3)"/></svg>
+            <svg class="edgespec" viewBox="0 0 220 12" width="220" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--viz-5)" stroke-width="var(--w-edge)" d="M2 6H214" marker-end="url(#s04-ah-v5)"/></svg>
+          </div>
+        </div>
+        <p class="why">Four colours naming HTTP, gRPC, queue and db. Every line looks equally
+        confident, because confidence was never given a channel. The reader must memorise a key
+        before a single line means anything, and the key grows every time the analyzer learns a
+        protocol.</p>
+      </div>
+
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="padding:var(--sp-12)">
+          <div class="specimens column" style="gap:var(--sp-8)">
+            <div style="position:relative;width:220px;height:16px">
+              <svg class="edgespec" viewBox="0 0 220 16" width="220" height="16" aria-hidden="true"><path class="edgeline e-traced" d="M2 8H214" marker-end="url(#s04-ah-traced)"/></svg>
+              <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">POST /charge</span>
+            </div>
+            <div style="position:relative;width:220px;height:16px">
+              <svg class="edgespec" viewBox="0 0 220 16" width="220" height="16" aria-hidden="true"><path class="edgeline e-traced" d="M2 8H214" marker-end="url(#s04-ah-open-traced)"/></svg>
+              <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">pub order.placed</span>
+            </div>
+            <div style="position:relative;width:220px;height:16px">
+              <svg class="edgespec" viewBox="0 0 220 16" width="220" height="16" aria-hidden="true"><path class="edgeline e-declared" d="M2 8H214" marker-end="url(#s04-ah-declared)"/></svg>
+              <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">gRPC <span class="ph">&#8249;method&#8250;</span></span>
+            </div>
+            <div style="position:relative;width:220px;height:16px">
+              <svg class="edgespec" viewBox="0 0 220 16" width="220" height="16" aria-hidden="true"><path class="edgeline e-traced" d="M2 8H214"/></svg>
+              <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">db <span class="ph">&#8249;table&#8250;</span></span>
+            </div>
+          </div>
+        </div>
+        <p class="why">Same four calls. The protocol is written down, in words, where a word belongs;
+        the colour has been given back to the only question a picture can answer faster than prose
+        &mdash; which of these did anyone actually see happen.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-states">
+    <div class="sec-head">
+      <span class="eyebrow">04.3</span>
+      <h2>The three proof states</h2>
+      <span class="tail">traced &middot; on-flow &middot; declared-but-unconfirmed</span>
+    </div>
+
+    <p class="note">
+      <b>Traced</b> is the analyzer following a real call in the source. It is the majority of every
+      board and the reference the other two are read against, so it takes
+      <span class="inline-code">--viz-baseline</span> &mdash; which is exactly what that token means
+      on a chart. <b>On-flow</b> is this edge being part of the flow currently played back or
+      selected; selection is the product's own voice, so it takes
+      <span class="inline-code">--accent</span>. <b>Declared</b> is a claim lifted from config or a
+      manifest that the source could not confirm; it is
+      <span class="inline-code">--unknown</span>, and it is broken because the evidence is.
+    </p>
+
+    <p class="note">
+      Two of the three resolve to the same neutral. <span class="inline-code">--viz-baseline</span>
+      and <span class="inline-code">--unknown</span> are the same value in both themes, so a board
+      at rest carries <b>no hue at all</b>: traced and declared are separated entirely by the dash,
+      and the only colour that ever appears on this plane is the flow the reader asked for. That is
+      not a collision to be fixed. It is the hue budget in its strongest form &mdash; one claim, one
+      hue, and nothing else on the canvas competing with it.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <div class="boardfield" style="padding:var(--sp-16);width:504px">
+          <div style="display:flex;flex-direction:column;gap:var(--sp-12)">
+
+            <div style="display:flex;align-items:center">
+              <div class="node n-service" style="min-height:auto;height:54px">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">checkout</div>
+              </div>
+              <div style="position:relative;flex:0 0 152px;height:54px">
+                <svg class="edgespec" viewBox="0 0 152 54" width="152" height="54" aria-hidden="true"><path class="edgeline e-traced" d="M0 27H146" marker-end="url(#s04-ah-traced)"/></svg>
+                <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">POST /charge</span>
+              </div>
+              <div class="node n-service" style="min-height:auto;height:54px">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">billing</div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center">
+              <div class="node n-service sel" style="min-height:auto;height:54px">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">checkout</div>
+              </div>
+              <div style="position:relative;flex:0 0 152px;height:54px">
+                <svg class="edgespec" viewBox="0 0 152 54" width="152" height="54" aria-hidden="true"><path class="edgeline e-onflow" d="M0 27H146" marker-end="url(#s04-ah-onflow)"/></svg>
+                <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">POST /charge</span>
+              </div>
+              <div class="node n-service sel" style="min-height:auto;height:54px">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">billing</div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center">
+              <div class="node n-service" style="min-height:auto;height:54px">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">checkout</div>
+              </div>
+              <div style="position:relative;flex:0 0 152px;height:54px">
+                <svg class="edgespec" viewBox="0 0 152 54" width="152" height="54" aria-hidden="true"><path class="edgeline e-declared" d="M0 27H146" marker-end="url(#s04-ah-declared)"/></svg>
+                <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">gRPC <span class="ph">&#8249;method&#8250;</span></span>
+              </div>
+              <div class="node n-service" style="min-height:auto;height:54px">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">shipping</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <p class="caption">Top to bottom: traced, on-flow, declared. The plaque says the same word in
+      row one and row two &mdash; identity did not change when the selection did, and the stroke is
+      the only thing that moved.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="panel">
+        <h3>The three strokes on their own</h3>
+        <p class="sub">Every value below is a token; none of them is a hue anyone picked for this sheet.</p>
+        <div class="specimens column">
+          <div class="specimen">
+            <svg class="edgespec" viewBox="0 0 260 12" width="260" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6H254" marker-end="url(#s04-ah-traced)"/></svg>
+            <span class="lbl">.e-traced &middot; --viz-baseline &middot; --w-edge &middot; no dash</span></div>
+          <div class="specimen">
+            <svg class="edgespec" viewBox="0 0 260 12" width="260" height="12" aria-hidden="true"><path class="edgeline e-onflow" d="M2 6H254" marker-end="url(#s04-ah-onflow)"/></svg>
+            <span class="lbl">.e-onflow &middot; --accent &middot; --w-flow &middot; no dash</span></div>
+          <div class="specimen">
+            <svg class="edgespec" viewBox="0 0 260 12" width="260" height="12" aria-hidden="true"><path class="edgeline e-declared" d="M2 6H254" marker-end="url(#s04-ah-declared)"/></svg>
+            <span class="lbl">.e-declared &middot; --unknown &middot; --w-edge &middot; --flow-dash-declared</span></div>
+        </div>
+      </div>
+
+      <dl class="specs">
+        <dt>Resting stroke</dt><dd>--w-edge</dd>
+        <dt>On-flow stroke</dt><dd>--w-flow</dd>
+        <dt>Traced dash</dt><dd>--flow-dash-traced (none)</dd>
+        <dt>Declared dash</dt><dd>--flow-dash-declared</dd>
+        <dt>Cap and join</dt><dd>round (.edgeline)</dd>
+        <dt>Head</dt><dd>6 &times; 5px, user space</dd>
+        <dt>Head fill</dt><dd>the stroke's own token</dd>
+        <dt>Dimmed board</dt><dd>--board-dim-opacity</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-unknown">
+    <div class="sec-head">
+      <span class="eyebrow">04.4</span>
+      <h2>A claim nobody could check has not failed at anything</h2>
+      <span class="tail">--unknown, never --wont</span>
+    </div>
+
+    <p class="note">
+      The shipped board strokes a declared edge with the token that means <em>won't fit, failed,
+      removed, blocked</em>. That is the wrong sentence. A service manifest naming a dependency the
+      analyzer could not find in the source is not a failure &mdash; it is an open question, and the
+      product has a token for open questions that says so in words:
+      <span class="inline-code">--unknown</span>, "not known, and refusing to guess". Red is spent on
+      failure, and it is only alarming while it stays spent there.
+    </p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="padding:var(--sp-12)">
+          <div style="position:relative;width:260px;max-width:100%;height:16px">
+            <svg class="edgespec" viewBox="0 0 260 16" width="260" height="16" aria-hidden="true"><path class="edgeline e-declared" d="M2 8H254" marker-end="url(#s04-ah-declared)"/></svg>
+            <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">gRPC <span class="ph">&#8249;method&#8250;</span></span>
+          </div>
+        </div>
+        <p class="why">Grey, broken, and pointed. The reader learns three true things: something
+        claims this call exists, the source did not confirm it, and it is still worth drawing.</p>
+      </div>
+
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="boardfield" style="padding:var(--sp-12)">
+          <div style="position:relative;width:260px;max-width:100%;height:16px">
+            <svg class="edgespec" viewBox="0 0 260 16" width="260" height="16" aria-hidden="true"><path class="edgeline" stroke="var(--wont)" stroke-width="var(--w-edge)" stroke-dasharray="var(--flow-dash-declared)" d="M2 8H254"/></svg>
+            <span class="edgetag" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">gRPC <span class="ph">&#8249;method&#8250;</span></span>
+          </div>
+        </div>
+        <p class="why">The shipped <span class="inline-code">.arch-rf-edge-declared</span>, drawn
+        as it actually ships &mdash; <span class="inline-code">product.css</span> sets
+        <span class="inline-code">marker-end: none</span> on it, so <b>there is no arrowhead</b>.
+        Two defects, not one. The red reads as <em>this call is broken</em> to every reader who has
+        seen the same red on a failed gate, and it burns the one hue the product cannot afford to
+        make ordinary. And the missing head silently drops direction from the one stroke whose
+        whole content is a <em>claim</em> that A calls B: nothing arrived, so nothing points.</p>
+      </div>
+    </div>
+
+    <p class="caption">There is no fourth stroke. An edge the analyzer <em>proved absent</em> is not
+    drawn faintly &mdash; it is not drawn. Absence is the index rail's job, not the canvas's.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-heads">
+    <div class="sec-head">
+      <span class="eyebrow">04.5</span>
+      <h2>The arrowhead</h2>
+      <span class="tail">does anything land &middot; do we know which way</span>
+    </div>
+
+    <p class="note">
+      The head is not identity and does not try to be: five families share two head shapes, so no
+      reader can decode a family from a head. It answers a narrower question that is genuinely a
+      claim about the world. A <b>closed</b> head means something lands here and, for a request,
+      comes back. An <b>open</b> head means nothing lands &mdash; the message is published into a
+      lane and the publisher does not wait. <b>No head</b> means the direction was never
+      established, which is the honest picture for
+      <span class="inline-code">db_access</span>: the analyzer saw the table touched and could not
+      say whether it was read or written.
+    </p>
+
+    <div class="panel">
+      <div class="specimens column">
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 260 12" width="260" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6H254" marker-end="url(#s04-ah-traced)"/></svg>
+          <span class="lbl">closed &middot; something lands here</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 260 12" width="260" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6H254" marker-end="url(#s04-ah-open-traced)"/></svg>
+          <span class="lbl">open &middot; nothing lands &mdash; published into a lane</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 260 12" width="260" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6H254"/></svg>
+          <span class="lbl">none &middot; direction not established</span></div>
+      </div>
+      <p class="caption">The third line is the ruling this book owed: Graphite has no grammar for an
+      arrow we refuse to point, so we do not point one. Drawing heads at both ends would assert two
+      readings, neither of which was measured; drawing one would pick a winner at random.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-plaque">
+    <div class="sec-head">
+      <span class="eyebrow">04.6</span>
+      <h2>The label plaque</h2>
+      <span class="tail">.edgetag &middot; 16px &middot; mono --t-10</span>
+    </div>
+
+    <p class="note">
+      Identity lives here and nowhere else. The plaque is 16px tall to match
+      <span class="inline-code">.prov</span>, sets in mono at
+      <span class="inline-code">--t-10</span> because it is a value rather than a label, and carries
+      the board ground <span class="inline-code">--nest-0</span> so it punches a clean hole in the
+      line it sits on. Its border is <span class="inline-code">--edge</span>: the plaque is chrome,
+      even though the line through it is not.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th>Edge kind</th><th>Plaque</th><th>Head</th><th>Because</th></tr></thead>
+          <tbody>
+            <tr><td class="k">http</td><td><span class="edgetag">POST /charge</span></td><td>closed</td><td>A request lands and a response comes back.</td></tr>
+            <tr><td class="k">grpc</td><td><span class="edgetag">gRPC <span class="ph">&#8249;method&#8250;</span></span></td><td>closed</td><td>As http; the method names itself.</td></tr>
+            <tr><td class="k">queue_publish</td><td><span class="edgetag">pub <span class="ph">&#8249;topic&#8250;</span></span></td><td>open</td><td>Fire and forget. Nothing lands.</td></tr>
+            <tr><td class="k">queue_consume</td><td><span class="edgetag">sub <span class="ph">&#8249;topic&#8250;</span></span></td><td>open</td><td>The other half of the same lane.</td></tr>
+            <tr><td class="k">db_read</td><td><span class="edgetag">db read <span class="ph">&#8249;table&#8250;</span></span></td><td>closed</td><td>Direction established, and it is a read.</td></tr>
+            <tr><td class="k">db_write</td><td><span class="edgetag">db write <span class="ph">&#8249;table&#8250;</span></span></td><td>closed</td><td>Direction established, and it is a write.</td></tr>
+            <tr><td class="k">db_access</td><td><span class="edgetag">db <span class="ph">&#8249;table&#8250;</span></span></td><td><b>none</b></td><td>The table was touched. Which way is the unknown.</td></tr>
+            <tr><td class="k">import</td><td><span class="edgetag">imports</span></td><td>closed</td><td>Structure, not traffic &mdash; and it still has a direction.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">Eight kinds, eight plaques, three heads and <em>zero</em> stroke colours.
+      That is the split doing its job.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="panel">
+        <h3>What the plaque never carries</h3>
+        <p class="sub">Two standing prohibitions, both of them things the shipped board does today.</p>
+        <div class="specimens column">
+          <div class="specimen">
+            <span class="edgetag">POST /charge</span>
+            <span class="lbl">yes &middot; the identity, in words</span></div>
+          <div class="specimen">
+            <span class="edgetag" style="color:var(--fits);border-color:var(--fits-edge)">POST /charge</span>
+            <span class="lbl">no &middot; a hue on chrome</span></div>
+          <div class="specimen">
+            <span class="edgetag">POST /charge &middot; <span class="ph">&#8249;confidence&#8250;</span></span>
+            <span class="lbl">no &middot; a calibration float</span></div>
+        </div>
+        <p class="caption">Confidence is a five-rung calibration ladder, and a reader cannot act on
+        the third decimal place of one. It resolves to a provenance tag in the index rail and never
+        renders as a number on the canvas.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Below the floor there is no plaque</h3>
+        <p class="sub">The shipped plaque sets below Graphite's smallest size. It is not shrunk further &mdash; it is withheld.</p>
+        <p class="note" style="margin-bottom:var(--sp-12)">The type floor is
+        <span class="inline-code">--t-10</span>, and even that is reserved for mono uppercase.
+        A plaque at the shipped size renders at roughly a fifth of that once the camera is zoomed out
+        to fit a scanned repository, which is not small type &mdash; it is texture. Below
+        <span class="ph">&#8249;label zoom floor&#8250;</span> the plaque is not drawn at all; hover
+        or selection brings it back at full size, un-clipped.</p>
+        <dl class="specs">
+          <dt>Plaque height</dt><dd>16px</dd>
+          <dt>Plaque type</dt><dd>--font-mono / --t-10</dd>
+          <dt>Plaque ground</dt><dd>--nest-0</dd>
+          <dt>Plaque border</dt><dd>--w-hair --edge</dd>
+          <dt>Plaque radius</dt><dd>--r-4</dd>
+          <dt>Plaque ink</dt><dd>--ink-2</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-routing">
+    <div class="sec-head">
+      <span class="eyebrow">04.7</span>
+      <h2>Routing</h2>
+      <span class="tail">orthogonal elbows &middot; fanned sides &middot; detour, never cross</span>
+    </div>
+
+    <p class="note">
+      An edge leaves a card on a stub, turns at right angles in a lane, and enters the far card on a
+      second stub. The exit side is the dominant axis between the two card centres, not a fixed
+      left-to-right: an edge that has to travel upward leaves through the top. Several edges sharing
+      one side are <b>fanned</b> along it rather than stacked on one point, and lanes are held apart
+      so two turns never lie on top of each other. A route that would cut through a third card
+      detours into the lane beside it &mdash; a line crossing a card reads as a line
+      <em>touching</em> that card, which is a claim the graph never made.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <div class="boardfield" style="position:relative;width:720px;height:264px">
+
+          <svg class="edgespec" viewBox="0 0 720 264" width="720" height="264" aria-hidden="true" style="position:absolute;left:0;top:0">
+            <path class="edgeline e-traced"   d="M176 122H192V51H314"  marker-end="url(#s04-ah-traced)"/>
+            <path class="edgeline e-declared" d="M176 140H192V213H314" marker-end="url(#s04-ah-declared)"/>
+            <path class="edgeline e-traced"   d="M480 51H496V122H538"  marker-end="url(#s04-ah-traced)"/>
+            <path class="edgeline e-traced"   d="M480 213H508V140H538" marker-end="url(#s04-ah-open-traced)"/>
+          </svg>
+
+          <div class="node n-entry" style="position:absolute;left:16px;top:104px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div>
+            <div class="nd-t">public API</div>
+          </div>
+          <div class="node n-service" style="position:absolute;left:320px;top:24px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+          </div>
+          <div class="node n-store" style="position:absolute;left:320px;top:186px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+            <div class="nd-t">orders</div>
+          </div>
+          <div class="node n-service" style="position:absolute;left:544px;top:104px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">billing</div>
+          </div>
+
+          <span class="edgetag" style="position:absolute;left:213px;top:43px">POST /charge</span>
+          <span class="edgetag" style="position:absolute;left:222px;top:205px">db <span class="ph">&#8249;table&#8250;</span></span>
+
+        </div>
+      </div>
+      <p class="caption">Two edges leave the entry's right side at two different points &mdash; that
+      is the fan. Their vertical runs share a lane; the two edges converging on billing's left side
+      use lanes held <span class="inline-code">--sp-12</span> apart so neither turn lands on the
+      other. The bottom-right edge carries an open head: it is a publish, and nothing lands.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <dl class="specs">
+        <dt>Stub off a card side</dt><dd>--sp-16</dd>
+        <dt>Lane separation</dt><dd>--sp-12</dd>
+        <dt>Segments</dt><dd>axis-aligned only</dd>
+        <dt>Corner</dt><dd>square turn, round join</dd>
+        <dt>Exit side</dt><dd>dominant axis between centres</dd>
+        <dt>Shared side</dt><dd>fanned, one edge at mid</dd>
+        <dt>Foreign card</dt><dd>detour, never cross</dd>
+      </dl>
+      <div class="panel">
+        <h3>No corner arc</h3>
+        <p class="sub">A turn is a right angle softened by the stroke's own round join.</p>
+        <p class="note" style="margin-bottom:0">The radius ramp governs boxes, not paths. Giving a
+        connector an arc radius would put a seventh number on a six-step ramp and make every corner
+        a value someone has to maintain. <span class="inline-code">.edgeline</span> already sets
+        <span class="inline-code">stroke-linejoin: round</span>, so the corner softens by exactly
+        half the stroke width and tracks the stroke automatically &mdash; a declared edge at
+        <span class="inline-code">--w-edge</span> and an on-flow edge at
+        <span class="inline-code">--w-flow</span> turn differently, correctly, for free.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-mode">
+    <div class="sec-head">
+      <span class="eyebrow">04.8</span>
+      <h2>On-flow is a mode, not a third resting state</h2>
+      <span class="tail">the board recedes &middot; --board-dim-opacity</span>
+    </div>
+
+    <p class="note">
+      Traced and declared are how an edge sits when nobody is looking at it in particular. On-flow is
+      never one of two things a reader has to tell apart at rest, because it only exists while a
+      flow is selected or played back &mdash; and while it exists, everything that is not on the flow
+      is at <span class="inline-code">--board-dim-opacity</span>. Selection outranks every other
+      carrier on this canvas and must be <em>more</em> visible than what it replaces, never less.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <div class="boardfield" style="position:relative;width:616px;height:246px">
+
+          <svg class="edgespec" viewBox="0 0 616 246" width="616" height="246" aria-hidden="true" style="position:absolute;left:0;top:0">
+            <path class="edgeline e-onflow" d="M176 115H226" marker-end="url(#s04-ah-onflow)"/>
+            <path class="edgeline e-onflow" d="M392 115H434" marker-end="url(#s04-ah-onflow)"/>
+            <path class="edgeline e-traced" d="M312 142V170" marker-end="url(#s04-ah-open-traced)" opacity="var(--board-dim-opacity)"/>
+          </svg>
+
+          <div class="node n-entry sel" style="position:absolute;left:16px;top:88px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div>
+            <div class="nd-t">public API</div>
+          </div>
+          <div class="node n-service sel" style="position:absolute;left:232px;top:88px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+          </div>
+          <div class="node n-store sel" style="position:absolute;left:440px;top:88px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+            <div class="nd-t">orders</div>
+          </div>
+          <div class="node n-topic dim" style="position:absolute;left:232px;top:176px;min-height:auto;height:54px">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div>
+            <div class="nd-t">order.placed</div>
+          </div>
+
+        </div>
+      </div>
+      <p class="caption">Three cards and two edges are on the flow; the publish to
+      <span class="inline-code">order.placed</span> is not, so it and its card recede together. The
+      dimmed pair is still legible &mdash; <span class="inline-code">--board-dim-opacity</span> is
+      <span class="inline-code">--st-archived-opacity</span>, the value this design system already
+      decided "receded but still readable" is worth. Dimming fires on playback and explicit
+      path-focus only, never on an ordinary single-node click.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="sec" id="p04-greyscale">
+    <div class="sec-head">
+      <span class="eyebrow">04.9</span>
+      <h2>The greyscale check</h2>
+      <span class="tail">what survives when the hue is taken away</span>
+    </div>
+
+    <p class="note">
+      The board's binding invariant is that meaning survives with all colour removed. Below, the same
+      three states drawn achromatically: only dash, width and head remain. Traced and declared lose
+      nothing, because they were never separated by hue in the first place &mdash; the dash was
+      always doing all of the work. On-flow and traced are the pair that separate on width alone at
+      rest, and width is the weakest channel in the whole system: it snaps to 1px on a
+      1&times; display.
+    </p>
+
+    <div class="panel">
+      <div class="specimens column">
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 300 12" width="300" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--ink-3)" stroke-width="var(--w-edge)" d="M2 6H294" marker-end="url(#s04-ah-ink)"/></svg>
+          <span class="lbl">traced &middot; solid &middot; --w-edge</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 300 12" width="300" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--ink-3)" stroke-width="var(--w-flow)" d="M2 6H294" marker-end="url(#s04-ah-ink)"/></svg>
+          <span class="lbl">on-flow &middot; solid &middot; --w-flow</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 300 12" width="300" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--ink-3)" stroke-width="var(--w-edge)" stroke-dasharray="var(--flow-dash-declared)" d="M2 6H294" marker-end="url(#s04-ah-ink)"/></svg>
+          <span class="lbl">declared &middot; --flow-dash-declared &middot; --w-edge</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 300 12" width="300" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--ink-3)" stroke-width="var(--w-edge)" d="M2 6H294" marker-end="url(#s04-ah-open-ink)"/></svg>
+          <span class="lbl">publish &middot; open head &middot; --w-edge</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 300 12" width="300" height="12" aria-hidden="true"><path class="edgeline" stroke="var(--ink-3)" stroke-width="var(--w-edge)" d="M2 6H294"/></svg>
+          <span class="lbl">direction unknown &middot; no head &middot; --w-edge</span></div>
+      </div>
+      <p class="caption">Rows one and two are the residual: at rest, achromatically, they are one
+      line drawn at two weights. The design resolves it by never asking them to be told apart at
+      rest &mdash; on-flow exists only while the rest of the board is dimmed, so the reader separates
+      them by what is <em>around</em> the line, not by the line. That is a real dependency and it is
+      written down here rather than discovered later.</p>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>Handback.</b> A fourth dash token
+    <span class="inline-code">--flow-dash-onflow</span> would let on-flow stand alone
+    achromatically, and there is a good case for it &mdash; a march or a longer rhythm reads as
+    <em>this is the path</em> without borrowing the field's dimming. It is not invented here:
+    inventing a token in a sheet is exactly the failure this book exists to prevent. Raised for the
+    substrate to rule on.</div>
+  </div>
+
+</section>

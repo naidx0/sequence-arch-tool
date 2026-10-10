@@ -1,0 +1,279 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 9: THE CHAT, CLEANER (Jaden, 2026-10-06)
+   packages/web2/src/chat/r9.css
+
+   Calm reading, one-line thinking and tool rows, the working line at the
+   foot of a live turn, the chat's title in the header, brand marks for chats.
+   Colours are the Ramp Kit tokens through shell2.css's --b-* variables.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the chat's title, in the header ─────────────────────────────────────── */
+.r9-title {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--row-h);
+  margin-left: -8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-14);
+  font-weight: var(--fw-head);
+  color: var(--b-ink1);
+  text-align: left;
+  cursor: text;
+}
+.r9-title[data-placeholder] {
+  color: var(--b-ink2);
+}
+.r9-title:hover:not(:disabled) {
+  background: var(--b-glass);
+}
+.r9-title:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+.r9-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.r9-title-pen {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--b-ink3);
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.r9-title:hover .r9-title-pen,
+.r9-title:focus-visible .r9-title-pen {
+  opacity: 1;
+}
+.r9-title-input {
+  min-width: 0;
+  height: var(--row-h);
+  margin-left: -8px;
+  padding: 0 8px;
+  border: 1px solid var(--b-edge2);
+  border-radius: 10px;
+  background: var(--b-s2);
+  font: inherit;
+  font-size: var(--t-14);
+  font-weight: var(--fw-head);
+  color: var(--b-ink1);
+  outline: none;
+}
+.r9-title-input:focus {
+  border-color: var(--b-acc);
+}
+.r9-title-wrap { display: flex; flex-direction: column; min-width: 0; }
+.r9-title-error { font-size: var(--t-12); color: var(--b-ink2, var(--ink-2)); overflow-wrap: anywhere; }
+
+/* ── a chat's brand mark ─────────────────────────────────────────────────── */
+.r9-chat-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--b-ink2);
+}
+.r9-chat-icon .s2-brand,
+.r9-chat-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── the answer, in a calm reading style ─────────────────────────────────
+   15 px body at 1.6, a clear heading scale, about 72 characters a line.
+   Jaden: "the overall chat interface is just hard to read". */
+.s2 .v3-transcript .prose {
+  font-size: var(--t-15);
+  line-height: 1.6;
+  max-width: min(72ch, 100%);
+  color: var(--b-ink1);
+}
+.s2 .v3-transcript .s2-answer,
+.s2 .v3-transcript .prose.s2-answer {
+  font-size: var(--t-15);
+  line-height: 1.6;
+}
+.s2 .v3-transcript .prose p {
+  margin: 0 0 12px;
+}
+.s2 .v3-transcript .prose > :last-child,
+.s2 .v3-transcript .prose p:last-child {
+  margin-bottom: 0;
+}
+.s2 .v3-transcript .prose .prose-h {
+  margin: 22px 0 8px;
+  color: var(--b-ink1);
+  font-weight: var(--fw-verdict);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.s2 .v3-transcript .prose .prose-h:first-child {
+  margin-top: 0;
+}
+.s2 .v3-transcript .prose h1.prose-h { font-size: var(--t-20); line-height: 1.3; }
+.s2 .v3-transcript .prose h2.prose-h { font-size: var(--t-17); line-height: 1.35; }
+.s2 .v3-transcript .prose h3.prose-h { font-size: var(--t-16); line-height: 1.4; font-weight: var(--fw-head); }
+.s2 .v3-transcript .prose h4.prose-h,
+.s2 .v3-transcript .prose h5.prose-h,
+.s2 .v3-transcript .prose h6.prose-h { font-size: var(--t-15); line-height: 1.5; font-weight: var(--fw-head); color: var(--b-ink2); }
+.s2 .v3-transcript .prose strong {
+  font-weight: var(--fw-head);
+  color: var(--b-ink1);
+}
+.s2 .v3-transcript .prose em {
+  font-style: italic;
+}
+.s2 .v3-transcript .prose ul.prose-list,
+.s2 .v3-transcript .prose ol.prose-list {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+.s2 .v3-transcript .prose .prose-list li {
+  margin: 0 0 4px;
+  padding-left: 2px;
+}
+.s2 .v3-transcript .prose .prose-list li::marker {
+  color: var(--b-ink3);
+}
+.s2 .v3-transcript .prose .prose-tick {
+  font-size: 0.86em;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--b-s2);
+  border: 1px solid var(--b-edge);
+  color: var(--b-ink1);
+}
+.s2 .v3-transcript .prose .prose-quote {
+  margin: 0 0 12px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--b-edge2);
+  color: var(--b-ink2);
+}
+.s2 .v3-transcript .prose .prose-rule {
+  margin: 18px 0;
+  border: 0;
+  border-top: 1px solid var(--b-edge);
+}
+.s2 .v3-transcript .prose .prose-table-wrap {
+  margin: 4px 0 14px;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--b-edge);
+  border-radius: 12px;
+  white-space: normal;
+}
+.s2 .v3-transcript .prose .prose-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-13);
+  line-height: 1.45;
+}
+.s2 .v3-transcript .prose .prose-table th,
+.s2 .v3-transcript .prose .prose-table td {
+  padding: 7px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--b-edge);
+}
+.s2 .v3-transcript .prose .prose-table th {
+  font-weight: var(--fw-head);
+  color: var(--b-ink1);
+  background: var(--b-s1);
+}
+.s2 .v3-transcript .prose .prose-table tr:last-child td {
+  border-bottom: 0;
+}
+.s2 .v3-transcript .s2-user .prose {
+  font-size: var(--t-14);
+  line-height: 1.5;
+}
+
+/* ── a fenced code block: language, Copy, the code ───────────────────────── */
+.r9-code {
+  margin: 4px 0 14px;
+  border: 1px solid var(--b-edge);
+  border-radius: 12px;
+  background: var(--b-s1);
+  overflow: hidden;
+  white-space: normal;
+}
+.r9-code-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid var(--b-edge);
+}
+.r9-code-lang {
+  font-family: var(--font-mono);
+  font-size: var(--t-10-5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--b-ink3);
+}
+.r9-code-copy {
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--b-glassedge);
+  border-radius: var(--r-full);
+  background: var(--b-glass);
+  font: inherit;
+  font-size: var(--t-12);
+  color: var(--b-ink2);
+  cursor: pointer;
+}
+.r9-code-copy:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.r9-code-copy:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+.s2 .v3-transcript .r9-code .prose-code {
+  margin: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.s2 .v3-transcript .r9-code .prose-code code {
+  font-family: var(--font-mono);
+  font-size: var(--t-12-5);
+  line-height: 1.6;
+  color: var(--b-ink1);
+  white-space: pre;
+}
+.r9-t-kw { color: var(--b-ink1); font-weight: var(--fw-solid); }
+.r9-t-str { color: var(--b-ink2); }
+.r9-t-num { color: var(--b-ink2); }
+.r9-t-com { color: var(--b-ink3); font-style: italic; }
+/* One line of a code block; the newline it carries breaks the line. */
+.r9-code-line {
+  display: inline;
+}
+
+.r9-effort { min-width: 0; padding: 8px 2px; color: var(--b-ink2, var(--ink-2)); }
+.r9-effort label { display: flex; justify-content: space-between; gap: 12px; }
+.r9-effort output { color: var(--b-ink1, var(--ink-1)); }
+.r9-effort input { display: block; width: 100%; min-height: var(--control-h); margin: 6px 0; accent-color: var(--b-acc, var(--accent)); cursor: pointer; }
+.r9-effort input:focus-visible { outline: 2px solid var(--b-acc, var(--accent)); outline-offset: 2px; border-radius: var(--r-full); }
+.r9-effort-labels { display: flex; justify-content: space-between; gap: 4px; font-size: var(--t-11); overflow-wrap: anywhere; }
+.r9-effort-labels span[data-selected] { color: var(--b-ink1, var(--ink-1)); font-weight: var(--fw-head); }
+
+.s2 .s2-think-h { min-width: 0; }
+.s2 .s2-think-h .s2-grow { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

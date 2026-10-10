@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workspace structure + canvas ledger — round 5</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root[data-theme="dark"]{
+  --bg-base:#0c0c0e;--surface-1:#121214;--surface-2:#18181b;--surface-3:#222226;
+  --edge:#2a2a30;--edge-strong:#36363e;--ink-1:#ececef;--ink-2:#a8a8b3;--ink-3:#6b6b76;--ink-4:#4a4a54;
+  --accent:#6366f1;--accent-solid:#6366f1;--state-selected:rgba(99,102,241,.14);--state-hover:rgba(255,255,255,.04);
+  --sel-ring:rgba(99,102,241,.22);--ai-dash:rgba(99,102,241,.5);--ai-fill:rgba(99,102,241,.06);
+  --e2:0 1px 0 rgba(0,0,0,.25),0 4px 12px rgba(0,0,0,.18);
+  --e3:0 1px 0 rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.22);
+  --w-hair:1px;--r-4:4px;--r-8:8px;--r-10:10px;--r-14:14px;--r-18:18px;--r-full:999px;
+  --sp-2:2px;--sp-4:4px;--sp-6:6px;--sp-8:8px;--sp-10:10px;--sp-12:12px;--sp-16:16px;--sp-20:20px;
+  --t-10:10px;--t-11:11px;--t-12:12px;--t-13:13px;--t-14:14px;--lh-10:12px;--lh-11:14px;--lh-12:16px;--lh-14:18px;
+  --font-sans:"Instrument Sans",system-ui,sans-serif;--font-mono:"JetBrains Mono",monospace;
+  --fw-label:550;--topbar-h:44px;--rail-w:200px;--arch-card-w:168px;--col-max:520px;--icon-btn:26px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-base);color:var(--ink-1);font:var(--t-12)/var(--lh-12) var(--font-sans)}
+.ledger{max-width:1480px;margin:0 auto;padding:var(--sp-20)}
+.ledger h1{font-size:20px;font-weight:600;margin:0 0 var(--sp-8)}
+.ledger h3,.ledger h4{margin:0;font-size:var(--t-13);font-weight:var(--fw-label)}
+.lede{color:var(--ink-2);max-width:82ch;margin:0 0 var(--sp-16);line-height:1.55}
+.owner-pick{border:var(--w-hair) solid var(--accent);border-radius:var(--r-14);padding:var(--sp-12) var(--sp-16);margin-bottom:var(--sp-20);background:color-mix(in srgb,var(--accent) 6%,var(--surface-1))}
+.owner-pick ul{margin:var(--sp-8) 0 0;padding-left:1.2rem;color:var(--ink-2);line-height:1.55}
+.dim{margin:var(--sp-20) 0 var(--sp-8);font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.spec{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden;background:var(--surface-1);margin-bottom:var(--sp-16)}
+.spec-hd{padding:var(--sp-10) var(--sp-12);border-bottom:var(--w-hair) solid var(--edge);display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-8)}
+.spec-tag{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);padding:2px var(--sp-6)}
+.spec-note{padding:var(--sp-10) var(--sp-12);color:var(--ink-2);border-top:var(--w-hair) solid var(--edge);font-size:var(--t-11);line-height:1.45}
+.mock{height:500px;display:flex;flex-direction:column;background:var(--bg-base);position:relative}
+.mock-appbar{height:var(--topbar-h);display:flex;align-items:center;gap:var(--sp-8);padding:0 var(--sp-10);border-bottom:var(--w-hair) solid var(--edge);background:var(--surface-1);flex-shrink:0}
+.mock-logo{font-weight:600;font-size:var(--t-12)}
+.mock-body{flex:1;min-height:0;display:flex}
+.mock-rail{width:var(--rail-w);border-right:var(--w-hair) solid var(--edge);background:var(--surface-1);display:flex;flex-direction:column;padding:var(--sp-8) 0}
+.mock-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.mock-wsbar{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-6) var(--sp-10);border-bottom:var(--w-hair) solid var(--edge);background:var(--surface-1);flex-shrink:0;flex-wrap:wrap}
+.mock-wsbody{flex:1;min-height:0;display:flex}
+.mock-chat{flex:0 0 42%;min-width:0;border-right:var(--w-hair) solid var(--edge);background:var(--surface-1);display:flex;flex-direction:column;min-height:0}
+.mock-pane{flex:1;min-width:0;background:var(--bg-base);position:relative}
+.rail-group{padding:0 var(--sp-10);margin-bottom:var(--sp-6)}
+.rail-group-lbl{font-size:var(--t-10);color:var(--ink-3);margin-bottom:var(--sp-4);text-transform:uppercase;letter-spacing:.04em}
+.rail-act{display:flex;align-items:center;gap:var(--sp-8);height:28px;padding:0 var(--sp-8);border-radius:var(--r-8);color:var(--ink-2);font-size:var(--t-11);margin:0 var(--sp-6) var(--sp-2)}
+.rail-act.sel{background:var(--state-selected);color:var(--ink-1)}
+.session-row{height:26px;display:flex;align-items:center;padding:0 var(--sp-8);border-radius:var(--r-8);color:var(--ink-3);font-size:var(--t-10);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-row.sel{background:var(--state-selected);color:var(--ink-1)}
+.wpill{display:inline-flex;align-items:center;gap:var(--sp-4);height:24px;padding:0 var(--sp-10);border-radius:var(--r-full);background:var(--surface-2);color:var(--ink-2);font-size:var(--t-10);border:var(--w-hair) solid transparent}
+.wpill.on{background:var(--state-selected);color:var(--ink-1);border-color:var(--edge)}
+.settings-corner{position:absolute;left:var(--sp-10);bottom:var(--sp-10);z-index:3;display:flex;align-items:center;gap:var(--sp-6);height:var(--icon-btn);padding:0 var(--sp-10);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);background:var(--surface-1);color:var(--ink-2);font-size:var(--t-11);box-shadow:var(--e2)}
+.settings-corner:hover{color:var(--ink-1);background:var(--surface-2)}
+.mock-transcript{flex:1;overflow:auto;padding:var(--sp-16) var(--sp-20);color:var(--ink-3);font-size:var(--t-11);min-height:0}
+.composerwrap{padding:0 var(--sp-20) var(--sp-12);flex:0 0 auto}
+.composerwrap .inner{max-width:var(--col-max);margin:0 auto}
+.composer{background:var(--surface-1);border:var(--w-hair) solid var(--edge);border-radius:var(--r-18);box-shadow:var(--e2);padding:var(--sp-10) var(--sp-10) var(--sp-8)}
+.composer .field{font-size:var(--t-14);line-height:var(--lh-14);color:var(--ink-3);padding:var(--sp-4) var(--sp-6) var(--sp-12)}
+.composer .ctrls{display:flex;align-items:center;gap:var(--sp-6)}
+.composer .ctrls .right{margin-left:auto;display:flex;align-items:center;gap:var(--sp-4)}
+.plusbtn{width:24px;height:24px;padding:0;border-radius:var(--r-full);border:var(--w-hair) solid var(--edge);background:transparent;color:var(--ink-2);display:grid;place-items:center;line-height:0}
+.plusbtn .i{display:block;margin:0}
+.iconbtn{width:var(--icon-btn);height:var(--icon-btn);padding:0;border-radius:var(--r-8);border:var(--w-hair) solid var(--edge);background:transparent;color:var(--ink-2);display:grid;place-items:center;line-height:0}
+.modelsel{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 var(--sp-8);border-radius:var(--r-8);color:var(--ink-2);font-size:var(--t-11)}
+.sendbtn{width:28px;height:28px;padding:0;border-radius:var(--r-full);border:0;background:var(--accent-solid);color:#fff;display:grid;place-items:center;line-height:0}
+.undercomposer{display:flex;align-items:center;justify-content:center;gap:var(--sp-10);padding:var(--sp-6) var(--sp-4) 0;max-width:var(--col-max);margin:0 auto;flex-wrap:wrap}
+.permsel{appearance:none;display:inline-flex;align-items:center;gap:var(--sp-4);height:20px;padding:0 var(--sp-8);border-radius:var(--r-8);border:var(--w-hair) solid var(--edge);background:var(--surface-2);color:var(--ink-2);font-size:var(--t-10);font-weight:var(--fw-label)}
+.session-strip{display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-6);font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3)}
+.session-strip-part{display:inline-flex;align-items:center;gap:var(--sp-4)}
+.session-strip .dot{color:var(--ink-4);user-select:none}
+.rail-act .i{color:var(--ink-3);flex-shrink:0}
+.rail-act.sel .i{color:inherit}
+.session-row{display:flex;align-items:center;gap:var(--sp-6)}
+.board-grid{position:absolute;inset:var(--sp-12);background-image:radial-gradient(circle,var(--edge) 1px,transparent 1px);background-size:16px 16px}
+.node{position:relative;width:var(--arch-card-w);min-height:72px;border:var(--w-hair) solid var(--edge-strong);border-radius:var(--r-10);background:var(--surface-2);padding:var(--sp-10) var(--sp-10) var(--sp-8);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.node .nd-ic{position:absolute;top:var(--sp-8);left:var(--sp-8);color:var(--ink-2);line-height:0}
+.node .nd-expand{position:absolute;top:var(--sp-8);right:var(--sp-8);color:var(--ink-3);font-size:var(--t-10);line-height:1}
+.node .nd-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-4);width:100%;padding-top:var(--sp-4);min-width:0}
+.node.title-only .nd-body{padding-top:var(--sp-2)}
+.node.with-sub .nd-body{padding-top:var(--sp-6)}
+.node .nd-t{font-size:var(--t-14);line-height:var(--lh-14);font-weight:600;color:var(--ink-1);overflow-wrap:anywhere;max-width:100%}
+.node .nd-s{font-size:var(--t-10);line-height:var(--lh-11);color:var(--ink-3);max-width:92%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.node.sel{box-shadow:0 0 0 1px var(--sel-ring),0 0 0 3px color-mix(in srgb,var(--accent) 8%,transparent)}
+.node.ghost{border-style:dashed;border-color:var(--ai-dash);background:var(--ai-fill)}
+.node.bad .nd-row{display:flex}
+.node.bad .nd-t{flex:1;text-align:left;font-size:var(--t-12);font-weight:var(--fw-label)}
+.node.bad .nd-expand{margin-left:auto}
+.compare{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-12);margin-bottom:var(--sp-20)}
+@media(max-width:900px){.compare{grid-template-columns:1fr}}
+.compare-col{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-14);background:var(--surface-1);text-align:center}
+.compare-stage{display:grid;place-items:center;margin-top:var(--sp-12);min-height:120px}
+.canvas-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-12);margin-bottom:var(--sp-16)}
+@media(max-width:900px){.canvas-row{grid-template-columns:1fr}}
+.ft-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-12);margin-bottom:var(--sp-20)}
+@media(max-width:1000px){.ft-row{grid-template-columns:1fr}}
+.ft-card{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden;background:var(--surface-1)}
+.ft-hd{padding:var(--sp-8) var(--sp-12);border-bottom:var(--w-hair) solid var(--edge);display:flex;justify-content:space-between;align-items:center;font-size:var(--t-11)}
+.ft-hd .mono{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3)}
+.ft-body{padding:var(--sp-12);font-size:var(--t-11);color:var(--ink-2);line-height:1.5;min-height:160px;background:var(--bg-base)}
+.ft-body h5{margin:0 0 var(--sp-6);font-size:var(--t-12);color:var(--ink-1)}
+.ft-body pre{margin:var(--sp-8) 0 0;padding:var(--sp-8);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);background:var(--surface-2);font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-2);overflow:auto}
+.ft-body .mermaid-box{margin-top:var(--sp-8);padding:var(--sp-10);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);background:var(--surface-1);font-family:var(--font-mono);font-size:var(--t-10);line-height:1.45;color:var(--ink-2)}
+.ft-body .html-preview{margin-top:var(--sp-8);padding:var(--sp-10);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);background:linear-gradient(180deg,var(--surface-2),var(--surface-1))}
+.ft-body .react-preview{margin-top:var(--sp-8);height:80px;border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);background:var(--surface-2);display:flex;align-items:flex-end;gap:var(--sp-4);padding:var(--sp-10)}
+.ft-body .bar{flex:1;background:color-mix(in srgb,var(--accent) 55%,var(--surface-3));border-radius:var(--r-4) var(--r-4) 0 0;min-height:8px}
+.legend{display:flex;flex-wrap:wrap;gap:var(--sp-8);margin:var(--sp-8) 0}
+.legend span{display:inline-flex;align-items:center;gap:var(--sp-4);font-size:var(--t-10);color:var(--ink-3)}
+.swatch{width:10px;height:10px;border-radius:2px;border:var(--w-hair) solid var(--edge-strong)}
+.swatch.sel{background:var(--sel-ring)}
+.swatch.ai{border-style:dashed;border-color:var(--ai-dash);background:var(--ai-fill)}
+.callout{border-left:2px solid var(--accent);padding:var(--sp-8) var(--sp-12);margin:var(--sp-12) 0;color:var(--ink-2);font-size:var(--t-11);line-height:1.5;background:var(--surface-1);border-radius:0 var(--r-8) var(--r-8) 0}
+.board-table{width:100%;border-collapse:collapse;font-size:var(--t-11);margin:var(--sp-12) 0}
+.board-table th,.board-table td{border:var(--w-hair) solid var(--edge);padding:var(--sp-8) var(--sp-10);text-align:left;vertical-align:top;color:var(--ink-2)}
+.board-table th{background:var(--surface-2);font-weight:var(--fw-label)}
+.board-table b{color:var(--ink-1)}
+.flow-arrow{stroke:var(--ai-dash);stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+.flow-arrow.solid{stroke:var(--edge-strong);stroke-dasharray:none;opacity:.7}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i-14{width:14px;height:14px}
+.i-12{width:12px;height:12px}
+.dont{color:#f87171}.do{color:#86efac}
+.lock{border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);padding:var(--sp-12) var(--sp-16);color:var(--ink-2);font-size:var(--t-11)}
+code{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-1)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ic-topic" viewBox="0 0 24 24"><path d="M3.6 8.4h6.2M3.6 12h9.6M3.6 15.6h6.2"/><path d="m16.4 8.4 3.6 3.6-3.6 3.6"/></symbol>
+<symbol id="ic-board" viewBox="0 0 24 24"><rect x="3.2" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="13.8" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="8.5" y="14.4" width="7" height="5.4" rx="1.6"/><path d="M6.7 9.6v2.6h10.6V9.6M12 12.2v2.2"/></symbol>
+<symbol id="ic-frame" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 4v16M16 4v16M4 8h16M4 16h16"/></symbol>
+<symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 7h12M4 12h16M4 17h8"/><circle cx="17" cy="7" r="2"/><circle cx="13" cy="12" r="2"/><circle cx="15" cy="17" r="2"/></symbol>
+<symbol id="ic-spark" viewBox="0 0 24 24"><path d="M12 3l1.6 5.8L19 10l-5.4 1.2L12 17l-1.6-5.8L5 10l5.4-1.2z"/></symbol>
+<symbol id="ic-service" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10h8M8 14h5"/></symbol>
+<symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.9"/><circle cx="12" cy="12" r="7.2"/><path d="M12 3.4v1.5M12 19.1v1.5M20.6 12h-1.5M4.9 12H3.4"/></symbol>
+<symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5.2v13.6M5.2 12h13.6"/></symbol>
+<symbol id="ic-send" viewBox="0 0 24 24"><path d="M12 19V5.6"/><path d="m5.8 11.8 6.2-6.2 6.2 6.2"/></symbol>
+<symbol id="ic-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="2.2"/><path d="M10.2 12H20v2"/></symbol>
+<symbol id="ic-terminal" viewBox="0 0 24 24"><path d="M5 8.5 9.5 12 5 15.5"/><path d="M11 16h8"/></symbol>
+<symbol id="ic-folder" viewBox="0 0 24 24"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h2.9l2.1 2.4h6.2A2.4 2.4 0 0 1 20 9.8v6.8A2.4 2.4 0 0 1 17.6 19H6.4A2.4 2.4 0 0 1 4 16.6z"/></symbol>
+<symbol id="ic-branch" viewBox="0 0 24 24"><circle cx="6.4" cy="5.6" r="2.2"/><circle cx="6.4" cy="18.4" r="2.2"/><circle cx="17.2" cy="7.8" r="2.2"/><path d="M6.4 7.8v8.4"/><path d="M17.2 10v1a4 4 0 0 1-4 4H6.4"/></symbol>
+<symbol id="ic-newthread" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="5.5"/><path d="M15.5 15.5 20 20"/></symbol>
+</defs></svg>
+
+<div class="ledger">
+  <h1>Workspace structure + canvas ledger — round 5</h1>
+  <p class="lede">Refinements: sidebar icons · centered under-composer strip · + glyph centered in button · node icons in corners (not aligned with title) · AI Canvas tool contract (5 native formats). Preview only.</p>
+
+  <div class="owner-pick">
+    <b>Locked direction</b>
+    <ul>
+      <li><b>Workspace C+B</b> — rail with icons on every row · in-main pills · settings bottom-left.</li>
+      <li><b>Under-composer</b> — whole row centered under composer; each fact is icon + label (not dumped left/right).</li>
+      <li><b>+ button</b> — glyph centered in the 24px circle (<code>place-items:center</code>, zero padding drift).</li>
+      <li><b>Node cards</b> — kind icon top-left corner · expand top-right corner · title/subtitle centered in body (icons NOT on same baseline as text).</li>
+      <li><b>Architecture</b> — OK for now; edges when wired to scan.</li>
+      <li><b>AI Canvas tools</b> — five native writers (see §5); not seqd, not whiteboard strokes.</li>
+    </ul>
+  </div>
+
+  <p class="dim">1 · Workspace — C+B with Graphite composer + corner settings</p>
+  <div class="spec">
+    <div class="spec-hd"><h3>C+B · locked layout</h3><span class="spec-tag">composer = sheet 12.4</span></div>
+    <div class="mock">
+      <div class="mock-appbar"><span class="mock-logo">Sequence</span><span style="flex:1"></span><span style="color:var(--ink-3);font-size:var(--t-10)">Ctrl+K</span></div>
+      <div class="mock-body">
+        <aside class="mock-rail">
+          <div class="rail-group"><div class="rail-group-lbl">Workspace</div>
+            <div class="rail-act sel"><svg class="i i-14"><use href="#ic-newthread"/></svg> Sessions</div>
+            <div class="rail-act"><svg class="i i-14"><use href="#ic-search"/></svg> Search</div>
+            <div class="rail-act"><svg class="i i-14"><use href="#ic-sliders"/></svg> Preferences</div>
+          </div>
+          <div class="rail-group"><div class="rail-group-lbl">This repo</div>
+            <div class="session-row sel"><svg class="i i-12"><use href="#ic-topic"/></svg> 08/25 · main</div>
+            <div class="session-row"><svg class="i i-12"><use href="#ic-topic"/></svg> feature/split</div>
+          </div>
+          <div class="rail-group"><div class="rail-group-lbl">Tools</div>
+            <div class="rail-act"><svg class="i i-14"><use href="#ic-spark"/></svg> Customize layout</div>
+          </div>
+        </aside>
+        <div class="mock-main">
+          <div class="mock-wsbar">
+            <span class="wpill on">Chat</span><span class="wpill on">Architecture</span><span class="wpill">Whiteboard</span><span class="wpill">AI Canvas</span><button class="wpill plusbtn" type="button" aria-label="Add view" style="width:24px;height:24px;padding:0"><svg class="i i-12"><use href="#ic-plus"/></svg></button>
+          </div>
+          <div class="mock-wsbody">
+            <section class="mock-chat">
+              <div class="mock-transcript"><div style="color:var(--ink-2);margin-bottom:var(--sp-12)">Placeholder copy is fine in preview — spacing and tokens below are the contract.</div></div>
+              <div class="composerwrap">
+                <div class="inner">
+                  <div class="composer">
+                    <div class="field">Ask about this repo — / for commands, @ to reference a node, a file or a function</div>
+                    <div class="ctrls">
+                      <button class="plusbtn" aria-label="Add"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+                      <span class="modelsel"><svg class="i i-12"><use href="#ic-key"/></svg><span style="font-family:var(--font-mono);font-size:var(--t-11)">claude-demo</span></span>
+                      <span class="right">
+                        <button class="iconbtn" aria-label="Terminal"><svg class="i i-14"><use href="#ic-terminal"/></svg></button>
+                        <button class="sendbtn" aria-label="Send"><svg class="i i-12"><use href="#ic-send"/></svg></button>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="undercomposer">
+                    <button class="permsel">Propose ▾</button>
+                    <span class="session-strip">
+                      <span class="session-strip-part"><svg class="i i-12"><use href="#ic-folder"/></svg> workspace</span>
+                      <span class="dot">·</span>
+                      <span class="session-strip-part"><svg class="i i-12"><use href="#ic-branch"/></svg> main</span>
+                      <span class="dot">·</span>
+                      <span class="session-strip-part"><svg class="i i-12"><use href="#ic-key"/></svg> claude-demo</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="mock-pane"><div class="board-grid"></div></section>
+          </div>
+        </div>
+      </div>
+      <button class="settings-corner" type="button"><svg class="i i-14"><use href="#ic-gear"/></svg> Settings</button>
+    </div>
+    <p class="spec-note"><span class="do">✓</span> Under-composer row centered as one unit. Each session fact = icon + label with even gaps. Sidebar rows carry icons. Plus glyph centered in 24px circle.</p>
+  </div>
+
+  <p class="dim">2 · Node card — icons in corners, title centered in body</p>
+  <div class="compare">
+    <div class="compare-col">
+      <b class="dont">✕ Today</b>
+      <div class="compare-stage"><div class="node bad"><div class="nd-row"><span class="nd-ic"><svg class="i i-14"><use href="#ic-service"/></svg></span><div class="nd-t">gateway</div><span class="nd-expand">↗</span></div></div></div>
+      <p style="color:var(--ink-3);font-size:var(--t-10);margin-top:var(--sp-8)">Icon and title share one row</p>
+    </div>
+    <div class="compare-col">
+      <b class="do">Title only</b>
+      <div class="compare-stage"><div class="node title-only sel"><span class="nd-ic"><svg class="i i-14"><use href="#ic-service"/></svg></span><span class="nd-expand">↗</span><div class="nd-body"><div class="nd-t">web2</div></div></div></div>
+      <p style="color:var(--ink-3);font-size:var(--t-10);margin-top:var(--sp-8)">Icons pinned to corners; title centered below</p>
+    </div>
+    <div class="compare-col">
+      <b class="do">With subtitle</b>
+      <div class="compare-stage"><div class="node with-sub"><span class="nd-ic"><svg class="i i-14"><use href="#ic-service"/></svg></span><span class="nd-expand">↗</span><div class="nd-body"><div class="nd-t">gateway</div><div class="nd-s">HTTP ingress</div></div></div></div>
+      <p style="color:var(--ink-3);font-size:var(--t-10);margin-top:var(--sp-8)">Body block shifts; corners unchanged</p>
+    </div>
+  </div>
+
+  <p class="dim">3 · Architecture board — OK for now; edges wired later</p>
+  <div class="canvas-row">
+    <div class="spec">
+      <div class="spec-hd"><h4>Human · point &amp; ask</h4><span class="spec-tag">soft selection</span></div>
+      <div style="padding:var(--sp-12);height:180px;position:relative;border-top:var(--w-hair) solid var(--edge)">
+        <div class="board-grid" style="inset:var(--sp-8)"></div>
+        <div class="node sel" style="position:absolute;left:10%;top:28%;width:110px"><div class="nd-row"><span class="nd-ic"><svg class="i i-12"><use href="#ic-service"/></svg></span><div class="nd-t" style="font-size:var(--t-12)">billing</div><span class="nd-expand">↗</span></div></div>
+        <div class="node" style="position:absolute;left:44%;top:38%;width:110px"><div class="nd-row"><span class="nd-ic"><svg class="i i-12"><use href="#ic-service"/></svg></span><div class="nd-t" style="font-size:var(--t-12)">gateway</div><span class="nd-expand">↗</span></div></div>
+        <svg style="position:absolute;left:28%;top:44%;width:20%;height:20px;overflow:visible" aria-hidden="true"><path class="flow-arrow solid" d="M0 10 H100"/></svg>
+      </div>
+      <p class="spec-note">Arrow styling placeholder — real ELK/import edges when connected to scan. Selection ring toned down (indigo, not amber).</p>
+    </div>
+    <div class="spec">
+      <div class="spec-hd"><h4>AI · topology proposals</h4><span class="spec-tag">dashed</span></div>
+      <div style="padding:var(--sp-12);height:180px;position:relative;border-top:var(--w-hair) solid var(--edge)">
+        <div class="board-grid" style="inset:var(--sp-8)"></div>
+        <div class="node" style="position:absolute;left:8%;top:36%;width:100px"><div class="nd-row"><span class="nd-ic"></span><div class="nd-t" style="font-size:var(--t-12)">gateway</div><span class="nd-expand"></span></div></div>
+        <div class="node ghost" style="position:absolute;left:40%;top:28%;width:110px"><div class="nd-row"><span class="nd-ic"><svg class="i i-12"><use href="#ic-spark"/></svg></span><div class="nd-t" style="font-size:var(--t-12)">cache</div><span class="nd-expand"></span></div><div class="nd-s">proposed</div></div>
+        <svg style="position:absolute;left:26%;top:42%;width:18%;height:16px;overflow:visible" aria-hidden="true"><path class="flow-arrow" d="M0 8 H80"/></svg>
+      </div>
+      <p class="spec-note">Keep dashed language for AI on Architecture only.</p>
+    </div>
+  </div>
+
+  <p class="dim">4 · AI Canvas — file-type bonded output (not freeform stickies)</p>
+  <p class="lede" style="margin-top:0">Round 3 stickies looked bad because the surface had no output contract. AI Canvas is <b>bonded to artifact types</b> the AI chooses via native tools — each renders through a known viewer so output is clean every time.</p>
+
+  <table class="board-table">
+    <thead><tr><th>Tool name</th><th>Block type</th><th>When AI uses it</th><th>Rendered as</th></tr></thead>
+    <tbody>
+      <tr><td><code>canvas.write_markdown</code></td><td><b>Markdown</b> (<code>.md</code>)</td><td>Planning, prose, MADR body, fenced code snippets</td><td>Typeset MD viewer — headings, lists, callouts, code fences</td></tr>
+      <tr><td><code>canvas.write_mermaid</code></td><td><b>Mermaid</b> (<code>.mmd</code> or fenced block)</td><td>Flowcharts, sequences, dependency graphs</td><td>Native mermaid renderer — same pipeline as chat diagrams</td></tr>
+      <tr><td><code>canvas.write_html</code></td><td><b>HTML</b> (<code>.html</code>)</td><td>Static layouts, comparison grids, annotated screenshots</td><td>Sandboxed HTML frame — Graphite tokens only</td></tr>
+      <tr><td><code>canvas.write_react</code></td><td><b>React</b> (<code>.tsx</code>)</td><td>Animated charts, step-through demos, interactive widgets</td><td>Mounted component preview — Recharts / motion, bounded</td></tr>
+      <tr><td><code>canvas.write_svg</code></td><td><b>SVG</b> (<code>.svg</code>)</td><td>Precise vector diagrams, icons, annotated paths — when Mermaid is too coarse</td><td>Inline SVG viewer — pan/zoom, no script</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <b>Five native writers — closed set.</b> The model may only append canvas blocks through these tools. Human pan/zoom + point-to-ask; human does not hand-edit layout. Opening <code>plan.md</code> or a MADR binds the canvas to that file's thread.<br><br>
+    <span class="dont">✕ Not on AI Canvas:</span> <code>.seqd</code> (Architecture scan IR), whiteboard strokes, raw JSON/YAML/CSV blocks (use MD code fence or HTML table), binary images (embed in MD/HTML). PDF is export-only, not a block type.
+  </div>
+
+  <div class="ft-row" style="grid-template-columns:repeat(5,1fr)">
+    <div class="ft-card">
+      <div class="ft-hd"><span><b>MD</b> · planning</span><span class="mono">plan.md</span></div>
+      <div class="ft-body">
+        <h5>Workspace split rollout</h5>
+        <p style="margin:0;color:var(--ink-3)">Phase 1: rail + pills. Phase 2: retire tab chrome.</p>
+        <div class="mermaid-box">graph LR<br>&nbsp;&nbsp;A[Rail C] --> B[Pills B]<br>&nbsp;&nbsp;B --> C[Split view]</div>
+      </div>
+    </div>
+    <div class="ft-card">
+      <div class="ft-hd"><span><b>HTML</b> · static visual</span><span class="mono">explainer.html</span></div>
+      <div class="ft-body">
+        <h5>Three surfaces</h5>
+        <div class="html-preview">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-6);font-size:var(--t-10)">
+            <div style="padding:var(--sp-8);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);text-align:center">Architecture<br><span style="color:var(--ink-3)">scan</span></div>
+            <div style="padding:var(--sp-8);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);text-align:center">Whiteboard<br><span style="color:var(--ink-3)">draw</span></div>
+            <div style="padding:var(--sp-8);border:var(--w-hair) dashed var(--ai-dash);border-radius:var(--r-8);text-align:center">AI Canvas<br><span style="color:var(--ink-3)">explain</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ft-card">
+      <div class="ft-hd"><span><b>React</b> · animated</span><span class="mono">Chart.tsx</span></div>
+      <div class="ft-body">
+        <h5>Import fan-out over time</h5>
+        <div class="react-preview">
+          <div class="bar" style="height:35%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:72%"></div><div class="bar" style="height:48%"></div><div class="bar" style="height:90%"></div>
+        </div>
+        <p style="margin:var(--sp-8) 0 0;font-size:var(--t-10);color:var(--ink-3)">Animated bar/flow — for metrics &amp; step-through only</p>
+      </div>
+    </div>
+    <div class="ft-card">
+      <div class="ft-hd"><span><b>SVG</b> · vector</span><span class="mono">flow.svg</span></div>
+      <div class="ft-body">
+        <h5>Service handoff</h5>
+        <svg viewBox="0 0 120 64" style="width:100%;margin-top:var(--sp-8);color:var(--ink-2)">
+          <rect x="4" y="20" width="28" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="46" y="20" width="28" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="88" y="20" width="28" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M32 32h14M74 32h14" stroke="var(--ai-dash)" stroke-width="1.2" stroke-dasharray="3 2"/>
+          <text x="18" y="36" text-anchor="middle" fill="var(--ink-3)" font-size="8" font-family="var(--font-mono)">api</text>
+          <text x="60" y="36" text-anchor="middle" fill="var(--ink-3)" font-size="8" font-family="var(--font-mono)">gw</text>
+          <text x="102" y="36" text-anchor="middle" fill="var(--ink-3)" font-size="8" font-family="var(--font-mono)">db</text>
+        </svg>
+        <p style="margin:var(--sp-8) 0 0;font-size:var(--t-10);color:var(--ink-3)">When Mermaid can't express the layout</p>
+      </div>
+    </div>
+  </div>
+  <p class="spec-note" style="border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);padding:var(--sp-10) var(--sp-12);margin-bottom:var(--sp-20)"><span class="do">✓</span> Consistent visuals because every block goes through a typed renderer. AI picks the format; the canvas never shows raw sticky-note soup. Contract: <code>docs/research/ai-canvas-tool-contract.md</code>.</p>
+
+  <p class="dim">Round 5 — owner confirmed</p>
+  <p class="lock">
+    <span class="do">✓ Locked:</span> C+B workspace · sidebar icons on every row · under-composer centered (icon + label per fact) · + glyph centered in 24px circle · node corner icons (not baseline-aligned with title) · Architecture OK for now · AI Canvas five native writers.<br><br>
+    <b>Next:</b> product implementation wave — workspace rail + pills, node card layout, AI Canvas surface + tool schema in analyzer.
+  </p>
+</div>
+</body>
+</html>

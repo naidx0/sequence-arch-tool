@@ -1,0 +1,353 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   BOARD VIEWS — Grid and Flow (GridView.tsx, FlowView.tsx)
+   Each view covers the board pane on its own ground. Graphite: dense type,
+   hairlines, ink for data, the accent only for focus.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.board-view {
+  position: absolute;
+  inset: 0;
+  /* The whole pane, on the board's own ground (Decision 49), its content
+     starting under the view pills (board.css .board-controls: --sp-12 down,
+     30px tall), which float over it. */
+  top: 0;
+  z-index: 5;
+  overflow: auto;
+  padding: var(--sp-16);
+  padding-top: calc(var(--sp-12) * 2 + 30px + var(--sp-4));
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.board-view .bv-empty { margin: 0; color: var(--ink-3); }
+
+/* ── grid ─────────────────────────────────────────────────────────────── */
+/* ROUND 7 C.6. Jaden: "Grid view isn't really transparent enough... not big
+   enough for the screen size." The matrix (it won its A/B on 3 of 3 repos,
+   so it stays a matrix) now sits on a glass card over the board's own field,
+   inset like the Diff card, centred, with cells up to 56px so it fills the
+   pane. The sticky headers take the card's glass too, so nothing opaque
+   blocks the field behind. */
+.board-view.gridview {
+  top: calc(var(--sp-12) * 2 + 30px);
+  left: var(--sp-12);
+  right: var(--sp-12);
+  bottom: var(--sp-12);
+  padding: var(--sp-16) var(--sp-20);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-18);
+  /* Glass with no blur: board.css hides the Map's cards under the Grid, so
+     what shows through is the field itself, crisp, not blurred cards. */
+  background: var(--glass-pane);
+}
+.gridview .gv-table { border-collapse: separate; border-spacing: 0; margin: 0 auto; }
+.gridview .gv-cap { caption-side: top; text-align: left; padding-bottom: var(--sp-8); color: var(--ink-3); font-size: var(--t-11); }
+.gridview th { font-weight: var(--fw-label); color: var(--ink-1); }
+.gridview .gv-corner { position: sticky; left: 0; top: 0; z-index: 3; background: var(--gv-head); }
+.gridview {
+  --gv-cell: 24px;
+  /* Sticky headers scroll over cells, so they are the card's own glass laid
+     on the ground colour: they read as the card (only the field's dots are
+     absent behind them) and a number never prints through. No blur: the
+     style ratchet caps backdrop-filters, and this needs none. */
+  --gv-head: linear-gradient(var(--glass-pane), var(--glass-pane)), var(--surface-1);
+}
+.gridview .gv-col {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 140px;
+  width: var(--gv-cell);
+  min-width: var(--gv-cell);
+  padding: 0 0 var(--sp-4);
+  vertical-align: bottom;
+  background: var(--gv-head);
+}
+.gridview .gv-col-t {
+  display: inline-block;
+  max-height: 136px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-12);
+}
+.gridview .gv-row {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding: 0 var(--sp-8) 0 0;
+  text-align: right;
+  background: var(--gv-head);
+}
+.gridview .gv-row-t {
+  display: inline-block;
+  max-width: 220px;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-12);
+}
+.gridview .is-member .gv-row-t,
+.gridview .is-member .gv-col-t { color: var(--ink-2); font-weight: var(--fw-body); }
+.gridview .gv-cell {
+  width: var(--gv-cell);
+  min-width: var(--gv-cell);
+  height: var(--gv-cell);
+  padding: 0;
+  border-right: var(--w-hair) solid var(--edge-faint);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-1);
+}
+.gridview .gv-cell.is-on { background: color-mix(in srgb, var(--flow-traced) 22%, transparent); }
+.gridview .gv-cell.is-self { background: var(--glass-ctl-hover); }
+.gridview .gv-hit {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.gridview .gv-hit:hover { background: var(--state-hover); }
+.gridview .gv-hit:focus-visible { outline: none; box-shadow: inset 0 0 0 var(--w-rule) var(--accent); }
+.gridview tbody tr:hover .gv-cell,
+.gridview tbody tr:hover .gv-row { background-color: var(--state-hover); }
+
+/* ── flow ─────────────────────────────────────────────────────────────── */
+.flowview { --fv-col: 168px; --fv-n: 1; }
+.flowview .fv-pick { display: flex; flex-wrap: wrap; gap: var(--sp-12); margin-bottom: var(--sp-16); }
+.flowview .fv-field { display: inline-flex; align-items: center; gap: var(--sp-6); color: var(--ink-3); }
+.flowview .fv-field select {
+  height: var(--control-h);
+  max-width: 260px;
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font: inherit;
+}
+.flowview .fv-seq {
+  position: relative;
+  width: calc(var(--fv-n) * var(--fv-col));
+  /* The lifelines: one hairline down the middle of each column. */
+  background-image: linear-gradient(to right, transparent calc(var(--fv-col) / 2 - 0.5px), var(--edge) calc(var(--fv-col) / 2 - 0.5px), var(--edge) calc(var(--fv-col) / 2 + 0.5px), transparent calc(var(--fv-col) / 2 + 0.5px));
+  background-size: var(--fv-col) 100%;
+  background-repeat: repeat-x;
+  padding-bottom: var(--sp-8);
+}
+.flowview .fv-heads { display: flex; }
+.flowview .fv-head {
+  flex: 0 0 var(--fv-col);
+  box-sizing: border-box;
+  padding: var(--sp-6) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.flowview .fv-msgs { list-style: none; margin: var(--sp-12) 0 0; padding: 0; }
+.flowview .fv-msg {
+  --fv-at: 0; /* the hop's index, set inline per message */
+  position: relative;
+  margin-left: calc(var(--fv-at) * var(--fv-col) + var(--fv-col) / 2);
+  width: var(--fv-col);
+  height: 40px;
+}
+.flowview .fv-arrow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 0;
+  border-top: var(--w-edge) solid var(--flow-traced);
+}
+.flowview .fv-arrow::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -4.5px;
+  border-left: 7px solid var(--flow-traced);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+.flowview .fv-label {
+  position: absolute;
+  left: var(--sp-4);
+  right: var(--sp-4);
+  bottom: 12px;
+  font-size: var(--t-11);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.flowview .fv-note { margin: var(--sp-8) 0 0; color: var(--ink-3); font-size: var(--t-11); }
+
+/* ── diff and hotspots (DiffView.tsx, HotspotsView.tsx) ───────────────── */
+/* ROUND 7 C.6. Jaden: "The second you click on diff... the UI doesn't match
+   up. Icons aren't really centered." Diff now speaks B's language: a glass
+   card column beside the Map, B's segmented pill for what to compare against,
+   a glass pill field, glass rows, and each status as a round chip whose glyph
+   is centred by grid, not by the font's side bearings. */
+/* S7: a worktree chat's Diff names the worktree branch and its base commit. */
+.dv-worktree {
+  margin: 0 0 var(--sp-8);
+  color: var(--ink-2);
+  font-size: var(--t-12);
+}
+.dv-worktree-label {
+  color: var(--ink-3);
+}
+.dv-worktree code {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-1);
+}
+/* Diff is a glass card beside the Map (board.css insets the Map by --dv-w). */
+.board-view.diffview {
+  top: calc(var(--sp-12) * 2 + 30px);
+  left: var(--sp-12);
+  right: auto;
+  bottom: var(--sp-12);
+  width: calc(var(--dv-w, 360px) - var(--sp-12) * 2);
+  padding: var(--sp-12);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-18);
+  /* No blur: beside the Map it lies over the field alone (the Map is inset),
+     and on a narrow board the Map under it is not drawn. */
+  background: var(--glass-pane);
+  box-shadow: var(--e2, none);
+}
+.diffview .dv-base { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8); margin-bottom: var(--sp-12); }
+.diffview .dv-against { margin: 0; flex: none; }
+.diffview .dv-against .bseg-b { white-space: nowrap; }
+.diffview .dv-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-3);
+  min-width: 0;
+  max-width: 100%;
+}
+.diffview .dv-field:focus-within { border-color: var(--accent-edge); background: var(--board-card); }
+.diffview .dv-field-k { font-size: var(--t-11); }
+.diffview .dv-field input {
+  width: 110px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  color: var(--ink-1);
+}
+.board-view .dv-sum { margin: 0 0 var(--sp-12); color: var(--ink-2); }
+.board-view .dv-error { padding: var(--sp-8) var(--sp-12); border-radius: var(--r-14); background: var(--glass-ctl); color: var(--ink-2); }
+.board-view .dv-h {
+  margin: var(--sp-12) 0 var(--sp-6);
+  padding-left: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.board-view .dv-list,
+.board-view .hv-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--sp-4); }
+.board-view .dv-row,
+.board-view .hv-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--row-h);
+  padding: var(--sp-6) var(--sp-10);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-14);
+  background: var(--glass-ctl);
+}
+.board-view .dv-row:hover,
+.board-view .hv-row:hover { background: var(--glass-ctl-hover); }
+.board-view .dv-name { color: var(--ink-1); font-weight: var(--fw-label); min-width: 0; overflow-wrap: anywhere; }
+.board-view .dv-n { margin-left: auto; color: var(--ink-3); font-size: var(--t-11); font-family: var(--font-mono); }
+/* The status chip: the glyph centred in a round chip by grid, the word beside. */
+.board-view .dv-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  flex: none;
+  font-size: var(--t-11);
+  line-height: 1;
+  color: var(--ink-2);
+}
+.board-view .dv-ic {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  background: var(--board-card);
+}
+/* The status glyph carries the colour; the word stays ink. */
+.board-view .dv-glyph {
+  display: block;
+  width: 1ch;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  line-height: 1;
+  text-align: center;
+}
+.board-view .is-added .dv-glyph { color: var(--fits); }
+.board-view .is-changed .dv-glyph,
+.board-view .is-renamed .dv-glyph { color: var(--spills); }
+.board-view .is-removed .dv-glyph { color: var(--wont); }
+.hotview .hv-key { margin: 0 0 var(--sp-12); color: var(--ink-3); font-size: var(--t-11); }
+.diffview .dv-files { flex: 1 0 100%; min-width: 0; margin: 0; padding: 0 0 0 calc(20px + var(--sp-6)); list-style: none; font-family: var(--font-mono); font-size: var(--t-11); line-height: var(--lh-11, 1.45); color: var(--ink-3); }
+.diffview .dv-file { display: flex; align-items: baseline; gap: var(--sp-6); min-width: 0; }
+.diffview .dv-fstatus { flex: none; }
+/* Round 7: a path is one line, ellipsised from the left so the file name
+   always shows (rtl box, ltr isolate inside); the full path is the title. */
+.diffview .dv-path {
+  /* Never grows, so a short path sits beside its status; a long one shrinks
+     and, being rtl, keeps its END (the file name) and loses its start. The
+     marks around the text (DiffView.tsx) keep the path itself left to right. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.diffview .dv-fstatus { color: var(--ink-2); }
+.diffview .dv-fstatus .dv-glyph { display: inline-block; }
+.hotview .hv-rank { min-width: 20px; font-family: var(--font-mono); font-weight: var(--fw-head); color: var(--ink-1); text-align: right; }
+.hotview .hv-bar { flex: 1 1 120px; height: 6px; border-radius: var(--r-full); background: var(--board-card); overflow: hidden; }
+.hotview .hv-fill { display: block; height: 100%; background: var(--spills); }
+.diffview .dv-more { padding: 0; border: 0; background: none; font: inherit; color: var(--ink-2); text-decoration: underline; cursor: pointer; }

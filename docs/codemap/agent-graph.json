@@ -1,0 +1,357 @@
+{
+  "nodes": [
+    {
+      "id": "schema-domain",
+      "label": "Shared Domain Model",
+      "path": "packages/schema",
+      "role": "domain",
+      "summary": "Shared types and validators for architecture graphs and sequence diagrams used across the monorepo."
+    },
+    {
+      "id": "export-projections",
+      "label": "Graph Export & Rendering",
+      "path": "packages/export",
+      "role": "export",
+      "summary": "Converts ArchGraph to SeqDiagram, Mermaid, SVG, and other export formats in the browser."
+    },
+    {
+      "id": "analyzer-scan",
+      "label": "Manifest & Code Scanner",
+      "path": "packages/analyzer/src/scan.ts",
+      "role": "server",
+      "summary": "Scans repos for Compose, Kubernetes, and Helm manifests to build an ArchGraph."
+    },
+    {
+      "id": "analyzer-server",
+      "label": "Local Repo API Server",
+      "path": "packages/analyzer/src/server/repoServer.ts",
+      "role": "server",
+      "summary": "Local HTTP server exposing /api attach, scan, and ask endpoints alongside the web UI."
+    },
+    {
+      "id": "analyzer-cli",
+      "label": "Sequence CLI",
+      "path": "packages/analyzer/src/cli.ts",
+      "role": "cli",
+      "summary": "Command-line entry point with scan, serve, app, export, and doctor subcommands."
+    },
+    {
+      "id": "acp-protocol",
+      "label": "Agent Client Protocol",
+      "path": "packages/acp",
+      "role": "protocol",
+      "summary": "Agent Client Protocol wrapper for running agent programs inside the analyzer server."
+    },
+    {
+      "id": "product-app",
+      "label": "Product Application Root",
+      "path": "packages/web/src/product/ProductApp.tsx",
+      "role": "ui",
+      "summary": "Top-level React shell that probes the platform and wires chat plus the architecture board."
+    },
+    {
+      "id": "product-shell",
+      "label": "Product Layout Shell",
+      "path": "packages/web/src/product/ProductShell.tsx",
+      "role": "ui",
+      "summary": "Main layout with chat on the left, board on the right, and attach controls in the top bar."
+    },
+    {
+      "id": "product-chat",
+      "label": "Chat & Ask Pipeline",
+      "path": "packages/web/src/product",
+      "role": "ui",
+      "summary": "Chat UI and ask pipeline; commits fenced seqd blocks from AI replies to the board."
+    },
+    {
+      "id": "product-board",
+      "label": "Architecture Board Surface",
+      "path": "packages/web/src/product/board",
+      "role": "ui",
+      "summary": "Architecture board surface rendering SeqDiagram SVG with draw-mode ink overlays."
+    },
+    {
+      "id": "product-store",
+      "label": "Product State Store",
+      "path": "packages/web/src/product/state/productStore.ts",
+      "role": "state",
+      "summary": "Zustand store holding attach state, board document, and draw proposals."
+    },
+    {
+      "id": "attach-flow",
+      "label": "Repo Attach Pipeline",
+      "path": "packages/web/src/product/attachFlow.ts",
+      "role": "ui",
+      "summary": "Attaches a local repo, fetches the scanned graph, and converts it for the board."
+    },
+    {
+      "id": "seqd-pipeline",
+      "label": "SeqDiagram Transform Layer",
+      "path": "packages/web/src/product/board",
+      "role": "ui",
+      "summary": "Transforms ArchGraph to SeqDiagram and handles board viewport, hit-testing, and file I/O."
+    },
+    {
+      "id": "ink-recognition",
+      "label": "Freehand Stroke Recognition",
+      "path": "packages/ink",
+      "role": "library",
+      "summary": "Recognizes freehand strokes into boxes and arrows for product board draw mode."
+    },
+    {
+      "id": "gateway-service",
+      "label": "Optional Model Gateway",
+      "path": "packages/gateway",
+      "role": "external-service",
+      "summary": "Optional standalone OpenRouter gateway for free-tier model access."
+    },
+    {
+      "id": "mcp-server",
+      "label": "MCP Tool Server",
+      "path": "packages/mcp",
+      "role": "server",
+      "summary": "MCP server exposing scan, export, and diagram tools to external AI clients."
+    },
+    {
+      "id": "desktop-shell",
+      "label": "Electron Desktop Wrapper",
+      "path": "packages/desktop",
+      "role": "cli",
+      "summary": "Optional Electron wrapper bundling the local analyzer app in a desktop window."
+    },
+    {
+      "id": "react-ui-stack",
+      "label": "React UI Runtime Stack",
+      "path": "packages/web/package.json",
+      "role": "external",
+      "summary": "External React, Zustand, XYFlow, Mermaid, and ELK dependencies for the web UI."
+    }
+  ],
+  "edges": [
+    {
+      "from": "export-projections",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "analyzer-scan",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "analyzer-server",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "analyzer-server",
+      "to": "acp-protocol",
+      "type": "imports"
+    },
+    {
+      "from": "analyzer-cli",
+      "to": "analyzer-scan",
+      "type": "calls"
+    },
+    {
+      "from": "analyzer-cli",
+      "to": "export-projections",
+      "type": "imports"
+    },
+    {
+      "from": "analyzer-cli",
+      "to": "analyzer-server",
+      "type": "calls"
+    },
+    {
+      "from": "product-app",
+      "to": "product-shell",
+      "type": "imports"
+    },
+    {
+      "from": "product-app",
+      "to": "product-store",
+      "type": "imports"
+    },
+    {
+      "from": "product-app",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "product-shell",
+      "to": "product-chat",
+      "type": "imports"
+    },
+    {
+      "from": "product-shell",
+      "to": "product-board",
+      "type": "imports"
+    },
+    {
+      "from": "product-chat",
+      "to": "product-store",
+      "type": "calls"
+    },
+    {
+      "from": "product-chat",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "product-chat",
+      "to": "analyzer-server",
+      "type": "calls"
+    },
+    {
+      "from": "product-board",
+      "to": "product-store",
+      "type": "reads"
+    },
+    {
+      "from": "product-board",
+      "to": "seqd-pipeline",
+      "type": "imports"
+    },
+    {
+      "from": "seqd-pipeline",
+      "to": "export-projections",
+      "type": "imports"
+    },
+    {
+      "from": "seqd-pipeline",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "product-store",
+      "to": "attach-flow",
+      "type": "imports"
+    },
+    {
+      "from": "product-store",
+      "to": "seqd-pipeline",
+      "type": "imports"
+    },
+    {
+      "from": "attach-flow",
+      "to": "analyzer-server",
+      "type": "calls"
+    },
+    {
+      "from": "attach-flow",
+      "to": "seqd-pipeline",
+      "type": "calls"
+    },
+    {
+      "from": "attach-flow",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "mcp-server",
+      "to": "analyzer-scan",
+      "type": "calls"
+    },
+    {
+      "from": "mcp-server",
+      "to": "export-projections",
+      "type": "imports"
+    },
+    {
+      "from": "mcp-server",
+      "to": "schema-domain",
+      "type": "imports"
+    },
+    {
+      "from": "product-app",
+      "to": "analyzer-server",
+      "type": "calls"
+    },
+    {
+      "from": "product-app",
+      "to": "react-ui-stack",
+      "type": "imports"
+    },
+    {
+      "from": "product-store",
+      "to": "react-ui-stack",
+      "type": "imports"
+    },
+    {
+      "from": "analyzer-server",
+      "to": "export-projections",
+      "type": "unknown"
+    },
+    {
+      "from": "gateway-service",
+      "to": "analyzer-server",
+      "type": "unknown"
+    },
+    {
+      "from": "desktop-shell",
+      "to": "analyzer-server",
+      "type": "unknown"
+    },
+    {
+      "from": "ink-recognition",
+      "to": "product-board",
+      "type": "imports"
+    }
+  ],
+  "flows": [
+    {
+      "id": "cold-start",
+      "label": "Cold start → platform probe → shell",
+      "steps": [
+        "product-app",
+        "analyzer-server",
+        "product-store",
+        "product-shell"
+      ]
+    },
+    {
+      "id": "attach-scan-board",
+      "label": "Attach repo → scan → board",
+      "steps": [
+        "attach-flow",
+        "analyzer-server",
+        "analyzer-scan",
+        "seqd-pipeline",
+        "product-store",
+        "product-board"
+      ]
+    },
+    {
+      "id": "chat-diagram-commit",
+      "label": "Chat ask → fenced seqd → board commit",
+      "steps": [
+        "product-chat",
+        "analyzer-server",
+        "product-store",
+        "seqd-pipeline",
+        "product-board"
+      ]
+    },
+    {
+      "id": "cli-scan-export",
+      "label": "CLI scan → export projection",
+      "steps": [
+        "analyzer-cli",
+        "analyzer-scan",
+        "schema-domain",
+        "export-projections"
+      ]
+    },
+    {
+      "id": "mcp-diagram-tool",
+      "label": "MCP client → scan → diagram SVG",
+      "steps": [
+        "mcp-server",
+        "analyzer-scan",
+        "export-projections",
+        "schema-domain"
+      ]
+    }
+  ]
+}

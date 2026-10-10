@@ -1,0 +1,7 @@
+api:
+  name: api
+  logLevel: debug
+db:
+  name: db
+serviceAccounts:
+  create: true

@@ -1,0 +1,11 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:session","resumed":false,"threadId":"thread-plan-1"}
+{"type":"acp:model","model":"gpt-5-codex"}
+{"type":"acp:update","update":{"sessionId":"thread-plan-1","update":{"sessionUpdate":"plan","entries":[{"content":"Inspect module setup and imports","status":"in_progress","priority":"medium"},{"content":"Inspect request handlers","status":"pending","priority":"medium"},{"content":"Summarise what the file does","status":"pending","priority":"medium"}]}}}
+{"type":"acp:update","update":{"sessionId":"thread-plan-1","update":{"sessionUpdate":"plan","entries":[{"content":"Inspect module setup and imports","status":"completed","priority":"medium"},{"content":"Inspect request handlers","status":"in_progress","priority":"medium"},{"content":"Summarise what the file does","status":"pending","priority":"medium"}]}}}
+{"type":"acp:update","update":{"sessionId":"thread-plan-1","update":{"sessionUpdate":"plan","entries":[{"content":"Inspect module setup and imports","status":"completed","priority":"medium"},{"content":"Inspect request handlers","status":"completed","priority":"medium"},{"content":"Summarise what the file does","status":"in_progress","priority":"medium"}]}}}
+{"type":"acp:update","update":{"sessionId":"thread-plan-1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"It serves the orders API."}}}}
+{"type":"acp:update","update":{"sessionId":"thread-plan-1","update":{"sessionUpdate":"plan","entries":[{"content":"Inspect module setup and imports","status":"completed","priority":"medium"},{"content":"Inspect request handlers","status":"completed","priority":"medium"},{"content":"Summarise what the file does","status":"completed","priority":"medium"}],"_meta":{"codex":{"explanation":"All three steps done."}}}}}
+{"type":"acp:turn","state":"ended","stopReason":"end_turn"}
+{"type":"acp:result","stopReason":"end_turn","text":"It serves the orders API."}
+{"type":"acp:turn","state":"settled"}

@@ -1,0 +1,324 @@
+/* The Agents surface (AgentsSurface.tsx): quiet rows, transparent films, one centre line per row. */
+.ags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  height: 100%;
+  padding: var(--sp-12) var(--sp-16);
+  overflow: auto;
+  background: var(--b-s1);
+  color: var(--b-ink2);
+  font-size: var(--t-12-5);
+}
+.ags-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+}
+.ags-title {
+  margin: 0;
+  font-size: var(--t-13);
+  color: var(--b-ink1);
+}
+.ags-total {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin: 0 auto 0 0;
+  color: var(--b-ink3);
+}
+.ags-total-num {
+  color: var(--b-ink1);
+  font-variant-numeric: tabular-nums;
+}
+.ags-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--r-8);
+  background: color-mix(in srgb, var(--b-ink1) 5%, transparent);
+}
+.ags-seg-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--sp-24);
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--b-ink3);
+  font: inherit;
+  cursor: pointer;
+}
+.ags-seg-btn:hover {
+  color: var(--b-ink1);
+}
+.ags-seg-btn[aria-selected='true'] {
+  background: color-mix(in srgb, var(--b-ink1) 9%, transparent);
+  color: var(--b-ink1);
+}
+.ags-seg-btn:focus-visible {
+  outline: var(--w-hair) solid var(--b-acc);
+}
+.ags-empty {
+  margin: 0;
+  color: var(--b-ink3);
+}
+.ags-tree,
+.ags-kids {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ags-kids {
+  margin-left: var(--sp-8);
+  padding-left: var(--sp-8);
+  border-left: var(--w-hair) solid var(--b-edge2, var(--b-edge));
+}
+.ags-chat + .ags-chat {
+  margin-top: var(--sp-8);
+}
+.ags-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--row-h-tool);
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-8);
+}
+.ags-row:hover {
+  background: var(--b-glass);
+}
+.ags-row-chat {
+  color: var(--b-ink1);
+}
+.ags-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sp-16);
+  height: var(--sp-16);
+}
+.ags-mark::before {
+  content: '';
+  width: var(--sp-6);
+  height: var(--sp-6);
+  border-radius: 50%;
+  background: var(--b-ink3);
+}
+.ags-mark[data-state='done']::before {
+  background: var(--b-ok);
+}
+.ags-mark[data-state='failed']::before {
+  background: var(--b-del);
+}
+.ags-mark[data-state='running']::before {
+  content: none;
+}
+.ags-mark .act-loader.is-cell {
+  width: var(--sp-16);
+  height: var(--sp-16);
+  line-height: var(--sp-16);
+}
+.ags-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--sp-16);
+}
+.ags-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--b-ink3);
+}
+.ags-meta {
+  flex: none;
+  margin-left: auto;
+  color: var(--b-ink3);
+  font-size: var(--t-11-5);
+  font-variant-numeric: tabular-nums;
+}
+.ags-meta + .ags-meta,
+.ags-desc + .ags-meta {
+  margin-left: 0;
+}
+.ags-desc + .ags-meta {
+  margin-left: auto;
+}
+.ags-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+.ags-axis {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--b-ink3);
+  font-size: var(--t-11);
+}
+.ags-track {
+  position: relative;
+  height: var(--sp-8);
+  margin: var(--sp-2) var(--sp-6);
+  border-radius: var(--r-4);
+  background: color-mix(in srgb, var(--b-ink1) 4%, transparent);
+}
+.ags-lane {
+  padding: var(--sp-4) 0;
+}
+.ags-track-sub {
+  height: var(--sp-4);
+}
+.ags-bar-sub {
+  opacity: 0.8;
+}
+.ags-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--r-4);
+  background: var(--b-ink3);
+}
+.ags-bar[data-state='running'] {
+  background: color-mix(in srgb, var(--b-ink1) 60%, transparent);
+}
+.ags-bar[data-state='done'] {
+  background: color-mix(in srgb, var(--b-ok) 70%, transparent);
+}
+.ags-bar[data-state='failed'] {
+  background: var(--b-del);
+}
+/* The stage frame for the surface (LiveSurface.tsx). */
+.v3-agents {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+.v3-agents > .ags {
+  flex: 1;
+}
+/* A subagent's type is never cut; its description gives way instead. */
+.ags-row:has(.ags-desc) .ags-label {
+  flex: none;
+}
+
+/* The Workflows section: the activity pane inside the surface, one column. */
+.ags-workflows {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ROUND 12: under 1200px the tabs are icons (tree, clock, flow); the word is the tooltip and the aria-label. */
+.ags-seg-ico { display: none; flex: none; }
+@media (max-width: 1199px) {
+  .ags-seg-btn { gap: 0; width: var(--sp-32); padding: 0; }
+  .ags-seg-ico { display: block; }
+  .ags-seg-t {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+.ags-seg-btn { position: relative; }
+
+/* ROUND 12 (B8): a running label's shimmer sweep is neutral ink on this surface (the shared band is accent-tinted, which read
+   as a stray blue streak across the tree); the running mark is the spinner, and the running bar is ink, not accent. */
+.ags .ags-label.shimmer-text {
+  background-image: linear-gradient(100deg, var(--b-ink3) 0%, var(--b-ink3) 38%, var(--b-ink1) 50%, var(--b-ink3) 62%, var(--b-ink3) 100%);
+  /* the shared sweep does not repeat, so the end of each pass left the first letters unpainted (transparent text); the
+     gradient's two ends are the same ink, so repeating it is seamless and every letter always has a colour */
+  background-repeat: repeat-x;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ags .ags-label.shimmer-text {
+    background-image: none;
+    color: var(--b-ink1);
+  }
+}
+.ags-seg-btn:focus-visible {
+  outline-color: var(--b-ink2);
+}
+
+/* ROUND 13 (A2, A3): the head is one row at every width (title, Tokens, tabs); nothing in it wraps or stacks. */
+.ags-head { flex-wrap: nowrap; min-width: 0; }
+.ags-title, .ags-total { white-space: nowrap; flex: none; }
+.ags-seg { flex: none; }
+.ags-seg-btn { white-space: nowrap; }
+
+/* ROUND 13 (lead): the title has priority in a row. It takes the free width and ellipsises last; the numbers (tokens, time)
+   keep their own width and never shrink. */
+.ags-row > .ags-label { flex: 1 1 auto; }
+/* A subagent row: the name keeps its full width while there is room; the definition gives way first (its shrink weight is
+   far larger, so it reaches zero before the name loses a letter), and the name ellipsises only as a last resort. */
+/* (lead fix) shrink weights alone still cut the name at 1024: the name takes its full width, capped at 70% of the row so a
+   very long type still ellipsises, and the definition only gets what is left (basis 0, so it never pushes the name). */
+.ags-row:has(.ags-desc) > .ags-label { flex: 0 0 auto; max-width: 70%; }
+.ags-row > .ags-desc { flex: 1 1 0; min-width: 0; }
+.ags-row > .ags-meta { flex: none; margin-left: 0; white-space: nowrap; }
+.ags-row > .ags-label + .ags-meta,
+.ags-row > .ags-desc + .ags-meta { margin-left: auto; }
+.ags-time { min-width: 3ch; text-align: right; }
+
+/* ROUND 13 (N2, N3): the timeline folded into the tree. A row has a twist that opens its clock strip; what is working is
+   stronger and a step larger, what is finished is quieter. */
+.ags-twist {
+  appearance: none;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-16);
+  height: var(--sp-16);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--b-ink3);
+  cursor: pointer;
+}
+.ags-twist svg { transition: transform var(--dur-1) var(--ease); }
+.ags-twist[aria-expanded='true'] svg { transform: rotate(90deg); }
+.ags-twist:hover { color: var(--b-ink1); }
+.ags-twist:focus-visible { outline: var(--w-hair) solid var(--b-ink2); }
+.ags-detail { margin: 0 var(--sp-6) var(--sp-4) var(--sp-32); }
+.ags-detail-t {
+  margin: var(--sp-2) 0 0;
+  color: var(--b-ink3);
+  font-size: var(--t-11);
+  /* one line at every width: the rest is in the tooltip */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ags-detail .ags-track { margin: var(--sp-4) 0; }
+li[data-state='done'] > .ags-row .ags-label { color: var(--b-ink3); }
+li[data-state='running'] > .ags-row .ags-label,
+li[data-state='failed'] > .ags-row .ags-label { color: var(--b-ink1); }
+li[data-state='running'] > .ags-row .ags-label { font-size: var(--t-13); font-weight: var(--fw-label); }
+li[data-state='running'] > .ags-row .ags-meta { color: var(--b-ink2); }
+
+/* A narrow pane (the surface beside the board and the chat on a ~1024px window): "Context 101k · Output 18k" is longer than the old
+   single figure, so under 340px the figures take their own line below the title and the tabs instead of pushing the tabs out of view. */
+.ags { container-type: inline-size; }
+@container (max-width: 340px) {
+  .ags-head { flex-wrap: wrap; row-gap: var(--sp-6); }
+  .ags-total { order: 3; flex: 1 0 100%; margin: 0; }
+  .ags-seg { margin-left: auto; }
+}

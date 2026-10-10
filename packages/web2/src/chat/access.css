@@ -1,0 +1,106 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   INTENT AND ACCESS — packages/web2/src/chat/access.css
+
+   The agent chip appends the mode to the model name ("· Build · Auto-edit");
+   the rows themselves are ordinary `.v3-mode-pop` rows. The one-time Full
+   access question is a dialog: 8px radius, 1px edge, 160ms in (Base UI's
+   data-starting-style hooks). Full access spends the failure ink, because it
+   is the one mode that runs any command without asking.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.v3-chip-mode {
+  font-size: var(--t-11);
+  line-height: 1;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.v3-agent-chip[data-access='full'] .v3-chip-mode {
+  color: var(--st-failed);
+}
+
+.v3-access-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── the one-time Full access confirm ─────────────────────────────────── */
+
+.v3-access-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--scrim);
+  transition: opacity 160ms var(--ease);
+}
+
+.v3-access-backdrop[data-starting-style],
+.v3-access-backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.v3-access-confirm {
+  position: fixed;
+  z-index: 71;
+  top: 50%;
+  left: 50%;
+  width: min(360px, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+  padding: var(--sp-16);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--bg-base);
+  box-shadow: var(--e4);
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  box-sizing: border-box;
+  transition: opacity 160ms var(--ease);
+}
+
+.v3-access-confirm[data-starting-style],
+.v3-access-confirm[data-ending-style] {
+  opacity: 0;
+}
+
+.v3-access-confirm-title {
+  margin: 0 0 var(--sp-6);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+.v3-access-confirm-body {
+  margin: 0;
+}
+
+.v3-access-confirm-error {
+  margin: var(--sp-8) 0 0;
+  color: var(--st-failed);
+}
+
+.v3-access-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-8);
+  margin-top: var(--sp-16);
+}
+
+.v3-access-btn {
+  height: 24px;
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge-strong);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-11);
+  cursor: pointer;
+}
+
+.v3-access-btn.is-primary {
+  border-color: var(--wont-edge);
+  background: var(--wont-wash);
+}

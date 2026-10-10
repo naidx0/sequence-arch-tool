@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="en" data-draft="b">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequence · Draft B — Workstation</title>
+
+<!--
+================================================================================
+  DRAFT B — WORKSTATION
+================================================================================
+
+  THE DIRECTION, IN TWO SENTENCES
+  Sequence should look like an instrument you live inside, not an app you visit:
+  two panes sharing one frame, a draggable seam between them, every identifier
+  and every number set in monospace so the eye can scan a column instead of
+  reading a sentence. Structure is drawn, not implied — box-drawing rules carry
+  nesting, ASCII meters carry progress, and the chrome earns its pixels by
+  telling you what the machine is doing right now.
+
+  THE THREE THINGS I WOULD CHANGE ABOUT THE CURRENT APP FIRST
+  1. KILL THE SINGLE-COLUMN TRANSCRIPT. Chat is currently the whole window, so
+     the thing chat is TALKING ABOUT lives one tab away and you pay a context
+     switch to see it. Make the workspace a split by default — transcript left,
+     the artefact under discussion right, one frame, one draggable seam. A diff
+     should be readable in the same glance as the sentence proposing it.
+  2. GIVE LONG WORK A PERMANENT HOME. A subagent that has been running 1m 12s is
+     the single most important fact on screen and today it is a spinner. Every
+     long-running task gets a row with elapsed time, the tool it is inside RIGHT
+     NOW, and its nested children indented under box-drawing rules — and that row
+     survives scrolling away, pinned in the run pane.
+  3. STOP SETTING IDENTIFIERS IN PROSE TYPE. Paths, branches, model names, token
+     counts, durations, line numbers: all of it is currently sans-serif and
+     proportional, which means you read it instead of scanning it. Monospace with
+     tabular figures, one ladder, everywhere. Density is not clutter; ambiguity is.
+
+================================================================================
+  CONTRAST — MEASURED, NOT EYEBALLED
+================================================================================
+  Method: sRGB channel v/255 -> linear (v<=0.03928 ? v/12.92 : ((v+0.055)/1.055)^2.4)
+          L = 0.2126R + 0.7152G + 0.0722B ; ratio = (Lhi+0.05)/(Llo+0.05)
+
+  The panes are translucent over a ground that is a GRADIENT, so every ratio
+  below is computed against the WORST CASE — the composite where the ground is at
+  its lightest lift (#191B22) and therefore the pane behind the text is lightest.
+
+  Composites (computed, not guessed):
+    pane  = rgba(255,255,255,.055) over #191B22  ->  rgb(38,40,46)   L = 0.021187
+    card  = rgba(255,255,255,.045) over pane     ->  rgb(48,50,55)   L = 0.031849
+    sel   = rgba(126,118,240,.16)  over pane     ->  rgb(52,52,77)   L = 0.037221
+    add   = rgba(74,222,154,.10)   over card     ->  rgb(51,67,65)   L = 0.050997
+    del   = rgba(248,113,113,.10)  over card     ->  rgb(68,56,61)   L = 0.043960
+    well  = rgba(0,0,0,.28)        over pane     ->  rgb(27,29,33)   L = 0.012215
+    gutter = opaque --gutter #1D1E23 (the sticky diff line-number column,
+             which must be opaque or code scrolls under it)            L = 0.013116
+    ground (darkest) #0F1013                                         L = 0.005189
+
+  Foreground luminances:
+    --ink-1  #EDEEF2  L = 0.855671      --ink-2  #B9BCC6  L = 0.503574
+    --ink-3  #9CA0AE  L = 0.352730      --ink-4  #787D8C  L = 0.205559
+    --accent #7E76F0  L = 0.236870      --accent-ink #A5A0FA  L = 0.400526
+    --ok     #4ADE9A  L = 0.560382      --run    #56B6F5  L = 0.420271
+    --warn   #F5B84E  L = 0.542433      --bad    #F87171  L = 0.329593
+    --bad-ink #FF9A9A L = 0.467029
+
+  BODY TEXT (needs >= 4.5:1)
+    ink-1 on pane 13.00:1 | on card 11.07:1 | on sel 10.38:1 | on well 14.56:1
+    ink-2 on pane  7.94:1 | on card  6.76:1 | on add   5.48:1 | on del   5.89:1
+    ink-3 on pane  5.66:1 | on card  4.92:1 | on sel   4.62:1 | on well  6.47:1
+          ^ the small mono greys — checked first, because this is where dense
+            monospace quietly fails. Both clear 4.5.
+    ink-2 on gutter 8.77:1   (diff line numbers, 11px mono — the worst case in
+            the file for size, so it gets the second-brightest ink, not ink-3)
+    accent-ink on card 5.50:1 | on sel 5.17:1
+    ok   on card 7.46:1 | on add 6.04:1
+    run  on card 5.75:1
+    warn on card 7.24:1
+    bad-ink on card 6.32:1 | on del 5.50:1
+    ground-ink #0F1013 on --accent fill 6.10:1 | on --ok fill 11.06:1
+
+  NON-TEXT MARKS + BOX-DRAWING RULES (needs >= 3:1)
+    ink-4 (│ ├ └ ─ rules, meter troughs, dividers) on pane 3.59:1 | on card 3.12:1
+    accent as a mark (bars, dots, focus ring) on pane 4.12:1 | on card 3.50:1
+    bad as a mark (gutter −, refused bar) on card 4.64:1
+
+  DELIBERATELY BELOW 3:1, AND ONLY EVER DECORATIVE — never the sole carrier of
+  meaning: --edge / --edge-soft hairlines, --glass-hi / --glass-lo inset
+  highlights, the --scrim. Every one of them has a redundant cue (a label, a
+  glyph, a colour-independent shape).
+
+  NOT USED AS BODY TEXT, ON PURPOSE:
+    --accent #7E76F0 on card = 3.50:1. It is a MARK token. Accent-coloured text
+    uses --accent-ink. This is enforced by convention below; there is no rule in
+    CSS that can catch it, so it is written here instead.
+
+================================================================================
+  Node kinds and states differentiate by GLYPH and WEIGHT first, hue second
+  (GRAPHITE-DECISIONS: never more hues than claims). Light mode is deferred.
+================================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   TOKENS — the only place in this file where a literal colour appears.
+   Nothing below this block reaches for a hex.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* ground — not black; a soft neutral elevation so backdrop-filter has
+     something to refract. No hue: the lift is grey, per Graphite law 1. */
+  --ground:        #0F1013;
+  --ground-lift:   #191B22;
+  --ground-lift-2: #15161B;
+
+  /* ink ladder */
+  --ink-1: #EDEEF2;   /* primary prose, code, headings            13.00:1 pane */
+  --ink-2: #B9BCC6;   /* secondary prose, gutters                  7.94:1 pane */
+  --ink-3: #9CA0AE;   /* mono meta: paths, counts, timers          5.66:1 pane */
+  --ink-4: #787D8C;   /* box-drawing rules, troughs, marks         3.59:1 pane */
+
+  /* accent — a mark colour and a text colour, kept separate on purpose */
+  --accent:     #7E76F0;
+  --accent-ink: #A5A0FA;
+  --on-accent:  #0F1013;
+
+  /* states — each also carries a glyph, never hue alone */
+  --ok:      #4ADE9A;
+  --run:     #56B6F5;
+  --warn:    #F5B84E;
+  --bad:     #F87171;
+  --bad-ink: #FF9A9A;
+
+  /* glass — lighter than its ground, always */
+  --glass-top: rgba(255,255,255,.055);
+  --glass-bot: rgba(255,255,255,.028);
+  --glass-hi:  rgba(255,255,255,.085);   /* top inset: where the light is */
+  --glass-lo:  rgba(0,0,0,.40);          /* bottom inset: the pane has thickness */
+  --card-fill: rgba(255,255,255,.045);
+  --well-fill: rgba(0,0,0,.28);
+  --gutter:    #1D1E23;   /* opaque: the sticky diff gutter cannot be see-through */
+
+  /* coloured alphas derived from the state hues, declared here so nothing
+     below reaches for a channel triple. Neutral white/black alphas below this
+     block are material physics (light and thickness), not palette. */
+  --run-glow-0: rgba(86,182,245,0);
+  --run-glow-1: rgba(86,182,245,.10);
+  --on-accent-edge: rgba(0,0,0,.30);
+
+  --edge:       rgba(255,255,255,.11);
+  --edge-soft:  rgba(255,255,255,.06);
+  --edge-hard:  rgba(255,255,255,.17);
+
+  --hover:    rgba(255,255,255,.055);
+  --press:    rgba(255,255,255,.09);
+  --sel:      rgba(126,118,240,.16);
+  --sel-edge: rgba(126,118,240,.42);
+
+  --add-bg: rgba(74,222,154,.10);
+  --del-bg: rgba(248,113,113,.10);
+  --ok-wash:   rgba(74,222,154,.13);
+  --run-wash:  rgba(86,182,245,.13);
+  --warn-wash: rgba(245,184,78,.13);
+  --bad-wash:  rgba(248,113,113,.13);
+  --accent-wash: rgba(126,118,240,.13);
+
+  --shadow-pane: 0 1px 0 var(--glass-hi) inset, 0 -1px 0 var(--glass-lo) inset,
+                 0 18px 44px rgba(0,0,0,.44);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.05) inset, 0 6px 16px rgba(0,0,0,.28);
+
+  /* type */
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  --t-9:  9px;  --lh-9: 12px;
+  --t-10:10px;  --lh-10:14px;
+  --t-11:11px;  --lh-11:15px;
+  --t-12:12px;  --lh-12:17px;
+  --t-13:13px;  --lh-13:19px;
+  --t-15:15px;  --lh-15:23px;
+  --t-18:18px;  --lh-18:24px;
+
+  /* space — a workstation ladder: tighter than Graphite's, still a ladder */
+  --s-2:2px; --s-3:3px; --s-4:4px; --s-6:6px; --s-8:8px;
+  --s-10:10px; --s-12:12px; --s-16:16px; --s-20:20px; --s-24:24px;
+
+  --r-3:3px; --r-5:5px; --r-8:8px; --r-12:12px; --r-full:999px;
+
+  --rail-w: 252px;
+  --seam-w: 7px;
+
+  --dur-1: 110ms; --dur-2: 170ms; --dur-3: 240ms;
+  --ease: cubic-bezier(.2,.7,.3,1);
+}
+
+/* ── reset ─────────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--sans);
+  font-size:var(--t-13); line-height:var(--lh-13);
+  color:var(--ink-1);
+  background:
+    radial-gradient(1100px 760px at 16% -14%, var(--ground-lift) 0%, transparent 62%),
+    radial-gradient(880px 700px at 98% 112%, var(--ground-lift-2) 0%, transparent 58%),
+    var(--ground);
+  background-attachment:fixed;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:var(--r-3)}
+::selection{background:var(--sel);color:var(--ink-1)}
+
+/* scrollbars — thin, workstation */
+*{scrollbar-width:thin;scrollbar-color:var(--ink-4) transparent}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--edge-hard);border-radius:var(--r-full);
+  border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:var(--ink-4);background-clip:content-box}
+
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums lining-nums;
+  font-feature-settings:"ss01" 0}
+.trunc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLASS — a pane must be LIGHTER than its ground, must have something varied
+   behind it to refract, must saturate, and must carry both insets.
+   ══════════════════════════════════════════════════════════════════════════ */
+.glass{
+  background:linear-gradient(180deg, var(--glass-top) 0%, var(--glass-bot) 100%);
+  -webkit-backdrop-filter:blur(22px) saturate(1.7);
+  backdrop-filter:blur(22px) saturate(1.7);
+  border:1px solid var(--edge);
+  box-shadow:var(--shadow-pane);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WINDOW
+   ══════════════════════════════════════════════════════════════════════════ */
+.win{
+  height:100vh; min-height:560px;
+  margin:0 auto;
+  display:grid;
+  grid-template-rows:38px minmax(0,1fr) 24px;
+  border-radius:var(--r-12);
+  overflow:hidden;
+  isolation:isolate;
+}
+
+/* ── titlebar ──────────────────────────────────────────────────────────── */
+.titlebar{
+  display:flex; align-items:center; gap:var(--s-12);
+  padding:0 var(--s-12);
+  border-bottom:1px solid var(--edge);
+  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);
+  backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:0 1px 0 var(--glass-hi) inset;
+  min-width:0;
+}
+.lights{display:flex;gap:6px;flex:none}
+.lights i{width:11px;height:11px;border-radius:var(--r-full);display:block;
+  box-shadow:0 0 0 1px rgba(0,0,0,.28) inset}
+.lights i:nth-child(1){background:var(--bad)}
+.lights i:nth-child(2){background:var(--warn)}
+.lights i:nth-child(3){background:var(--ok)}
+
+.crumb{display:flex;align-items:center;gap:var(--s-6);min-width:0;
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3);
+  font-variant-numeric:tabular-nums}
+.crumb b{color:var(--ink-1);font-weight:500}
+.crumb .sep{color:var(--ink-4)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:var(--s-6);flex:none}
+
+.chip{
+  display:inline-flex;align-items:center;gap:var(--s-6);
+  height:22px;padding:0 var(--s-8);
+  border:1px solid var(--edge);border-radius:var(--r-5);
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset;
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;color:var(--ink-2);
+  letter-spacing:.02em;white-space:nowrap;
+  transition:background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.chip:hover{background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04));
+  border-color:var(--edge-hard);color:var(--ink-1)}
+.chip.on{border-color:var(--sel-edge);background:var(--accent-wash);color:var(--accent-ink)}
+.chip .dot{width:5px;height:5px;border-radius:var(--r-full);background:currentColor;flex:none}
+
+/* ── body grid: rail | seam | main ─────────────────────────────────────── */
+.body{display:grid;grid-template-columns:var(--rail-w) var(--seam-w) minmax(0,1fr);
+  min-height:0;min-width:0}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SEAM — the draggable-looking boundary. Structural, not decorative.
+   ══════════════════════════════════════════════════════════════════════════ */
+.seam{
+  position:relative;cursor:col-resize;
+  background:linear-gradient(90deg, transparent 0 2px, var(--edge-soft) 3px 4px, transparent 5px);
+  border:0;
+}
+.seam::before{
+  content:"";position:absolute;inset:0 2px;border-radius:var(--r-full);
+  background:transparent;transition:background var(--dur-1) var(--ease);
+}
+.seam::after{
+  content:"⋮⋮";position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;letter-spacing:-2px;
+  color:var(--ink-4);opacity:0;transition:opacity var(--dur-2) var(--ease);
+  writing-mode:vertical-rl;
+}
+.seam:hover::before,.seam:focus-visible::before{background:var(--accent-wash)}
+.seam:hover::after,.seam:focus-visible::after{opacity:1;color:var(--accent-ink)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SESSION RAIL
+   ══════════════════════════════════════════════════════════════════════════ */
+.rail{
+  min-width:0;min-height:0;display:flex;flex-direction:column;
+  border-right:1px solid var(--edge-soft);
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.012));
+  -webkit-backdrop-filter:blur(20px) saturate(1.6);
+  backdrop-filter:blur(20px) saturate(1.6);
+  box-shadow:1px 0 0 rgba(0,0,0,.30) inset;
+}
+.rail-head{padding:var(--s-10) var(--s-10) var(--s-8);border-bottom:1px solid var(--edge-soft)}
+.rail-title{
+  display:flex;align-items:center;gap:var(--s-6);
+  font-family:var(--mono);font-size:var(--t-9);line-height:var(--lh-9);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+  margin-bottom:var(--s-8);
+}
+.rail-title .box{color:var(--ink-4)}
+.rail-title .count{margin-left:auto;color:var(--ink-4);letter-spacing:.04em}
+
+.rail-acts{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4)}
+.rail-acts .chip{height:24px;justify-content:center;width:100%}
+.rail-acts .chip.wide{grid-column:1 / -1}
+
+.rail-scroll{flex:1;min-height:0;overflow-y:auto;padding:var(--s-6) var(--s-6) var(--s-12)}
+
+.group{margin-top:var(--s-10)}
+.group:first-child{margin-top:var(--s-2)}
+.group-hd{
+  display:flex;align-items:center;gap:var(--s-6);
+  padding:var(--s-4) var(--s-6) var(--s-6);
+  font-family:var(--mono);font-size:var(--t-9);line-height:var(--lh-9);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+}
+.group-hd .rule{flex:1;height:1px;background:var(--edge-soft)}
+.group-hd .n{color:var(--ink-4)}
+
+.thread{
+  position:relative;display:flex;align-items:center;gap:var(--s-8);
+  width:100%;text-align:left;
+  padding:var(--s-6) var(--s-6) var(--s-6) var(--s-8);
+  border-radius:var(--r-5);border:1px solid transparent;
+  transition:background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+  min-width:0;
+}
+.thread + .thread{margin-top:1px}
+.thread:hover{background:var(--hover)}
+.thread .mark{
+  flex:none;width:11px;text-align:center;
+  font-family:var(--mono);font-size:var(--t-11);line-height:1;color:var(--ink-4);
+}
+.thread .txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.thread .nm{font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thread .meta{font-family:var(--mono);font-size:var(--t-9);line-height:var(--lh-9);
+  color:var(--ink-4);letter-spacing:.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.thread.loaded{background:var(--sel);border-color:var(--sel-edge)}
+.thread.loaded .nm{color:var(--ink-1);font-weight:500}
+.thread.loaded .mark{color:var(--accent-ink)}
+.thread.loaded .meta{color:var(--ink-3)}
+.thread.loaded::before{
+  content:"";position:absolute;left:-1px;top:5px;bottom:5px;width:2px;
+  border-radius:var(--r-full);background:var(--accent);
+}
+.thread.picked{background:var(--hover);border-color:var(--edge)}
+.thread.picked .mark{color:var(--accent-ink)}
+.thread.picked .nm{color:var(--ink-1)}
+
+.row-acts{display:flex;gap:2px;flex:none;opacity:0;
+  transition:opacity var(--dur-1) var(--ease)}
+.thread:hover .row-acts,.thread:focus-within .row-acts{opacity:1}
+.iconbtn{
+  width:20px;height:20px;border-radius:var(--r-3);
+  display:grid;place-items:center;
+  font-family:var(--mono);font-size:var(--t-11);line-height:1;color:var(--ink-3);
+  transition:background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.iconbtn:hover{background:var(--press);color:var(--ink-1)}
+
+.selbar{
+  display:flex;align-items:center;gap:var(--s-8);
+  margin:var(--s-6) var(--s-2) 0;padding:var(--s-6) var(--s-8);
+  border:1px solid var(--sel-edge);border-radius:var(--r-5);
+  background:var(--accent-wash);
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;color:var(--accent-ink);
+}
+.selbar .acts{margin-left:auto;display:flex;gap:var(--s-8)}
+.selbar .acts button{color:var(--ink-2);text-decoration:underline;text-underline-offset:2px}
+.selbar .acts button:hover{color:var(--ink-1)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MAIN — tab bar, then the split
+   ══════════════════════════════════════════════════════════════════════════ */
+.main{min-width:0;min-height:0;display:grid;grid-template-rows:34px minmax(0,1fr)}
+
+.tabs{
+  display:flex;align-items:stretch;gap:0;min-width:0;
+  border-bottom:1px solid var(--edge);
+  background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01));
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);
+  backdrop-filter:blur(18px) saturate(1.6);
+  overflow-x:auto;overflow-y:hidden;
+}
+.tab{
+  position:relative;flex:none;
+  display:flex;align-items:center;gap:var(--s-6);
+  padding:0 var(--s-10);height:100%;
+  border-right:1px solid var(--edge-soft);
+  font-family:var(--mono);font-size:var(--t-11);line-height:1;
+  color:var(--ink-3);letter-spacing:.01em;white-space:nowrap;
+  transition:background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.tab .g{color:var(--ink-4);font-size:var(--t-10)}
+.tab:hover{background:var(--hover);color:var(--ink-2)}
+.tab.on{background:var(--card-fill);color:var(--ink-1);font-weight:500}
+.tab.on .g{color:var(--accent-ink)}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:var(--accent)}
+.tab .x{
+  width:15px;height:15px;border-radius:var(--r-3);display:grid;place-items:center;
+  font-size:var(--t-11);color:var(--ink-4);margin-left:var(--s-2);
+}
+.tab .x:hover{background:var(--press);color:var(--ink-1)}
+.tabs-tail{margin-left:auto;display:flex;align-items:center;gap:var(--s-6);
+  padding:0 var(--s-10);flex:none}
+
+/* ── the split: chat | seam | side pane ────────────────────────────────── */
+.split{
+  display:grid;
+  grid-template-columns:minmax(380px,1.08fr) var(--seam-w) minmax(330px,1fr);
+  min-height:0;min-width:0;
+}
+.col{min-width:0;min-height:0;display:flex;flex-direction:column}
+.col.chat{border-right:1px solid var(--edge-soft)}
+
+/* pane header — the same object in both columns, so the frame reads as one */
+.pane-hd{
+  flex:none;display:flex;align-items:center;gap:var(--s-8);
+  height:28px;padding:0 var(--s-10);min-width:0;
+  border-bottom:1px solid var(--edge-soft);
+  background:rgba(255,255,255,.022);
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+}
+.pane-hd .k{color:var(--ink-4);text-transform:none;letter-spacing:.02em}
+.pane-hd .right{margin-left:auto;display:flex;align-items:center;gap:var(--s-6);flex:none}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TRANSCRIPT
+   ══════════════════════════════════════════════════════════════════════════ */
+.stream{flex:1;min-height:0;overflow-y:auto;padding:var(--s-12) var(--s-12) var(--s-16)}
+
+.turn{margin-bottom:var(--s-16)}
+.turn-hd{
+  display:flex;align-items:center;gap:var(--s-8);margin-bottom:var(--s-8);min-width:0;
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;color:var(--ink-3);
+  letter-spacing:.05em;
+}
+.turn-hd .who{color:var(--ink-1);font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.turn-hd .rule{flex:1;height:1px;background:var(--edge-soft);min-width:var(--s-12)}
+.turn-hd .t{color:var(--ink-4);flex:none}
+
+.usr{
+  border-left:2px solid var(--accent);
+  padding:var(--s-6) var(--s-10);
+  background:var(--accent-wash);
+  border-radius:0 var(--r-5) var(--r-5) 0;
+  color:var(--ink-1);font-size:var(--t-13);line-height:var(--lh-13);
+}
+
+.prose h3{
+  margin:0 0 var(--s-6);font-size:var(--t-15);line-height:var(--lh-15);
+  font-weight:600;letter-spacing:-.01em;color:var(--ink-1);
+}
+.prose p{margin:0 0 var(--s-8);color:var(--ink-2);font-size:var(--t-13);line-height:var(--lh-13)}
+.prose ul{margin:0 0 var(--s-8);padding:0;list-style:none}
+.prose li{
+  position:relative;padding-left:18px;margin-bottom:var(--s-4);
+  color:var(--ink-2);font-size:var(--t-13);line-height:var(--lh-13);
+}
+.prose li::before{
+  content:"─";position:absolute;left:2px;top:0;
+  font-family:var(--mono);color:var(--ink-4);
+}
+.prose p,.prose li{overflow-wrap:anywhere}
+.prose code{
+  font-family:var(--mono);font-size:var(--t-12);
+  background:var(--well-fill);border:1px solid var(--edge-soft);
+  border-radius:var(--r-3);padding:0 4px;color:var(--ink-1);
+  overflow-wrap:anywhere;
+}
+
+/* PATH TRUNCATION — a path must lose its LEADING directories, never its
+   filename. CSS ellipsis only trims the tail, and direction:rtl reorders the
+   slashes, so the path is split: a shrinking head and a fixed tail. */
+.p2{display:flex;min-width:0;align-items:baseline;font-family:var(--mono)}
+.p2 .head{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--ink-3);
+  /* rtl puts the ellipsis on the LEFT; plaintext keeps the path itself in
+     LTR order so the slashes do not reorder. If a browser gets this wrong the
+     filename is still safe — it lives in .tail, outside the truncating box. */
+  direction:rtl;unicode-bidi:plaintext;text-align:left}
+.p2 .tail{flex:none;white-space:nowrap;color:var(--ink-1);font-weight:500}
+.card-hd .p2,.filehd .p2{flex:1}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CARDS — the structural unit. Real boundary, real header, no floating.
+   ══════════════════════════════════════════════════════════════════════════ */
+.card{
+  margin:var(--s-8) 0;
+  border:1px solid var(--edge);border-radius:var(--r-8);
+  background:var(--card-fill);
+  box-shadow:var(--shadow-card);
+  overflow:hidden;min-width:0;
+}
+.card-hd{
+  display:flex;align-items:center;gap:var(--s-8);min-width:0;
+  padding:var(--s-6) var(--s-10);
+  border-bottom:1px solid var(--edge-soft);
+  background:rgba(255,255,255,.02);
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);
+  color:var(--ink-2);
+}
+.card-hd .kind{
+  flex:none;font-size:var(--t-9);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.card-hd .sep{color:var(--ink-4);flex:none}
+.card-hd .right{margin-left:auto;display:flex;align-items:center;gap:var(--s-8);flex:none;
+  color:var(--ink-3);font-size:var(--t-10)}
+.card-bd{padding:var(--s-8) var(--s-10)}
+
+/* status stripe on the left edge of a card — colour + glyph, never colour alone */
+.card.s-ok   {border-left:2px solid var(--ok)}
+.card.s-run  {border-left:2px solid var(--run)}
+.card.s-bad  {border-left:2px solid var(--bad)}
+.card.s-wait {border-left:2px solid var(--ink-4)}
+
+.st{display:inline-flex;align-items:center;gap:var(--s-4);flex:none;
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;letter-spacing:.04em}
+.st.ok{color:var(--ok)} .st.run{color:var(--run)}
+.st.bad{color:var(--bad-ink)} .st.warn{color:var(--warn)} .st.wait{color:var(--ink-3)}
+
+/* ── thinking fold ─────────────────────────────────────────────────────── */
+details.think{
+  margin:var(--s-8) 0;border:1px dashed var(--edge);border-radius:var(--r-8);
+  background:rgba(255,255,255,.018);overflow:hidden;
+}
+details.think > summary{
+  list-style:none;cursor:pointer;
+  display:flex;align-items:center;gap:var(--s-8);min-width:0;
+  padding:var(--s-6) var(--s-10);
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3);
+  transition:background var(--dur-1) var(--ease);
+}
+details.think > summary::-webkit-details-marker{display:none}
+details.think > summary:hover{background:var(--hover);color:var(--ink-2)}
+details.think > summary .tri{color:var(--ink-4);flex:none;
+  transition:transform var(--dur-2) var(--ease)}
+details.think[open] > summary .tri{transform:rotate(90deg)}
+details.think > summary .lbl{color:var(--ink-2)}
+details.think > summary .n{margin-left:auto;color:var(--ink-4);flex:none}
+.think-bd{
+  padding:var(--s-8) var(--s-10) var(--s-10) var(--s-16);
+  border-top:1px dashed var(--edge-soft);
+  font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-3);
+  max-height:150px;overflow-y:auto;
+}
+.think-bd p{margin:0 0 var(--s-6)}
+.think-bd p:last-child{margin:0}
+
+/* ── tool rows ─────────────────────────────────────────────────────────── */
+.tool{
+  display:flex;align-items:center;gap:var(--s-8);min-width:0;
+  padding:var(--s-6) var(--s-10);
+  font-family:var(--mono);font-size:var(--t-12);line-height:var(--lh-12);
+}
+.tool + .tool{border-top:1px solid var(--edge-soft)}
+.tool .fn{color:var(--ink-1);font-weight:500;flex:none}
+.tool .arg{color:var(--ink-3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tool .tail{margin-left:auto;display:flex;align-items:center;gap:var(--s-8);flex:none;
+  color:var(--ink-3);font-size:var(--t-10)}
+
+.tool-note{
+  padding:var(--s-6) var(--s-10) var(--s-8) var(--s-16);
+  border-top:1px solid var(--edge-soft);
+  background:var(--bad-wash);
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);color:var(--bad-ink);
+  overflow-wrap:anywhere;
+}
+.excerpt{
+  margin:0;padding:var(--s-6) var(--s-10);
+  border-top:1px solid var(--edge-soft);
+  background:var(--well-fill);
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-2);
+  max-height:84px;overflow:auto;white-space:pre;
+}
+
+/* ── ASCII meter ───────────────────────────────────────────────────────── */
+.meter{font-family:var(--mono);font-size:var(--t-11);line-height:1;letter-spacing:.5px;
+  color:var(--ink-4);flex:none;white-space:nowrap}
+.meter .fill{color:var(--run)}
+.meter.done .fill{color:var(--ok)}
+
+/* braille spinner — this repo's own vocabulary, already on the reasoning row */
+.spin{font-family:var(--mono);flex:none;display:inline-block;width:1ch;color:var(--run)}
+.spin::after{content:"\28CB"}
+@keyframes braille{
+  0%  {content:"\28CB"} 10%{content:"\28D9"} 20%{content:"\28F9"} 30%{content:"\28F8"}
+  40% {content:"\28F4"} 50%{content:"\28F4"} 60%{content:"\28E6"} 70%{content:"\28E7"}
+  80% {content:"\28C7"} 90%{content:"\28CF"}
+}
+@keyframes meter-run{
+  0%  {content:"\25B0\25B1\25B1\25B1\25B1\25B1"}
+  25% {content:"\25B0\25B0\25B1\25B1\25B1\25B1"}
+  50% {content:"\25B0\25B0\25B0\25B1\25B1\25B1"}
+  75% {content:"\25B0\25B0\25B0\25B0\25B1\25B1"}
+  100%{content:"\25B0\25B0\25B0\25B0\25B0\25B1"}
+}
+.meter.live .fill::after{content:"\25B0\25B0\25B0\25B1\25B1\25B1"}
+
+/* ── todo list ─────────────────────────────────────────────────────────── */
+.todo{display:block}
+.todo li{
+  display:flex;align-items:baseline;gap:var(--s-8);min-width:0;
+  padding:var(--s-4) var(--s-10);
+  font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);
+  list-style:none;
+}
+.todo li + li{border-top:1px solid var(--edge-soft)}
+.todo .g{flex:none;width:12px;text-align:center;font-family:var(--mono);font-size:var(--t-12)}
+.todo .lbl{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo .why{font-family:var(--mono);font-size:var(--t-10);color:var(--ink-3);flex:none}
+.todo .d .g{color:var(--ok)}
+.todo .d .lbl{color:var(--ink-3);text-decoration:line-through;
+  text-decoration-color:var(--ink-4)}
+.todo .a .g{color:var(--run)}
+.todo .a .lbl{color:var(--ink-1);font-weight:500}
+.todo .p .g{color:var(--ink-4)}
+.todo .b .g{color:var(--warn)}
+.todo .b .lbl{color:var(--ink-1)}
+.todo ul{margin:0;padding:0}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SUBAGENT ROW — the best idea in the 21st.dev set, given the most room.
+   Elapsed time + the tool it is inside RIGHT NOW + nested children on rules.
+   ══════════════════════════════════════════════════════════════════════════ */
+.agent{
+  border:1px solid var(--edge);border-left:2px solid var(--run);
+  border-radius:var(--r-8);background:var(--card-fill);
+  box-shadow:var(--shadow-card);margin:var(--s-8) 0;overflow:hidden;min-width:0;
+}
+.agent-hd{
+  display:flex;align-items:center;gap:var(--s-8);min-width:0;
+  padding:var(--s-6) var(--s-10);
+  font-family:var(--mono);font-size:var(--t-12);line-height:var(--lh-12);
+  background:var(--run-wash);
+  border-bottom:1px solid var(--edge-soft);
+}
+.agent-hd .nm{color:var(--ink-1);font-weight:700;flex:none}
+.agent-hd .kind{flex:none;font-size:var(--t-9);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3)}
+.agent-hd .right{margin-left:auto;display:flex;align-items:center;gap:var(--s-8);flex:none}
+.elapsed{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:var(--t-12);color:var(--ink-1);font-weight:700;letter-spacing:.02em;flex:none;
+}
+.elapsed .u{color:var(--ink-3);font-weight:400}
+
+.agent-now{
+  display:flex;align-items:center;gap:var(--s-8);min-width:0;
+  padding:var(--s-6) var(--s-10);
+  border-bottom:1px solid var(--edge-soft);
+  background:var(--well-fill);
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);
+}
+.agent-now .k{flex:none;color:var(--ink-3);font-size:var(--t-9);letter-spacing:.12em;
+  text-transform:uppercase}
+.agent-now .v{min-width:0;color:var(--ink-1);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.agent-now .v .fn{color:var(--accent-ink)}
+
+/* the nested tree — box drawing carries the nesting, indentation alone does not */
+.tree{margin:0;padding:var(--s-6) var(--s-10) var(--s-8);list-style:none;
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11)}
+.tree li{display:flex;align-items:center;gap:var(--s-6);min-width:0;padding:1px 0}
+.tree .br{flex:none;color:var(--ink-4);white-space:pre}
+.tree .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.tree .lbl .fn{color:var(--ink-1)}
+.tree .tail{margin-left:auto;flex:none;color:var(--ink-3);font-size:var(--t-10);
+  padding-left:var(--s-8)}
+.tree li.now .lbl{color:var(--ink-1)}
+.tree li.now{background:var(--run-wash);border-radius:var(--r-3);
+  margin:0 calc(var(--s-4) * -1);padding:1px var(--s-4)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EDIT APPROVAL + DIFF
+   ══════════════════════════════════════════════════════════════════════════ */
+.diff{
+  margin:0;max-height:186px;overflow:auto;
+  background:var(--well-fill);
+  border-top:1px solid var(--edge-soft);border-bottom:1px solid var(--edge-soft);
+}
+.dl{
+  display:flex;align-items:flex-start;gap:0;min-width:0;
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);
+  white-space:pre;
+}
+.dl .ln{
+  flex:none;width:44px;padding:0 var(--s-6);text-align:right;
+  color:var(--ink-2);
+  border-right:1px solid var(--edge-soft);
+  position:sticky;left:0;background:var(--gutter);   /* opaque, or code scrolls under it */
+  font-variant-numeric:tabular-nums;
+}
+.dl .sg{flex:none;width:16px;text-align:center;color:var(--ink-4)}
+.dl .cd{padding-right:var(--s-10);color:var(--ink-1);min-width:0}
+.dl.add{background:var(--add-bg)}
+.dl.add .sg{color:var(--ok)}
+.dl.del{background:var(--del-bg)}
+.dl.del .sg{color:var(--bad-ink)}
+.dl.hunk{background:rgba(255,255,255,.03)}
+.dl.hunk .cd{color:var(--ink-3)}
+.dl.ctx .cd{color:var(--ink-2)}
+
+.approve{
+  display:flex;align-items:center;gap:var(--s-8);flex-wrap:wrap;
+  padding:var(--s-8) var(--s-10);
+}
+.approve .q{font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);min-width:0}
+.approve .btns{margin-left:auto;display:flex;gap:var(--s-6);flex:none}
+.btn{
+  display:inline-flex;align-items:center;gap:var(--s-6);
+  height:24px;padding:0 var(--s-10);border-radius:var(--r-5);
+  border:1px solid var(--edge);
+  font-family:var(--mono);font-size:var(--t-11);line-height:1;letter-spacing:.02em;
+  color:var(--ink-2);
+  background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset;
+  transition:background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+             color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.btn:hover{border-color:var(--edge-hard);color:var(--ink-1);
+  background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04))}
+.btn:active{transform:translateY(1px)}
+.btn.go{background:var(--ok);border-color:var(--ok);color:var(--on-accent);font-weight:700;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset}
+.btn.go:hover{background:var(--ok);filter:brightness(1.08)}
+.btn.no{color:var(--bad-ink);border-color:var(--edge)}
+.btn.no:hover{background:var(--bad-wash);border-color:var(--bad)}
+.btn.acc{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
+  font-weight:700;box-shadow:0 1px 0 rgba(255,255,255,.26) inset}
+.btn.acc:hover{background:var(--accent);filter:brightness(1.08)}
+.kbd{font-family:var(--mono);font-size:var(--t-9);color:var(--ink-4);
+  border:1px solid var(--edge);border-radius:var(--r-3);padding:1px 4px;line-height:1}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMPOSER
+   ══════════════════════════════════════════════════════════════════════════ */
+.composer{
+  flex:none;margin:0;padding:var(--s-8) var(--s-10) var(--s-8);
+  border-top:1px solid var(--edge);
+  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.018));
+  -webkit-backdrop-filter:blur(22px) saturate(1.7);
+  backdrop-filter:blur(22px) saturate(1.7);
+  box-shadow:0 1px 0 var(--glass-hi) inset;
+}
+.inputwrap{
+  border:1px solid var(--edge);border-radius:var(--r-8);
+  background:var(--well-fill);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset;
+  transition:border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  overflow:hidden;
+}
+.inputwrap:focus-within{border-color:var(--sel-edge);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 0 0 2px var(--accent-wash)}
+.inputwrap textarea{
+  display:block;width:100%;resize:none;border:0;background:transparent;
+  padding:var(--s-8) var(--s-10) var(--s-4);
+  color:var(--ink-1);font-family:var(--sans);
+  font-size:var(--t-13);line-height:var(--lh-13);min-height:46px;
+}
+.inputwrap textarea::placeholder{color:var(--ink-3)}
+.inputwrap textarea:focus{outline:none}
+
+.comp-bar{
+  display:flex;align-items:center;gap:var(--s-6);flex-wrap:wrap;
+  padding:var(--s-6) var(--s-8);border-top:1px solid var(--edge-soft);
+  background:rgba(255,255,255,.02);
+}
+.seg{display:inline-flex;border:1px solid var(--edge);border-radius:var(--r-5);overflow:hidden;
+  flex:none;background:rgba(0,0,0,.2)}
+.seg button{
+  padding:0 var(--s-8);height:22px;
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;letter-spacing:.04em;
+  color:var(--ink-3);
+  transition:background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.seg button + button{border-left:1px solid var(--edge-soft)}
+.seg button:hover{background:var(--hover);color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--accent-wash);color:var(--accent-ink);
+  font-weight:700;box-shadow:0 -2px 0 var(--accent) inset}
+.comp-bar .send{margin-left:auto;flex:none}
+
+.footcrumb{
+  display:flex;align-items:center;gap:var(--s-6);flex-wrap:wrap;
+  margin-top:var(--s-6);min-width:0;
+  font-family:var(--mono);font-size:var(--t-10);line-height:var(--lh-10);
+  color:var(--ink-3);font-variant-numeric:tabular-nums;
+}
+.footcrumb b{color:var(--ink-1);font-weight:500}
+.footcrumb .sep{color:var(--ink-4)}
+.footcrumb .grow{flex:1;min-width:var(--s-8)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SIDE PANE — the second surface in the same frame
+   ══════════════════════════════════════════════════════════════════════════ */
+.side{min-width:0;min-height:0;display:grid;grid-template-rows:28px minmax(0,1.25fr) auto minmax(0,1fr)}
+.side-scroll{min-height:0;overflow:auto}
+.filehd{
+  display:flex;align-items:center;gap:var(--s-8);min-width:0;
+  padding:var(--s-6) var(--s-10);
+  border-bottom:1px solid var(--edge-soft);
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);
+}
+.filehd .delta{flex:none;display:flex;gap:var(--s-6);font-variant-numeric:tabular-nums}
+.filehd .delta .p{color:var(--ok)}
+.filehd .delta .m{color:var(--bad-ink)}
+
+/* NOT a <pre>: the rows are elements, so a <pre> would render the newlines
+   BETWEEN them as blank lines. Each .cl carries its own white-space:pre. */
+.code{margin:0;padding:var(--s-6) 0;background:transparent}
+.cl{display:flex;min-width:0;font-family:var(--mono);font-size:var(--t-11);
+  line-height:var(--lh-11);white-space:pre}
+.cl .ln{flex:none;width:40px;padding-right:var(--s-8);text-align:right;color:var(--ink-4);
+  font-variant-numeric:tabular-nums}
+.cl .cd{min-width:0;padding-right:var(--s-10);color:var(--ink-2)}
+.cl .cd .kw{color:var(--accent-ink)}
+.cl .cd .str{color:var(--ok)}
+.cl .cd .cm{color:var(--ink-4)}
+.cl.hl{background:var(--add-bg)}
+.cl.hl .cd{color:var(--ink-1)}
+
+.runs{border-top:1px solid var(--edge);min-height:0;display:flex;flex-direction:column}
+.runs-bd{min-height:0;overflow:auto;padding:var(--s-8) var(--s-10) var(--s-10)}
+.runrow{
+  display:flex;align-items:center;gap:var(--s-8);min-width:0;
+  padding:var(--s-4) 0;
+  font-family:var(--mono);font-size:var(--t-11);line-height:var(--lh-11);
+}
+.runrow + .runrow{border-top:1px solid var(--edge-soft)}
+.runrow .nm{flex:none;color:var(--ink-1);font-weight:500}
+.runrow .sub{min-width:0;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.runrow .tail{margin-left:auto;flex:none;display:flex;align-items:center;gap:var(--s-8)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STATUS BAR
+   ══════════════════════════════════════════════════════════════════════════ */
+.statusbar{
+  display:flex;align-items:center;gap:var(--s-10);min-width:0;
+  padding:0 var(--s-10);
+  border-top:1px solid var(--edge);
+  background:rgba(255,255,255,.03);
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);
+  backdrop-filter:blur(18px) saturate(1.6);
+  font-family:var(--mono);font-size:var(--t-9);line-height:var(--lh-9);
+  color:var(--ink-3);letter-spacing:.04em;font-variant-numeric:tabular-nums;
+  overflow:hidden;
+}
+.statusbar .sep{color:var(--ink-4);flex:none}
+.statusbar .grow{margin-left:auto;flex:none}
+.statusbar .ok{color:var(--ok)}
+.statusbar .run{color:var(--run)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DRAFT LABEL
+   ══════════════════════════════════════════════════════════════════════════ */
+.draftlabel{
+  position:fixed;right:10px;bottom:32px;z-index:60;
+  display:inline-flex;align-items:center;gap:var(--s-6);
+  padding:var(--s-4) var(--s-8);
+  border:1px solid var(--edge-hard);border-radius:var(--r-5);
+  background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04));
+  -webkit-backdrop-filter:blur(20px) saturate(1.7);
+  backdrop-filter:blur(20px) saturate(1.7);
+  box-shadow:0 1px 0 var(--glass-hi) inset, 0 6px 18px rgba(0,0,0,.4);
+  font-family:var(--mono);font-size:var(--t-10);line-height:1;letter-spacing:.06em;
+  color:var(--ink-1);
+}
+.draftlabel .b{color:var(--accent-ink);font-weight:700}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOTION — every animation declared here, every one off under reduce.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference){
+  .spin::after{animation:braille .85s steps(1) infinite}
+  .meter.live .fill::after{animation:meter-run 2.4s steps(1) infinite alternate}
+  .shimmer{
+    background:linear-gradient(90deg, var(--ink-3) 0%, var(--ink-1) 42%, var(--ink-3) 84%);
+    background-size:220% 100%;
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;
+    animation:sweep 2.6s linear infinite;
+  }
+  @keyframes sweep{from{background-position:120% 0}to{background-position:-120% 0}}
+  .card,.agent,.thread,.tab,.btn{transition-duration:var(--dur-2)}
+  .agent{animation:breathe 3.6s var(--ease) infinite}
+  @keyframes breathe{
+    0%,100%{box-shadow:var(--shadow-card), 0 0 0 0 var(--run-glow-0)}
+    50%    {box-shadow:var(--shadow-card), 0 0 0 3px var(--run-glow-1)}
+  }
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:1ms !important;animation-iteration-count:1 !important;
+    transition-duration:1ms !important;scroll-behavior:auto !important;
+  }
+  .shimmer{color:var(--ink-1);background:none;-webkit-background-clip:border-box;
+    background-clip:border-box}
+  .spin::after{content:"\28CB"}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NARROW — nothing overflows, nothing scrolls sideways. Columns drop in order
+   of least value first: side pane, then the rail.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width:1180px){
+  .split{grid-template-columns:minmax(0,1fr)}
+  .split > .seam,.split > .side{display:none}
+  .col.chat{border-right:0}
+}
+@media (max-width:860px){
+  .body{grid-template-columns:minmax(0,1fr)}
+  .body > .rail,.body > .seam{display:none}
+}
+@media (max-width:560px){
+  .approve .btns{margin-left:0;width:100%}
+  .footcrumb .grow{display:none}
+}
+</style>
+</head>
+
+<body>
+<div class="win">
+
+  <!-- ══ TITLEBAR ═══════════════════════════════════════════════════════ -->
+  <header class="titlebar">
+    <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="crumb trunc">
+      <span class="box" aria-hidden="true">╭─</span>
+      <b>sequence</b><span class="sep">·</span><span>main</span>
+      <span class="sep">·</span><span>minicpm5-hermes</span>
+    </div>
+    <div class="tb-right">
+      <span class="chip"><span class="dot" style="color:var(--ok)"></span>local · no key</span>
+      <span class="chip on"><span class="spin" aria-hidden="true"></span>1 agent</span>
+      <button class="chip" type="button">⌘K</button>
+    </div>
+  </header>
+
+  <!-- ══ BODY ═══════════════════════════════════════════════════════════ -->
+  <div class="body">
+
+    <!-- ── SESSION RAIL ───────────────────────────────────────────────── -->
+    <nav class="rail" aria-label="Sessions">
+      <div class="rail-head">
+        <div class="rail-title">
+          <span class="box" aria-hidden="true">├─</span>
+          <span>Workspace</span>
+          <span class="count mono">4</span>
+        </div>
+        <div class="rail-acts">
+          <button class="chip on" type="button">Sessions</button>
+          <button class="chip" type="button">Search</button>
+          <button class="chip wide" type="button">＋ New chat</button>
+        </div>
+      </div>
+
+      <div class="rail-scroll">
+
+        <section class="group">
+          <div class="group-hd"><span>General</span><span class="rule" aria-hidden="true"></span><span class="n mono">2</span></div>
+
+          <div class="thread loaded" tabindex="0" aria-current="true">
+            <span class="mark" aria-hidden="true">▸</span>
+            <span class="txt">
+              <span class="nm">An llm, break it down for me</span>
+              <span class="meta mono">loaded · 18 turns · 2m ago</span>
+            </span>
+            <span class="row-acts">
+              <button class="iconbtn" type="button" aria-label="More">⋯</button>
+              <button class="iconbtn" type="button" aria-label="Close">×</button>
+            </span>
+          </div>
+
+          <div class="thread picked" tabindex="0" aria-selected="true">
+            <span class="mark" aria-hidden="true">◼</span>
+            <span class="txt">
+              <span class="nm">cs-05</span>
+              <span class="meta mono">selected · 6 turns · 1h ago</span>
+            </span>
+            <span class="row-acts">
+              <button class="iconbtn" type="button" aria-label="More">⋯</button>
+              <button class="iconbtn" type="button" aria-label="Close">×</button>
+            </span>
+          </div>
+
+          <div class="selbar">
+            <span aria-hidden="true">◼</span><span>1 selected</span>
+            <span class="acts">
+              <button type="button">Merge</button>
+              <button type="button">Archive</button>
+            </span>
+          </div>
+        </section>
+
+        <section class="group">
+          <div class="group-hd"><span>Sequence</span><span class="rule" aria-hidden="true"></span><span class="n mono">2</span></div>
+
+          <div class="thread" tabindex="0">
+            <span class="mark" aria-hidden="true">□</span>
+            <span class="txt">
+              <span class="nm">Which files depend on scan.ts</span>
+              <span class="meta mono">idle · 4 turns · 3h ago</span>
+            </span>
+            <span class="row-acts">
+              <button class="iconbtn" type="button" aria-label="More">⋯</button>
+              <button class="iconbtn" type="button" aria-label="Close">×</button>
+            </span>
+          </div>
+
+          <div class="thread" tabindex="0">
+            <span class="mark" aria-hidden="true">□</span>
+            <span class="txt">
+              <span class="nm">harness-04</span>
+              <span class="meta mono">idle · 31 turns · yesterday</span>
+            </span>
+            <span class="row-acts">
+              <button class="iconbtn" type="button" aria-label="More">⋯</button>
+              <button class="iconbtn" type="button" aria-label="Close">×</button>
+            </span>
+          </div>
+        </section>
+
+      </div>
+    </nav>
+
+    <!-- ── SEAM: rail / main ──────────────────────────────────────────── -->
+    <button class="seam" type="button" aria-label="Resize sidebar" title="Drag to resize"></button>
+
+    <!-- ── MAIN ───────────────────────────────────────────────────────── -->
+    <main class="main">
+
+      <!-- workspace tab bar -->
+      <div class="tabs" role="tablist" aria-label="Workspace">
+        <button class="tab on" role="tab" aria-selected="true">
+          <span class="g" aria-hidden="true">◈</span>Chat
+          <span class="x" role="button" aria-label="Close tab">×</span>
+        </button>
+        <button class="tab" role="tab" aria-selected="false"><span class="g" aria-hidden="true">▤</span>Files</button>
+        <button class="tab" role="tab" aria-selected="false"><span class="g" aria-hidden="true">⬡</span>Architecture</button>
+        <button class="tab" role="tab" aria-selected="false"><span class="g" aria-hidden="true">✎</span>Whiteboard</button>
+        <button class="tab" role="tab" aria-selected="false"><span class="g" aria-hidden="true">✦</span>AI&nbsp;Canvas</button>
+        <button class="tab" role="tab" aria-selected="false"><span class="g" aria-hidden="true">▮</span>Terminal</button>
+        <button class="tab" role="tab" aria-selected="false"><span class="g" aria-hidden="true">◍</span>Browser</button>
+        <div class="tabs-tail">
+          <span class="chip" title="Split view is on">▥ split</span>
+        </div>
+      </div>
+
+      <!-- ══ THE SPLIT — chat | seam | second surface, one frame ═══════ -->
+      <div class="split">
+
+        <!-- ── CHAT COLUMN ─────────────────────────────────────────── -->
+        <section class="col chat" aria-label="Transcript">
+          <div class="pane-hd">
+            <span aria-hidden="true">│</span>
+            <span>Transcript</span>
+            <span class="k">An llm, break it down for me</span>
+            <span class="right">
+              <span class="mono">18 turns</span>
+              <button class="iconbtn" type="button" aria-label="Pin">⌁</button>
+            </span>
+          </div>
+
+          <div class="stream">
+
+            <!-- user turn -->
+            <article class="turn">
+              <div class="turn-hd">
+                <span class="who">You</span>
+                <span class="rule" aria-hidden="true"></span>
+                <span class="t mono">09:41:22</span>
+              </div>
+              <div class="usr">An llm, break it down for me — and check whether the composer can hold the session lock.</div>
+            </article>
+
+            <!-- assistant turn -->
+            <article class="turn">
+              <div class="turn-hd">
+                <span class="who">Hermes</span>
+                <span class="rule" aria-hidden="true"></span>
+                <span class="mono">minicpm5-hermes</span>
+                <span class="t mono">09:41:24</span>
+              </div>
+
+              <!-- 1. prose: heading + list -->
+              <div class="prose">
+                <h3>An LLM, broken down</h3>
+                <p>Four parts, and only the last one is the part people argue about:</p>
+                <ul>
+                  <li><b>Tokeniser</b> — text in, integer ids out. Deterministic, boring, and the source of half your off-by-one bugs.</li>
+                  <li><b>Embedding + attention stack</b> — each token looks at every earlier token and rewrites itself. This is the whole trick.</li>
+                  <li><b>Decoder head</b> — one probability per vocabulary entry, sampled under a temperature.</li>
+                  <li><b>Harness</b> — tools, memory, approval. <code>packages/analyzer</code> is ours, and it is where grounding happens.</li>
+                </ul>
+                <p>On the composer: it can hold the lock, but it does not today. Reading the call sites now.</p>
+              </div>
+
+              <!-- 2. thinking fold -->
+              <details class="think">
+                <summary>
+                  <span class="tri" aria-hidden="true">▸</span>
+                  <span class="spin" aria-hidden="true"></span>
+                  <span class="lbl shimmer">Reasoning</span>
+                  <span class="n mono">412 tok · 3.1s</span>
+                </summary>
+                <div class="think-bd">
+                  <p>The question has two halves and they want different answers. The first half is
+                  conceptual, so keep it to four named parts — more than four and nobody remembers any.</p>
+                  <p>The second half is factual about this repo, so it needs evidence, not recall.
+                  Read <code>src/scan.ts</code> for the lock owner, then grep for the chart writer
+                  before claiming the composer can take it.</p>
+                  <p>Do not run the test suite; Work mode does not allow <code>run_command</code> by
+                  default and guessing at the verdict would be worse than asking.</p>
+                </div>
+              </details>
+
+              <!-- 3. tool calls: done / running / refused -->
+              <div class="card s-ok">
+                <div class="card-hd">
+                  <span class="kind">Tool</span><span class="sep" aria-hidden="true">│</span>
+                  <span class="st ok"><span aria-hidden="true">✓</span>done</span>
+                  <span class="right"><span class="mono">1 file · 214 lines</span><span class="mono">0.28s</span></span>
+                </div>
+                <div class="tool">
+                  <span class="fn">read_file</span>
+                  <span class="arg trunc">src/scan.ts</span>
+                  <span class="tail"><span class="meter done"><span class="fill">▰▰▰▰▰▰</span></span></span>
+                </div>
+                <pre class="excerpt">export function scanRepo(root: string, opts: ScanOpts): ArchGraph {
+  const lock = sessionLock.acquire(root);        // ← owner lives here
+  try { return walk(root, opts); } finally { lock.release(); }
+}</pre>
+              </div>
+
+              <div class="card s-run">
+                <div class="card-hd">
+                  <span class="kind">Tool</span><span class="sep" aria-hidden="true">│</span>
+                  <span class="st run"><span class="spin" aria-hidden="true"></span>running</span>
+                  <span class="right"><span class="mono">142/611 files</span><span class="mono">4.6s</span></span>
+                </div>
+                <div class="tool">
+                  <span class="fn">search_files</span>
+                  <span class="arg trunc">"propose_chart"</span>
+                  <span class="tail"><span class="meter live"><span class="fill"></span></span></span>
+                </div>
+              </div>
+
+              <div class="card s-bad">
+                <div class="card-hd">
+                  <span class="kind">Tool</span><span class="sep" aria-hidden="true">│</span>
+                  <span class="st bad"><span aria-hidden="true">✕</span>refused</span>
+                  <span class="right"><span class="mono">policy · work-mode</span></span>
+                </div>
+                <div class="tool">
+                  <span class="fn">run_command</span>
+                  <span class="arg trunc">pnpm test</span>
+                  <span class="tail"><span class="meter"><span class="fill">▱▱▱▱▱▱</span></span></span>
+                </div>
+                <div class="tool-note">refused: run_command is not a Work-mode default</div>
+                <div class="approve">
+                  <span class="q">Allow it once for this session?</span>
+                  <span class="btns">
+                    <button class="btn" type="button">Allow once <span class="kbd">⏎</span></button>
+                    <button class="btn no" type="button">Keep refused</button>
+                  </span>
+                </div>
+              </div>
+
+              <!-- 4. todo list -->
+              <div class="card s-wait">
+                <div class="card-hd">
+                  <span class="kind">Todos</span><span class="sep" aria-hidden="true">│</span>
+                  <span class="st wait">1 done · 1 active · 1 pending · 1 blocked</span>
+                  <span class="right"><span class="meter"><span class="fill">▰▱▱▱</span></span><span class="mono">25%</span></span>
+                </div>
+                <ul class="todo">
+                  <li class="d"><span class="g" aria-hidden="true">✓</span><span class="lbl">Read the analyzer</span><span class="why mono">done</span></li>
+                  <li class="a"><span class="g" aria-hidden="true">▸</span><span class="lbl">Wire the board writers</span><span class="why mono">active</span></li>
+                  <li class="p"><span class="g" aria-hidden="true">☐</span><span class="lbl">Mount the code card</span><span class="why mono">pending</span></li>
+                  <li class="b"><span class="g" aria-hidden="true">!</span><span class="lbl">Files tab</span><span class="why mono">blocked: needs the pane cap raised</span></li>
+                </ul>
+              </div>
+
+              <!-- 5. subagent row -->
+              <div class="agent">
+                <div class="agent-hd">
+                  <span class="kind">Subagent</span>
+                  <span class="nm">review:bugs</span>
+                  <span class="st run"><span class="spin" aria-hidden="true"></span>running</span>
+                  <span class="right">
+                    <span class="meter live"><span class="fill"></span></span>
+                    <span class="elapsed">1m&nbsp;12<span class="u">s</span></span>
+                  </span>
+                </div>
+                <div class="agent-now">
+                  <span class="k">now</span>
+                  <span class="v trunc"><span class="fn">read_file</span> packages/web2/src/app/App.tsx</span>
+                </div>
+                <ul class="tree">
+                  <li><span class="br" aria-hidden="true">├─</span><span class="lbl"><span class="fn">search_files</span> "useSessionLock"</span><span class="tail">✓ 0.4s</span></li>
+                  <li><span class="br" aria-hidden="true">├─</span><span class="lbl"><span class="fn">read_file</span> packages/web2/src/chat/Composer.tsx</span><span class="tail">✓ 0.3s</span></li>
+                  <li class="now"><span class="br" aria-hidden="true">├─</span><span class="lbl"><span class="fn">read_file</span> packages/web2/src/app/App.tsx</span><span class="tail"><span class="spin" aria-hidden="true"></span> 8s</span></li>
+                  <li><span class="br" aria-hidden="true">└─</span><span class="lbl" style="color:var(--ink-3)">3 findings queued</span><span class="tail">pending</span></li>
+                </ul>
+              </div>
+
+              <!-- 6. edit approval card -->
+              <div class="card">
+                <div class="card-hd">
+                  <span class="kind">Edit</span><span class="sep" aria-hidden="true">│</span>
+                  <span class="p2"><span class="head">packages/web2/src/chat/</span><span class="tail">Composer.tsx</span></span>
+                  <span class="right">
+                    <span class="mono" style="color:var(--ok)">+12</span>
+                    <span class="mono" style="color:var(--bad-ink)">−3</span>
+                  </span>
+                </div>
+                <div class="diff" tabindex="0" role="region" aria-label="Diff, scrollable">
+                  <div class="dl hunk"><span class="ln" aria-hidden="true">···</span><span class="sg" aria-hidden="true">@</span><span class="cd">@@ -142,7 +142,16 @@ export function Composer({ onSend }: Props) {</span></div>
+                  <div class="dl ctx"><span class="ln">142</span><span class="sg" aria-hidden="true"> </span><span class="cd">  const [mode, setMode] = useState&lt;Mode&gt;('build');</span></div>
+                  <div class="dl del"><span class="ln">143</span><span class="sg" aria-hidden="true">−</span><span class="cd">  const [locked, setLocked] = useState(false);</span></div>
+                  <div class="dl del"><span class="ln">144</span><span class="sg" aria-hidden="true">−</span><span class="cd">  const drive = () =&gt; setLocked(true);</span></div>
+                  <div class="dl del"><span class="ln">145</span><span class="sg" aria-hidden="true">−</span><span class="cd">  // TODO: this never asks the session who owns it</span></div>
+                  <div class="dl add"><span class="ln">143</span><span class="sg" aria-hidden="true">+</span><span class="cd">  const [locked, setLocked] = useState(() =&gt; sessionLock.isHeld());</span></div>
+                  <div class="dl add"><span class="ln">144</span><span class="sg" aria-hidden="true">+</span><span class="cd">  useEffect(() =&gt; sessionLock.subscribe(setLocked), []);</span></div>
+                  <div class="dl add"><span class="ln">145</span><span class="sg" aria-hidden="true">+</span><span class="cd"></span></div>
+                  <div class="dl add"><span class="ln">146</span><span class="sg" aria-hidden="true">+</span><span class="cd">  const drive = useCallback(async () =&gt; {</span></div>
+                  <div class="dl add"><span class="ln">147</span><span class="sg" aria-hidden="true">+</span><span class="cd">    const held = await sessionLock.acquire(threadId);</span></div>
+                  <div class="dl add"><span class="ln">148</span><span class="sg" aria-hidden="true">+</span><span class="cd">    if (!held) { toast('another session is driving the tabs'); return; }</span></div>
+                  <div class="dl add"><span class="ln">149</span><span class="sg" aria-hidden="true">+</span><span class="cd">    setLocked(true);</span></div>
+                  <div class="dl add"><span class="ln">150</span><span class="sg" aria-hidden="true">+</span><span class="cd">  }, [threadId]);</span></div>
+                  <div class="dl ctx"><span class="ln">151</span><span class="sg" aria-hidden="true"> </span><span class="cd">  return (</span></div>
+                  <div class="dl ctx"><span class="ln">152</span><span class="sg" aria-hidden="true"> </span><span class="cd">    &lt;form className="composer" onSubmit={submit}&gt;</span></div>
+                </div>
+                <div class="approve">
+                  <span class="q">The composer takes the lock instead of assuming it. Apply to the working tree?</span>
+                  <span class="btns">
+                    <button class="btn acc" type="button">✓ Accept <span class="kbd" style="color:var(--on-accent);border-color:var(--on-accent-edge)">⌘⏎</span></button>
+                    <button class="btn no" type="button">✕ Reject</button>
+                    <button class="btn" type="button">Open ▸</button>
+                  </span>
+                </div>
+              </div>
+
+            </article>
+          </div>
+
+          <!-- ══ COMPOSER ═══════════════════════════════════════════ -->
+          <div class="composer">
+            <div class="inputwrap">
+              <label class="sr" for="ci">Message</label>
+              <textarea id="ci" rows="2" placeholder="Ask, plan, or drive the tabs…  ⌘⏎ to send"></textarea>
+              <div class="comp-bar">
+                <button class="chip" type="button">⌥ minicpm5-hermes ▾</button>
+                <span class="seg" role="group" aria-label="Mode">
+                  <button type="button" aria-pressed="false">Plan</button>
+                  <button type="button" aria-pressed="true">Build</button>
+                  <button type="button" aria-pressed="false">Teach</button>
+                </span>
+                <button class="chip on" type="button" aria-pressed="true" title="This conversation drives the tabs">
+                  <span class="dot"></span>Drive · locked
+                </button>
+                <button class="chip" type="button">⌁ Context 62%</button>
+                <button class="btn acc send" type="button">Send ⏎</button>
+              </div>
+            </div>
+            <div class="footcrumb">
+              <span aria-hidden="true">└─</span>
+              <b>sequence</b><span class="sep">·</span>
+              <span>⎇ main</span><span class="sep">·</span>
+              <span>minicpm5-hermes</span>
+              <span class="grow"></span>
+              <span>12.4k / 200k tok</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── SEAM: chat / side pane. The frame is shared; this is the join ── -->
+        <button class="seam" type="button" aria-label="Resize panes" title="Drag to resize"></button>
+
+        <!-- ── SIDE PANE — the second surface ──────────────────────── -->
+        <aside class="side" aria-label="Side pane">
+          <div class="pane-hd">
+            <span aria-hidden="true">│</span>
+            <span>Editor</span>
+            <span class="k">follows chat</span>
+            <span class="right">
+              <button class="iconbtn" type="button" aria-label="Detach">⧉</button>
+              <button class="iconbtn" type="button" aria-label="Close pane">×</button>
+            </span>
+          </div>
+
+          <div class="side-scroll">
+            <div class="filehd">
+              <span aria-hidden="true" style="color:var(--ink-4)">▤</span>
+              <span class="p2" style="font-size:var(--t-11)"><span class="head">packages/web2/src/chat/</span><span class="tail">Composer.tsx</span></span>
+              <span class="delta mono"><span class="p">+12</span><span class="m">−3</span></span>
+            </div>
+            <div class="code">
+<div class="cl"><span class="ln">138</span><span class="cd"><span class="kw">import</span> { sessionLock } <span class="kw">from</span> <span class="str">'../session/lock'</span>;</span></div>
+<div class="cl"><span class="ln">139</span><span class="cd"></span></div>
+<div class="cl"><span class="ln">140</span><span class="cd"><span class="kw">export function</span> Composer({ onSend }: Props) {</span></div>
+<div class="cl"><span class="ln">141</span><span class="cd">  <span class="kw">const</span> threadId = useThreadId();</span></div>
+<div class="cl"><span class="ln">142</span><span class="cd">  <span class="kw">const</span> [mode, setMode] = useState&lt;Mode&gt;(<span class="str">'build'</span>);</span></div>
+<div class="cl hl"><span class="ln">143</span><span class="cd">  <span class="kw">const</span> [locked, setLocked] = useState(() =&gt; sessionLock.isHeld());</span></div>
+<div class="cl hl"><span class="ln">144</span><span class="cd">  useEffect(() =&gt; sessionLock.subscribe(setLocked), []);</span></div>
+<div class="cl"><span class="ln">145</span><span class="cd"></span></div>
+<div class="cl hl"><span class="ln">146</span><span class="cd">  <span class="kw">const</span> drive = useCallback(<span class="kw">async</span> () =&gt; {</span></div>
+<div class="cl hl"><span class="ln">147</span><span class="cd">    <span class="kw">const</span> held = <span class="kw">await</span> sessionLock.acquire(threadId);</span></div>
+<div class="cl hl"><span class="ln">148</span><span class="cd">    <span class="kw">if</span> (!held) { toast(<span class="str">'another session is driving the tabs'</span>); <span class="kw">return</span>; }</span></div>
+<div class="cl hl"><span class="ln">149</span><span class="cd">    setLocked(<span class="kw">true</span>);</span></div>
+<div class="cl hl"><span class="ln">150</span><span class="cd">  }, [threadId]);</span></div>
+<div class="cl"><span class="ln">151</span><span class="cd">  <span class="kw">return</span> (</span></div>
+<div class="cl"><span class="ln">152</span><span class="cd">    &lt;form className=<span class="str">"composer"</span> onSubmit={submit}&gt;      <span class="cm">// ← the seam owner</span></span></div>
+<div class="cl"><span class="ln">153</span><span class="cd">      &lt;textarea ref={ta} onKeyDown={keys} /&gt;</span></div>
+<div class="cl"><span class="ln">154</span><span class="cd">    &lt;/form&gt;</span></div>
+<div class="cl"><span class="ln">155</span><span class="cd">  );</span></div>
+<div class="cl"><span class="ln">156</span><span class="cd">}</span></div>
+</div>
+          </div>
+
+          <!-- ── RUNS: long-running work gets a permanent home ──────── -->
+          <div class="pane-hd" style="border-top:1px solid var(--edge)">
+            <span aria-hidden="true">├─</span>
+            <span>Runs</span>
+            <span class="k">1 running · 2 done</span>
+            <span class="right"><button class="iconbtn" type="button" aria-label="Clear">⌫</button></span>
+          </div>
+          <div class="runs">
+            <div class="runs-bd">
+
+              <div class="runrow">
+                <span class="st run" style="flex:none"><span class="spin" aria-hidden="true"></span></span>
+                <span class="nm">review:bugs</span>
+                <span class="sub trunc">read_file packages/web2/src/app/App.tsx</span>
+                <span class="tail">
+                  <span class="meter live"><span class="fill"></span></span>
+                  <span class="elapsed">1m&nbsp;12<span class="u">s</span></span>
+                </span>
+              </div>
+
+              <div class="runrow">
+                <span class="st ok" style="flex:none" aria-hidden="true">✓</span>
+                <span class="nm">scan:graph</span>
+                <span class="sub trunc">611 files · 2,418 edges · grounded</span>
+                <span class="tail">
+                  <span class="meter done"><span class="fill">▰▰▰▰▰▰</span></span>
+                  <span class="elapsed">4<span class="u">s</span></span>
+                </span>
+              </div>
+
+              <div class="runrow">
+                <span class="st ok" style="flex:none" aria-hidden="true">✓</span>
+                <span class="nm">index:mono</span>
+                <span class="sub trunc">packages/* · incremental</span>
+                <span class="tail">
+                  <span class="meter done"><span class="fill">▰▰▰▰▰▰</span></span>
+                  <span class="elapsed">11<span class="u">s</span></span>
+                </span>
+              </div>
+
+              <div class="runrow">
+                <span class="st warn" style="flex:none" aria-hidden="true">!</span>
+                <span class="nm">gate:legibility</span>
+                <span class="sub trunc">Files tab · blocked: needs the pane cap raised</span>
+                <span class="tail">
+                  <span class="meter"><span class="fill">▱▱▱▱▱▱</span></span>
+                  <span class="elapsed" style="color:var(--ink-3)">—</span>
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ══ STATUS BAR ═════════════════════════════════════════════════════ -->
+  <footer class="statusbar">
+    <span class="trunc">⎇ main <span class="sep">·</span> 0 ahead <span class="sep">·</span> 1 dirty</span>
+    <span class="sep" aria-hidden="true">│</span>
+    <span class="trunc">graph 611 files · 2,418 edges</span>
+    <span class="sep" aria-hidden="true">│</span>
+    <span class="run trunc"><span class="spin" aria-hidden="true"></span> review:bugs 1m 12s</span>
+    <span class="grow"><span class="ok">● local-first</span> <span class="sep">·</span> no key <span class="sep">·</span> UTF-8 <span class="sep">·</span> LF</span>
+  </footer>
+
+</div>
+
+<div class="draftlabel" role="note"><span class="b">B</span> · Workstation</div>
+</body>
+</html>

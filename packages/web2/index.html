@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Drawn svg/html frames cannot navigate to anything: only the app's own origin may be framed. Same policy as
+         APP_FRAME_POLICY (analyzer/src/server/static.ts), here too so the Vite dev server and serveGraph have it. -->
+    <meta http-equiv="Content-Security-Policy" content="frame-src 'self'" />
+
+    <!--
+      THE FIRST PAINT IS DARK, AND IT COSTS NO HEX LITERAL TO SAY SO.
+      color-scheme tells the browser which way to paint the canvas before a
+      single stylesheet has arrived, so there is no white flash ahead of
+      tokens/graphite.css. Naming a background colour here instead would put a
+      hex outside the token file and start the exact drift item 0.6 exists to
+      stop. Dark leads because GRAPHITE-DECISIONS.md Decision 1 defers light.
+    -->
+    <meta name="color-scheme" content="dark light" />
+
+    <!--
+      NO WEBFONT CDN LINK, AND THIS COMMENT IS THE REASON IT WILL NOT COME BACK.
+
+      The Graphite book links Google Fonts at _core.html:148-150 because a sheet
+      has to open by double-clicking it. The book says in the same breath that
+      the APP must not: "a local-first product that blocks first paint on a CDN
+      contradicts itself." CLAUDE.md's non-negotiable says it from the other
+      end — the app boots and delivers its core with no network.
+
+      Instrument Sans and JetBrains Mono are @import-ed from node_modules at the
+      top of src/tokens/graphite.css and emitted into the bundle by Vite. There
+      is nothing to fetch. test/boot.test.ts asserts zero references to
+      fonts.googleapis.com and fonts.gstatic.com anywhere in the booted
+      document, and it will fail the moment a <link> like the book's is pasted
+      in here.
+    -->
+
+    <title>Sequence</title>
+
+    <!--
+      THE BOOT SPLASH (overhaul stream 3, S4; MonoCode-style loading, MIT,
+      hardbeat920/monocode, the idea not the code). The mark, centred, on the
+      canvas colour, breathing slowly until React paints; main.tsx fades it
+      over 160ms on the first frame and removes it. System colours only
+      (Canvas, CanvasText): no hex outside the token file. Still under
+      prefers-reduced-motion.
+    -->
+    <style>
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        place-items: center;
+        background: Canvas;
+        color: CanvasText;
+        transition: opacity 160ms ease-out;
+        pointer-events: none;
+      }
+      #boot-splash.is-done { opacity: 0; }
+      #boot-splash svg { width: 40px; height: 40px; opacity: 0.85; animation: boot-breathe 1.6s ease-in-out infinite; }
+      @keyframes boot-breathe { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.4; } }
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash { transition: none; }
+        #boot-splash svg { animation: none; }
+      }
+    </style>
+
+    <script>
+      /*
+       * PRE-PAINT THEME. Runs before the body exists so the attribute is set
+       * on the first frame rather than swapped on the second — a theme that
+       * corrects itself after paint is a flash, and a flash reads as a bug.
+       *
+       * Keep this choice aligned with settings/themePreference.ts: a saved
+       * system choice resolves before paint, not only after React mounts.
+       *
+       * Wrapped in try/catch: localStorage throws outright in a sandboxed
+       * frame and when site data is blocked, and a theme preference is never
+       * worth taking the whole app down for.
+       */
+      try {
+        var stored = localStorage.getItem('seq.theme');
+        if (stored === 'system') {
+          stored = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        if (stored === 'light' || stored === 'dark') {
+          document.documentElement.setAttribute('data-theme', stored);
+          document.documentElement.style.colorScheme = stored;
+        }
+      } catch (_) {
+        /* no storage — the markup default stands */
+      }
+
+      /*
+       * PRE-PAINT ACCENT — the same job, for the accent
+       * (GRAPHITE-DECISIONS.md Decisions 29 and 30, tokens/graphite.css §5b).
+       *
+       * This is a SECOND COPY of what src/settings/accentPreference.ts does,
+       * and the duplication is the point rather than an oversight: a module
+       * cannot run before the first frame, and an accent that corrects itself
+       * after paint is a gold flash on a white app — exactly the flash the
+       * theme script above exists to prevent. The module owns every LATER
+       * change; this owns frame one. The key is 'sequence.accent' at both ends
+       * and each end names the other.
+       *
+       * BLUE IS THE DEFAULT (Decision 32, the Lovable look), and the DOM's
+       * default is the ABSENCE of the attribute, so the two disagree and this
+       * script is what settles it on frame one. A stored, exact 'gold' or
+       * 'white' opts out; anything unreadable or unknown lands on blue, which
+       * is what ships.
+       */
+      try {
+        var stored = localStorage.getItem('sequence.accent');
+        if (stored === 'gold' || stored === 'white' || stored === 'violet' || stored === 'green' || stored === 'rose' || stored === 'graphite') {
+          document.documentElement.setAttribute('data-accent', stored);
+        } else {
+          document.documentElement.setAttribute('data-accent', 'blue');
+        }
+      } catch (_) {
+        /* no storage — blue, which is the default anyway */
+        document.documentElement.setAttribute('data-accent', 'blue');
+      }
+    </script>
+  </head>
+  <body>
+    <div id="boot-splash" aria-hidden="true">
+      <svg viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+        <g fill="currentColor">
+          <rect x="10" y="10" width="26" height="8" rx="4" />
+          <rect x="28" y="10" width="8" height="26" rx="4" />
+          <rect x="28" y="28" width="26" height="8" rx="4" />
+          <rect x="46" y="28" width="8" height="26" rx="4" />
+          <rect x="5" y="5" width="18" height="18" rx="5" />
+          <rect x="23" y="23" width="18" height="18" rx="5" />
+          <rect x="41" y="41" width="18" height="18" rx="5" />
+        </g>
+      </svg>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

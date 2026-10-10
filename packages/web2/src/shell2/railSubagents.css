@@ -1,0 +1,88 @@
+/* Subagent sub-rows under a chat in the rail (SubagentRows.tsx). */
+
+/* The chat title keeps clear of the row's overflow button, which sits over the row's right edge (shell2.css .s2-it-more). */
+.s2-it > .s2-it-hit.s2-rail-hit {
+  padding-right: calc(var(--target-min) + var(--sp-4));
+}
+.rsub-twist {
+  position: relative;
+  z-index: 2; /* above the row's whole-row hit button */
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.rsub-twist:hover {
+  color: var(--ink-1);
+}
+.rsub-list {
+  display: flex;
+  flex-direction: column;
+}
+.rsub-row {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-height: var(--sp-24);
+  padding: 0 8px 0 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+.rsub-row:hover {
+  color: var(--ink-1);
+  background: var(--b-glass);
+}
+/* The status slot is a fixed square: dot, spinner and label share one centre line. */
+.rsub-dot {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sp-16);
+  height: var(--sp-16);
+}
+.rsub-dot::before {
+  content: '';
+  width: var(--sp-6);
+  height: var(--sp-6);
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.rsub-dot[data-state='failed']::before {
+  background: var(--b-del);
+}
+.rsub-dot[data-state='running']::before {
+  content: none;
+}
+.rsub-dot .act-loader.is-cell {
+  width: var(--sp-16);
+  height: var(--sp-16);
+  line-height: var(--sp-16);
+}
+.rsub-name {
+  line-height: var(--sp-16);
+  flex: none;
+  white-space: nowrap;
+}
+.rsub-desc {
+  line-height: var(--sp-16);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-3);
+}

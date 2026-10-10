@@ -1,0 +1,1073 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE ACTIVITY VIEW — P9
+   packages/web2/src/activity/activity.css
+
+   EVERY SELECTOR IS SCOPED UNDER .ac-scope, WITHOUT EXCEPTION. R7's measurement
+   of v1 found ~50 unscoped selectors and the legibility gate exists because one
+   stray `.board-chat-input button` crushed a whole menu while every other check
+   passed. A pane that can only paint inside its own root cannot do that.
+
+   NO HEX, NO px FONT-SIZE, NO RAW font-weight. tokens/graphite.css is the one
+   file allowed to declare a colour, a size or a weight, and test/firewall.test.ts
+   enforces it. Everything below is a var().
+
+   ── THE HUE BUDGET FOR THIS SHEET: THE SIX --st-* ROLES AND NOTHING ELSE ──
+   docs/brand/graphite/pages/12-the-agentic-surfaces.html §12.5 draws the run
+   states as "each an alias (--st-*) rather than a verdict token, so what a state
+   is worth is decided once", and §12.7's ledger says what each one may claim.
+   The mapping is made once, here, on [data-tone]:
+
+     neutral  --st-neutral  (an alias of --ink-3, "not a hue at all")  queued
+     active   --st-active   (--info)   "in flight — a notice, not a verdict"
+     stalled  --st-stalled  (--spills) "stalled, and waiting on you"
+     done     --st-done     (--fits)   "it ran and it passed"
+     failed   --st-failed   (--wont)   "it ran and it failed"
+     blocked  --unknown                "not known, and refusing to guess"
+
+   `blocked` is the one role with no --st-* alias, because §12.5's five states
+   were drawn before server-side runs existed and neither `interrupted` nor
+   `stopped` is among them. It takes --unknown directly for the reason §12.6
+   gives: a run whose driver went away, or one a budget halted, did not fail at
+   anything, and "Painting a missing prerequisite red teaches the reader to
+   distrust every other red on the screen, which is the only defence the product
+   has." An --st-blocked alias belongs in the token file the day the book adds
+   the two states; adding one here would be this sheet extending the substrate's
+   own namespace from the outside.
+
+   NOTHING ELSE ON THIS SURFACE IS COLOURED. Not a divider, not a heading, not a
+   border, not the run id, not the filter bar. Render it in greyscale and no row
+   becomes ambiguous, because every state is a word before it is a dot.
+
+   ── COMPACT IS THE ONLY DENSITY ──────────────────────────────────────────
+   28px rows (--row-h-thread), 26px controls (--icon-btn), 10/11/12px type.
+   "Airy is a defect."
+
+   ── WHERE THIS FILE IS IMPORTED ──────────────────────────────────────────
+   `app/App.tsx`, which owns one ordered style block and argues the position of
+   every sheet in it. This one sits with review.css, after every pane sheet:
+   both are drawn OVER the frame, and a surface that overlays must be able to
+   raise its radius and padding off anything it covers.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.ac-scope {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  /* The dialog host sizes itself to its content; this is the measure at which
+     a run row reads as one line rather than wrapping into two. It is a clamp
+     on the frame, not a fixed width — sheet 11's rule that "the clamps are the
+     design; the value inside them is not". */
+  width: calc(var(--menu-w) * 2.5);
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  color: var(--ink-1);
+  background: var(--bg-base);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+  border-radius: var(--r-18);
+}
+
+.ac-scope .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num);
+}
+
+/* ── the tone map. ONE PLACE, and every state carries its word beside it ── */
+.ac-scope [data-tone='neutral'] { --ac-tone: var(--st-neutral); }
+.ac-scope [data-tone='active'] { --ac-tone: var(--st-active); }
+.ac-scope [data-tone='stalled'] { --ac-tone: var(--st-stalled); }
+.ac-scope [data-tone='done'] { --ac-tone: var(--st-done); }
+.ac-scope [data-tone='failed'] { --ac-tone: var(--st-failed); }
+.ac-scope [data-tone='blocked'] { --ac-tone: var(--unknown); }
+
+/* ── the header ──────────────────────────────────────────────────────────── */
+.ac-scope .ac-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: var(--topbar-h);
+  padding: 0 var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+  flex: 0 0 auto;
+}
+
+.ac-scope .ac-title {
+  margin: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+
+.ac-scope .ac-spacer { flex: 1 1 auto; }
+
+/* THE HEADLINE. It is --ink-2 when it says nothing is waiting and --spills when
+   something is, and it says which in words either way. --spills, not --accent:
+   the accent is the product's own voice (send, selection, focus) and a list
+   that spends it on a count would leave the send button as one of two saturated
+   objects on screen. §12.7: --spills claims "stalled, and waiting on you", and
+   that is exactly the claim this line makes. */
+.ac-scope .ac-needs {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+}
+.ac-scope .ac-needs[data-attention='yes'] {
+  color: var(--spills);
+  font-weight: var(--fw-label);
+}
+
+.ac-scope .ac-territories {
+  margin: 0 var(--sp-12);
+  padding: var(--sp-10) 0;
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+.ac-scope .ac-territories-toggle {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ac-scope .ac-territories-toggle .ac-twist-ico {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform 120ms var(--ease);
+}
+.ac-scope .ac-territories[data-open='yes'] .ac-twist-ico { transform: rotate(90deg); }
+.ac-scope .ac-territories-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.ac-scope .ac-territories-body { margin-top: var(--sp-8); }
+.ac-scope .ac-territories-title {
+  margin: 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-head);
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ac-scope .ac-territories-summary {
+  margin: 0 0 var(--sp-8);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-2);
+}
+.ac-scope .ac-territory-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.ac-scope .ac-territory {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-6) var(--sp-10);
+  padding: var(--sp-6) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-4);
+  background: var(--surface-1);
+}
+.ac-scope .ac-territory[data-main='yes'] {
+  border-color: var(--edge-strong);
+}
+.ac-scope .ac-territory-name {
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+.ac-scope .ac-territory-meta {
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+.ac-scope .ac-territory-note {
+  flex: 1 1 100%;
+  font-size: var(--t-11);
+  color: var(--ink-2);
+}
+
+.ac-scope .ac-btn {
+  height: var(--icon-btn);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  cursor: pointer;
+}
+.ac-scope .ac-btn:hover { border-color: var(--edge-strong); color: var(--ink-1); }
+
+/* The double ring — --bg-base then --accent — never removed. */
+.ac-scope .ac-btn:focus-visible,
+.ac-scope .ac-row:focus-visible,
+.ac-scope .ac-bucket:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── the three absences, and the filter's own ────────────────────────────── */
+.ac-scope .ac-note {
+  margin: var(--sp-12);
+  padding: var(--sp-12);
+  border: var(--w-hair) solid var(--unknown-edge);
+  border-radius: var(--r-10);
+  background: var(--unknown-wash);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+  line-height: var(--lh-14);
+}
+
+/* A REFUSAL IS --wont AND AN ABSENCE IS NOT. The engine answering "no
+   repository attached" is a thing that happened and a thing to act on; the
+   engine not having been asked yet is neither. */
+.ac-scope .ac-note-fail {
+  border-color: var(--wont-edge);
+  background: var(--wont-wash);
+  color: var(--ink-1);
+}
+
+/* ── the filter bar ──────────────────────────────────────────────────────── */
+.ac-scope .ac-buckets {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+}
+
+.ac-scope .ac-bucket {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--icon-btn);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  cursor: pointer;
+}
+.ac-scope .ac-bucket:hover { color: var(--ink-1); }
+
+/* SELECTION IS NEUTRAL. Sheet 11.4's ruling, carried: "selection is where the
+   keyboard is, and is neutral". The applied filter is a surface, not a claim. */
+.ac-scope .ac-bucket[aria-pressed='true'] {
+  background: var(--surface-2);
+  border-color: var(--edge);
+  color: var(--ink-1);
+}
+
+.ac-scope .ac-bucket-n {
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+
+/* ── the list ────────────────────────────────────────────────────────────── */
+.ac-scope .ac-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ac-scope .ac-row-host { list-style: none; }
+
+/* ROUND 11 (Jaden: "I don't really understand these. It doesn't look
+   clean."). A row is two quiet lines on one grid:
+       [icon]  Program name                                   1m
+               Running   in progress   1/3 nodes   3 files +40 -12
+   The icon is a SHAPE per state (so it reads without its hue), the verb is the
+   state's word in the tone's ink, the rest is muted plain words and numbers.
+   Every column starts at the same x on every row: the icon, the name, the verb,
+   the first detail, and the time on the right. Nothing animates. */
+.ac-scope .ac-row {
+  display: grid;
+  grid-template-columns: var(--sp-16) minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--sp-10);
+  width: 100%;
+  padding: var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-10);
+  background: transparent;
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  text-align: left;
+  cursor: pointer;
+}
+.ac-scope .ac-row:hover { background: var(--surface-1); }
+.ac-scope .ac-row[data-open='yes'] {
+  background: var(--surface-2);
+  border-color: var(--edge);
+}
+
+.ac-scope .ac-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Centred on the whole (two-line) row, not on its title line. */
+  align-self: center;
+  color: var(--ac-tone, var(--ink-3));
+}
+.ac-scope .ac-ico svg { display: block; }
+
+/* A PULSE, NOT A SPINNER (§12.5): running is the only moving thing, six beats and
+   still. Reduced motion holds it still. */
+.ac-scope [data-live='yes'] .ac-ico { animation: ac-pulse 1.6s var(--ease) 6; }
+@keyframes ac-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ac-scope [data-live='yes'] .ac-ico { animation: none; }
+}
+
+.ac-scope .ac-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.ac-scope .ac-program {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-1);
+}
+.ac-scope .ac-sub {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+  min-width: 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+/* The verb: the state's word in its tone's ink (a verdict hue only where the
+   state is a verdict; every other state is the muted ink). A fixed column so the
+   detail after it starts at one x down the whole list. */
+.ac-scope .ac-state {
+  flex: 0 0 auto;
+  width: calc(var(--sp-32) * 2.5);
+  white-space: nowrap;
+  color: var(--ac-tone, var(--ink-3));
+  font-weight: var(--fw-body);
+}
+
+.ac-scope .ac-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--ink-3);
+}
+.ac-scope .ac-hint {
+  flex: 0 0 auto;
+  width: calc(var(--sp-32) * 5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac-scope .ac-progress {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+.ac-scope .ac-changed {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.ac-scope .ac-span {
+  align-self: start;
+  width: var(--sp-32);
+  text-align: right;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-12);
+  font-variant-numeric: tabular-nums;
+}
+.ac-scope .ac-err-n { color: var(--wont); }
+
+/* Narrow: the hint steps aside before the numbers do. */
+@media (max-width: 640px) {
+  .ac-scope .ac-hint { display: none; }
+}
+
+/* THE ERROR LINE HANGS UNDER THE PROGRAM NAME, not under the row's left edge.
+   The arithmetic is the row's own: the list's padding, the row's border and
+   the row's padding, which is where the program name starts now that the state
+   trails it. Written out rather than eyeballed so it follows the row's frame. */
+.ac-scope .ac-rowerr {
+  margin: 0;
+  padding: 0 var(--sp-8) var(--sp-4)
+    calc(var(--sp-8) + var(--w-hair) + var(--sp-16) + var(--sp-10));
+  font-size: var(--t-10);
+  line-height: var(--lh-14);
+  color: var(--ink-3);
+}
+
+/* THE REJECTION LINES HANG WHERE THE ERROR LINE DOES, and share its arithmetic
+   for the same reason: both are sentences about the run above them and both
+   have to start under the program name rather than under the state word.
+   They wrap — a checker's joined violation list is a real sentence and
+   truncating it to one line would hide the id it names, which is the only part
+   the reader can act on. */
+.ac-scope .ac-rowviol {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--sp-8) var(--sp-4)
+    calc(var(--sp-8) + var(--w-hair) + var(--sp-16) + var(--sp-10));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: var(--t-10);
+  line-height: var(--lh-14);
+  color: var(--wont);
+  overflow-wrap: anywhere;
+}
+
+/* ── one run, opened ─────────────────────────────────────────────────────── */
+.ac-scope .ac-detail {
+  border-top: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  flex: 0 0 auto;
+}
+
+.ac-scope .ac-detail-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+.ac-scope .ac-detail-title {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The irreversible stop is a decision gate, not a status. It stays entirely
+   neutral: Graphite identifies destructive actions with words, never red. */
+.ac-scope .ac-cancel-gate {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-8);
+  padding: var(--sp-8) var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background: var(--surface-2);
+}
+
+.ac-scope .ac-cancel-copy {
+  flex: 1 1 calc(var(--sp-32) * 6);
+  min-width: 0;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+.ac-scope .ac-cancel-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin-left: auto;
+}
+
+.ac-scope .ac-nodes,
+.ac-scope .ac-notes,
+.ac-scope .ac-violations,
+.ac-scope .ac-events {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.ac-scope .ac-node,
+.ac-scope .ac-event {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--icon-btn);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+.ac-scope .ac-node-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  flex: 0 0 auto;
+  order: 2;
+  white-space: nowrap;
+  font-weight: var(--fw-body);
+  color: var(--ac-tone, var(--ink-3));
+}
+.ac-scope .ac-node-title { order: 1; }
+.ac-scope .ac-node-kind { order: 3; }
+
+.ac-scope .ac-node-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-1);
+}
+
+.ac-scope .ac-node-kind {
+  flex: 0 0 auto;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+
+.ac-scope .ac-node-err {
+  flex: 0 0 auto;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--wont);
+}
+
+.ac-scope .ac-node-detail {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+
+.ac-scope .ac-noteline {
+  font-size: var(--t-10);
+  line-height: var(--lh-14);
+  color: var(--spills);
+}
+
+/* The rejection reasons, at the top of an opened run. `--wont` and not
+   `--spills`: a note is a loud signal about how the run went, this is the
+   verdict that the result is not acceptable. It wraps for the same reason the
+   row's copy does — the ids it names are the actionable part. */
+.ac-scope .ac-violations {
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+.ac-scope .ac-violation {
+  font-size: var(--t-10);
+  line-height: var(--lh-14);
+  color: var(--wont);
+  overflow-wrap: anywhere;
+}
+
+.ac-scope .ac-events { border-top: var(--w-hair) solid var(--edge-faint); }
+
+.ac-scope .ac-event-seq {
+  flex: 0 0 auto;
+  width: var(--sp-32);
+  text-align: right;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-4);
+}
+
+.ac-scope .ac-event-type {
+  flex: 0 0 auto;
+  width: calc(var(--sp-32) * 3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-2);
+}
+
+.ac-scope .ac-event-what {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+}
+
+/* THE ROW COLLAPSES BEFORE IT CROWDS. Below this the meta cluster is the first
+   thing to go: a run's state and what it is running are the two fields the
+   surface exists for, and an elapsed token squeezed against a truncated program
+   name serves neither. */
+
+
+/* ── COMPOSING A RUN ──────────────────────────────────────────────────────
+   The authoring view replaces the list inside the same overlay, so it inherits
+   the pane's ground and adds no frame of its own. Every measurement comes from
+   the token file; law 3's rungs are `--control-h` for a control and
+   `--icon-btn` for the small buttons the header already uses. */
+
+.ac-scope .ac-author {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  padding: var(--sp-12);
+  min-width: 0;
+}
+
+.ac-scope .ac-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.ac-scope .ac-label {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+.ac-scope .ac-input {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  min-width: 0;
+}
+
+/* A textarea is the one control law 3's row heights do not govern: it is a
+   field you write a paragraph into, so it is sized in lines rather than to a
+   rung, and `height: auto` is what stops the rung above applying. */
+.ac-scope .ac-textarea {
+  height: auto;
+  padding: var(--sp-8);
+  resize: vertical;
+  min-height: calc(var(--control-h) * 3);
+}
+
+.ac-scope .ac-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.ac-scope .ac-input:disabled { color: var(--ink-4); border-color: var(--edge-faint); }
+
+/* WHAT THIS RUN MAY SPEND — two selects side by side, because they are one
+   question ("how long may this go on for") asked in the two units the
+   scheduler actually counts. They collapse to one column when the overlay is
+   narrow rather than shrinking below a readable label. */
+.ac-scope .ac-budgets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--sp-32) * 5), 1fr));
+  gap: var(--sp-8);
+}
+
+/* The caveat sits with the controls it is about, spanning both columns, rather
+   than becoming a third paragraph under the form. */
+.ac-scope .ac-budget-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--t-10);
+  line-height: var(--lh-14);
+  color: var(--ink-3);
+}
+
+/* A select is not a text input: it needs the room its longest option takes and
+   the platform arrow, so it opts out of the padding-right the text rule sets. */
+.ac-scope select.ac-input {
+  padding-right: var(--sp-4);
+  cursor: pointer;
+}
+
+/* What the run will do, stated rather than chosen. */
+.ac-scope .ac-runtime {
+  margin: 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+/* Every complaint, at once. `--wont` is the token the pane already uses for a
+   refusal; this spends no new hue. */
+.ac-scope .ac-problems {
+  margin: 0;
+  padding-left: var(--sp-16);
+  color: var(--wont);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+.ac-scope .ac-authoractions {
+  display: flex;
+  gap: var(--sp-8);
+  justify-content: flex-end;
+}
+
+/* P4 — curated built-in catalogue inside the author form. Compact rows; one
+   selected at a time. Not cards — pressable list items. */
+.ac-scope .ac-builtins {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-width: 0;
+}
+
+.ac-scope .ac-builtin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.ac-scope .ac-builtin {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  padding: var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ac-scope .ac-builtin:hover:not(:disabled) {
+  border-color: var(--edge-strong, var(--edge));
+}
+
+.ac-scope .ac-builtin[data-selected='yes'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 var(--w-hair) var(--accent);
+}
+
+.ac-scope .ac-builtin-title {
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-1);
+}
+
+.ac-scope .ac-builtin-blurb {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.ac-scope .ac-builtin:disabled {
+  color: var(--ink-4);
+  border-color: var(--edge-faint);
+  cursor: default;
+}
+
+/* The one solid control on the surface — sheet 09's rule that a screen has at
+   most one thing the product is offering. `--accent-solid` and its paired
+   foreground are the only place the accent is a fill rather than an edge. */
+.ac-scope .ac-btn-solid {
+  border-color: transparent;
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+}
+.ac-scope .ac-btn-solid:hover:not(:disabled) { border-color: transparent; color: var(--accent-on-solid); }
+.ac-scope .ac-btn:disabled { color: var(--ink-4); border-color: var(--edge-faint); cursor: default; }
+
+.ac-scope .ac-node-err,
+.ac-scope .ac-node-detail { order: 4; }
+
+/* The workflow node state keeps its dot (ActivityPane's node rows still render .ac-dot;
+   the row restyle replaced only the run rows' dot with an icon). Queued is drawn hollow. */
+.ac-scope .ac-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: var(--sp-4);
+  border-radius: var(--r-full);
+  background-color: currentColor;
+  flex: 0 0 auto;
+}
+.ac-scope [data-tone='neutral'] .ac-dot {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 var(--w-hair) currentColor;
+}
+
+/* ── embedded in the Agents surface (Workflows) ───────────────────────────
+   No dialog frame: it takes the surface's width and sits on its film. */
+.ac-scope[data-embedded='true'] {
+  width: 100%;
+  border-radius: var(--r-8);
+  background: transparent;
+  overflow: visible;
+}
+.ac-scope[data-embedded='true'] .ac-head {
+  height: auto;
+  padding: 0 0 var(--sp-8);
+}
+.ac-scope[data-embedded='true'] .ac-head {
+  flex-wrap: wrap;
+  row-gap: var(--sp-4);
+}
+.ac-scope[data-embedded='true'] .ac-btn {
+  white-space: nowrap;
+  flex: none;
+}
+.ac-scope[data-embedded='true'] .ac-needs {
+  min-width: 0;
+}
+
+/* ── ROUND 12: THE WORKFLOWS TAB, PITCH PERFECT ───────────────────────────
+   A run's program drawn as a graph (WorkflowGraph.tsx): steps top to bottom,
+   a loop as a return arc down the left side around a tinted region, a step's state in its dot and word.
+   The run's head says whether it is Commandable or Locked. In the Agents
+   surface the buttons are a full row tall and the sections breathe. */
+.ac-scope .ac-graph-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding: var(--sp-8) 0;
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.ac-scope .ac-graph {
+  position: relative;
+  color: var(--ink-3);
+}
+.ac-scope .ac-graph-edges {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.ac-scope .ac-edge path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--w-rule);
+}
+.ac-scope .ac-edge-loop { color: var(--ink-2); }
+.ac-scope .ac-edge-loop path { stroke-dasharray: 4 3; }
+.ac-scope .ac-edge-loop text {
+  fill: var(--ink-2);
+  stroke: none;
+  font-family: var(--font-sans);
+  font-size: var(--t-10);
+}
+.ac-scope .ac-gnode {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2, var(--surface-1));
+  color: var(--ac-tone, var(--ink-3));
+}
+.ac-scope .ac-gnode[data-tone='active'] {
+  --ac-tone: var(--ink-1);
+  border-color: var(--ink-2);
+}
+.ac-scope .ac-region {
+  fill: color-mix(in srgb, var(--ink-1) 4%, transparent);
+  stroke: var(--edge-strong);
+  stroke-width: var(--w-hair);
+  stroke-dasharray: 3 3;
+}
+.ac-scope .ac-gnode .ac-dot { margin-right: 0; }
+.ac-scope .ac-gnode-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  color: var(--ink-1);
+  font-size: var(--t-11-5);
+  line-height: var(--lh-11);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.ac-scope .ac-gnode-k {
+  flex: none;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+}
+.ac-scope .ac-ctl {
+  flex: none;
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-11);
+}
+.ac-scope .ac-ctl[data-control='commandable'] {
+  border-color: var(--edge-strong);
+  color: var(--ink-1);
+}
+.ac-scope[data-embedded='true'] .ac-btn {
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.ac-scope[data-embedded='true'] .ac-head { gap: var(--sp-8); padding-bottom: var(--sp-12); }
+.ac-scope[data-embedded='true'] .ac-detail { margin-top: var(--sp-16); border-radius: var(--r-8); border: var(--w-hair) solid var(--edge); }
+.ac-scope[data-embedded='true'] .ac-detail-head { height: auto; min-height: var(--row-h); padding: var(--sp-8) var(--sp-12); flex-wrap: wrap; row-gap: var(--sp-6); }
+.ac-scope[data-embedded='true'] .ac-list { margin-top: var(--sp-8); }
+.ac-scope[data-embedded='true'] .ac-buckets { margin-top: var(--sp-4); }
+
+/* The embedded head: title, then the two buttons on one line; the status sentence under them. */
+.ac-scope[data-embedded='true'] .ac-needs { order: 2; flex: 1 0 100%; }
+.ac-scope[data-embedded='true'] .ac-detail-head .ac-spacer { display: none; }
+.ac-scope[data-embedded='true'] .ac-detail-head { justify-content: flex-end; }
+.ac-scope[data-embedded='true'] .ac-detail-title { flex: 0 1 auto; }
+.ac-scope[data-embedded='true'] .ac-ctl { margin-right: auto; }
+.ac-scope .ac-edge-word { letter-spacing: 0; }
+
+/* A narrow column (the 1024 pane) tightens the step's padding and type so a two-line title still reads whole. */
+.ac-scope .ac-gnode[data-narrow='true'] { padding: 0 var(--sp-6); gap: var(--sp-4); }
+.ac-scope .ac-gnode[data-narrow='true'] .ac-gnode-t { font-size: var(--t-11); }
+
+/* ROUND 13 (A1): the Workflows head is the title on the left and its two buttons on the right, one row. The buttons are one
+   unit (never split across lines); when the pane is too narrow the title keeps its line and the unit drops to the next, whole. */
+.ac-head-actions { display: inline-flex; align-items: center; gap: var(--sp-8); flex: none; }
+.ac-scope[data-embedded='true'] .ac-title { white-space: nowrap; flex: none; }
+.ac-scope[data-embedded='true'] .ac-head { justify-content: space-between; }
+.ac-scope[data-embedded='true'] .ac-head .ac-spacer { display: none; }
+.ac-scope[data-embedded='true'] .ac-head-actions { margin-left: auto; }
+.ac-scope[data-embedded='true'] .ac-head-actions .ac-btn { white-space: nowrap; flex: none; }
+
+/* ROUND 13 (A4): where the icon says the state (spinner, green check) the word stays for screen readers only. */
+.ac-scope .ac-state-quiet {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* ROUND 13 (lead): inside the Agents surface the Workflows head, its status line, the filter chips and the list rows start at
+   the same left edge as the surface's own "Agents" header (shell2/pages.css gives the head 22px of inset; this outranks it),
+   and the filter chips are one row that scrolls sideways rather than wrapping to two. */
+.s2 .ac-scope[data-embedded='true'] .ac-head { padding-left: 0; padding-right: 0; }
+.ac-scope[data-embedded='true'] .ac-buckets {
+  padding-left: 0;
+  padding-right: 0;
+  gap: var(--sp-2);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ac-scope[data-embedded='true'] .ac-buckets::-webkit-scrollbar { display: none; }
+.ac-scope[data-embedded='true'] .ac-bucket { flex: none; padding: 0 var(--sp-6); gap: var(--sp-4); white-space: nowrap; }
+.ac-scope[data-embedded='true'] .ac-list { padding-left: 0; padding-right: 0; }
+/* Zero counts say nothing in a narrow column; the chip's title still carries them. The row fades at its right edge when it scrolls. */
+.ac-scope[data-embedded='true'] .ac-bucket[data-count='0'] .ac-bucket-n { display: none; }
+.ac-scope[data-embedded='true'] .ac-bucket { font-size: var(--t-11-5); }
+.ac-scope[data-embedded='true'] .ac-buckets { mask-image: linear-gradient(90deg, var(--ink-1) calc(100% - var(--sp-16)), transparent); }
+
+/* ROUND 13 (A8, N4): the editor's open button sits on the status row; under 1200px the big title goes (the tab already says
+   Workflows) and Refresh is its glyph, so Refresh and Start a workflow are one compact row. */
+.ac-scope[data-embedded='true'] .ac-head-sub { order: 2; flex: 1 0 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); min-width: 0; }
+.ac-scope[data-embedded='true'] .ac-head-sub .ac-needs { order: 0; flex: 1 1 auto; min-width: 0; }
+.ac-editor-btn { display: inline-flex; align-items: center; gap: var(--sp-6); flex: none; }
+.ac-btn-ico { flex: none; display: block; }
+.ac-scope[data-embedded='true'] .ac-btn { display: inline-flex; align-items: center; gap: var(--sp-6); }
+@media (max-width: 1199px) {
+  .ac-scope[data-embedded='true'] .ac-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .ac-scope[data-embedded='true'] .ac-head { justify-content: flex-end; }
+  .ac-scope[data-embedded='true'] .ac-head-actions .ac-btn:not(.ac-btn-solid) { width: var(--row-h); padding: 0; justify-content: center; }
+  .ac-scope[data-embedded='true'] .ac-head-actions .ac-btn:not(.ac-btn-solid) .ac-btn-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+
+/* ROUND 13 (review): never two lines. The status sentence is one line that ends in an ellipsis (its full text is the title),
+   and under 1200px the open button reads "Editor" so the sentence and the button share the row. */
+.ac-scope[data-embedded='true'] .ac-head-sub .ac-needs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-ed-short { display: none; }
+@media (max-width: 1199px) {
+  .ac-scope[data-embedded='true'] .ac-ed-long { display: none; }
+  .ac-scope[data-embedded='true'] .ac-ed-short { display: inline; }
+}
+
+/* A compressed pane (the Agents surface beside the board at ~800px): the row's detail line wraps instead of clipping "2/3 nodes"
+   to "2/". Each figure stays whole; the hint shrinks before the numbers do. */
+.ac-scope .ac-meta {
+  flex-wrap: wrap;
+  row-gap: 0;
+  overflow: visible;
+  white-space: normal;
+}
+.ac-scope .ac-hint { flex: 0 1 auto; max-width: 100%; white-space: nowrap; }
+.ac-scope .ac-progress, .ac-scope .ac-changed { white-space: nowrap; }
+
+/* The open run whose row the filter hides: its panel still shows, above the list. */
+.ac-scope .ac-open-orphan { margin-bottom: var(--sp-8); }
+
+/* The chips fold to fit their pane (the pane's own width, not the window's): first "Waiting on you" is "Waiting", then the chips tighten,
+   so every chip is whole and the row does not scroll. The chip's title still carries the full word and its count. */
+.ac-scope[data-embedded='true'] .ac-buckets { container-type: inline-size; container-name: acbuckets; }
+@container acbuckets (max-width: 330px) {
+  .ac-bucket-tail { display: none; }
+}
+@container acbuckets (max-width: 280px) {
+  .ac-scope[data-embedded='true'] .ac-bucket { padding: 0 var(--sp-4); gap: var(--sp-2); }
+}

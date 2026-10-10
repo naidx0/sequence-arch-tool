@@ -1,0 +1,16 @@
+{
+  "p003": {"visual": "2", "clipped": "none", "why": "Same two-node diagram, but picture 2 adds a caption naming what travels (default.conf calls invoices.ts via /api/)."},
+  "p010": {"visual": "2", "clipped": "none", "why": "Same chain, but picture 2 states the payload (GET /payments/*) between payments.ts and index.js, which the bare diagram in picture 1 lacks."},
+  "p013": {"visual": "1", "clipped": "both", "why": "Picture 1 labels the edges (GET /invoices/*, /api/) while picture 2 is unlabeled; both truncate 'InvoiceContr...', and neither actually shows a queue."},
+  "p020": {"visual": "1", "clipped": "both", "why": "Picture 1 spells out the three callers and their routes (GET /payments/*, POST /charge); both truncate 'payments_cli...' and 'PaymentClien...'."},
+  "p030": {"visual": "2", "clipped": "both", "why": "Picture 2 names the GET /invoices/* call and the postgres read, while picture 1 shows only boxes; both truncate 'InvoiceContr...'."},
+  "p037": {"visual": "2", "clipped": "both", "why": "Picture 2 names the HTTP calls travelling on each edge, but neither distinguishes queues from HTTP; both truncate 'InvoiceContr...'."},
+  "p040": {"visual": "1", "clipped": "none", "why": "Picture 1 adds the caption saying default.conf calls invoices.ts via /api/, while picture 2 is the bare diagram."},
+  "p047": {"visual": "1", "clipped": "none", "why": "Picture 1 states what travels (GET /payments/*), while picture 2 shows only the unlabeled chain."},
+  "p057": {"visual": "2", "clipped": "both", "why": "Picture 2 explains the calls on the edges and picture 1 does not; both truncate 'InvoiceContr...'."},
+  "p067": {"visual": "1", "clipped": "both", "why": "Picture 1 names the GET /invoices/* call and the postgres read, while picture 2 has no edge info; both truncate 'InvoiceContr...'."},
+  "p074": {"visual": "1", "clipped": "both", "why": "Picture 1 labels the HTTP calls between services, while picture 2 is unlabeled and neither shows queues; both truncate 'InvoiceContr...'."},
+  "p077": {"visual": "2", "clipped": "both", "why": "Picture 2 at least names what travels on each edge, though neither shows a real queue edge; both truncate 'InvoiceContr...'."},
+  "p084": {"visual": "2", "clipped": "both", "why": "Picture 2 lists each caller's route into index.js (GET /payments/*, POST /charge); both truncate the client node labels."},
+  "p094": {"visual": "1", "clipped": "both", "why": "Picture 1 explains the calls and routes, while picture 2 has boxes only; both truncate 'InvoiceContr...'."}
+}

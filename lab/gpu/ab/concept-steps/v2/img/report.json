@@ -1,0 +1,3065 @@
+[
+ {
+  "n": 1,
+  "focus": "http.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 2,
+  "focus": "invoices.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 168
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 26,
+     "y1": 168,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "invoices.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 74,
+      "y1": 120,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: invoices.ts. 5 items. focused on invoices.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 204
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 62,
+     "y1": 204,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "invoices.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     },
+     {
+      "name": "caption",
+      "text": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.",
+      "x0": 0,
+      "x1": 440,
+      "y0": 22,
+      "y1": 54,
+      "height": 32,
+      "lines": 2,
+      "lineHeight": "16px",
+      "fontSize": "12px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 142,
+      "y1": 188,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 110,
+      "y1": 156,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 296,
+      "x1": 416,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 142,
+      "y1": 188,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: invoices.ts. What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.. 5 items. focused on invoices.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 3,
+  "focus": "payments.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 104
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 26,
+     "y1": 104,
+     "viewBox": "0 0 432 78"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "payments.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:payments/src/index.js",
+      "shown": "index.js",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: payments.ts. 3 items. focused on payments.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 124
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 46,
+     "y1": 124,
+     "viewBox": "0 0 432 78"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "payments.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     },
+     {
+      "name": "caption",
+      "text": "What travels here: payments.ts calls index.js (GET /payments/*). From the scanned graph.",
+      "x0": 0,
+      "x1": 440,
+      "y0": 22,
+      "y1": 38,
+      "height": 16,
+      "lines": 1,
+      "lineHeight": "16px",
+      "fontSize": "12px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 62,
+      "y1": 108,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 62,
+      "y1": 108,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:payments/src/index.js",
+      "shown": "index.js",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 62,
+      "y1": 108,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: payments.ts. What travels here: payments.ts calls index.js (GET /payments/*). From the scanned graph.. 3 items. focused on payments.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 4,
+  "focus": "index.js",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 432 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.js",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:orders/app/payments_client.py",
+      "shown": "payments_cli…",
+      "truncated": true,
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/PaymentClient.java",
+      "shown": "PaymentClien…",
+      "truncated": true,
+      "x0": 16,
+      "x1": 136,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:payments/src/index.js",
+      "shown": "index.js",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:payments/src/db.js",
+      "shown": "db.js",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.js. 5 items. focused on index.js"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 284
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 78,
+     "y1": 284,
+     "viewBox": "0 0 432 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.js",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     },
+     {
+      "name": "caption",
+      "text": "What travels here: payments.ts calls index.js (GET /payments/*). payments_client.py calls index.js (POST /charge). PaymentClient.java calls index.js (POST /charge). From the scanned graph.",
+      "x0": 0,
+      "x1": 440,
+      "y0": 22,
+      "y1": 70,
+      "height": 48,
+      "lines": 3,
+      "lineHeight": "16px",
+      "fontSize": "12px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 94,
+      "y1": 140,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:orders/app/payments_client.py",
+      "shown": "payments_cli…",
+      "truncated": true,
+      "x0": 16,
+      "x1": 136,
+      "y0": 158,
+      "y1": 204,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/PaymentClient.java",
+      "shown": "PaymentClien…",
+      "truncated": true,
+      "x0": 16,
+      "x1": 136,
+      "y0": 222,
+      "y1": 268,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:payments/src/index.js",
+      "shown": "index.js",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 158,
+      "y1": 204,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:payments/src/db.js",
+      "shown": "db.js",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 158,
+      "y1": 204,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.js. What travels here: payments.ts calls index.js (GET /payments/*). payments_client.py calls index.js (POST /charge). PaymentClient.java calls index.js (POST /charge). From the scanned graph.. 5 items. focused on index.js"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 5,
+  "focus": "invoices.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 168
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 26,
+     "y1": 168,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "invoices.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 74,
+      "y1": 120,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: invoices.ts. 5 items. focused on invoices.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 204
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 62,
+     "y1": 204,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "invoices.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     },
+     {
+      "name": "caption",
+      "text": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.",
+      "x0": 0,
+      "x1": 440,
+      "y0": 22,
+      "y1": 54,
+      "height": 32,
+      "lines": 2,
+      "lineHeight": "16px",
+      "fontSize": "12px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 142,
+      "y1": 188,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 110,
+      "y1": 156,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 296,
+      "x1": 416,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 142,
+      "y1": 188,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: invoices.ts. What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.. 5 items. focused on invoices.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 6,
+  "focus": "InvoiceController.java",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 104
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 26,
+     "y1": 104,
+     "viewBox": "0 0 432 78"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "InvoiceController.java",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 156,
+      "x1": 276,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "ds:postgres",
+      "shown": "ds:postgres",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: InvoiceController.java. 3 items. focused on InvoiceController.java"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 140
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 62,
+     "y1": 140,
+     "viewBox": "0 0 432 78"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "InvoiceController.java",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     },
+     {
+      "name": "caption",
+      "text": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). InvoiceController.java reads postgres (invoices). From the scanned graph.",
+      "x0": 0,
+      "x1": 440,
+      "y0": 22,
+      "y1": 54,
+      "height": 32,
+      "lines": 2,
+      "lineHeight": "16px",
+      "fontSize": "12px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 156,
+      "x1": 276,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "ds:postgres",
+      "shown": "ds:postgres",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: InvoiceController.java. What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). InvoiceController.java reads postgres (invoices). From the scanned graph.. 3 items. focused on InvoiceController.java"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 7,
+  "focus": "default.conf",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 104
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 104,
+     "viewBox": "0 0 400 78"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "default.conf",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: default.conf. 2 items. focused on default.conf"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 124
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 46,
+     "y1": 124,
+     "viewBox": "0 0 400 78"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "default.conf",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     },
+     {
+      "name": "caption",
+      "text": "What travels here: default.conf calls invoices.ts (/api/). From the scanned graph.",
+      "x0": 0,
+      "x1": 440,
+      "y0": 22,
+      "y1": 38,
+      "height": 16,
+      "lines": 1,
+      "lineHeight": "16px",
+      "fontSize": "12px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 62,
+      "y1": 108,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 62,
+      "y1": 108,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: default.conf. What travels here: default.conf calls invoices.ts (/api/). From the scanned graph.. 2 items. focused on default.conf"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 8,
+  "focus": "index.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 296
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 296,
+     "viewBox": "0 0 400 270"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 138,
+      "y1": 184,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 234,
+      "y1": 280,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.ts. 5 items. focused on index.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 296
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 296,
+     "viewBox": "0 0 400 270"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 138,
+      "y1": 184,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 234,
+      "y1": 280,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.ts. 5 items. focused on index.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 9,
+  "focus": "http.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 10,
+  "focus": "index.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 296
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 296,
+     "viewBox": "0 0 400 270"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 138,
+      "y1": 184,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 234,
+      "y1": 280,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.ts. 5 items. focused on index.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 296
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 296,
+     "viewBox": "0 0 400 270"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 138,
+      "y1": 184,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 234,
+      "y1": 280,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.ts. 5 items. focused on index.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 11,
+  "focus": "http.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 12,
+  "focus": "http.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 13,
+  "focus": "invoices.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 168
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 26,
+     "y1": 168,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "invoices.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 74,
+      "y1": 120,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: invoices.ts. 5 items. focused on invoices.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 204
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 432,
+     "y0": 62,
+     "y1": 204,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "invoices.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     },
+     {
+      "name": "caption",
+      "text": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.",
+      "x0": 0,
+      "x1": 440,
+      "y0": 22,
+      "y1": 54,
+      "height": 32,
+      "lines": 2,
+      "lineHeight": "16px",
+      "fontSize": "12px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:edge/default.conf",
+      "shown": "default.conf",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 136,
+      "y0": 142,
+      "y1": 188,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 156,
+      "x1": 276,
+      "y0": 110,
+      "y1": 156,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "shown": "InvoiceContr…",
+      "truncated": true,
+      "x0": 296,
+      "x1": 416,
+      "y0": 78,
+      "y1": 124,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 296,
+      "x1": 416,
+      "y0": 142,
+      "y1": 188,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: invoices.ts. What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.. 5 items. focused on invoices.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 14,
+  "focus": "index.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 296
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 296,
+     "viewBox": "0 0 400 270"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 138,
+      "y1": 184,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 234,
+      "y1": 280,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.ts. 5 items. focused on index.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 296
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 296,
+     "viewBox": "0 0 400 270"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "index.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/index.ts",
+      "shown": "index.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 138,
+      "y1": 184,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/payments.ts",
+      "shown": "payments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 234,
+      "y1": 280,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: index.ts. 5 items. focused on index.ts"
+   },
+   "console": []
+  }
+ },
+ {
+  "n": 15,
+  "focus": "http.ts",
+  "off": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  },
+  "cap": {
+   "geo": {
+    "frame": {
+     "w": 440,
+     "h": 232
+    },
+    "svg": {
+     "x0": 0,
+     "x1": 400,
+     "y0": 26,
+     "y1": 232,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "clientW": 440,
+     "scrollW": 440
+    },
+    "texts": [
+     {
+      "name": "title",
+      "text": "http.ts",
+      "x0": 0,
+      "x1": 440,
+      "y0": 0,
+      "y1": 18,
+      "height": 18,
+      "lines": 1,
+      "lineHeight": "18px",
+      "fontSize": "13px",
+      "inside": true,
+      "textInside": true,
+      "clippedX": false,
+      "clippedY": false,
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "overlapsSvg": false
+     }
+    ],
+    "nodes": [
+     {
+      "id": "file:gateway/src/routes/invoices.ts",
+      "shown": "invoices.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/orders.ts",
+      "shown": "orders.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/routes/shipments.ts",
+      "shown": "shipments.ts",
+      "truncated": false,
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "boxInside": true,
+      "labelInsideBox": true
+     },
+     {
+      "id": "file:gateway/src/lib/http.ts",
+      "shown": "http.ts",
+      "truncated": false,
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "boxInside": true,
+      "labelInsideBox": true
+     }
+    ],
+    "overlaps": [],
+    "edgeLabels": [],
+    "stepper": false,
+    "ariaLabel": "data-flow chart: http.ts. 4 items. focused on http.ts"
+   },
+   "console": []
+  }
+ }
+]
