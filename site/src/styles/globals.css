@@ -1,0 +1,773 @@
+@import 'tailwindcss';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
+/*
+  trysequence.app — the Lovable idiom (GRAPHITE-DECISIONS.md Decision 32).
+  Owner, 2026-09-18, on his own Ramp Kit: "I like Lovable a lot in terms of
+  their colors, their fonts, everything… let's take Lovable for every type of
+  AI engineering task… make sure you match the site to showcase that."
+  One face (Inter), Lovable's greys on the dark sections, Lovable's blue as
+  the one colour, the kit's 8px rounding scaled up for a page. Liquid glass
+  chrome stays. Mark monochrome (Decision 25).
+*/
+
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  /* THE LOVABLE LADDER, read off the kit's .t-lovable: light bg #F5F5F5 on
+     white surfaces, ink #030303 and muted #636363; dark bg #1D1D1C, surface
+     #272726, fg #FFFFFF, muted #A6A6A4. Grey with one point of warmth and no
+     navy — the owner read the old #121215 as "a metallic hint of navy". */
+  --canvas: #ffffff;
+  --canvas-muted: #f5f5f5;
+  --ink: #1d1d1c;
+  --ink-muted: #636363;
+  --dark: #1d1d1c;
+  --dark-elevated: #272726;
+  --on-dark: #ffffff;
+  --on-dark-muted: #a6a6a4;
+  /* THE ACCENT IS INK ON THE LIGHT SECTIONS AND WHITE ON THE DARK ONES.
+     Owner, 2026-09-18, after seeing gold and white side by side: "I like the
+     white a lot more, it looks a lot more professional… let's set white as
+     our main thing." The gold that came before stays reachable as
+     `?accent=gold` below, so the comparison can be repeated. */
+  /* Owner, 2026-09-18, on the neutral page: "black and white is way too
+     hard to look at… maybe blue, like Apple." One hue, Apple's blue: the
+     web blue on the light sections, the system blue on the dark ones. It
+     names one thing on every surface — the thing to look at or press. */
+  /* LOVABLE'S BLUE, #1F55F1 — one hue, and the app's own accent, so the
+     captures on this page and the page around them agree. On white it reads
+     as text at 5.7:1, so the text cut is the same blue. */
+  --accent: #1f55f1;
+  --accent-hover: #1a4ad6;
+  --accent-ink: #ffffff;
+  /* The accent used AS text on the light ground (labels, numbers, one
+     chart series). Not --accent-ink, which is text ON the accent. */
+  --accent-text: #1f55f1;
+  --accent-rgb: 31, 85, 241;
+  --accent-glass: rgba(31, 85, 241, 0.92);
+  --accent-glass-border: rgba(255, 255, 255, 0.34);
+  /* The accent as it appears on the dark sections (demo stages, harness
+     marks): the app's lighter cut of the same blue, 4.6:1 on #1D1D1C. */
+  --accent-dark-rgb: 76, 125, 255;
+  --hairline: rgba(0, 0, 0, 0.1);
+  --hairline-dark: rgba(255, 255, 255, 0.12);
+  --radius-pill: 980px;
+  /* The kit's 8px rounding, scaled for a page: 18 on a card, 14 on a tile. */
+  --radius-card: 18px;
+  --radius-tile: 14px;
+  --pad: clamp(1.1rem, 3.5vw, 2.25rem);
+  --max: 1180px;
+  --max-wide: 1480px;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --glass: rgba(255, 255, 255, 0.58);
+  --glass-border: rgba(255, 255, 255, 0.78);
+  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.035), 0 14px 36px rgba(0, 0, 0, 0.07);
+  --shadow-lift: 0 10px 30px rgba(0, 0, 0, 0.1), 0 28px 70px rgba(0, 0, 0, 0.12);
+  --shadow-glass:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 12px 40px rgba(0, 0, 0, 0.1);
+  --specular: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0));
+}
+
+/* ── GOLD, THE PREVIOUS LOOK ──────────────────────────────────────────────────
+   Kept behind `?accent=gold` (or data-accent on the root) so the page can
+   still be seen the way it was before 2026-09-18. Nothing else changes, so
+   the comparison is only the accent. */
+:root[data-accent='ink'] {
+  --accent: #1d1d1f;
+  --accent-hover: #000000;
+  --accent-ink: #ffffff;
+  --accent-text: #1d1d1f;
+  --accent-rgb: 29, 29, 31;
+  --accent-glass: rgba(29, 29, 31, 0.86);
+  --accent-glass-border: rgba(255, 255, 255, 0.28);
+  --accent-dark-rgb: 255, 255, 255;
+}
+:root[data-accent='gold'] {
+  --accent: #f2d96a;
+  --accent-hover: #ebcf55;
+  --accent-ink: #1a1500;
+  --accent-text: #8b6914;
+  --accent-rgb: 242, 217, 106;
+  --accent-glass: rgba(242, 217, 106, 0.62);
+  --accent-glass-border: rgba(255, 255, 255, 0.7);
+  --accent-dark-rgb: 242, 217, 106;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  background: var(--canvas-muted);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* —— Store density —— */
+.tile {
+  padding: clamp(2rem, 4vw, 3.25rem) var(--pad);
+}
+
+.tile-tight {
+  padding: clamp(1.5rem, 3vw, 2.5rem) var(--pad);
+}
+
+.tile-inner {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+}
+
+.tile-wide {
+  width: 100%;
+  max-width: var(--max-wide);
+  margin-inline: auto;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 6.4vw, 4.1rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+.display-sm {
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 3.8vw, 2.85rem);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.lede {
+  font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--ink-muted);
+  margin: 0;
+  max-width: 36rem;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0 0 0.55rem;
+}
+
+/* —— Surfaces (light paint — prefer solid over heavy backdrop blur) —— */
+.glass {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.glass-dark {
+  position: relative;
+  background: rgba(39, 39, 38, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.glass-chip {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 6px 18px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.store-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  transition:
+    transform 0.28s var(--ease),
+    box-shadow 0.28s var(--ease);
+}
+
+.store-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-card:hover {
+    transform: none;
+  }
+}
+
+/* Atmospheric fills — soft wash, fewer stacked radials (cheaper paint) */
+.atmosphere-silver {
+  background:
+    radial-gradient(ellipse 80% 45% at 50% -8%, rgba(255, 255, 255, 1), transparent 55%),
+    linear-gradient(180deg, #f5f6fa 0%, #f9fafc 100%);
+}
+
+.atmosphere-graphite {
+  background:
+    radial-gradient(ellipse 60% 40% at 70% 0%, rgba(var(--accent-dark-rgb), 0.1), transparent 50%),
+    linear-gradient(180deg, #212120 0%, #1d1d1c 100%);
+}
+
+.atmosphere-warm {
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -10%, rgba(255, 250, 230, 0.65), transparent 50%),
+    linear-gradient(180deg, #faf8f2 0%, #f6f4ed 100%);
+}
+
+/* Yellow frosted glass CTA — subtle yellow, Apple-clear */
+.pill-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-glass);
+  color: var(--accent-ink);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  padding: 0.8rem 1.55rem;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  border: 1px solid var(--accent-glass-border);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 8px 20px rgba(0, 0, 0, 0.06);
+  transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.pill-cta:hover {
+  background: rgba(var(--accent-rgb), 0.78);
+}
+
+.pill-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  padding: 0.8rem 1.4rem;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
+  transition: background 0.2s var(--ease);
+}
+
+.pill-ghost:hover {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.stat-num {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 4.8vw, 3.4rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* Horizontal Store shelf */
+.shelf {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.shelf::-webkit-scrollbar {
+  display: none;
+}
+
+.shelf > * {
+  scroll-snap-align: start;
+}
+
+@media (min-width: 1100px) {
+  .shelf {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, 1fr);
+    overflow: visible;
+  }
+}
+
+.demo-frame {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(29, 29, 28, 0.94);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.14) inset,
+    0 16px 40px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+
+/* —— Demo motion (calm presence, not broken loaders) —— */
+@keyframes demo-draw {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes demo-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes demo-shimmer {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(230%);
+  }
+}
+
+@keyframes demo-typing {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.demo-ink {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: demo-draw 2.8s var(--ease) 1 forwards;
+}
+
+.demo-edge-pulse {
+  animation: demo-pulse 2.4s ease-in-out infinite;
+}
+
+.demo-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-shimmer::after {
+  content: none;
+}
+
+.demo-typing-dot {
+  animation: demo-typing 1.25s ease-in-out infinite;
+}
+
+.demo-typing-dot:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.demo-typing-dot:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+.demo-live-dot {
+  animation: demo-pulse 1.8s ease-in-out infinite;
+}
+
+/* One-shot entrance only — no staggered GPU layer storm on chart shelves */
+.reveal-card {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-ink,
+  .demo-edge-pulse,
+  .demo-live-dot,
+  .demo-typing-dot {
+    animation: none !important;
+  }
+  .demo-ink {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ---- Walkthrough: the product, captured (Hero) ---- */
+.walk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  text-align: left;
+}
+@media (min-width: 960px) {
+  .walk {
+    grid-template-columns: 300px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.walk-rail {
+  display: grid;
+  gap: 8px;
+}
+.walk-tab {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.55);
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.walk-tab:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+.walk-tab.is-active {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--hairline));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.walk-tab-n {
+  grid-row: 1 / span 2;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--ink-muted);
+  padding-top: 2px;
+}
+.walk-tab.is-active .walk-tab-n {
+  color: var(--accent-text);
+}
+.walk-tab-label {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.walk-tab-what {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+.walk-stage {
+  min-width: 0;
+}
+.walk-frame {
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgb(16, 16, 20);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 28px 80px rgba(0, 0, 0, 0.16);
+}
+.walk-frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgb(24, 24, 29);
+  color: rgba(245, 245, 247, 0.85);
+}
+.walk-dots {
+  display: inline-flex;
+  gap: 6px;
+}
+.walk-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.walk-did {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12.5px;
+}
+.walk-did-k {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.45);
+}
+.walk-did-v {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* The ask reads as a sentence someone typed, in the page's own face —
+     the mono fallback (no --font-mono is defined on the site) rendered in
+     whatever the OS had, which the owner read as "the font doesn't look
+     clean". */
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: rgba(245, 245, 247, 0.92);
+}
+.walk-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top left;
+  animation: walk-in 320ms ease both;
+}
+@keyframes walk-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.walk-notice {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 720px) {
+  .walk-notice {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.walk-notice li {
+  position: relative;
+  padding: 10px 12px 10px 28px;
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.walk-notice li::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .walk-shot {
+    animation: none;
+  }
+}
+
+/* ── THE STEP POINTS AT THE PART OF THE FRAME IT MEANS ─────────────────────
+   Owner, 2026-09-18: "make sure you draw arrows from ask to the prompt,
+   architecture to the board, AI canvas… clean arrows, it would suck if they
+   are bad arrows messing up all over the place." No arrows cross the picture.
+   The active tab grows a short connector into the gutter, and inside the frame
+   a spotlight box sits on the region the step is about, with the rest of the
+   capture dimmed a little. Both move with the step. */
+.walk-shotwrap {
+  position: relative;
+  overflow: hidden;
+}
+.walk-focus {
+  position: absolute;
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 3px rgba(var(--accent-rgb), 0.18),
+    0 0 0 9999px rgba(8, 8, 10, 0.34);
+  pointer-events: none;
+  transition: left 420ms cubic-bezier(0.2, 0.7, 0.2, 1), top 420ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    width 420ms cubic-bezier(0.2, 0.7, 0.2, 1), height 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.walk-focus-tag {
+  position: absolute;
+  left: -1.5px;
+  top: -1.5px;
+  transform: translateY(-100%);
+  padding: 3px 8px 4px;
+  border-radius: 8px 8px 8px 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.walk-focus[data-tag-inside='true'] .walk-focus-tag {
+  transform: none;
+  border-radius: 8px 0 8px 0;
+}
+@media (min-width: 960px) {
+  .walk-tab {
+    position: relative;
+  }
+  .walk-tab.is-active::after {
+    content: '';
+    position: absolute;
+    right: -25px;
+    top: 50%;
+    width: 24px;
+    height: 0;
+    border-top: 1.5px solid var(--accent);
+    transform: translateY(-50%);
+  }
+  .walk-tab.is-active::before {
+    content: '';
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    transform: translateY(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .walk-focus {
+    transition: none;
+  }
+}
+
+/* ── STUDIO: FOUR CARDS, ONE HEIGHT ─────────────────────────────────────────
+   Owner, 2026-09-18: "Canvas is a big pane and Outcomes is a big pane, chat
+   and impact are smaller panes… a lot of blank space." Every demo gets the
+   same stage height, and the two thin ones were given more to say. */
+.studio-grid {
+  align-items: stretch;
+}
+.studio-card {
+  display: flex;
+  flex-direction: column;
+}
+.studio-demo {
+  height: 320px;
+}
+.studio-demo .demo-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.studio-demo .demo-frame > :last-child {
+  flex: 1;
+  min-height: 0;
+}
+.studio-demo .demo-fill {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── A CROPPED PANE LIFTS OFF THE CARD (owner, 2026-09-19) ─────────────────
+   "It's cut off and it's not very transparent… it's hard for people to kind
+   of see."
+
+   Two different complaints, and the crop only fixed the first. The second is
+   contrast: a dark capture sitting directly on a dark card has no edge, so
+   the eye cannot find where the screenshot starts. A hairline ring and a
+   slight lift give it one, without washing the capture itself. */
+.studio-demo .demo-pane {
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+}

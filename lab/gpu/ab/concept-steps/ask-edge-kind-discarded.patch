@@ -1,0 +1,74 @@
+diff --git a/packages/analyzer/src/server/lessonState.ts b/packages/analyzer/src/server/lessonState.ts
+index 73a4a8fd..159509b3 100644
+--- a/packages/analyzer/src/server/lessonState.ts
++++ b/packages/analyzer/src/server/lessonState.ts
+@@ -111,6 +111,37 @@ const TEACH_ASK =
+ 
+ const MAX_QUEUE = 6;
+ 
++/**
++ * AN ASK THAT NAMES A KIND OF CONNECTION, NOT A FILE (SEQUENCE_TEACH_ASK_EDGE_KIND=1, under A/B).
++ * "Teach me message queues using the real queue edges in this repo" and "queues vs HTTP"
++ * started their lessons on `http.ts`, an import star, because "HTTP" (or an https:// link)
++ * names that file by its basename. Measured on the concept-steps judge set, 15 of 55 turns
++ * showed an off-topic picture, on queue and payment asks. With the flag, a file named only by
++ * a connection word is not the subject, and an ask naming a kind of connection seeds from the
++ * files on edges of that kind, in the order the ask names the kinds.
++ */
++const EDGE_KIND_ASKS: readonly { words: RegExp; kinds: readonly string[] }[] = [
++  { words: /\b(queues?|messages?|message queues?|topics?|publish\w*|subscrib\w*|consumers?|producers?|event bus)\b/i, kinds: ['queue_publish', 'queue_consume'] },
++  { words: /\b(https?|rest|routes?|endpoints?|api calls?|grpc)\b/i, kinds: ['http', 'grpc'] },
++  { words: /\b(databases?|datastores?|tables?|sql|db)\b/i, kinds: ['db_read', 'db_write', 'db_access'] },
++];
++
++/** A file whose own name is a connection word (http.ts, queue.py, db.ts). */
++function isKindWordFile(node: { label: string; path?: string }): boolean {
++  const base = (node.path ?? node.label).split(/[\\/]/).pop() ?? '';
++  const stemName = base.replace(/\.[^.]+$/, '');
++  return EDGE_KIND_ASKS.some((k) => new RegExp('^(?:' + k.words.source + ')$', 'i').test(stemName));
++}
++
++/** The edge kinds an ask names, in the order it names them; empty when the flag is off. */
++export function askedEdgeKinds(ask: string): string[] {
++  if (process.env.SEQUENCE_TEACH_ASK_EDGE_KIND !== '1') return [];
++  return EDGE_KIND_ASKS.map((k) => ({ k, at: ask.search(k.words) }))
++    .filter((x) => x.at >= 0)
++    .sort((a, b) => a.at - b.at)
++    .flatMap((x) => x.k.kinds);
++}
++
+ /**
+  * WHAT A LEARNER TYPES IS NOT WHAT THE SCANNER SPELLS.
+  *
+@@ -252,6 +283,8 @@ export function buildQueue(graph: Pick<ArchGraph, 'nodes' | 'edges'>, ask: strin
+     (n) => n.kind === 'file' && n.path !== undefined && (labelCount.get(n.label) ?? 0) === 1,
+   );
+   const named = nodes.filter((n) => askNames(ask, n));
++  const asksKinds = askedEdgeKinds(ask).length > 0;
++  const subjectNamed = asksKinds ? named.filter((n) => !isKindWordFile(n)) : named;
+ 
+   /*
+    * A CONTAINER NAME IS A SIGNAL, NOT A CONCEPT.
+@@ -289,7 +322,21 @@ export function buildQueue(graph: Pick<ArchGraph, 'nodes' | 'edges'>, ask: strin
+     (n) => n.path === undefined && askNames(ask, n) && (n.label?.length ?? 0) >= 3,
+   );
+   const aboutThisRepo = namesContainer || REPO_REFERENCE.test(ask);
+-  const seeds = named.length > 0 ? named : aboutThisRepo ? nodes : [];
++  const kindSeeds: ArchNode[] = [];
++  if (subjectNamed.length === 0 && aboutThisRepo) {
++    const fileById = new Map(nodes.map((n) => [n.id, n]));
++    for (const kind of askedEdgeKinds(ask)) {
++      for (const e of graph.edges ?? []) {
++        if (e.kind !== kind) continue;
++        for (const id of [e.srcId, e.dstId]) {
++          const n = fileById.get(id);
++          if (n !== undefined && !kindSeeds.includes(n)) kindSeeds.push(n);
++        }
++      }
++    }
++  }
++  const seeds =
++    subjectNamed.length > 0 ? subjectNamed : kindSeeds.length > 0 ? kindSeeds : named.length > 0 ? named : aboutThisRepo ? nodes : [];
+   if (seeds.length === 0) return [];
+ 
+   const byId = new Map(nodes.map((n) => [n.id, n]));

@@ -1,0 +1,92 @@
+{
+  "about": "Harder draw-language A/B questions over the shopfront fixture, to separate arms that all ground the easy set. Every question needs a 5+ hop chain, a fan-out to 3+ backends, or two flows that meet; several invite a plausible shortcut the scan does NOT have (noted per question in trap). Every expectPath hop is a real, same-direction scan edge; the driver re-checks that. focus starts with \"repo\" so the slice is the whole 36-node repo at --max-nodes 36: the repo's edgeless focus pulls in its services and stores, and the breadth-first walk reaches every file.",
+  "questions": [
+    {
+      "id": "card-charge-every-way",
+      "kind": "join, 5+ hops",
+      "question": "Starting at the gateway's entry file, draw every way a request can end up at the Stripe code in the payments service. Show each file it passes through.",
+      "focus": ["repo", "gateway/src/index.ts", "payments/src/stripe.js"],
+      "trap": "orders/app/routes.py -> payments/src/index.js (skipping payments_client.py) is not a scan edge",
+      "expectPath": [
+        ["gateway/src/index.ts", "gateway/src/routes/payments.ts", "payments/src/index.js", "payments/src/stripe.js"],
+        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/stripe.js"]
+      ]
+    },
+    {
+      "id": "gateway-fanout",
+      "kind": "fan-out to 4 backends",
+      "question": "Draw every backend file the gateway's entry file reaches through its route files, and which route files use the gateway's shared HTTP helper.",
+      "focus": ["repo", "gateway/src/index.ts", "gateway/src/lib/http.ts"],
+      "trap": "gateway/src/routes/payments.ts -> gateway/src/lib/http.ts is not a scan edge (the other three routes import it)",
+      "expectPath": [
+        ["gateway/src/index.ts", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java"],
+        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py"],
+        ["gateway/src/index.ts", "gateway/src/routes/payments.ts", "payments/src/index.js"],
+        ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go"],
+        ["gateway/src/routes/invoices.ts", "gateway/src/lib/http.ts"],
+        ["gateway/src/routes/orders.ts", "gateway/src/lib/http.ts"],
+        ["gateway/src/routes/shipments.ts", "gateway/src/lib/http.ts"]
+      ]
+    },
+    {
+      "id": "order-notify",
+      "kind": "4-hop chain + topic shared by two services",
+      "question": "How does a customer get notified after placing an order through the gateway? Draw from the gateway's entry file to the notifications worker, with arrows in the direction the scan records them.",
+      "focus": ["repo", "gateway/src/index.ts", "notifications/worker.py"],
+      "trap": "orders/app/events.py -> notifications/worker.py is not a scan edge, and neither is order.created -> notifications/worker.py (the worker's edge points at the topic)",
+      "expectPath": [
+        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
+        ["notifications/worker.py", "topic:order.created"]
+      ]
+    },
+    {
+      "id": "invoice-and-charge",
+      "kind": "two flows joining at a store",
+      "question": "An invoice request comes in at the edge proxy. Draw how it reaches invoice data, and how the invoice service's payment calls reach stored payments. Show where the two flows meet.",
+      "focus": ["repo", "edge/default.conf", "invoices/src/main/java/shop/invoices/PaymentClient.java"],
+      "trap": "InvoiceController.java -> PaymentClient.java is not a scan edge; the controller and the payment client are not linked",
+      "expectPath": [
+        ["edge/default.conf", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"],
+        ["invoices/src/main/java/shop/invoices/PaymentClient.java", "payments/src/index.js", "payments/src/db.js", "ds:postgres"]
+      ]
+    },
+    {
+      "id": "postgres-sharers",
+      "kind": "store reached from 4 services",
+      "question": "Which services share the postgres database? For each one, draw the path from that service's entry file to postgres. Leave out services that never touch it.",
+      "focus": ["repo", "ds:postgres"],
+      "trap": "inventory/server.py -> postgres and payments/src/stripe.js -> postgres are not scan edges",
+      "expectPath": [
+        ["orders/app/main.py", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"],
+        ["payments/src/index.js", "payments/src/db.js", "ds:postgres"],
+        ["shipping/main.go", "ds:postgres"],
+        ["invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"]
+      ]
+    },
+    {
+      "id": "shipping-two-triggers",
+      "kind": "two flows into one service",
+      "question": "The shipping service is reached two ways: a gateway request and the order.created event. Draw both, the request all the way to where the shipment is stored and the event from the orders code that publishes it.",
+      "focus": ["repo", "shipping/main.go", "shipping/subscriber.go"],
+      "trap": "shipping/subscriber.go -> shipping/main.go is not a scan edge (the subscriber does not hand off to main.go), and order.created -> subscriber.go is backwards",
+      "expectPath": [
+        ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go", "ds:postgres"],
+        ["orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
+        ["shipping/subscriber.go", "topic:order.created"]
+      ]
+    },
+    {
+      "id": "orders-main-fanout",
+      "kind": "fan-out to 4 backends, one 5-hop branch",
+      "question": "Starting at the orders service's main file, draw every backend it reaches (other services, stores and topics), following each branch to its end.",
+      "focus": ["repo", "orders/app/main.py"],
+      "trap": "inventory/server.py -> postgres and orders/app/routes.py -> orders/app/models.py are not scan edges",
+      "expectPath": [
+        ["orders/app/main.py", "orders/app/routes.py", "orders/app/inventory_client.py", "inventory/server.py"],
+        ["orders/app/main.py", "orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/db.js", "ds:postgres"],
+        ["orders/app/main.py", "orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
+        ["orders/app/main.py", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"]
+      ]
+    }
+  ]
+}

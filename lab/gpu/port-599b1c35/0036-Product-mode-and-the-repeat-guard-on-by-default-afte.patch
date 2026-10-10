@@ -1,0 +1,139 @@
+From 3d31b45334d3a688140f92831fbf943893ffb78f Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 08:38:42 -0400
+Subject: [PATCH 36/37] Product mode and the repeat guard on by default, after
+ blind check 4 passed (=0 turns each off)
+
+Blind set 4 (sealed, separate worker): product shape 0% -> 46% (+0.46, SE 0.07), no answer resent in
+either arm, quality -2.0 (SE 2.5, inside the bar), file charts 46% -> 4%, concept flow charts
+29% -> 67%. On this branch only.
+---
+ packages/analyzer/src/server/askPipeline.ts   |  8 +++----
+ .../analyzer/src/test/ask-tool-loop.test.ts   | 22 ++++++++++++++++---
+ .../src/test/teach-product-mode.test.ts       |  6 ++---
+ tools/bench/product-question-ab.mjs           |  4 ++--
+ 4 files changed, 28 insertions(+), 12 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 158ca8a1..81ea6f98 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -2443,7 +2443,7 @@ export function mutatingToolRefusal(name: string | undefined, teach: boolean): s
+  * next. Nothing in the teach contract has a newcomer's shape for "what is this
+  * product", and nothing stopped an answer being sent again.
+  *
+- * Behind SEQUENCE_TEACH_PRODUCT_MODE=1 (off by default): a teach turn whose
++ * On by default since blind check 4 (2026-09-24; SEQUENCE_TEACH_PRODUCT_MODE=0 turns it off): a teach turn whose
+  * question asks what the product is, why it exists, how it works or what its
+  * advantages are gets the shape below, reads the README and docs before the
+  * topology, draws the product flow as concepts rather than files, and is shown
+@@ -2487,7 +2487,7 @@ export function isProductQuestion(question: string): boolean {
+ }
+ 
+ export function teachProductTurn(input: { teach?: boolean; question: string; historyLines?: readonly string[] }): boolean {
+-  if (process.env.SEQUENCE_TEACH_PRODUCT_MODE !== '1' || input.teach !== true) return false;
++  if (process.env.SEQUENCE_TEACH_PRODUCT_MODE === '0' || input.teach !== true) return false;
+   if (NAMES_CODE.test(input.question)) return false;
+   if (isProductQuestion(input.question)) return true;
+   /* Sticky: an earlier question in this conversation was a product question. */
+@@ -3520,7 +3520,7 @@ export function teachOneChange(problems: readonly string[], draft: string, overv
+ }
+ 
+ /*
+- * AN ANSWER IS NOT SENT TWICE (SEQUENCE_TEACH_REPEAT_GUARD=1, off by default).
++ * AN ANSWER IS NOT SENT TWICE (on by default since blind check 4, 2026-09-24; SEQUENCE_TEACH_REPEAT_GUARD=0 turns it off).
+  *
+  * 2026-09-24: the owner asked three different product questions and got the same
+  * answer three times; a prompt line telling the model not to repeat itself did
+@@ -3578,7 +3578,7 @@ export function repeatFallback(draft: string, historyLines?: readonly string[]):
+ }
+ 
+ export function repeatsLastAnswer(text: string, historyLines?: readonly string[]): boolean {
+-  if (process.env.SEQUENCE_TEACH_REPEAT_GUARD !== '1') return false;
++  if (process.env.SEQUENCE_TEACH_REPEAT_GUARD === '0') return false;
+   const last = [...(historyLines ?? [])].reverse().find((l) => l.startsWith('Assistant: '));
+   if (last === undefined) return false;
+   /* The history keeps 1,200 characters of an answer; compare like with like. */
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index e86e6499..416c1434 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -7584,8 +7584,7 @@ async function repeatTeachTurn(flag: string | undefined) {
+   const { callProvider } = makeProviderScript([{ text: LAST_ANSWER }, { text: NEW_ANSWER }]);
+   const base = await makeAttachedInput(repo, callProvider);
+   const before = process.env.SEQUENCE_TEACH_REPEAT_GUARD;
+-  if (flag === undefined) delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
+-  else process.env.SEQUENCE_TEACH_REPEAT_GUARD = flag;
++  process.env.SEQUENCE_TEACH_REPEAT_GUARD = flag ?? '0';
+   try {
+     return await runAskPipeline(
+       {
+@@ -7608,7 +7607,7 @@ test('askPipeline teach, SEQUENCE_TEACH_REPEAT_GUARD=1: a draft that repeats the
+   assert.doesNotMatch(result.text, /hands it to the orders service/);
+ });
+ 
+-test('askPipeline teach, repeat guard off: the repeated draft goes out as before', async () => {
++test('askPipeline teach, SEQUENCE_TEACH_REPEAT_GUARD=0: the repeated draft goes out as before', async () => {
+   const result = await repeatTeachTurn(undefined);
+   assert.match(result.text, /hands it to the orders service/);
+ });
+@@ -7645,3 +7644,20 @@ test('askPipeline teach, repeat guard: a retry is sampled hot, and a draft still
+     else process.env.SEQUENCE_TEACH_REPEAT_GUARD = before;
+   }
+ });
++
++test('askPipeline teach, repeat guard is ON by default (SEQUENCE_TEACH_REPEAT_GUARD unset)', async () => {
++  const repo = shopfrontRepo();
++  const { callProvider } = makeProviderScript([{ text: LAST_ANSWER }, { text: NEW_ANSWER }]);
++  const base = await makeAttachedInput(repo, callProvider);
++  const before = process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++  delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++  try {
++    const result = await runAskPipeline(
++      { ...base, question: 'i still dont get it, why does it exist?', teach: true, historyLines: ['User: what is this app?', `Assistant: ${LAST_ANSWER}`] },
++      () => {},
++    );
++    assert.match(result.text, /shop counter/);
++  } finally {
++    if (before !== undefined) process.env.SEQUENCE_TEACH_REPEAT_GUARD = before;
++  }
++});
+diff --git a/packages/analyzer/src/test/teach-product-mode.test.ts b/packages/analyzer/src/test/teach-product-mode.test.ts
+index 9d5a4a62..d31458d6 100644
+--- a/packages/analyzer/src/test/teach-product-mode.test.ts
++++ b/packages/analyzer/src/test/teach-product-mode.test.ts
+@@ -15,12 +15,12 @@ test('the owner product questions are product questions; a code question is not'
+   assert.ok(!isProductQuestion('Explain the softmax gradient in nn_bigram.py'));
+ });
+ 
+-test('product mode needs the flag and a teach turn', () => {
++test('product mode is on by default in a teach turn, and =0 turns it off', () => {
+   const before = process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+   try {
+-    delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++    process.env.SEQUENCE_TEACH_PRODUCT_MODE = '0';
+     assert.equal(teachProductTurn({ teach: true, question: OWNER[2]! }), false);
+-    process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
++    delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+     assert.equal(teachProductTurn({ teach: true, question: OWNER[2]! }), true);
+     assert.equal(teachProductTurn({ teach: false, question: OWNER[2]! }), false);
+   } finally {
+diff --git a/tools/bench/product-question-ab.mjs b/tools/bench/product-question-ab.mjs
+index ba85c770..8a745186 100644
+--- a/tools/bench/product-question-ab.mjs
++++ b/tools/bench/product-question-ab.mjs
+@@ -32,9 +32,9 @@ const RUNS = Number(arg('--runs', '1'));
+ const OUT = arg('--out', path.join(root, 'tools/bench/out', `product-question-${ARM}.json`));
+ /* Arms: off (neither flag), on (product mode), guard (product mode + repeat guard). */
+ if (ARM === 'on' || ARM === 'guard' || ARM === 'guard3') process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
+-else delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++else process.env.SEQUENCE_TEACH_PRODUCT_MODE = '0';
+ if (ARM === 'guard' || ARM === 'guard3') process.env.SEQUENCE_TEACH_REPEAT_GUARD = '1';
+-else delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++else process.env.SEQUENCE_TEACH_REPEAT_GUARD = '0';
+ if (ARM === 'guard3') process.env.SEQUENCE_TEACH_REPEAT_FALLBACK = 'new-only';
+ else delete process.env.SEQUENCE_TEACH_REPEAT_FALLBACK;
+ /* --convos <file.json>: [{id, repo, questions}] replaces the built-in set (the blind check). */
+-- 
+2.51.1.windows.1
+

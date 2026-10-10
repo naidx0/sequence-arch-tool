@@ -1,0 +1,898 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SHEET 03 — NODE KINDS, AND HOW THEY DIFFER WITHOUT COLOUR
+     Fragment. Body content only. _core.html supplies every token and every
+     class used here. No <style> block, no new class.
+
+     This sheet implements OWNER DECISION 2. It is the sheet the rest of the
+     board book is specified against, because every other board surface — the
+     legend, the index rail, the minimap, the playback overlay — inherits its
+     kind vocabulary from here.
+
+     The retired scheme is drawn using --accent, --fits, --spills and
+     --unknown, which is not an illustration of the old kind hues. Four of
+     them WERE those tokens, byte for byte. Drawing them from the status
+     vocabulary is the most literal reproduction available and it needs no hex.
+
+     ONE non-layout inline style appears on this page: filter:grayscale(1),
+     in 03.5, as the demonstration device for the binding invariant. It is
+     raised in the handback.
+
+     03.3, 03.4 and 03.6 were re-derived against the RENDERED silhouette system,
+     not against the declared token list. Six kinds now carry six genuinely
+     different outlines, two of which a border-radius cannot express and which
+     the substrate therefore draws; every silhouette specimen on this page is
+     at card aspect and at least half a card tall, so the radii have room to
+     paint; and 03.6's matrix names the channels that separate each pair at the
+     size drawn, plus the one pair that falls to the icon alone below the floor.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<section class="page wide" data-page-num="03" data-page-title="Node kinds without hue" id="p03">
+
+  <div class="pagehead">
+    <span class="num">Sheet 03 &middot; Sequence extensions</span>
+    <h1>Node kinds, and how they differ without colour</h1>
+    <p class="lede">
+      A node's <b>kind</b> is a category &mdash; what sort of thing the analyzer found. A node's
+      <b>state</b> is a claim about the world &mdash; it passed, it is at risk, it is selected, it
+      failed. Law 1 spends hue on claims, and there are never more hues than there are claims.
+      A category is not a claim, so a category does not get a hue. Kind is carried instead by four
+      non-chromatic channels: an <b>icon</b>, a <b>silhouette</b>, a <b>border treatment</b> and a
+      step in the <b>neutral tone</b> ramp.
+    </p>
+    <p class="lede">
+      This is not a compromise made to accommodate colour vision. It is the stronger design on
+      every axis that matters for a canvas &mdash; it survives being zoomed out past the labels, it
+      scales past six categories where a hue budget cannot, it is legible to every reader, and it
+      gives the accent back to selection outright. The retired scheme did none of those things,
+      and it also, byte for byte, told the reader that every datastore had passed.
+    </p>
+  </div>
+
+  <!-- ── 03.1 THE RETIREMENT ─────────────────────────────────────────────── -->
+  <div class="sec" id="s03-retired">
+    <div class="sec-head">
+      <span class="eyebrow">03.1</span>
+      <h2>The kind hues are retired, and here is what they were saying</h2>
+      <span class="tail">four of five were the status vocabulary</span>
+    </div>
+
+    <p class="note">
+      The board previously assigned one hue per kind. Four of those five hues were not merely
+      similar to Sequence's status colours &mdash; they were the same values. A datastore was
+      painted in the token that means <em>passed</em>. A topic was painted in the token that means
+      <em>warning</em>; the warning token was in fact declared as an alias of the topic token, so
+      the two could not have drifted apart even in principle. A service was painted in the accent,
+      which Law 2 reserves for the product's own voice. An entry was painted in the muted token
+      that means <em>not known</em>.
+    </p>
+    <p class="note">
+      Below, each retired kind is drawn beside the status badge it collided with. Nothing has been
+      approximated: the card and the badge beside it resolve to the same custom property.
+    </p>
+
+    <div class="scrollx">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm" style="gap:var(--sp-16)">
+
+          <div class="specimen">
+            <div style="display:flex;align-items:center;gap:var(--sp-8)">
+              <div class="node n-service" style="min-height:auto;border-color:var(--fits);background:var(--fits-wash)">
+                <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+                <div class="nd-t">orders</div>
+              </div>
+              <span class="verdict v-fits">Fits</span>
+            </div>
+            <span class="lbl">datastore = --fits</span>
+          </div>
+
+          <div class="specimen">
+            <div style="display:flex;align-items:center;gap:var(--sp-8)">
+              <div class="node n-service" style="min-height:auto;border-color:var(--spills);background:var(--spills-wash)">
+                <div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div>
+                <div class="nd-t">order.placed</div>
+              </div>
+              <span class="verdict v-spills">Spills</span>
+            </div>
+            <span class="lbl">topic = --spills</span>
+          </div>
+
+          <div class="specimen">
+            <div style="display:flex;align-items:center;gap:var(--sp-8)">
+              <div class="node n-service" style="min-height:auto;border-color:var(--unknown);background:var(--unknown-wash)">
+                <div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div>
+                <div class="nd-t">public API</div>
+              </div>
+              <span class="verdict v-unknown">Unknown</span>
+            </div>
+            <span class="lbl">entry = --unknown</span>
+          </div>
+
+          <div class="specimen">
+            <div style="display:flex;align-items:center;gap:var(--sp-8)">
+              <div class="node n-service" style="min-height:auto;border-color:var(--accent);background:var(--accent-wash)">
+                <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">checkout</div>
+              </div>
+              <button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+            </div>
+            <span class="lbl">service = --accent</span>
+          </div>
+
+        </div>
+        <p class="why">The default <span class="inline-code">layered</span> arch layout flows the
+        graph rightward &mdash; <span class="inline-code">archLayout.ts:105</span> sets
+        <span class="inline-code">'elk.direction': 'RIGHT'</span> on the
+        <span class="inline-code">layered</span> case, which is also the
+        <span class="inline-code">default</span> &mdash; so datastores and topics collect
+        downstream. The downstream half of every board therefore resolved to a field of
+        <em>passed</em> and <em>warning</em> about nothing at all, and the one card that was
+        genuinely selected competed with every service on screen for the same gold. <b>The
+        qualifier is load-bearing:</b> the plain-English board is not laid out this way &mdash;
+        <span class="inline-code">graph/layout.ts:114</span> sets
+        <span class="inline-code">BOARD_ELK_OPTIONS['elk.direction']</span> to
+        <span class="inline-code">'DOWN'</span> &mdash; and there the same pile-up runs down the
+        page instead of across it. The direction changes; the defect does not.</p>
+      </div>
+    </div>
+
+    <p class="caption">
+      A reader cannot unlearn a verdict colour. Once green means <span class="inline-code">--fits</span>
+      anywhere in the product, a green rectangle means <em>it passed</em> everywhere in the product,
+      including on a rectangle that was only ever trying to say <em>this is a table</em>.
+    </p>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>Why the hue was load-bearing, and why it no longer has to be.</b> The retired card had
+      <span class="inline-code">--e0</span> in every state and sat almost exactly on the ground it
+      was drawn on &mdash; no tone step, no elevation, no shadow. With separation unavailable from
+      surface and light, hue was the only channel left, so the design had to spend it. The card
+      now takes a real tone step (<span class="inline-code">--arch-tone-*</span>, off the graphite
+      surface ramp) and <span class="inline-code">--e1</span>. Once a card is a raised object, its
+      border can go quiet at <span class="inline-code">--edge</span> &mdash; and quiet borders are
+      what freed the hue.
+    </div>
+  </div>
+
+  <!-- ── 03.2 THE FOUR CHANNELS ──────────────────────────────────────────── -->
+  <div class="sec" id="s03-channels">
+    <div class="sec-head">
+      <span class="eyebrow">03.2</span>
+      <h2>The four channels that carry kind</h2>
+      <span class="tail">no colour token in the --arch-* namespace</span>
+    </div>
+
+    <p class="note">
+      Each channel answers at a different distance. The icon is read when the card is legible; the
+      silhouette is read when it is not; the border treatment says what sort of evidence the
+      boundary rests on; the tone carries containment depth first and separation second. They are
+      declared once per kind and the card chassis is otherwise identical &mdash; a kind sets four
+      custom properties and nothing else.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>What each channel is for</h3>
+        <p class="sub">Ordered strongest to weakest. No pair of kinds may rest on the weakest alone.</p>
+        <table class="tk">
+          <thead><tr><th>Channel</th><th>Tokens</th><th>Reads at</th></tr></thead>
+          <tbody>
+            <tr><td class="k">icon</td><td class="v">the sprite &mdash; one glyph, one kind</td><td>to the icon's own floor</td></tr>
+            <tr><td class="k">silhouette</td><td class="v">--arch-sil-* + two drawn outlines</td><td>to half a card</td></tr>
+            <tr><td class="k">border style</td><td class="v">--arch-style-*</td><td>label distance</td></tr>
+            <tr><td class="k">border weight</td><td class="v">--arch-weight-*</td><td>close, and not on 1&times;</td></tr>
+            <tr><td class="k">neutral tone</td><td class="v">--arch-tone-*</td><td>any size; flat in light</td></tr>
+          </tbody>
+        </table>
+        <p class="caption">Border style and border weight are counted together as one channel,
+        <em>border treatment</em>, because weight alone is not reliable &mdash; see 03.7.</p>
+      </div>
+
+      <div class="panel">
+        <h3>What each border style asserts</h3>
+        <p class="sub">The style is a statement about evidence, not a decoration.</p>
+        <dl class="specs">
+          <dt>solid</dt><dd>the analyzer saw this thing stand there</dd>
+          <dt>dashed</dt><dd>a boundary drawn around other things</dd>
+          <dt>dotted</dt><dd>ambient &mdash; sampled, not held</dd>
+        </dl>
+        <p class="caption" style="margin-top:var(--sp-12)">Tone runs on the graphite surface ramp and
+        carries zero chroma in either theme: <span class="inline-code">--surface-1</span>,
+        <span class="inline-code">--surface-2</span>, <span class="inline-code">--surface-3</span>.
+        A module recedes behind its members because it is behind them, not because it is a
+        different sort of thing. In light, Graphite separates elevation by shadow and hairline ring
+        rather than by tone, so surfaces 2 through 4 resolve to the same value and this channel goes
+        flat &mdash; which is the second reason no pair of kinds may rest on it. Every pair still
+        separates, because every pair separates on icon and silhouette first.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 03.3 THE SIX, DRAWN ─────────────────────────────────────────────── -->
+  <div class="sec" id="s03-six">
+    <div class="sec-head">
+      <span class="eyebrow">03.3</span>
+      <h2>Five kinds and one position, drawn</h2>
+      <span class="tail">--arch-card-w &middot; --arch-card-min-h is a floor</span>
+    </div>
+
+    <p class="note">
+      On the board field, at rest, with nothing selected and no verdict attached, each at the full
+      <span class="inline-code">--arch-card-w</span> &times;
+      <span class="inline-code">--arch-card-min-h</span>. There is not one hue between them. Every
+      difference a reader can see here is a difference of shape, glyph, boundary or grey.
+    </p>
+    <p class="note">
+      <b>Corner radius alone is too weak a channel to carry six kinds</b>, because the renderer is
+      free to discard the number &mdash; see 03.4. So four of the six are separated by an outline a
+      radius can express, and two by an outline it cannot: the module's folder tab and the agent's
+      chamfer are <em>drawn</em>, and the datastore's cylinder keeps a real border while its top and
+      bottom go elliptical. Nothing on this row is faked with a radius that will not render.
+    </p>
+
+    <div class="scrollx">
+      <div class="boardfield" style="padding:var(--sp-16)">
+        <div style="display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+
+          <div class="specimen">
+            <div class="node n-entry">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div>
+              <div class="nd-t">public API</div>
+              <div class="nd-s">The way in.</div>
+            </div>
+            <span class="lbl">.n-entry &middot; ic-entry</span></div>
+
+          <div class="specimen">
+            <div class="node n-service">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div>
+              <div class="nd-s">Takes an order and charges it.</div>
+            </div>
+            <span class="lbl">.n-service &middot; ic-service</span></div>
+
+          <div class="specimen">
+            <div class="node n-module">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div>
+              <div class="nd-t">billing</div>
+              <div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;members&#8250;</span></span></div>
+            </div>
+            <span class="lbl">.n-module &middot; ic-module</span></div>
+
+          <div class="specimen">
+            <div class="node n-store">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+              <div class="nd-t">orders</div>
+              <div class="nd-s">It sits still.</div>
+            </div>
+            <span class="lbl">.n-store &middot; ic-database</span></div>
+
+          <div class="specimen">
+            <div class="node n-topic">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div>
+              <div class="nd-t">order.placed</div>
+              <div class="nd-s">A lane things flow along.</div>
+            </div>
+            <span class="lbl">.n-topic &middot; ic-topic</span></div>
+
+          <div class="specimen">
+            <div class="node n-agent">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div>
+              <div class="nd-t">refund worker</div>
+              <div class="nd-s">An actor, not a deployment.</div>
+            </div>
+            <span class="lbl">.n-agent &middot; ic-agent</span></div>
+
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">
+      Six outlines, left to right. <b>Entry</b> is a flag &mdash; a capsule left end against a hard
+      square right edge, so the shape says <em>things arrive here from off-board</em>.
+      <b>Service</b> is the base rounded rectangle at <span class="inline-code">--r-14</span>.
+      <b>Module</b> is that rectangle with a folder tab drawn above its top-left corner, carrying
+      the card's own border style, weight and ink and having no bottom edge. <b>Datastore</b> is a
+      cylinder &mdash; flat sides, a half-ellipse top and bottom, and a seam that is the lower arc
+      of the top one. <b>Topic</b> is a stadium, both ends fully round. <b>Agent</b> is a
+      near-square plate with its top-right corner cut away, drawn as two clipped layers so the cut
+      edge is stroked exactly like every other edge. Each is a sentence about the thing &mdash; a
+      datastore sits, a topic is a lane, a module is a container, an agent is not a deployed object.
+    </p>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>A capsule end costs horizontal padding, and the two capsule kinds pay it.</b>
+      <span class="inline-code">--r-full</span> never paints 999px; it paints half the shorter side.
+      On a card at the <span class="inline-code">--arch-card-min-h</span> floor that is half the
+      card's height, and an arc that deep cuts inward far enough that a header glyph set at the
+      card's own <span class="inline-code">--sp-10</span> padding lands outside the painted shape.
+      Entry and Topic are therefore drawn here at <span class="inline-code">--sp-20</span>
+      horizontal padding &mdash; exactly the trade Graphite already makes for
+      <span class="inline-code">.btn.pill</span>, where the pill radius buys itself a wider
+      horizontal pad than the square button. Entry pays it on the left end only, because its right
+      corners are 0 and paint square; Topic pays it at both ends. The other four kinds do not pay
+      it: the agent's chamfer is a fixed <span class="inline-code">--sp-16</span> bite that clears
+      the header line, and the datastore's top ellipse has already risen above the padding by the
+      time the header starts. <b>This now lives in the substrate</b>, on
+      <span class="inline-code">.node.n-entry</span> and
+      <span class="inline-code">.node.n-topic</span> in <span class="inline-code">_core.html</span>,
+      where it fixes every entry and topic specimen in the book at once. This page carries no
+      inline padding override any more, and no sheet should write one.
+    </div>
+
+    <div class="kindlegend" style="margin-top:var(--sp-12)">
+      <span class="grp">Kinds</span>
+      <span class="k"><span class="silswatch n-service"></span><svg class="i i-12"><use href="#ic-service"/></svg>Service</span>
+      <span class="k"><span class="silswatch n-module"></span><svg class="i i-12"><use href="#ic-module"/></svg>Module</span>
+      <span class="k"><span class="silswatch n-store"></span><svg class="i i-12"><use href="#ic-database"/></svg>Datastore</span>
+      <span class="k"><span class="silswatch n-topic"></span><svg class="i i-12"><use href="#ic-topic"/></svg>Topic</span>
+      <span class="k"><span class="silswatch n-agent"></span><svg class="i i-12"><use href="#ic-agent"/></svg>Agent</span>
+      <span class="grpsep"></span>
+      <span class="grp">Position</span>
+      <span class="k"><span class="silswatch n-entry"></span><svg class="i i-12"><use href="#ic-entry"/></svg>Entry</span>
+    </div>
+    <p class="caption">
+      Five kinds, then a hairline, then the one <em>position</em> &mdash; 03.7 states why entry
+      may not stand as the sixth peer. The legend carries the silhouette and the glyph, and no
+      colour chip, because there is no colour for a chip to show. Each silhouette is drawn at
+      <span class="inline-code">--arch-card-w &divide; 2</span> by
+      <span class="inline-code">--arch-card-min-h &divide; 2</span> &mdash; card aspect, half a card.
+      The 26 &times; 18 chip this replaces was too short for its own radii to paint; see 03.4. Read
+      the row as a <em>vocabulary</em> and not as a zoom level: the radii are scaled by the
+      renderer, but the tab, the chamfer and the seam are token sizes and stay where they are, so a
+      legend chip shows the shapes larger than a camera-scaled card of the same box would. What a
+      camera actually does to them is 03.6's right-hand column.
+      <b>Module is in the legend.</b> It is in the schema
+      (<span class="inline-code">parentId</span>,
+      <span class="inline-code">memberIds</span>) and it was being flattened onto Service before it
+      ever reached the picture, which is how a board could contain modules and a legend could
+      contain none.
+    </p>
+  </div>
+
+  <!-- ── 03.4 THE BINDING INVARIANT ──────────────────────────────────────── -->
+  <div class="sec" id="s03-invariant">
+    <div class="sec-head">
+      <span class="eyebrow">03.4</span>
+      <h2>The binding invariant</h2>
+      <span class="tail">the test every board sheet is specified against</span>
+    </div>
+
+    <div class="panel">
+      <p class="note" style="margin:0;max-width:none;font-size:var(--t-14);line-height:var(--lh-14);color:var(--ink-1)">
+        <b>Every architecture node kind must remain distinguishable with all colour removed, at
+        every size the silhouette is drawn, from the radii that actually paint.</b>
+        Render the board greyscale. If two kinds go ambiguous, the design is wrong &mdash; not the
+        renderer, not the reader, the design.
+      </p>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      The first clause is stronger than "do not rely on colour alone": it says a kind may not rely
+      on colour <em>at all</em>. Anything a reader needs in order to tell a datastore from a topic
+      must already be present in the achromatic picture, which means the greyscale render and the
+      colour render carry exactly the same kind information &mdash; and the difference between them
+      is precisely the set of claims the board is making.
+    </p>
+    <p class="note">
+      The last two clauses are the ones that were missing, and their absence was this book's
+      central defect. <b>A declared radius is not a rendered radius.</b> CSS computes one scale
+      factor for the whole box &mdash;
+      <span class="inline-code">f = min(side length &divide; sum of the radii on that side)</span>,
+      taken over all four sides &mdash; and multiplies every corner by it. Two consequences follow,
+      and both bite on a board: any radius at or above half the box height paints as a stadium end,
+      and on a short box two different tokens paint the same arc. Proving the invariant against the
+      token list therefore proves nothing about the picture.
+    </p>
+
+    <div class="scrollx">
+      <div class="panel" style="max-width:var(--col-max)">
+        <table class="tk">
+          <thead><tr><th>Box drawn</th><th>Token</th><th>Tightest side</th><th>Radii on it</th><th>f</th><th>Paints</th></tr></thead>
+          <tbody>
+            <tr><td class="k">160 &times; 96 card</td><td class="v">--r-14</td><td class="v">96</td><td class="v">14 + 14 = 28</td><td class="v">1</td><td class="r">14px</td></tr>
+            <tr><td class="k">160 &times; 96 card</td><td class="v">--r-full</td><td class="v">96</td><td class="v">999 + 999 = 1998</td><td class="v">96 / 1998</td><td class="r">48px</td></tr>
+            <tr><td class="k">80 &times; 48 swatch</td><td class="v">--r-14</td><td class="v">48</td><td class="v">14 + 14 = 28</td><td class="v">1</td><td class="r">14px</td></tr>
+            <tr><td class="k">80 &times; 48 swatch</td><td class="v">--r-full</td><td class="v">48</td><td class="v">999 + 999 = 1998</td><td class="v">48 / 1998</td><td class="r">24px</td></tr>
+            <tr><td class="k">26 &times; 18 chip</td><td class="v">--r-14</td><td class="v">18</td><td class="v">14 + 14 = 28</td><td class="v">18 / 28</td><td class="r">9px</td></tr>
+            <tr><td class="k">26 &times; 18 chip</td><td class="v">--r-18</td><td class="v">18</td><td class="v">18 + 18 = 36</td><td class="v">18 / 36</td><td class="r">9px</td></tr>
+            <tr><td class="k">26 &times; 18 chip</td><td class="v">--r-full</td><td class="v">18</td><td class="v">999 + 999 = 1998</td><td class="v">18 / 1998</td><td class="r">9px</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="caption">
+      Every figure in the last column is <em>token &times; f</em>, and every f is the ratio printed
+      beside it. The bottom three rows are the defect made arithmetic: on the 26 &times; 18 chip
+      this book used to draw its legend with, <span class="inline-code">--r-14</span>,
+      <span class="inline-code">--r-18</span> and <span class="inline-code">--r-full</span> all land
+      on the same 9px, so a service and a topic rendered as one shape while the token list said two.
+      A swatch shorter than twice its largest radius is a lie about the shape. That is why every
+      silhouette specimen on this page is at card aspect and at least half a card tall, and why the
+      folder tab, the cylinder and the chamfer are drawn rather than declared &mdash; a radius that
+      will not render is not a silhouette, it is a comment.
+    </p>
+  </div>
+
+  <!-- ── 03.5 THE SAME ROW, IN GREYSCALE ─────────────────────────────────── -->
+  <div class="sec" id="s03-greyscale">
+    <div class="sec-head">
+      <span class="eyebrow">03.5</span>
+      <h2>The same row again, in greyscale</h2>
+      <span class="tail">and the retired scheme beside it</span>
+    </div>
+
+    <p class="note">
+      Left: the six from 03.3, at the same size, with all colour removed. Right: the retired hue
+      scheme at the same size, with all colour removed. Both panels are rendered from the same
+      markup and the same geometry as the specimens they echo &mdash; full
+      <span class="inline-code">--arch-card-w</span> &times;
+      <span class="inline-code">--arch-card-min-h</span> cards, not shrunken ones &mdash; and the
+      only thing added is the desaturation. Shrinking a specimen to fit a column is the same defect
+      as declaring a radius that will not paint.
+    </p>
+
+    <div class="grid g2">
+
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="padding:var(--sp-12);width:100%;filter:grayscale(1)">
+          <div style="display:flex;flex-wrap:wrap;gap:var(--sp-10);align-items:flex-start">
+            <div class="node n-entry">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div>
+              <div class="nd-t">public API</div></div>
+            <div class="node n-service">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div></div>
+            <div class="node n-module">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div>
+              <div class="nd-t">billing</div></div>
+            <div class="node n-store">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+              <div class="nd-t">orders</div></div>
+            <div class="node n-topic">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div>
+              <div class="nd-t">order.placed</div></div>
+            <div class="node n-agent">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div>
+              <div class="nd-t">refund worker</div></div>
+          </div>
+        </div>
+        <p class="why">Six kinds, six readings. Nothing was lost, because nothing was ever
+        carried in the hue. Cover the glyphs at <em>this</em> size and the six outlines still sort
+        into six groups &mdash; that claim is size-bounded and 03.6 states where it stops.</p>
+      </div>
+
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="boardfield" style="padding:var(--sp-12);width:100%;filter:grayscale(1)">
+          <div style="display:flex;flex-wrap:wrap;gap:var(--sp-10);align-items:flex-start">
+            <div class="node n-service" style="border-color:var(--unknown);background:var(--unknown-wash)">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Entry</span></div>
+              <div class="nd-t">public API</div></div>
+            <div class="node n-service" style="border-color:var(--accent);background:var(--accent-wash)">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div></div>
+            <div class="node n-service" style="border-color:var(--accent);background:var(--accent-wash)">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Module</span></div>
+              <div class="nd-t">billing</div></div>
+            <div class="node n-service" style="border-color:var(--fits);background:var(--fits-wash)">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Datastore</span></div>
+              <div class="nd-t">orders</div></div>
+            <div class="node n-service" style="border-color:var(--spills);background:var(--spills-wash)">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Topic</span></div>
+              <div class="nd-t">order.placed</div></div>
+            <div class="node n-service" style="border-color:var(--info);background:var(--info-wash)">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Agent</span></div>
+              <div class="nd-t">refund worker</div></div>
+          </div>
+        </div>
+        <p class="why">One silhouette, one glyph, one boundary, six labels. Remove the colour and
+        the only thing left telling the reader what any of these are is text &mdash; which is the
+        one channel that disappears first when the board is zoomed to fit. Module is not even a
+        distinct card: it was mapped onto Service before it was drawn.</p>
+      </div>
+
+    </div>
+
+    <p class="caption">
+      Read the left panel with the labels covered rather than with them read: the flag, the folder,
+      the cylinder, the stadium and the chamfer are all there, and at this size no pair is close.
+      The claim is bounded to this size, though, and 03.6 says where it stops &mdash; the pair that
+      loses its outline first as the camera pulls back is the service rectangle against the
+      cylinder, because the only thing between them is the rise of the ellipse.
+      The desaturation on both panels is a demonstration device applied to this page, not a
+      product mode. Sequence never renders the board greyscale; the invariant is a test the design
+      has to pass, not a view the user has to use.
+    </p>
+  </div>
+
+  <!-- ── 03.6 THE SEPARATION MATRIX ──────────────────────────────────────── -->
+  <div class="sec" id="s03-matrix">
+    <div class="sec-head">
+      <span class="eyebrow">03.6</span>
+      <h2>Every pair, and the channels that separate it</h2>
+      <span class="tail">the invariant, specified rather than asserted</span>
+    </div>
+
+    <p class="note">
+      Every pair of kinds drawn in 03.3 is listed, and every row was re-derived against the outlines
+      as they paint at the size drawn &mdash; not against the token list. The middle column names
+      the channels that separate that pair on the full card. The right-hand column names what is
+      left <b>below half a card</b>, which is the honest floor: at that scale the folder tab is
+      6px, the chamfer 8px and the cylinder's arc 7px, and below it those three features and the
+      dash patterns stop reading. What survives further out is the coarse outline &mdash;
+      round-ended, moderately rounded, or near-square &mdash; plus tone, plus the icon.
+    </p>
+    <p class="note">
+      Two properties hold across the whole table and both are requirements, not observations:
+      <b>every pair differs in at least three of the four channels</b> on the card, and
+      <b>every pair differs in both icon and silhouette</b>. One property is reported rather than
+      required, because it is what the geometry gives:
+      <b>one pair &mdash; service and datastore &mdash; falls to the icon alone below the floor.</b>
+      They share a tone, they share a border style, their weights snap together on a 1&times;
+      display, and the only thing between their outlines is the rise of the cylinder's ellipse.
+      That is a statement about level of detail, not a failure; it is the reason the icon is ranked
+      the strongest channel in 03.2 and the reason the board must keep drawing it.
+    </p>
+
+    <div class="scrollx">
+      <div class="panel">
+        <table class="tk">
+          <thead><tr><th>Pair</th><th>Separates on the card &mdash; 160 &times; 96</th><th>Of four</th><th>Still separates below half a card</th></tr></thead>
+          <tbody>
+            <tr><td class="k">entry / service</td><td>icon &middot; silhouette (flag / rounded rect) &middot; border style</td><td class="r">3</td><td>silhouette &middot; icon</td></tr>
+            <tr><td class="k">entry / module</td><td>icon &middot; silhouette (flag / folder) &middot; border weight &middot; tone</td><td class="r">4</td><td>silhouette &middot; tone &middot; icon</td></tr>
+            <tr><td class="k">entry / datastore</td><td>icon &middot; silhouette (flag / cylinder) &middot; border style and weight</td><td class="r">3</td><td>silhouette &middot; icon</td></tr>
+            <tr><td class="k">entry / topic</td><td>icon &middot; silhouette (square right end / round) &middot; border style</td><td class="r">3</td><td>silhouette &middot; icon</td></tr>
+            <tr><td class="k">entry / agent</td><td>icon &middot; silhouette (flag / chamfer) &middot; border style and weight &middot; tone</td><td class="r">4</td><td>silhouette &middot; tone &middot; icon</td></tr>
+            <tr><td class="k">service / module</td><td>icon &middot; silhouette (tab) &middot; border style and weight &middot; tone</td><td class="r">4</td><td>tone &middot; icon</td></tr>
+            <tr><td class="k">service / datastore</td><td>icon &middot; silhouette (ellipse rise) &middot; border weight</td><td class="r">3</td><td><b>icon only</b></td></tr>
+            <tr><td class="k">service / topic</td><td>icon &middot; silhouette (--r-14 / stadium) &middot; border style</td><td class="r">3</td><td>silhouette &middot; icon</td></tr>
+            <tr><td class="k">service / agent</td><td>icon &middot; silhouette (chamfer) &middot; border weight &middot; tone</td><td class="r">4</td><td>tone &middot; icon</td></tr>
+            <tr><td class="k">module / datastore</td><td>icon &middot; silhouette (tab / cylinder) &middot; border style &middot; tone</td><td class="r">4</td><td>tone &middot; icon</td></tr>
+            <tr><td class="k">module / topic</td><td>icon &middot; silhouette (folder / stadium) &middot; border style and weight &middot; tone</td><td class="r">4</td><td>silhouette &middot; tone &middot; icon</td></tr>
+            <tr><td class="k">module / agent</td><td>icon &middot; silhouette (tab / chamfer) &middot; border style &middot; tone</td><td class="r">4</td><td>tone &middot; icon</td></tr>
+            <tr><td class="k">datastore / topic</td><td>icon &middot; silhouette (cylinder / stadium) &middot; border style and weight</td><td class="r">3</td><td>silhouette &middot; icon</td></tr>
+            <tr><td class="k">datastore / agent</td><td>icon &middot; silhouette (cylinder / chamfer) &middot; tone</td><td class="r">3</td><td>tone &middot; icon</td></tr>
+            <tr><td class="k">topic / agent</td><td>icon &middot; silhouette (stadium / chamfer) &middot; border style and weight &middot; tone</td><td class="r">4</td><td>silhouette &middot; tone &middot; icon</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="caption">
+      Seven of the fifteen pairs sit on the floor of three and eight clear it. Two rows are worth
+      reading twice.
+      <b>Datastore / agent</b> is the only pair the border separates on neither style nor weight
+      &mdash; both are solid <span class="inline-code">--w-struct</span> &mdash; which is the price
+      the substrate paid for drawing the agent as a painted plate, since a plate cannot carry a dash
+      pattern; icon, silhouette and tone carry it instead. <b>Service / datastore</b> is the pair
+      that used to be two rounded rectangles differing by a border weight, which is why the
+      datastore now gets the most literal shape in the set: flat sides, an elliptical top and
+      bottom, and the seam that is the lower arc of that top ellipse. Even so it is the pair that
+      loses its outline first.
+    </p>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>Weight is the channel that can fail, and the specification accounts for it.</b> A
+      <span class="inline-code">--w-struct</span> border is 1.5px, and 1.5px snaps to 1px on a 1&times;
+      display &mdash; where it becomes indistinguishable from <span class="inline-code">--w-hair</span>.
+      Read the middle column with the weight term struck out: every pair still differs in icon and
+      silhouette, and no pair falls below two channels &mdash; service / datastore is the pair that
+      lands on that floor. Weight is a reinforcement in this design and never a carrier. <b>No new
+      kind may be added whose only separation from an existing kind is weight.</b>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-12)">
+      <b>The level-of-detail ladder, stated rather than implied.</b> The ladder is about the
+      <em>camera</em>, which scales every feature together, and not about the legend chip, which
+      keeps the tab, the chamfer and the seam at token size while the renderer scales only the
+      radii. At the full card every channel is readable. At <b>half a card</b> &mdash; a card the
+      camera has taken to 80 &times; 48 &mdash; the outline still separates all six, and border
+      weight is already gone.
+      At half a card those three features are already at 6px, 8px and 7px respectively.
+      <b>Below half a card</b> they fall under that, the dash and dot patterns break up, and the outline collapses to three coarse groups:
+      round-ended (entry, topic), moderately rounded (service, module, datastore), near-square
+      (agent). Tone and the icon are what remain, and where tone is equal the icon is alone.
+      One caveat travels with that: in light, Graphite separates elevation by shadow rather than by
+      tone and surfaces 2 through 4 resolve to one value, so the tone term in the right-hand column
+      goes to zero there and more pairs land on the icon. Light is deferred under Decision 1, and
+      this is recorded as a consequence to be checked when it is picked up, not tuned now.
+      Below the icon's own floor nothing separates kinds at all &mdash; that is a zoom at which the
+      board is no longer being asked what anything is.
+    </div>
+  </div>
+
+  <!-- ── 03.7 ENTRY IS A POSITION ────────────────────────────────────────── -->
+  <div class="sec" id="s03-entry">
+    <div class="sec-head">
+      <span class="eyebrow">03.7</span>
+      <h2>Entry is a position, not a kind</h2>
+      <span class="tail">--arch-sil-entry is a modifier on the base rectangle</span>
+    </div>
+
+    <p class="note">
+      <em>Kind</em> answers what a node is. <em>Entry</em> answers where the reader comes in &mdash;
+      it is the node the board is entered through, and any kind can occupy it. A service that
+      nothing upstream calls is an entry; make one call to it from inside the scope and it is a
+      service again, without having changed what it is. That is why entry is not the sixth peer in
+      the list, and why its silhouette is a <em>modifier</em>: the left end is opened into a capsule
+      and the right end is squared off against it, so the shape says <em>things arrive here from
+      off-board and go on from that edge</em>. Both ends are written as what paints &mdash;
+      <span class="inline-code">--r-full 0 0 --r-full</span>. The token used to name
+      <span class="inline-code">--r-14</span> on the right, which on a 160 &times; 96 card is scaled
+      by f to under a pixel and thrown away; it now says square, because square is what ships.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The same node, in two positions</h3>
+        <p class="sub">Nothing about the thing changed. Its position in the graph did.</p>
+        <div class="stage pad-sm">
+          <div class="specimen">
+            <div class="node n-service" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div>
+            </div>
+            <span class="lbl">called from inside</span></div>
+          <div class="specimen">
+            <div class="node n-entry" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span>
+                <span class="right"><svg class="i i-12"><use href="#ic-service"/></svg></span></div>
+              <div class="nd-t">checkout</div>
+            </div>
+            <span class="lbl">nothing upstream</span></div>
+        </div>
+        <p class="caption">In the entry position the node keeps its kind glyph, moved to the right
+        of the header. The reader is told both facts and neither replaces the other.</p>
+      </div>
+
+      <div class="panel">
+        <h3>What follows for the legend</h3>
+        <p class="sub">Two lists, because they answer two questions.</p>
+        <dl class="specs">
+          <dt>Kinds</dt><dd>service &middot; module &middot; datastore &middot; topic &middot; agent</dd>
+          <dt>Positions</dt><dd>entry</dd>
+          <dt>Kind carrier</dt><dd>--arch-sil / style / weight / tone + icon</dd>
+          <dt>Position carrier</dt><dd>--arch-sil-entry, grafted</dd>
+          <dt>Colour spent</dt><dd>none, on either</dd>
+        </dl>
+        <p class="caption" style="margin-top:var(--sp-12)">A legend that lists entry among the kinds
+        teaches the reader that entry is a thing you can build, which it is not. The board sheets
+        that render a legend must draw the two groups apart &mdash; and every one of them now does.
+        The substrate supplies the two parts, <span class="inline-code">.kindlegend .grp</span> and
+        <span class="inline-code">.kindlegend .grpsep</span>, so the split is one shape drawn nine
+        times rather than nine sheets inventing nine separators. A legend that shows a subset with
+        no entry in it draws no separator, because there is no second group to separate.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 03.8 WHY THIS IS BETTER, NOT A COMPROMISE ───────────────────────── -->
+  <div class="sec" id="s03-better">
+    <div class="sec-head">
+      <span class="eyebrow">03.8</span>
+      <h2>Why this is better than hue, not a compromise</h2>
+      <span class="tail">four arguments, none of them accessibility alone</span>
+    </div>
+
+    <div class="grid g2">
+
+      <div class="panel">
+        <h3>It holds when the labels are gone</h3>
+        <p class="sub">A canvas spends most of its life zoomed out. Type has a floor; shape does not.</p>
+        <div class="stage pad-sm" style="align-items:center;gap:var(--sp-10)">
+          <span class="silswatch n-entry"></span>
+          <span class="silswatch n-service"></span>
+          <span class="silswatch n-module"></span>
+          <span class="silswatch n-store"></span>
+          <span class="silswatch n-topic"></span>
+          <span class="silswatch n-agent"></span>
+        </div>
+        <p class="caption">Six silhouettes at half a card &mdash; card aspect, 80 &times; 48 &mdash;
+        with no glyph, no label and no colour, and they still sort into six groups. Half a card is
+        the floor rather than an arbitrary legend size: it is the scale at which the folder tab, the
+        chamfer and the cylinder's arc are still a visible step, and below it 03.6's right-hand
+        column takes over. Hue would survive further out than this &mdash; but hue at any size is
+        the one thing the design is not allowed to spend, because a green node and a passing
+        verdict are the same object.</p>
+      </div>
+
+      <div class="panel">
+        <h3>It is legible to every reader</h3>
+        <p class="sub">The colour-blind case is a consequence, not the motivation.</p>
+        <p class="note" style="margin:0">
+          Red&ndash;green colour vision deficiency is common enough that a scheme separating a
+          datastore from a topic by green versus amber is a scheme some readers simply do not
+          receive. Under the invariant this cannot happen by construction, and it cannot regress by
+          accident either: the greyscale render is the same test the design already has to pass, so
+          the accessibility property is not a second thing anyone has to remember to check.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h3>It scales past six</h3>
+        <p class="sub">The hue budget is closed. The shape space is not.</p>
+        <p class="note" style="margin:0">
+          Law 1 fixes the hue budget at the number of claims, and Sequence's claims are already
+          spent: <span class="inline-code">--fits</span>, <span class="inline-code">--spills</span>,
+          <span class="inline-code">--wont</span>, <span class="inline-code">--unknown</span>,
+          <span class="inline-code">--info</span>, plus the accent. A hue-coded kind scheme is
+          therefore full at five and every kind after that has to borrow a meaning from a verdict.
+          A silhouette-and-icon scheme costs one glyph and one shape per kind and takes them from a
+          namespace nothing else is using.
+        </p>
+        <p class="caption" style="margin-top:var(--sp-10)">The price of a seventh kind under the
+        retired scheme was a colour the reader already knew the meaning of. The price under this
+        one is a drawing.</p>
+      </div>
+
+      <div class="panel">
+        <h3>It gives selection the accent outright</h3>
+        <p class="sub">Selection outranks every other carrier and must be louder than what it replaces.</p>
+        <div class="stage pad-sm">
+          <div class="specimen">
+            <div class="node n-service" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div></div>
+            <span class="lbl">rest</span></div>
+          <div class="specimen">
+            <div class="node n-service sel" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div></div>
+            <span class="lbl">.sel</span></div>
+          <div class="specimen">
+            <div class="node n-service dim" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div></div>
+            <span class="lbl">.dim</span></div>
+        </div>
+        <p class="caption">With no kind wearing the accent, the selected node is the only accent on
+        the board and needs no help to be found. Unselected nodes recede to
+        <span class="inline-code">--board-dim-opacity</span>, which is
+        <span class="inline-code">--st-archived-opacity</span> &mdash; receded and still readable,
+        never dimmed below legibility.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 03.9 WHAT STILL EARNS COLOUR ────────────────────────────────────── -->
+  <div class="sec" id="s03-claims">
+    <div class="sec-head">
+      <span class="eyebrow">03.9</span>
+      <h2>What a node is still allowed to be coloured for</h2>
+      <span class="tail">state, and only state</span>
+    </div>
+
+    <p class="note">
+      Hue is not banned from the board. It is reserved &mdash; and the reservation is what makes it
+      work, because a coloured node on a board of achromatic nodes is now unambiguous. Colour on a
+      node means the node is <em>doing</em> or <em>has been found to be</em> something. It never
+      means the node <em>is a</em> something.
+    </p>
+
+    <div class="scrollx">
+      <div class="boardfield" style="padding:var(--sp-16)">
+        <div style="display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+
+          <div class="specimen">
+            <div class="node n-store" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+              <div class="nd-t">orders</div>
+              <div class="nd-ft"><span class="prov p-declared">Declared</span></div>
+            </div>
+            <span class="lbl">provenance</span></div>
+
+          <div class="specimen">
+            <div class="node n-service" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div>
+              <div class="nd-ft"><span class="verdict v-wont">Won't fit</span></div>
+            </div>
+            <span class="lbl">a verdict</span></div>
+
+          <div class="specimen">
+            <div class="node n-agent sel" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div>
+              <div class="nd-t">refund worker</div>
+            </div>
+            <span class="lbl">selection</span></div>
+
+          <div class="specimen">
+            <div class="node n-topic" style="min-height:auto">
+              <div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div>
+              <div class="nd-t">order.placed</div>
+              <div class="nd-ft"><span class="dot" style="color:var(--st-active)"></span>
+                <span class="mono" style="font-size:var(--t-10);color:var(--ink-3)">Running</span></div>
+            </div>
+            <span class="lbl">a run state</span></div>
+
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">
+      Four coloured objects on a board of achromatic cards, and every one of them is a claim about
+      the world that the reader can act on. Under the retired scheme these four would have been
+      competing with every card behind them.
+    </p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <p class="why" style="color:var(--ink-2)">Colour a node when it has a verdict, a risk, an
+        error, a live run state, or the selection. Attach the word beside the colour, as sheet 05
+        requires &mdash; a verdict badge contains the verdict as text.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <p class="why" style="color:var(--ink-2)">Colour a node because of what it is. Colour a
+        node's border, its header rule or its kind label as chrome. Reassign a
+        <span class="inline-code">--viz-*</span> series colour to a kind &mdash; the viz namespace
+        is for series, and a kind is not a series.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 03.10 SPECIFICATION ─────────────────────────────────────────────── -->
+  <div class="sec" id="s03-spec">
+    <div class="sec-head">
+      <span class="eyebrow">03.10</span>
+      <h2>Specification</h2>
+      <span class="tail">what an implementation has to satisfy</span>
+    </div>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The card chassis</h3>
+        <p class="sub">Identical for every kind. Kind sets four custom properties and nothing else.</p>
+        <pre class="codeblock">.node{
+  --arch-line:var(--edge);
+  width:var(--arch-card-w);
+  min-height:var(--arch-card-min-h);
+  background:var(--arch-tone);
+  border:var(--arch-weight) var(--arch-style) var(--arch-line);
+  border-radius:var(--arch-sil);
+  box-shadow:var(--e1);
+}
+/* module tab, cylinder seam and agent
+   plates are drawn from the same
+   --arch-line, so one instruction
+   repaints one outline. */</pre>
+        <p class="caption">The outline ink is <span class="inline-code">--arch-line</span>, which
+        rests at <span class="inline-code">--edge</span> for every kind in every theme. It exists so
+        that hover and selection repaint one outline whether that outline is a CSS border or a
+        painted plate. A kind that reaches for a border colour has left the design.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Rules an implementation must hold</h3>
+        <p class="sub">Each is checkable against a render, not against an intention.</p>
+        <dl class="specs">
+          <dt>Greyscale</dt><dd>every kind stays distinguishable</dd>
+          <dt>Rendered</dt><dd>proven from the radii that paint, never the declared ones</dd>
+          <dt>Specimen</dt><dd>card aspect, at least half a card, or it is not evidence</dd>
+          <dt>Icon</dt><dd>one glyph per kind, one meaning per glyph</dd>
+          <dt>Silhouette</dt><dd>every pair differs on the card; drawn, not faked, where a radius cannot</dd>
+          <dt>Channels</dt><dd>every pair differs on three of four</dd>
+          <dt>LOD</dt><dd>the size below which the icon carries is stated, not assumed</dd>
+          <dt>Weight</dt><dd>never the sole separator of a pair</dd>
+          <dt>Chroma</dt><dd>zero, in the whole --arch-* namespace</dd>
+          <dt>Capsule</dt><dd>--sp-20 horizontal pad, so content clears the arc</dd>
+          <dt>Module</dt><dd>presented as module, never as service</dd>
+          <dt>Entry</dt><dd>a position; drawn apart from the kinds</dd>
+          <dt>Verdict</dt><dd>never on a kind; always with its word</dd>
+        </dl>
+      </div>
+    </div>
+
+    <p class="caption">
+      The last line of the table is where the retired scheme actually failed. It did not
+      simply pick unfortunate colours &mdash; it made the kind and the verdict the same
+      sentence, and then drew the sentence a hundred times.
+    </p>
+  </div>
+
+</section>

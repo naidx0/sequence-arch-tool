@@ -1,0 +1,498 @@
+From 551a9ba4d6c78bad5db3b9fa1954e130921e26c9 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 15:26:02 -0400
+Subject: [PATCH 21/37] Cloud patch 0010-deflection-floor, ported (flagged
+ SEQUENCE_TEACH_DEFLECT_FLOOR, off by default)
+
+Import and the full-turn tests hand-placed. One assertion rewritten for head's contract: the
+Slice 12 settle pass already strips a closing offer and quotes it in a note, so the hand-back
+must be absent from everything except that note. Tool-loop, grounded-lesson and picture-pointer
+283/283.
+---
+ packages/analyzer/src/server/askPipeline.ts   |  37 ++++-
+ packages/analyzer/src/server/conceptChart.ts  | 140 +++++++++++++++++-
+ .../analyzer/src/test/ask-tool-loop.test.ts   | 102 +++++++++++++
+ .../analyzer/src/test/grounded-lesson.test.ts | 109 ++++++++++++++
+ .../analyzer/src/test/picture-pointer.test.ts |  11 ++
+ 5 files changed, 390 insertions(+), 9 deletions(-)
+ create mode 100644 packages/analyzer/src/test/grounded-lesson.test.ts
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index c09c9590..993c7f6f 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -75,6 +75,7 @@ import {
+   deriveCheckIn,
+   deriveNextPictureCheckIn,
+   redrawOf,
++  withGroundedLesson,
+   withPicturePointer,
+   withWorkedExample,
+   type AnswerFlowTrace,
+@@ -5752,6 +5753,34 @@ ${lastToolSectionText}`);
+        *
+        * The arrow is the graph's, so this is a claim the scan supports.
+        */
++      /* A turn that is still a stub, or still hands the work back, after its
++         bounces leads with a small lesson read off its own chart and the scan
++         (withGroundedLesson). Before the check-in, so the check-in sees a lesson
++         to ask about. Behind SEQUENCE_TEACH_DEFLECT_FLOOR=1 (keep the model's words)
++         or =drop (drop only its hand-back sentences) until measured. */
++      /*
++       * THE PICTURE ON SCREEN, whoever drew it. `lastChartThisTurn` is only
++       * written by the product's own floors (turnCarry.reach.test.ts holds it
++       * there), so a turn where the MODEL drew had none, and the lines below
++       * that read the picture never fired on the model's own chart. The
++       * model's latest chart this turn is the fallback; it is read here and
++       * never written back to the slot.
++       */
++      const pictureOnScreen = lastChartThisTurn ?? chartsDrawnThisTurn[chartsDrawnThisTurn.length - 1];
++      const deflectFloor = process.env.SEQUENCE_TEACH_DEFLECT_FLOOR;
++      if (
++        (deflectFloor === '1' || deflectFloor === 'drop') &&
++        input.teach === true &&
++        pictureOnScreen !== undefined
++      ) {
++        text = withGroundedLesson(
++          text,
++          input.graph ?? undefined,
++          pictureOnScreen,
++          TEACH_STUB_WORDS,
++          deflectFloor === 'drop' ? 'drop' : 'keep',
++        );
++      }
+       const openArrow = input.teachContext?.open;
+       if (
+         input.teach === true &&
+@@ -5857,18 +5886,18 @@ ${derivedCheck}`;
+       if (
+         process.env.SEQUENCE_TEACH_WORKED_EXAMPLE === '1' &&
+         input.teach === true &&
+-        lastChartThisTurn !== undefined &&
++        pictureOnScreen !== undefined &&
+         !atCap
+       ) {
+-        text = withWorkedExample(text, input.graph ?? undefined, lastChartThisTurn);
++        text = withWorkedExample(text, input.graph ?? undefined, pictureOnScreen);
+       }
+       if (
+         process.env.SEQUENCE_TEACH_PICTURE_POINTER === '1' &&
+         input.teach === true &&
+-        lastChartThisTurn !== undefined &&
++        pictureOnScreen !== undefined &&
+         !atCap
+       ) {
+-        text = withPicturePointer(text, lastChartThisTurn);
++        text = withPicturePointer(text, pictureOnScreen);
+       }
+       /*
+        * THE VERIFY CONTRACT — an edit the tests never saw is a guess with a diff.
+diff --git a/packages/analyzer/src/server/conceptChart.ts b/packages/analyzer/src/server/conceptChart.ts
+index 7e9ace86..6f3d4c09 100644
+--- a/packages/analyzer/src/server/conceptChart.ts
++++ b/packages/analyzer/src/server/conceptChart.ts
+@@ -937,10 +937,13 @@ function insertBeforeClosingQuestion(text: string, line: string): string {
+   const body = text.trim();
+   const paras = body.split(/\n{2,}/);
+   const last = paras[paras.length - 1] ?? '';
+-  if (paras.length > 1 && /\?\**\s*$/.test(last)) {
+-    return [...paras.slice(0, -1), line, last].join('\n\n');
+-  }
+-  return `${body}\n\n${line}`;
++  if (!/\?\**\s*$/.test(last)) return `${body}\n\n${line}`;
++  /* A lesson written as one paragraph closes on its question too: split the
++     closing question off the sentences before it, so the question stays last. */
++  const split = /^([\s\S]*[.!][)`*]*)\s+([^.!?\n]*\?\**)\s*$/.exec(last);
++  if (split !== null) return [...paras.slice(0, -1), split[1]!, line, split[2]!].join('\n\n');
++  if (paras.length > 1) return [...paras.slice(0, -1), line, last].join('\n\n');
++  return `${line}\n\n${body}`;
+ }
+ 
+ /**
+@@ -957,7 +960,7 @@ function insertBeforeClosingQuestion(text: string, line: string): string {
+  * service matches the edges of the files inside it), a call beats a data
+  * access beats an import, and nothing is said when no such edge exists.
+  */
+-const EXAMPLE_ALREADY = /\b(?:for example|for instance|e\.g\.|imagine|think of|say you|suppose|picture this|like a|like an)\b/i;
++const EXAMPLE_ALREADY = /\b(?:a real example from this code|for example|for instance|e\.g\.|imagine|think of|say you|suppose|picture this|like a|like an)\b/i;
+ const KIND_RANK: Record<string, number> = { http: 0, grpc: 0, queue_publish: 1, queue_consume: 1, db_read: 2, db_write: 2, db_access: 2, import: 3 };
+ 
+ export function deriveWorkedExample(
+@@ -1166,3 +1169,130 @@ export function redrawOf(drawn: readonly SeqChart[], next: SeqChart): number | u
+   }
+   return undefined;
+ }
++
++/**
++ * A TEACH TURN THAT STILL HANDS THE WORK BACK GETS A SMALL LESSON FIRST.
++ *
++ * Of the 11 minicpm5 answers quoted in the owner's chat, 7 taught nothing:
++ * a greeting asking what to work on, two stop notes ("I have not written an
++ * answer rather than guess at one"), "can you confirm which files", "isn't a
++ * valid surface", a leaked `</think>` narration, and "There is no README
++ * file". Every one of those turns had read the scan, and most had a chart on
++ * screen. The grader bounces the worst of them twice; after that the turn
++ * lands as it is, and the learner who asked to be taught is asked a question.
++ *
++ * So, like the visual, the check-in and the reveal before it, a floor in
++ * code: when the turn is a stub or hands the work back, and a chart is on
++ * screen, the harness leads with three sentences read off that chart and the
++ * scan. The model's own words stay, after it.
++ */
++const HANDS_BACK = new RegExp(
++  [
++    String.raw`\bwhat are you working on\b`,
++    String.raw`\bonce i know what you (?:need|want)\b`,
++    String.raw`\b(?:i )?have not written an answer\b`,
++    String.raw`\brather than guess at one\b`,
++    String.raw`\bcan you confirm which\b`,
++    String.raw`\b(?:isn['’]t|is not) a valid (?:surface|question|request)\b`,
++    String.raw`^\s*there is no [\w.-]+(?: file)?\.?\s*$`,
++    String.raw`\bwhat would you like (?:me )?to (?:learn|cover|explain|look at|focus on)\b`,
++    String.raw`\b(?:tell|let) me (?:know )?(?:what|which) (?:you|part|file|topic)\b`,
++  ].join('|'),
++  'im',
++);
++
++export function handsTheWorkBack(text: string): boolean {
++  return HANDS_BACK.test(text.replace(/<\/?think>/g, ' '));
++}
++
++export function deriveGroundedLesson(
++  graph: Pick<ArchGraph, 'nodes' | 'edges'> | undefined,
++  chart: SeqChart | undefined,
++): string | undefined {
++  if (chart === undefined || chart.items.length < 2) return undefined;
++  const item = (id: string) => chart.items.find((i) => i.id === id);
++  const links = (chart.links ?? []).filter((l) => item(l.from) !== undefined && item(l.to) !== undefined);
++  if (links.length === 0) return undefined;
++  /* The same walk the picture pointer takes: from where nothing points in,
++     first arrow out of each box, never revisiting one. */
++  const hasIncoming = new Set(links.map((l) => l.to));
++  const start = chart.items.find((i) => !hasIncoming.has(i.id) && links.some((l) => l.from === i.id))?.id ?? links[0]!.from;
++  const walk = [start];
++  while (walk.length < 4) {
++    const next = links.find((l) => l.from === walk[walk.length - 1] && !walk.includes(l.to));
++    if (next === undefined) break;
++    walk.push(next.to);
++  }
++  if (walk.length < 2) return undefined;
++  const names = walk.map((id) => `**${item(id)!.label}**`);
++  const path =
++    names.length === 2
++      ? `it starts at ${names[0]} and leads to ${names[1]}`
++      : `it starts at ${names[0]}, goes through ${names.slice(1, -1).join(' and ')}, and ends at ${names[names.length - 1]}`;
++  /* The arrows are the scan's own only when every hop joins two real nodes and
++     the scan has an edge between them, or between files inside them (a service
++     box stands for the files it holds, as in deriveWorkedExample). */
++  const byId = new Map((graph?.nodes ?? []).map((n) => [n.id, n]));
++  const within = (id: string, target: string): boolean => {
++    for (let cur: string | undefined = id, hops = 0; cur !== undefined && hops < 8; hops += 1) {
++      if (cur === target) return true;
++      cur = byId.get(cur)?.parentId;
++    }
++    return false;
++  };
++  const grounded =
++    graph !== undefined &&
++    walk.slice(1).every((id, i) => {
++      const from = item(walk[i]!)!.nodeId;
++      const to = item(id)!.nodeId;
++      return (
++        from !== undefined &&
++        to !== undefined &&
++        (graph.edges ?? []).some((e) => within(e.srcId, from) && within(e.dstId, to))
++      );
++    });
++  const lines = [
++    `Here is what the code itself shows, read from the scan. Follow the picture on the canvas: ${path}.` +
++      (grounded ? ' Each arrow on that path is a connection the scan found in the code, not a guess.' : ''),
++  ];
++  const example = deriveWorkedExample(graph, chart);
++  if (example !== undefined) lines.push(example);
++  return lines.join(' ');
++}
++
++/**
++ * `keep` leaves every word the model wrote, after the lesson — this file's
++ * rule for the check-in and the reveal. `drop` also removes the sentences that
++ * hand the work back, and only those: on the 7 hand-backs from the owner's
++ * chat, scored with the r5 chart, `keep` moved the mean from 37 to 44 (the
++ * scorer still caps a turn that ends by handing back) and `drop` to 62. Which
++ * one a learner is better served by is an arm to measure, not a call to make
++ * here.
++ */
++export function withGroundedLesson(
++  text: string,
++  graph: Pick<ArchGraph, 'nodes' | 'edges'> | undefined,
++  chart: SeqChart | undefined,
++  stubWords: number,
++  mode: 'keep' | 'drop' = 'keep',
++): string {
++  const words = text.trim().split(/\s+/).filter(Boolean).length;
++  if (words > stubWords && !handsTheWorkBack(text)) return text;
++  const lesson = deriveGroundedLesson(graph, chart);
++  if (lesson === undefined) return text;
++  const own =
++    mode === 'drop'
++      ? text
++          .split(/\n{2,}/)
++          .map((para) =>
++            para
++              .split(/(?<=[.!?])\s+/)
++              .filter((sentence) => !handsTheWorkBack(sentence))
++              .join(' ')
++              .trim(),
++          )
++          .filter(Boolean)
++          .join('\n\n')
++      : text.trim();
++  return own === '' ? lesson : `${lesson}\n\n${own}`;
++}
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index 02bd621a..cf228507 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -7469,3 +7469,105 @@ test('teach evidence: the result says what evidence the first prompt carried, wi
+   const laterResult = laterEvents.find((e) => e.type === 'result') as { evidence?: unknown } | undefined;
+   assert.strictEqual(laterResult?.evidence, undefined, 'a turn handed no evidence says none');
+ });
++
++/* ========================================== teach deflection floor ===== */
++
++async function handBackTeachTurn(flag: string | undefined) {
++  const repo = shopfrontRepo();
++  const HAND_BACK = 'I have looked at the scan. Can you confirm which files you want me to cover?';
++  const { callProvider } = makeProviderScript([
++    {
++      text: 'Drawing the services.',
++      toolRequests: [
++        {
++          id: 'c1',
++          name: 'propose_chart',
++          args: {
++            kind: 'system-architecture',
++            title: 'How an order gets in',
++            items: [
++              { id: 'g', label: 'orders.ts', nodeId: 'file:gateway/src/routes/orders.ts' },
++              { id: 'o', label: 'routes.py', nodeId: 'file:orders/app/routes.py' },
++            ],
++            links: [{ from: 'g', to: 'o', label: 'HTTP' }],
++          },
++        },
++      ],
++    },
++    { text: HAND_BACK },
++  ]);
++  const base = await makeAttachedInput(repo, callProvider);
++  const before = process.env.SEQUENCE_TEACH_DEFLECT_FLOOR;
++  if (flag === undefined) delete process.env.SEQUENCE_TEACH_DEFLECT_FLOOR;
++  else process.env.SEQUENCE_TEACH_DEFLECT_FLOOR = flag;
++  try {
++    return await runAskPipeline({ ...base, question: 'Teach me how an order gets into the system', teach: true }, () => {});
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_TEACH_DEFLECT_FLOOR;
++    else process.env.SEQUENCE_TEACH_DEFLECT_FLOOR = before;
++  }
++}
++
++test('askPipeline teach, SEQUENCE_TEACH_DEFLECT_FLOOR=1: a turn that still hands the work back after its bounces leads with a lesson from its own chart', async () => {
++  const result = await handBackTeachTurn('1');
++  assert.match(result.text, /^Here is what the code itself shows, read from the scan\. Follow the picture on the canvas: it starts at \*\*orders\.ts\*\* and leads to \*\*routes\.py\*\*\. Each arrow on that path is a connection the scan found in the code/);
++  assert.match(result.text, /A real example from this code: `gateway\/src\/routes\/[a-z]+\.ts:\d+`/);
++  /* The model's own words are kept, after the lesson. */
++  assert.ok(result.text.includes('Can you confirm which files'));
++});
++
++test('askPipeline teach deflection floor stays off without the flag', async () => {
++  const result = await handBackTeachTurn(undefined);
++  assert.doesNotMatch(result.text, /Here is what the code itself shows/);
++});
++
++test('askPipeline teach: the picture pointer reads the chart the MODEL drew, not only the product floor', async () => {
++  const repo = shopfrontRepo();
++  const LESSON =
++    'The gateway route file forwards every order request to the orders service, which answers it from its routes module. ' +
++    'That hop is a plain HTTP call, so when the orders service is slow the gateway waits too, and the customer sees the delay at checkout. ' +
++    'What would the gateway do if the orders service stopped answering?';
++  const { callProvider } = makeProviderScript([
++    {
++      text: 'Drawing it.',
++      toolRequests: [
++        {
++          id: 'c1',
++          name: 'propose_chart',
++          args: {
++            kind: 'data-flow',
++            title: 'An order request',
++            items: [
++              { id: 'g', label: 'orders.ts', nodeId: 'file:gateway/src/routes/orders.ts' },
++              { id: 'o', label: 'routes.py', nodeId: 'file:orders/app/routes.py' },
++            ],
++            links: [{ from: 'g', to: 'o', label: 'HTTP' }],
++          },
++        },
++      ],
++    },
++    { text: LESSON },
++  ]);
++  const base = await makeAttachedInput(repo, callProvider);
++  const before = process.env.SEQUENCE_TEACH_PICTURE_POINTER;
++  process.env.SEQUENCE_TEACH_PICTURE_POINTER = '1';
++  try {
++    const result = await runAskPipeline({ ...base, question: 'Teach me how an order request travels', teach: true }, () => {});
++    assert.match(result.text, /On the canvas, start at \*\*orders\.ts\*\* and follow the arrow to \*\*routes\.py\*\*\./);
++    /* Still before the closing question. */
++    assert.match(result.text.trim(), /\?$/);
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_TEACH_PICTURE_POINTER;
++    else process.env.SEQUENCE_TEACH_PICTURE_POINTER = before;
++  }
++});
++
++test('askPipeline teach deflection floor, =drop: the hand-back sentence is gone and the lesson stands', async () => {
++  const result = await handBackTeachTurn('drop');
++  assert.match(result.text, /^Here is what the code itself shows/);
++  /* At head the settle pass already removes a closing offer and says so in a quoted note
++     (Slice 12); the hand-back must be gone from everything but that note. */
++  assert.doesNotMatch(result.text.replace(/\(Sequence took out the closing offer "[^"]*"[^)]*\)/g, ''), /Can you confirm which files/);
++  /* The model's other sentence survives. */
++  assert.ok(result.text.includes('I have looked at the scan.'));
++});
+diff --git a/packages/analyzer/src/test/grounded-lesson.test.ts b/packages/analyzer/src/test/grounded-lesson.test.ts
+new file mode 100644
+index 00000000..7833dbf7
+--- /dev/null
++++ b/packages/analyzer/src/test/grounded-lesson.test.ts
+@@ -0,0 +1,109 @@
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import test from 'node:test';
++import { fileURLToPath } from 'node:url';
++
++import { scanRepo } from '../scan.js';
++import { deriveGroundedLesson, handsTheWorkBack, withGroundedLesson, withWorkedExample } from '../server/conceptChart.js';
++
++const ANALYZER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
++const SHOPFRONT = path.join(ANALYZER_ROOT, 'test', 'fixtures', 'shopfront');
++
++async function shopfrontGraph() {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-grounded-lesson-'));
++  const repo = path.join(dir, 'repo');
++  fs.cpSync(SHOPFRONT, repo, { recursive: true });
++  return scanRepo(repo);
++}
++
++const SERVICES = {
++  version: 1,
++  kind: 'system-architecture',
++  title: 'shopfront',
++  items: [
++    { id: 'g', label: 'gateway', nodeId: 'svc:gateway' },
++    { id: 'o', label: 'orders', nodeId: 'svc:orders' },
++    { id: 'db', label: 'postgres', nodeId: 'ds:postgres' },
++  ],
++  links: [
++    { from: 'g', to: 'o', label: 'HTTP' },
++    { from: 'o', to: 'db', label: 'stores orders' },
++  ],
++} as never;
++
++/* The seven hand-backs quoted in the owner's chat (09-22/23), verbatim or cut to their deciding sentence. */
++const HAND_BACKS = [
++  'Hello! This looks like the start of a conversation. What are you working on — would you like help analyzing the intrtech service?',
++  'I used all 2 of my tool rounds on this and was still looking things up when I ran out, so I have not written an answer rather than guess at one.',
++  'I stopped because this turn hit its time budget while I was still looking things up, so I have not written an answer rather than guess at one.',
++  'There is no README file',
++  "your last turn cited `providers.py`, `facade.py`, and `security.py`, which I haven't verified yet. Can you confirm which files are available",
++  'The question references "the ai canvas" which isn\'t a valid surface for this repository\'s contents',
++];
++/* The two that taught, cut to their first sentences. */
++const LESSONS = [
++  "The app is a FastAPI service (`app/main.py`) that sits behind a React UI (`frontend`). The frontend's engine module sends HTTP requests to the service. Those requests pass through a security middleware that enforces authentication, CORS, and allowed origins. The service persists state in a SQLite database (`ds:ml-harness-db`) and uses an OpenCode facade.",
++  "Here's what I found from the repository structure and files you've loaded: the frontend sends an API call via `frontend/src/lib/engine/client.ts`, which posts to `app/main.py`.",
++];
++
++test('the hand-backs from the owner\'s chat are recognised, and the two real lessons are not', () => {
++  for (const t of HAND_BACKS) assert.ok(handsTheWorkBack(t), t);
++  for (const t of LESSONS) assert.ok(!handsTheWorkBack(t), t);
++});
++
++test('the lesson is read off the chart and the scan: the path, that the arrows are real, and a real file:line', async () => {
++  const graph = await shopfrontGraph();
++  const lesson = deriveGroundedLesson(graph, SERVICES)!;
++  assert.match(lesson, /^Here is what the code itself shows, read from the scan\. Follow the picture on the canvas: it starts at \*\*gateway\*\*, goes through \*\*orders\*\*, and ends at \*\*postgres\*\*\./);
++  assert.match(lesson, /Each arrow on that path is a connection the scan found in the code/);
++  assert.match(lesson, /A real example from this code: `gateway\/src\/routes\/[a-z]+\.ts:\d+` sends/);
++});
++
++test('boxes that are not real nodes get the path but no claim that the arrows are the scan\'s', () => {
++  const concept = {
++    version: 1,
++    kind: 'data-flow',
++    title: 'softmax',
++    items: [
++      { id: 'a', label: 'scores' },
++      { id: 'b', label: 'exponentials' },
++    ],
++    links: [{ from: 'a', to: 'b' }],
++  } as never;
++  const lesson = deriveGroundedLesson(undefined, concept)!;
++  assert.match(lesson, /it starts at \*\*scores\*\* and leads to \*\*exponentials\*\*\./);
++  assert.doesNotMatch(lesson, /connection the scan found/);
++});
++
++test('a hand-back keeps its own words after the lesson; a real lesson is left alone', async () => {
++  const graph = await shopfrontGraph();
++  const out = withGroundedLesson(HAND_BACKS[4]!, graph, SERVICES, 35);
++  assert.match(out, /^Here is what the code itself shows/);
++  assert.ok(out.endsWith(HAND_BACKS[4]!));
++  assert.equal(withGroundedLesson(LESSONS[0]!, graph, SERVICES, 35), LESSONS[0]);
++  /* An empty turn becomes just the lesson. */
++  assert.match(withGroundedLesson('', graph, SERVICES, 35), /^Here is what the code itself shows[^\n]*$/);
++  /* No chart with arrows, nothing to teach from: unchanged. */
++  assert.equal(withGroundedLesson(HAND_BACKS[3]!, graph, undefined, 35), HAND_BACKS[3]);
++});
++
++test('the worked-example line is not added a second time after the lesson carries one', async () => {
++  const graph = await shopfrontGraph();
++  const out = withWorkedExample(withGroundedLesson(HAND_BACKS[0]!, graph, SERVICES, 35), graph, SERVICES);
++  assert.equal(out.match(/A real example from this code/g)?.length, 1);
++});
++
++test('drop mode removes only the sentences that hand the work back, and keeps the rest of the model\'s words', async () => {
++  const graph = await shopfrontGraph();
++  const turn = "Your last turn cited `providers.py`, which I haven't verified yet. Can you confirm which files are available?";
++  const out = withGroundedLesson(turn, graph, SERVICES, 35, 'drop');
++  assert.match(out, /^Here is what the code itself shows/);
++  assert.ok(out.includes("Your last turn cited `providers.py`, which I haven't verified yet."));
++  assert.doesNotMatch(out, /Can you confirm which files/);
++  /* A turn that is nothing but a hand-back becomes just the lesson. */
++  assert.match(withGroundedLesson('There is no README file', graph, SERVICES, 35, 'drop'), /^Here is what the code itself shows[^\n]*$/);
++  /* keep is the default and leaves every word. */
++  assert.ok(withGroundedLesson(turn, graph, SERVICES, 35).endsWith(turn));
++});
+diff --git a/packages/analyzer/src/test/picture-pointer.test.ts b/packages/analyzer/src/test/picture-pointer.test.ts
+index 3bcf2e51..143b3f51 100644
+--- a/packages/analyzer/src/test/picture-pointer.test.ts
++++ b/packages/analyzer/src/test/picture-pointer.test.ts
+@@ -80,3 +80,14 @@ test('with no closing question the pointer is appended at the end', () => {
+   const out = withPicturePointer('The frontend calls the service.', R5);
+   assert.match(out, /service\.\n\nOn the canvas/);
+ });
++
++test('a one-paragraph lesson has its closing question split off, so the question still comes last', () => {
++  const one = 'The frontend calls main.py over HTTP. The service stores state in SQLite. What would break if SQLite were read-only?';
++  const out = withPicturePointer(one, R5).split('\n\n');
++  assert.deepEqual(out.length, 3);
++  assert.equal(out[0], 'The frontend calls main.py over HTTP. The service stores state in SQLite.');
++  assert.match(out[1]!, /^On the canvas, start at \*\*frontend\*\*/);
++  assert.equal(out[2], 'What would break if SQLite were read-only?');
++  /* A text that is only a question gets the line in front of it. */
++  assert.match(withPicturePointer('Which part hands off next?', R5), /^On the canvas[^\n]*\n\nWhich part hands off next\?$/);
++});
+-- 
+2.51.1.windows.1
+

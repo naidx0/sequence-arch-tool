@@ -1,0 +1,191 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE BOARD TAGS (round 8) — B's view pill, one per board
+   packages/web2/src/canvas/boards/boards.css
+
+   Same chassis as board.css `.vt`: a 30px glass pill, raised when it is the
+   board on screen. The strip is one row that scrolls sideways rather than
+   wrapping, so its height never moves the board under it.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.board-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  font-size: var(--t-12);
+  color: var(--ink-2);
+}
+.board-tabs::-webkit-scrollbar { display: none; }
+
+.board-tabs .btag {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--row-h);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease);
+}
+.board-tabs .btag:hover { background: var(--glass-ctl-hover); }
+.board-tabs .btag[data-on='true'] {
+  border-color: var(--edge-strong);
+  background: var(--board-card);
+  box-shadow: var(--e1);
+}
+
+.board-tabs .btag-main {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: 100%;
+  max-width: 200px;
+  padding: 0 var(--sp-12);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.board-tabs .btag[data-kind='whiteboard'] .btag-main { padding-right: var(--sp-4); }
+.board-tabs .btag[data-on='true'] .btag-main { color: var(--ink-1); }
+.board-tabs .btag-main:focus-visible,
+.board-tabs .btag-x:focus-visible,
+.board-tabs .btag-add:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+.board-tabs .btag-t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board-tabs .btag-x,
+.board-tabs .btag-add {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-right: var(--sp-4);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.board-tabs .btag-x:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.board-tabs .btag-add {
+  width: var(--row-h);
+  height: var(--row-h);
+  margin: 0;
+  border: var(--w-hair) solid var(--edge);
+  background: var(--glass-ctl);
+}
+.board-tabs .btag-add:hover:not(:disabled) { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.board-tabs .btag-add:disabled { opacity: 0.5; cursor: default; }
+
+.board-tabs .btag.is-editing {
+  gap: var(--sp-6);
+  padding: 0 var(--sp-8) 0 var(--sp-12);
+  border-color: var(--accent);
+}
+.board-tabs .btag-input {
+  width: 120px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+}
+
+/* ── where the strip sits ──────────────────────────────────────────────
+   On the architecture board it floats over the top-left corner like the view
+   pills, which move down one row under it (board.css .board-controls is
+   measured for the fit's top band, so no card is laid under either row). The
+   shell's pane head owns the top-right corner. */
+.board-scope.board-stack > .board-tabs {
+  position: absolute;
+  top: var(--sp-12);
+  left: var(--sp-12);
+  right: 80px;
+  z-index: 6;
+}
+/* ROUND 13 (A6): the tags are the first items of the toolbar row itself (BoardControls `leading`), so the whole toolbar is one line at the top. */
+.board-scope.board-stack[data-board-tabs='true'] .board-controls {
+  top: var(--sp-12);
+}
+
+/* On the whiteboard it is the surface's first row. */
+.wb-boards {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.wb-boards > .board-tabs {
+  flex: 0 0 auto;
+  padding: var(--sp-8) var(--sp-12) 0;
+}
+.wb-boards > .wb-boards-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+.wb-boards > .wb-boards-body > * { flex: 1 1 auto; min-width: 0; }
+.wb-boards-note {
+  margin: var(--sp-6) var(--sp-12) 0;
+  font-size: var(--t-12);
+  color: var(--ink-3);
+}
+
+/* ROUND 13 (A6): inside the toolbar the tags share the row's one height (26px) and centre their glyph in the box. */
+/* The whiteboard's tags are the SAME strip (owner, round 2): same pill height, type size and padding as the architecture board's row. */
+.board-controls .board-tabs,
+.wb-boards-free > .board-tabs { flex: 0 1 auto; min-width: var(--row-h-tool); }
+.board-controls .board-tabs .btag-add,
+.wb-boards-free > .board-tabs .btag-add { flex: none; }
+.board-controls .board-tabs .btag,
+.wb-boards-free > .board-tabs .btag { height: var(--row-h-tool); }
+.board-controls .board-tabs .btag-main,
+.wb-boards-free > .board-tabs .btag-main { font-size: var(--t-11-5); padding: 0 var(--sp-10); }
+.board-controls .board-tabs .btag[data-kind='whiteboard'] .btag-main,
+.wb-boards-free > .board-tabs .btag[data-kind='whiteboard'] .btag-main { padding-right: var(--sp-4); }
+.board-controls .board-tabs .btag-add,
+.wb-boards-free > .board-tabs .btag-add { width: var(--row-h-tool); height: var(--row-h-tool); }
+.board-controls .board-tabs .btag-add > *,
+.board-controls .board-tabs .btag-x > *,
+.wb-boards-free > .board-tabs .btag-add > *,
+.wb-boards-free > .board-tabs .btag-x > * { display: block; margin: auto; }
+/* The tags fold on the board's own width in steps (board.css, last block): names to icons, then several boards into the one
+   fold pill below. */
+.board-tabs .btag-fold { position: relative; display: none; flex: 0 0 auto; }
+.board-controls .board-tabs .btag-fold-btn { max-width: 100%; min-width: var(--row-h-tool); justify-content: center; padding: 0 var(--sp-8); gap: var(--sp-2); }
+.board-tabs .btag-fold-row { display: flex; align-items: center; gap: var(--sp-2); }
+.board-tabs .btag-fold-row .bview-item { flex: 1 1 auto; min-width: 0; }
+.board-tabs .btag-fold-row .btag-x { margin-right: 0; }
+.board-tabs .btag-fold-list {
+  right: auto;
+  /* Twenty-five boards scroll inside the list instead of running off the pane. */
+  max-height: min(calc(var(--sp-32) * 10), calc(100vh - var(--sp-32) * 4));
+  overflow-y: auto;
+}

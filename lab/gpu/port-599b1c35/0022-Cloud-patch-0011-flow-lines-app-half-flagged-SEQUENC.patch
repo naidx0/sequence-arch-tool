@@ -1,0 +1,384 @@
+From 4e246e44202c6139111964aed2e12a7ed71ddd6d Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 15:27:09 -0400
+Subject: [PATCH 22/37] Cloud patch 0011-flow-lines, app half (flagged
+ SEQUENCE_CHART_FLOW_LINES, off by default)
+
+Design call: with the flag off, propose_chart publishes head's own description and parameters
+(steps, surface) byte for byte; the 0.1.2 text the patch carried is not restored. With it on,
+the flow-lines tool is published. chart-flow-lines 4/4.
+---
+ packages/analyzer/src/server/askTools.ts      | 150 ++++++++++++++----
+ .../src/test/chart-flow-lines.test.ts         | 144 +++++++++++++++++
+ packages/schema/src/index.ts                  |   1 +
+ 3 files changed, 266 insertions(+), 29 deletions(-)
+ create mode 100644 packages/analyzer/src/test/chart-flow-lines.test.ts
+
+diff --git a/packages/analyzer/src/server/askTools.ts b/packages/analyzer/src/server/askTools.ts
+index 9c99328c..353ab2fa 100644
+--- a/packages/analyzer/src/server/askTools.ts
++++ b/packages/analyzer/src/server/askTools.ts
+@@ -43,7 +43,8 @@ import { repoExecutionRefusal } from './repoTrust.js';
+ import { gitDiff, gitStatus, GitWorkspaceError } from './gitWorkspace.js';
+ import type { ArchGraph } from '@sequence/schema';
+ import { validatePlan, type Concept } from './lessonState.js';
+-import { validateChart, CHART_KINDS, FLOW_KINDS, chartFamily, isChartKind } from '@sequence/schema';
++import { validateChart, CHART_KINDS, FLOW_KINDS, chartFamily, compileFlowLines, flowProblemLine, isChartKind } from '@sequence/schema';
++import type { CompiledFlow } from '@sequence/schema';
+ import type { Digest } from '../explain/explain.js';
+ import {
+   SEQ_DIAGRAM_EDGE_FAMILIES,
+@@ -4193,6 +4194,31 @@ export function liftedEdgeKeys(graph: ArchGraph | undefined): Set<string> {
+   return keys;
+ }
+ 
++/**
++ * FLOW LINES, WHEN ON. `SEQUENCE_CHART_FLOW_LINES=1` lets `propose_chart` take
++ * `flow` instead of `items`/`links`: a few `a -> b: label | narration` lines
++ * (schema/src/flowLines.ts), compiled into the same chart and then grounded and
++ * validated exactly like a JSON one. Refusals come back per line.
++ *
++ * `flow` may be one string or an array of lines. The array is what the fence
++ * example teaches, because a multi-line string inside a JSON fence needs `\\n`
++ * escapes that a small model drops. Items/links win when both are sent, so a
++ * caller that already speaks JSON sees no change.
++ */
++export function chartFlowLinesEnabled(): boolean {
++  return process.env.SEQUENCE_CHART_FLOW_LINES === '1';
++}
++
++function flowLinesArg(args: Record<string, unknown>): string | undefined {
++  if (!chartFlowLinesEnabled() || Array.isArray(args.items)) return undefined;
++  const flow = args.flow;
++  if (typeof flow === 'string' && flow.trim() !== '') return flow;
++  if (Array.isArray(flow) && flow.length > 0 && flow.every((l) => typeof l === 'string')) {
++    return (flow as string[]).join('\n');
++  }
++  return undefined;
++}
++
+ /**
+  * `propose_chart` — the model names a chart KIND and fills its data contract;
+  * Sequence draws the pixels (packages/schema/src/chart.ts explains why).
+@@ -4206,7 +4232,24 @@ function executeProposeChart(
+   args: Record<string, unknown>,
+   ctx: AskToolContext,
+ ): AskToolResult {
+-  const raw = (args.chart ?? args) as unknown;
++  const flow = flowLinesArg(args);
++  let compiled: CompiledFlow | undefined;
++  if (flow !== undefined) {
++    const out = compileFlowLines(flow, {
++      kind: isChartKind(args.kind) ? args.kind : 'data-flow',
++      title: typeof args.title === 'string' ? args.title : '',
++      ...(typeof args.caption === 'string' ? { caption: args.caption } : {}),
++      ...(typeof args.focusItemId === 'string' ? { focusItemId: args.focusItemId } : {}),
++    });
++    if (!out.ok) {
++      return {
++        ok: false,
++        evidence: `refused: propose_chart — ${out.problems.slice(0, 6).map((p) => p.message).join('; ')}`,
++      };
++    }
++    compiled = out;
++  }
++  const raw = (compiled?.chart ?? args.chart ?? args) as unknown;
+   const known = ctx.graph ? new Set(ctx.graph.nodes.map((n) => n.id)) : undefined;
+   /*
+    * NO GRAPH ⇒ NO GROUNDING ⇒ NO nodeId. Without a scanned graph (design mode),
+@@ -4278,7 +4321,9 @@ function executeProposeChart(
+     }
+   }
+   if (!result.ok) {
+-    const lines = result.problems.slice(0, 6).map((p) => `${p.path || '(root)'}: ${p.message}`);
++    const lines = result.problems
++      .slice(0, 6)
++      .map((p) => (compiled ? flowProblemLine(compiled, p) : `${p.path || '(root)'}: ${p.message}`));
+     return {
+       ok: false,
+       evidence: `refused: propose_chart — ${lines.join('; ')}`,
+@@ -6242,6 +6287,23 @@ function canvasBlockNoun(name: string): string {
+  * asking it to get one wrong.
+  */
+ export function renderChartToolHintSection(): string[] {
++  if (chartFlowLinesEnabled()) {
++    return [
++      '--- CHARTS (Sequence draws the pixels) ---',
++      'To put a picture the reader can SEE in the answer, call `propose_chart` inside a ```sequence-tool fence. For a flow, write one hop per line, in the order things happen:',
++      '```sequence-tool',
++      '{"id":"k1","name":"propose_chart","args":{"kind":"data-flow","title":"How a request reaches the model",',
++      '  "flow":["ui \\"Composer\\"",',
++      '         "ui -> srv: the question | The composer posts what you typed to the ask pipeline",',
++      '         "srv -> llm: a prompt | The pipeline turns it into a prompt for the provider"],',
++      '  "focusItemId":"srv"}}',
++      '```',
++      `Chart kinds: ${CHART_KINDS.join(', ')}.`,
++      '`a -> b: label | narration` is one hop; `a "Label" = path` grounds a part to a real file, and a hop between two real files must be a connection the scan found. Leave the path off a part that is an idea.',
++      'For charts that are not flows, send `items` `{ "id", "label", "nodeId"?, "detail"?, "value"?, "group"?, "tone"? }` and `links` `{ "from", "to", "label"? }` instead of `flow`.',
++      '`focusItemId` spotlights the one part under discussion. Do not restate the whole picture in prose afterwards.',
++    ];
++  }
+   return [
+     '--- CHARTS (Sequence draws the pixels) ---',
+     'To put a picture the reader can SEE in the answer, call `propose_chart` inside a ```sequence-tool fence — you supply the data, Sequence renders it:',
+@@ -6589,6 +6651,55 @@ export interface AskToolRegistryEntry {
+ }
+ 
+ /** Canonical tool schemas — OpenAI defs and UI verbs both read from here (B2.4). */
++/* Head's own propose_chart (steps, surface), published unchanged while flow lines are off. */
++const PROPOSE_CHART_DESCRIPTION =
++  'Draw a chart; you give the kind and the data and Sequence renders it. kind: ' +
++  CHART_KINDS.join(', ') + '. items[]: {id,label,nodeId?,detail?,value?,group?,tone?}; ' +
++  'links[]: {from,to,label?,value?}. An item that stands for part of this repository carries ' +
++  'its real nodeId. focusItemId spotlights one item. steps[] (flow kinds): {from,to,says,detail?} ' +
++  'in the order the data travels; the canvas plays them hop by hop.';
++
++const PROPOSE_CHART_PARAMETERS = {
++  type: 'object',
++  properties: {
++    kind: { type: 'string' },
++    title: { type: 'string' },
++    caption: { type: 'string' },
++    items: { type: 'array' },
++    links: { type: 'array' },
++    axes: { type: 'object' },
++    focusItemId: { type: 'string' },
++    steps: {
++      type: 'array',
++      description: 'Flow charts: the hops in order, {from,to,says,detail?}; a step draws its own arrow.',
++    },
++    version: { type: 'number' },
++    /* The AI Canvas tab (planTurn.ts): "plan" puts a plan's chart on the Plan tab. */
++    surface: { type: 'string' },
++  },
++  required: ['kind', 'title', 'items'],
++  additionalProperties: true,
++};
++
++/** `propose_chart` as published when flow lines are on (see chartFlowLinesEnabled). */
++const PROPOSE_CHART_FLOW_DESCRIPTION =
++  'Draw a chart the reader can SEE. You supply the kind and the parts; Sequence renders it. ' +
++  'kind is one of: ' + CHART_KINDS.join(', ') + '. ' +
++  'For a flow, write `flow` as lines, one hop per line, in the order things happen: ' +
++  '`a -> b: what moves | what happens`. Declare a part that is a real file as `a "Label" = path/to/file`; ' +
++  'the path is checked against the scan, and a hop between two real files must be a connection the scan found. ' +
++  'For other charts send items[] {id,label,nodeId?,detail?,value?,group?,tone?} and links[] {from,to,label?,value?} instead.';
++
++const PROPOSE_CHART_FLOW_PARAMETERS = {
++  type: 'object',
++  properties: {
++    ...PROPOSE_CHART_PARAMETERS.properties,
++    flow: { type: 'array', items: { type: 'string' } },
++  },
++  required: ['kind', 'title'],
++  additionalProperties: true,
++};
++
+ export const ASK_TOOL_REGISTRY: Record<AskToolName, AskToolRegistryEntry> = {
+   read_file: {
+     uiVerb: 'read_file',
+@@ -6789,32 +6900,13 @@ export const ASK_TOOL_REGISTRY: Record<AskToolName, AskToolRegistryEntry> = {
+   },
+   propose_chart: {
+     uiVerb: 'propose_chart',
+-    description:
+-      'Draw a chart; you give the kind and the data and Sequence renders it. kind: ' +
+-      CHART_KINDS.join(', ') + '. items[]: {id,label,nodeId?,detail?,value?,group?,tone?}; ' +
+-      'links[]: {from,to,label?,value?}. An item that stands for part of this repository carries ' +
+-      'its real nodeId. focusItemId spotlights one item. steps[] (flow kinds): {from,to,says,detail?} ' +
+-      'in the order the data travels; the canvas plays them hop by hop.',
+-    parameters: {
+-      type: 'object',
+-      properties: {
+-        kind: { type: 'string' },
+-        title: { type: 'string' },
+-        caption: { type: 'string' },
+-        items: { type: 'array' },
+-        links: { type: 'array' },
+-        axes: { type: 'object' },
+-        focusItemId: { type: 'string' },
+-        steps: {
+-          type: 'array',
+-          description: 'Flow charts: the hops in order, {from,to,says,detail?}; a step draws its own arrow.',
+-        },
+-        version: { type: 'number' },
+-        /* The AI Canvas tab (planTurn.ts): "plan" puts a plan's chart on the Plan tab. */
+-        surface: { type: 'string' },
+-      },
+-      required: ['kind', 'title', 'items'],
+-      additionalProperties: true,
++    /* Getters, so the registry stays the one source both wires project from,
++       whichever way SEQUENCE_CHART_FLOW_LINES is set when the belt is built. */
++    get description(): string {
++      return chartFlowLinesEnabled() ? PROPOSE_CHART_FLOW_DESCRIPTION : PROPOSE_CHART_DESCRIPTION;
++    },
++    get parameters() {
++      return chartFlowLinesEnabled() ? PROPOSE_CHART_FLOW_PARAMETERS : PROPOSE_CHART_PARAMETERS;
+     },
+   },
+   propose_plan: {
+diff --git a/packages/analyzer/src/test/chart-flow-lines.test.ts b/packages/analyzer/src/test/chart-flow-lines.test.ts
+new file mode 100644
+index 00000000..c670a0cb
+--- /dev/null
++++ b/packages/analyzer/src/test/chart-flow-lines.test.ts
+@@ -0,0 +1,144 @@
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import path from 'node:path';
++import { test } from 'node:test';
++import { fileURLToPath } from 'node:url';
++import { scanRepo } from '../scan.js';
++import { resolveInRepo } from '../server/jail.js';
++import {
++  executeAskTool,
++  openaiAskToolDefinitions,
++  renderChartToolHintSection,
++} from '../server/askTools.js';
++
++/**
++ * FLOW LINES ON propose_chart (canvas plan, Slice 1: lines in, JSON out).
++ *
++ * Behind SEQUENCE_CHART_FLOW_LINES=1. With it on, `flow` compiles into the same
++ * chart and then goes through the same grounding as JSON: a path resolves to
++ * the scanned node, a hop between two real files must be a scanned edge, and a
++ * refusal names the line. With it off nothing changes.
++ */
++
++const here = path.dirname(fileURLToPath(import.meta.url));
++const SHOPFRONT = path.join(here, '..', '..', 'test', 'fixtures', 'shopfront');
++
++async function ctx() {
++  const root = fs.realpathSync(SHOPFRONT);
++  const graph = await scanRepo(SHOPFRONT, { cluster: true });
++  return {
++    graph,
++    resolveReadable: (rel: string) => resolveInRepo(root, rel),
++    repoRoot: root,
++    designMode: false,
++    question: 'how does an order get in?',
++    canvasToolsEnabled: true,
++  } as unknown as Parameters<typeof executeAskTool>[2];
++}
++
++async function withFlag<T>(value: string | undefined, fn: () => Promise<T> | T): Promise<T> {
++  const before = process.env.SEQUENCE_CHART_FLOW_LINES;
++  if (value === undefined) delete process.env.SEQUENCE_CHART_FLOW_LINES;
++  else process.env.SEQUENCE_CHART_FLOW_LINES = value;
++  try {
++    return await fn();
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_CHART_FLOW_LINES;
++    else process.env.SEQUENCE_CHART_FLOW_LINES = before;
++  }
++}
++
++const GROUNDED = [
++  'g "Gateway route" = gateway/src/routes/orders.ts',
++  'o "Orders API" = orders/app/routes.py',
++  'g -> o: the order | The gateway forwards the order to the orders service',
++  'o -> person: a receipt | The customer gets an answer',
++];
++
++test('flag on: flow lines draw a grounded chart, paths resolved to scanned nodes', async () => {
++  const c = await ctx();
++  const r = await withFlag('1', () =>
++    executeAskTool('propose_chart', { kind: 'data-flow', title: 'How an order gets in', flow: GROUNDED }, c),
++  );
++  assert.equal(r.ok, true, r.evidence);
++  assert.deepEqual(
++    r.chart?.items.map((i) => [i.id, i.nodeId]),
++    [
++      ['g', 'file:gateway/src/routes/orders.ts'],
++      ['o', 'file:orders/app/routes.py'],
++      ['person', undefined],
++    ],
++  );
++  assert.deepEqual(r.chart?.links?.map((l) => `${l.from}>${l.to}:${l.label}`), [
++    'g>o:the order',
++    'o>person:a receipt',
++  ]);
++  /* One string works too (native tool calls send it that way). */
++  const one = await withFlag('1', () =>
++    executeAskTool('propose_chart', { kind: 'data-flow', title: 'x', flow: GROUNDED.join('\n') }, c),
++  );
++  assert.equal(one.ok, true, one.evidence);
++});
++
++test('flag on: an invented hop between real files is refused on the line that drew it', async () => {
++  const c = await ctx();
++  const flow = [
++    'o = orders/app/routes.py',
++    'g = gateway/src/routes/orders.ts',
++    'o -> g: a callback',
++  ];
++  const r = await withFlag('1', () => executeAskTool('propose_chart', { kind: 'data-flow', title: 'x', flow }, c));
++  assert.equal(r.ok, false);
++  assert.match(r.evidence, /line 3 \(o -> g\): no edge file:orders\/app\/routes\.py -> file:gateway\/src\/routes\/orders\.ts/);
++  assert.match(r.evidence, /The scan has file:gateway\/src\/routes\/orders\.ts -> file:orders\/app\/routes\.py/);
++
++  const ghost = await withFlag('1', () =>
++    executeAskTool('propose_chart', { kind: 'data-flow', title: 'x', flow: ['a = src/nope.ts', 'a -> b'] }, c),
++  );
++  assert.equal(ghost.ok, false);
++  assert.match(ghost.evidence, /line 1 \(a\): "src\/nope\.ts" is not a node/);
++
++  const chained = await withFlag('1', () =>
++    executeAskTool('propose_chart', { kind: 'data-flow', title: 'x', flow: ['a -> b -> c'] }, c),
++  );
++  assert.equal(chained.ok, false);
++  assert.match(chained.evidence, /line 1: .*one hop per line/);
++});
++
++test('flag off: flow is ignored and the published tool and fence example are unchanged', async () => {
++  const c = await ctx();
++  const r = await withFlag(undefined, () =>
++    executeAskTool('propose_chart', { kind: 'data-flow', title: 'x', flow: GROUNDED }, c),
++  );
++  assert.equal(r.ok, false);
++  assert.match(r.evidence, /items must be non-empty/);
++  const spec = await withFlag(undefined, () => openaiAskToolDefinitions(['propose_chart'])[0]!);
++  assert.deepEqual(spec.function.parameters.required, ['kind', 'title', 'items']);
++  assert.ok(!('flow' in (spec.function.parameters.properties as object)));
++  const hint = await withFlag(undefined, () => renderChartToolHintSection().join('\n'));
++  assert.match(hint, /"items":\[/);
++  assert.doesNotMatch(hint, /"flow"/);
++});
++
++test('flag on: the tool asks for flow lines, items stay available, and items win when both are sent', async () => {
++  const spec = await withFlag('1', () => openaiAskToolDefinitions(['propose_chart'])[0]!);
++  assert.deepEqual(spec.function.parameters.required, ['kind', 'title']);
++  assert.match(spec.function.description, /a -> b: what moves \| what happens/);
++  assert.ok('items' in (spec.function.parameters.properties as object));
++  const hint = await withFlag('1', () => renderChartToolHintSection());
++  /* The fence example is valid JSON a model can copy. */
++  const start = hint.indexOf('```sequence-tool');
++  const body = hint.slice(start + 1, hint.indexOf('```', start + 1)).join('\n');
++  const call = JSON.parse(body) as { args: { flow: string[] } };
++  assert.equal(call.args.flow.length, 3);
++  const c = await ctx();
++  const both = await withFlag('1', () =>
++    executeAskTool(
++      'propose_chart',
++      { kind: 'data-flow', title: 'x', items: [{ id: 'a', label: 'A' }], flow: ['z -> y'] },
++      c,
++    ),
++  );
++  assert.equal(both.ok, true, both.evidence);
++  assert.deepEqual(both.chart?.items.map((i) => i.id), ['a']);
++});
+diff --git a/packages/schema/src/index.ts b/packages/schema/src/index.ts
+index ff0e427a..bb2a2ccf 100644
+--- a/packages/schema/src/index.ts
++++ b/packages/schema/src/index.ts
+@@ -510,6 +510,7 @@ export * from './flowLines.js';
+ // pointing languages (`path` into a numbered map, `ascii` into a numbered picture), each
+ // compiled into the same SeqChart and grounded by the same validateChart.
+ export * from './drawLanguages.js';
++export * from './flowLines.js';
+ export * from './cycles.js';
+ // `paths.ts` (pathsBetween) — the route, where the three above return SETS. Two
+ // services can each sit in the other's closure with the reader still unable to
+-- 
+2.51.1.windows.1
+

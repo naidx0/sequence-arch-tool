@@ -1,0 +1,25 @@
+From 36e8b485e78d988f4114d1ab6aa3cab6c9cb4020 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 15:27:18 -0400
+Subject: [PATCH 23/37] Drop the duplicate flowLines export 0011 added (the
+ schema half already exports it)
+
+---
+ packages/schema/src/index.ts | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/packages/schema/src/index.ts b/packages/schema/src/index.ts
+index bb2a2ccf..ff0e427a 100644
+--- a/packages/schema/src/index.ts
++++ b/packages/schema/src/index.ts
+@@ -510,7 +510,6 @@ export * from './flowLines.js';
+ // pointing languages (`path` into a numbered map, `ascii` into a numbered picture), each
+ // compiled into the same SeqChart and grounded by the same validateChart.
+ export * from './drawLanguages.js';
+-export * from './flowLines.js';
+ export * from './cycles.js';
+ // `paths.ts` (pathsBetween) — the route, where the three above return SETS. Two
+ // services can each sit in the other's closure with the reader still unable to
+-- 
+2.51.1.windows.1
+

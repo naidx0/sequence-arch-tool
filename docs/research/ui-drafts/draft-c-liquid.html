@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequence · UI draft C — Liquid</title>
+
+<!--
+================================================================================
+  DRAFT C — LIQUID
+================================================================================
+
+  THE DIRECTION, IN TWO SENTENCES
+  Floating glass panes drift over a soft, faintly-tinted ground; radii are large,
+  padding is generous, and every pane answers the pointer with a lift and a
+  specular sweep so the surface reads as a material rather than a rectangle.
+  The only things that move on their own are the three things that are actually
+  in flight — a streaming answer, a running tool, a running subagent — so
+  "alive" means "reporting", never "decorated".
+
+  THE THREE THINGS I WOULD CHANGE ABOUT THE CURRENT APP FIRST
+  1. Build the subagent capsule, and build it before anything cosmetic. Right now
+     a long-running child is a silence. Elapsed time plus the tool it is inside
+     RIGHT NOW is the single highest-value row in the whole reference set
+     (brief §1) and it costs almost nothing — we already stream the nested calls,
+     we just throw the "where is it now" away. Everything else in this draft is
+     paint; this one is a missing organ.
+  2. Give every surface ONE ground and make panes lighter than it. Four attempts
+     at glass failed in this repo for one reason: the panes were darker than what
+     they sat on, so `backdrop-filter` ran expensive arithmetic and produced a
+     dark box with a fuzzy edge. Glass is a LIGHTER thing with a brighter top
+     edge. Until that inverts, no amount of blur will read.
+  3. Make refusal a first-class card, not red text. `run_command pnpm test` being
+     refused is a *policy answer* — it should state the rule, name the mode, and
+     offer the one action that would change the outcome. Today refusals look like
+     failures, which trains people to retry instead of to read.
+
+  WHAT I DELIBERATELY DID NOT ANIMATE — this is the discipline, and it is the
+  whole difference between "alive" and "noisy"
+  • The ground. No drifting blobs, no breathing gradient. It is a backdrop; a
+    backdrop that moves makes every foreground state-change unreadable.
+  • The session rail. Rows do not fade in, groups do not stagger, the loaded
+    thread does not pulse. A list of things that exist is not an event.
+  • The tab bar. No sliding underline, no morphing pill. Tab switching is
+    instant in the real app and the UI should not pretend it is expensive.
+  • The composer. No caret blink beyond the browser's own, no glow on focus
+    beyond a ring, no send-button bounce. You type here constantly; anything
+    that moves here becomes a tic.
+  • The breadcrumb, the model picker, the mode control, the Drive chip at rest.
+  • Completed and refused tool calls. They are finished. Only the RUNNING one
+    spins, and only it carries a meter.
+  • The diff, the thinking fold, the side pane's graph. Content at rest.
+  • Chips, counts, avatars, icons at rest.
+  The two one-shot animations (the todo item that just flipped to in-progress,
+  and the check that just landed) run ONCE, for under a second, and end. They
+  report a transition; they do not idle.
+
+  MOTION BUDGET AT REST: three loci.
+    1. the streaming prose tail — shimmer
+    2. the running tool call    — braille spinner + indeterminate ASCII meter
+    3. the running subagent     — braille spinner + a breathing ring
+  Everything else is pointer-driven (hover lift + specular sweep) or one-shot.
+
+================================================================================
+  CONTRAST — MEASURED, NOT EYEBALLED
+================================================================================
+  Method: every ratio below is computed on the COMPOSITED colour, not on the
+  scrim. Each translucent pane was alpha-composited over the ground, then the
+  ink composited over that, then sRGB → linear (c/12.92 below 0.04045, else
+  ((c+0.055)/1.055)^2.4), L = 0.2126R + 0.7152G + 0.0722B, ratio =
+  (L_hi + 0.05) / (L_lo + 0.05).
+
+  The ground is a base plus three radial tints. I measured against the
+  PATHOLOGICAL pixel — all three tints stacked at once — because that is the
+  brightest the ground can ever get, and light ink on a brighter ground is the
+  worst case. No real pixel is that bright.
+
+    ground base  #080b11   L = 0.00331
+    ground peak  #15212f   L = 0.01428   (worst case, all tints stacked)
+
+  Composited pane colours over that worst-case peak:
+    rail   (white .055) → #222d3a
+    pane   (white .075) → #27313e
+    card   (white .105) → #2e3845
+    raised (white .150) → #38424e      ← also the hover-lift ceiling
+    nested-in-pane (white .090 over pane) → #3a4450
+    nested-in-card (white .090 over card) → #404a55   ← diffs, tool output, folds
+    specular crest (white .195 total)     → #434c57   ← brightest reachable surface
+
+  BODY TEXT — requirement ≥ 4.5:1. Columns are rail / pane / card / raised /
+  nested-in-card / specular-crest. The last two columns are the binding ones.
+    --ink       #f4f7fb   13.01  12.22  11.08   9.50   8.47   8.12
+    --ink-dim   #c6d0dd    8.97   8.42   7.64   6.55   5.78   5.59
+    --ink-mute  #b6c1ce    7.66   7.20   6.52   5.63   4.94   4.78   ← worst body
+    --accent    #86daf5    8.90   8.36   7.58   6.50   5.75   5.55
+    --ok        #86e4b6    9.18   8.62   7.82   6.70   5.93   5.73
+    --warn      #f5cd8a    9.31   8.75   7.93   6.80   6.01   5.81
+    --bad       #fbc0c6    8.96   8.42   7.63   6.54   5.78   5.59
+    WORST BODY-TEXT RATIO ANYWHERE = 4.69:1  (--ink-dim on the added-diff row)
+    Next worst: 4.70 (--bad on the removed-diff row), 4.78 (--ink-mute under a
+    specular crest). Bar is 4.50; the margin is thin by design, not by accident —
+    these are the three most heavily tinted surfaces in the file.
+
+  NON-TEXT MARKS — requirement ≥ 3:1.
+    --ink-faint #93a0b1    5.26   4.94   4.48   3.84   3.39   3.28
+      (declared NON-TEXT ONLY: rules, glyph marks, disabled icons. It is never
+       used for a string you have to read. On the crest it is 3.28, above 3 but
+       below 4.5, which is exactly why it is fenced off.)
+    --edge-strong white .48 → #9da2a8 : 4.07 vs card, 3.39 vs the crest.
+      Used for marks that CARRY meaning (checkbox boxes, the focus ring, the
+      active-tab rule). Decorative hairlines (--edge .14 / --edge-soft .09) sit
+      at 1.5–1.8:1 and are exempt — no information is ever carried by a hairline
+      alone; every one of them is doubled by a fill, a glyph or a label.
+    --accent as a mark on raised = 6.50, as a focus ring = 6.50.
+
+  TINTED ROWS AND CHIPS — text on them, measured on the composited wash:
+    loaded thread row  (accent .16 / rail)   #324958  ink 8.82  dim 6.07  accent 6.03
+    multi-select row   (white  .10 / rail)   #38424e  ink 9.52  dim 6.56
+    rail hover row     (white  .065 / rail)  #303a47  ink 10.66 dim 7.35  mute 6.29
+    accent chip        (accent .18 / card)   #3d5564  accent 4.97  ink 7.27
+    ok chip            (ok     .18 / card)   #3d5759  ok     5.09  ink 7.22
+    warn chip          (warn   .18 / card)   #515351  warn   5.17  dim 4.98
+    bad chip / refusal (bad    .18 / card)   #525661  bad    5.02  dim 5.03
+    running capsule    (accent .12 / card)   #384b5a  accent 5.73  ink 8.38  mute 4.93
+    capsule inner slab (white  .05 / capsule)#425462  ink    7.27  dim 5.01
+    todo blocked row   (warn   .18 / card)   #515351  dim    4.98
+    diff add row  (ok  .10 / nested-in-card) #47595f  ok     4.80  dim 4.69
+    diff rem row  (bad .10 / nested-in-card) #535661  bad    4.70  dim 4.71  ← worst
+    composer field     (white  .05 / pane)   #313c48  ink 10.49 dim 7.23  mute 6.18
+    ghost Reject btn   (white  .07 / card)   #3c4652  bad    6.15  ink 8.93
+    solid Accept       #9ae3f7 fill, #06121a ink = 13.26:1 ; fill vs card 8.34:1
+
+  FIVE PAIRINGS FAILED THE FIRST AUDIT AND WERE CHANGED, NOT ROUNDED UP:
+    • --bad was #f9b4bb; on the removed-diff row it measured 4.36. Lightened to
+      #fbc0c6 → 4.70. (Chips and the refusal card improved with it.)
+    • diff line numbers were --ink-faint on the wash rows (4.36 / 4.45) and the
+      column was position:sticky with its own --glass-nested fill, which stacked
+      a second white layer. Sticky removed, colour raised to --ink-dim → 4.69.
+    • the todo "blocked:" reason was --ink-mute on the warn wash (4.26) →
+      --ink-dim (4.98).
+    • the capsule's inner slab was --glass-nested over the capsule's accent wash,
+      compositing to #4a5c69 where its label measured 3.82. Slab dropped to
+      --glass-field and the label raised to --ink-dim → 5.01.
+    • the capsule's nested-tool path was --ink-dim on that same slab (4.47) →
+      --ink (7.27). It is the most important string in the card; it should have
+      been full ink anyway.
+
+  THE HOVER CAP. Hover lifts a pane to white .150 and the specular crest adds
+  .045 on top, so .195 is the brightest any surface can become. Every number
+  above was taken with that ceiling applied — that is the "specular crest"
+  column. Hover cannot push anything below the bar because the bar was measured
+  at the top of the hover range, not at rest.
+
+================================================================================
+  GLASS RECIPE (the four things this repo measured, applied)
+   • Every pane is a WHITE alpha fill, i.e. always lighter than its ground.
+   • The ground carries a wide, low-contrast gradient (one cool indigo, one
+     muted teal, both very faint) so the blur has something to chew on.
+   • saturate(180%) is what turns fog into glass.
+   • inset top highlight = where the light is; inset bottom shade = thickness.
+   • 24px blur on structural panes (frosted), 14px on small controls so the
+     shape behind a chip still reads.
+================================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================================
+   TOKENS — the complete palette. No hex literal appears below this block.
+   ========================================================================= */
+:root{
+  /* --- ground ------------------------------------------------------------ */
+  --ground:            #080b11;
+  --tint-indigo:       rgba(91,124,240,.085);
+  --tint-teal:         rgba(58,168,166,.060);
+  --tint-haze:         rgba(255,255,255,.014);
+
+  /* --- glass fills: every one LIGHTER than the ground beneath it ---------- */
+  --glass-rail:        rgba(255,255,255,.055);
+  --glass-pane:        rgba(255,255,255,.075);
+  --glass-card:        rgba(255,255,255,.105);
+  --glass-nested:      rgba(255,255,255,.090);
+  --glass-raised:      rgba(255,255,255,.150);
+  --glass-hover:       rgba(255,255,255,.150);  /* the hover ceiling */
+  --glass-field:       rgba(255,255,255,.050);
+  --glass-ghost:       rgba(255,255,255,.070);
+
+  /* --- edges, speculars, shadow ------------------------------------------ */
+  --edge:              rgba(255,255,255,.14);
+  --edge-soft:         rgba(255,255,255,.09);
+  --edge-strong:       rgba(255,255,255,.48);   /* meaningful marks only */
+  --spec-top:          rgba(255,255,255,.22);
+  --spec-top-strong:   rgba(255,255,255,.34);
+  --spec-bottom:       rgba(0,0,0,.30);
+  --sweep-crest:       rgba(255,255,255,.045);
+  --shadow:            rgba(3,6,12,.55);
+  --shadow-deep:       rgba(3,6,12,.72);
+
+  /* --- ink --------------------------------------------------------------- */
+  --ink:               #f4f7fb;
+  --ink-dim:           #c6d0dd;
+  --ink-mute:          #b6c1ce;
+  --ink-faint:         #93a0b1;   /* NON-TEXT ONLY — see contrast notes */
+
+  /* --- status hues ------------------------------------------------------- */
+  --accent:            #86daf5;
+  --ok:                #86e4b6;
+  --warn:              #f5cd8a;
+  --bad:               #fbc0c6;
+  --accent-solid:      #9ae3f7;
+  --on-accent:         #06121a;
+
+  /* --- washes (tinted fills over a pane) --------------------------------- */
+  --wash-thread:       rgba(134,218,245,.16);
+  --wash-accent:       rgba(134,218,245,.18);
+  --wash-accent-soft:  rgba(134,218,245,.12);
+  --wash-ok:           rgba(134,228,182,.18);
+  --wash-warn:         rgba(245,205,138,.18);
+  --wash-bad:          rgba(251,192,198,.18);
+  --wash-add:          rgba(134,228,182,.10);
+  --wash-rem:          rgba(251,192,198,.10);
+  --wash-row:          rgba(255,255,255,.10);
+  --wash-hover:        rgba(255,255,255,.065);
+  --ring-accent:       rgba(134,218,245,.55);
+  --glow-accent:       rgba(134,218,245,.30);
+  --glow-accent-soft:  rgba(134,218,245,.12);
+
+  /* --- shape ------------------------------------------------------------- */
+  --r-xs: 7px;  --r-sm: 10px; --r-md: 14px;
+  --r-lg: 20px; --r-xl: 26px; --r-pill: 999px;
+
+  --blur-pane: 24px;
+  --blur-chip: 14px;
+  --sat: 180%;
+
+  /* --- type -------------------------------------------------------------- */
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* --- motion ------------------------------------------------------------ */
+  --t-fast: 140ms;
+  --t-mid:  260ms;
+  --t-slow: 420ms;
+  --ease:   cubic-bezier(.22,.61,.36,1);
+  --ease-out: cubic-bezier(.16,1,.3,1);
+}
+
+/* ============================================================================
+   RESET / SHELL
+   ========================================================================= */
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family:var(--sans);
+  font-size:13.5px;
+  line-height:1.5;
+  color:var(--ink);
+  background-color:var(--ground);
+  overflow-x:hidden;            /* the page never scrolls sideways */
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* The ground: wide, faint, two hues + a haze. Deliberately NOT animated. */
+.ground{
+  position:fixed; inset:0; z-index:-1;
+  background-color:var(--ground);
+  background-image:
+    radial-gradient(1100px 760px at 14% 4%,  var(--tint-indigo), transparent 64%),
+    radial-gradient(900px  680px at 92% 96%, var(--tint-teal),   transparent 62%),
+    radial-gradient(1400px 900px at 58% 46%, var(--tint-haze),   transparent 70%);
+}
+
+/* ============================================================================
+   GLASS
+   ========================================================================= */
+.glass{
+  position:relative;
+  background:var(--glass-pane);
+  -webkit-backdrop-filter:blur(var(--blur-pane)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-pane)) saturate(var(--sat));
+  border:1px solid var(--edge);
+  border-radius:var(--r-xl);
+  box-shadow:
+    inset 0 1px 0 var(--spec-top),          /* where the light is */
+    inset 0 -1px 0 var(--spec-bottom),      /* the pane has thickness */
+    0 24px 48px -28px var(--shadow-deep);
+}
+.glass--rail{ background:var(--glass-rail); }
+.glass--card{ background:var(--glass-card); border-radius:var(--r-lg); }
+.glass--chip{
+  background:var(--glass-card);
+  -webkit-backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  border-radius:var(--r-pill);
+}
+
+/* Specular sweep — pointer-driven only, never at rest. */
+.sweepable{ overflow:hidden; }
+.sweepable::after{
+  content:""; position:absolute; inset:-1px; pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(104deg, transparent 32%, var(--sweep-crest) 46%, var(--sweep-crest) 54%, transparent 68%);
+  transform:translateX(-140%);
+  opacity:0;
+}
+.sweepable:hover::after,
+.sweepable:focus-within::after{ animation:sweep 820ms var(--ease-out) 1; }
+@keyframes sweep{
+  0%   { transform:translateX(-140%); opacity:0; }
+  18%  { opacity:1; }
+  82%  { opacity:1; }
+  100% { transform:translateX(140%);  opacity:0; }
+}
+
+/* Hover lift — capped at --glass-hover so contrast can never fall below spec. */
+.liftable{ transition:transform var(--t-mid) var(--ease-out), background var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease); }
+.liftable:hover{
+  transform:translateY(-2px);
+  background:var(--glass-hover);
+  border-color:var(--edge-strong);
+  box-shadow:
+    inset 0 1px 0 var(--spec-top-strong),
+    inset 0 -1px 0 var(--spec-bottom),
+    0 28px 56px -26px var(--shadow-deep);
+}
+
+/* ============================================================================
+   APP GRID
+   ========================================================================= */
+.app{
+  display:grid;
+  grid-template-columns:268px minmax(0,1fr);
+  gap:14px;
+  height:100dvh;
+  min-height:640px;
+  padding:14px;
+  max-width:100%;
+}
+.app > *{ min-width:0; min-height:0; }
+
+/* ============================================================================
+   1. SESSION RAIL
+   ========================================================================= */
+.rail{ display:flex; flex-direction:column; padding:16px 12px 12px; gap:14px; overflow:hidden; }
+.rail > *{ flex:0 0 auto; }                       /* nothing in the rail shrinks… */
+.rail > .railscroll{ flex:1 1 auto; min-height:0; } /* …except the list, which scrolls */
+
+.rail__head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 6px; }
+.eyebrow{
+  font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-mute); margin:0;
+}
+.workspace{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+.workspace__name{ font-size:14px; font-weight:600; color:var(--ink); }
+
+.iconbtn{
+  flex:0 0 auto;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px; padding:0;
+  font:inherit; font-size:12px; color:var(--ink-mute);
+  background:var(--glass-field); border:1px solid var(--edge-soft);
+  border-radius:var(--r-sm); cursor:pointer;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.iconbtn:hover{ background:var(--glass-hover); color:var(--ink); border-color:var(--edge-strong); }
+
+.railactions{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.railaction{
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:9px 4px 8px;
+  font:inherit; font-size:10.5px; font-weight:500; color:var(--ink-dim);
+  background:var(--glass-field); border:1px solid var(--edge-soft);
+  border-radius:var(--r-md); cursor:pointer;
+  -webkit-backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-out);
+}
+.railaction:hover{ background:var(--glass-hover); color:var(--ink); border-color:var(--edge-strong); transform:translateY(-1px); }
+.railaction .g{ font-size:14px; line-height:1; color:var(--ink-mute); }
+.railaction:hover .g{ color:var(--accent); }
+
+.railscroll{ flex:1 1 auto; overflow-y:auto; overflow-x:hidden; margin:0 -4px; padding:0 4px; }
+.group{ margin-bottom:14px; }
+.group__head{
+  display:flex; align-items:center; gap:7px; padding:4px 8px 6px;
+}
+.group__count{
+  font-family:var(--mono); font-size:10px; color:var(--ink-mute);
+  background:var(--glass-field); border:1px solid var(--edge-soft);
+  border-radius:var(--r-pill); padding:0 6px;
+}
+.group__rule{ flex:1 1 auto; height:1px; background:var(--edge-soft); }
+
+.thread{
+  position:relative; display:flex; align-items:center; gap:9px;
+  width:100%; padding:9px 9px 9px 11px; margin-bottom:3px;
+  font:inherit; text-align:left; color:var(--ink-dim);
+  background:transparent; border:1px solid transparent;
+  border-radius:var(--r-md); cursor:pointer;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.thread:hover{ background:var(--wash-hover); border-color:var(--edge-soft); color:var(--ink); }
+.thread__dot{ flex:0 0 auto; width:6px; height:6px; border-radius:var(--r-pill); background:var(--ink-faint); }
+.thread__label{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12.5px; }
+.thread__meta{ flex:0 0 auto; font-family:var(--mono); font-size:10px; color:var(--ink-mute); }
+
+.thread--loaded{
+  background:var(--wash-thread); border-color:var(--ring-accent); color:var(--ink);
+  -webkit-backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  box-shadow:inset 0 1px 0 var(--spec-top);
+}
+.thread--loaded .thread__dot{ background:var(--accent); box-shadow:0 0 0 3px var(--glow-accent-soft); }
+.thread--loaded .thread__label{ font-weight:600; }
+.thread--loaded::before{
+  content:""; position:absolute; left:3px; top:9px; bottom:9px; width:2px;
+  border-radius:var(--r-pill); background:var(--accent);
+}
+.thread--selected{ background:var(--wash-row); border-color:var(--edge); color:var(--ink); }
+.thread__check{
+  flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  width:15px; height:15px; border-radius:5px;
+  border:1px solid var(--edge-strong); color:var(--on-accent);
+  background:var(--accent-solid); font-size:10px; font-weight:700;
+}
+
+.thread__acts{ display:flex; gap:3px; opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.thread:hover .thread__acts, .thread:focus-within .thread__acts{ opacity:1; }
+.thread--hoverpin .thread__acts{ opacity:1; }   /* pinned so the draft shows it */
+.thread--hoverpin{ background:var(--wash-hover); border-color:var(--edge-soft); color:var(--ink); }
+.act{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:19px; height:19px; padding:0; font:inherit; font-size:11px;
+  color:var(--ink-mute); background:var(--glass-field);
+  border:1px solid var(--edge-soft); border-radius:6px; cursor:pointer;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.act:hover{ color:var(--ink); background:var(--glass-hover); }
+.act--danger:hover{ color:var(--bad); }
+
+.railfoot{
+  display:flex; align-items:center; gap:8px; padding:9px 10px;
+  border-top:1px solid var(--edge-soft);
+}
+.avatar{
+  flex:0 0 auto; width:24px; height:24px; border-radius:var(--r-pill);
+  display:grid; place-items:center; font-size:10px; font-weight:700;
+  color:var(--on-accent); background:var(--accent-solid);
+}
+.railfoot__who{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; color:var(--ink-dim); }
+
+.caption{ font-size:10px; color:var(--ink-mute); padding:0 10px; margin:2px 0 0; }
+
+/* ============================================================================
+   2. STAGE + TAB BAR
+   ========================================================================= */
+.stage{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+
+/* flex:0 0 auto — otherwise the bar shrinks under the frame and eats its own
+   bottom padding, clipping the tab pills by ~11px. */
+.tabbar{ flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--r-lg); }
+.tabstrip{
+  display:flex; align-items:center; gap:5px; flex:1 1 auto; min-width:0;
+  overflow-x:auto; scrollbar-width:none; padding:1px;
+}
+.tabstrip::-webkit-scrollbar{ display:none; }
+.tab{
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
+  padding:6px 12px; font:inherit; font-size:12px; color:var(--ink-mute);
+  background:transparent; border:1px solid transparent;
+  border-radius:var(--r-pill); cursor:pointer; white-space:nowrap;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.tab:hover{ background:var(--wash-hover); color:var(--ink); border-color:var(--edge-soft); }
+.tab .g{ font-size:11px; color:var(--ink-faint); }
+.tab:hover .g{ color:var(--ink-mute); }
+.tab--active{
+  background:var(--wash-accent); color:var(--ink); font-weight:600;
+  border-color:var(--ring-accent);
+  box-shadow:inset 0 1px 0 var(--spec-top);
+}
+.tab--active .g{ color:var(--accent); }
+.tab--split{ border-color:var(--edge-strong); color:var(--ink-dim); }
+.tab__split{
+  font-family:var(--mono); font-size:9px; letter-spacing:.06em;
+  color:var(--ink-mute); border:1px solid var(--edge-soft);
+  border-radius:4px; padding:0 4px;
+}
+.tab__x{
+  display:inline-grid; place-items:center; width:16px; height:16px;
+  margin-right:-4px; padding:0; font:inherit; font-size:11px; line-height:1;
+  color:var(--ink-mute); background:transparent; border:0;
+  border-radius:var(--r-pill); cursor:pointer;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.tab__x:hover{ background:var(--wash-row); color:var(--ink); }
+
+/* ============================================================================
+   5. SIDE-BY-SIDE FRAME
+   ========================================================================= */
+/* THREE columns, not two: the seam is a grid child too. With two tracks the
+   seam took column 2 and the side pane wrapped onto a second row — which
+   getComputedStyle happily reported as a healthy two-column grid. Only the
+   measured rects showed the side pane sitting below the chat. */
+.frame{
+  flex:1 1 auto; display:grid; grid-template-columns:minmax(0,1.45fr) 1px minmax(0,1fr);
+  gap:0; min-height:0; overflow:hidden; border-radius:var(--r-xl);
+}
+.frame > *{ min-width:0; min-height:0; }
+.chatcol{ display:flex; flex-direction:column; min-height:0; padding:0; }
+.seam{ width:1px; background:var(--edge-soft); }
+
+.colhead{
+  display:flex; align-items:center; gap:8px; flex:0 0 auto;
+  padding:11px 16px; border-bottom:1px solid var(--edge-soft);
+}
+.colhead__title{ font-size:11.5px; font-weight:600; color:var(--ink-dim); }
+.colhead__spacer{ flex:1 1 auto; }
+
+/* ============================================================================
+   3. TRANSCRIPT
+   ========================================================================= */
+.transcript{ flex:1 1 auto; overflow-y:auto; overflow-x:hidden; padding:16px 18px 20px; display:flex; flex-direction:column; gap:14px; }
+/* CRITICAL. Without this every card in the transcript keeps flex-shrink:1, and
+   once the content is taller than the scroller they all compress — the subagent
+   capsule measured 26px tall holding 123px of content, silently clipped by its
+   own overflow:hidden. Cards do not shrink; the transcript scrolls. */
+.transcript > *{ flex:0 0 auto; min-width:0; }
+
+.turn{ display:flex; gap:11px; min-width:0; }
+.turn__gutter{ flex:0 0 auto; width:26px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.turn__body{ flex:1 1 auto; min-width:0; }
+.mark{
+  width:26px; height:26px; border-radius:var(--r-pill); display:grid; place-items:center;
+  font-size:11px; font-weight:700; color:var(--ink-dim);
+  background:var(--glass-card); border:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 var(--spec-top);
+}
+.mark--you{ color:var(--ink); }
+.mark--ai{ color:var(--accent); border-color:var(--ring-accent); background:var(--wash-accent-soft); }
+
+.bubble{ padding:12px 15px; border-radius:var(--r-lg); }
+.bubble--you{
+  background:var(--glass-card); border:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 var(--spec-top), inset 0 -1px 0 var(--spec-bottom);
+  -webkit-backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+}
+.prose h3{ margin:0 0 7px; font-size:14.5px; font-weight:600; letter-spacing:-.01em; color:var(--ink); }
+.prose p{ margin:0 0 9px; color:var(--ink-dim); }
+.prose p:last-child{ margin-bottom:0; }
+.prose ol{ margin:0 0 9px; padding-left:0; list-style:none; counter-reset:step; }
+.prose ol li{
+  counter-increment:step; position:relative; padding-left:26px; margin-bottom:5px; color:var(--ink-dim);
+}
+.prose ol li::before{
+  content:counter(step); position:absolute; left:0; top:1px;
+  width:17px; height:17px; border-radius:var(--r-pill);
+  display:grid; place-items:center;
+  font-family:var(--mono); font-size:9.5px; font-weight:700;
+  color:var(--accent); background:var(--wash-accent-soft);
+  border:1px solid var(--ring-accent);
+}
+.prose code, .mono{ font-family:var(--mono); font-size:11.5px; }
+.prose code{
+  background:var(--glass-field); border:1px solid var(--edge-soft);
+  border-radius:5px; padding:1px 5px; color:var(--ink);
+}
+
+/* -- MOTION 1/3 : shimmer on the tail that is still streaming --------------- */
+.streaming{ display:block; margin-top:2px; }
+.shimmer{
+  background-image:linear-gradient(100deg, var(--ink-mute) 20%, var(--ink) 42%, var(--ink) 50%, var(--ink-mute) 72%);
+  background-size:250% 100%;
+  background-repeat:no-repeat;
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent;
+  animation:shimmer 2400ms linear infinite;
+}
+@keyframes shimmer{ from{ background-position:120% 0; } to{ background-position:-120% 0; } }
+.cursorblock{
+  display:inline-block; width:.52em; height:1em; vertical-align:-.13em;
+  margin-left:3px; border-radius:2px; background:var(--accent);
+}
+
+/* -- thinking fold --------------------------------------------------------- */
+.fold{ border-radius:var(--r-lg); }
+.fold > summary{
+  display:flex; align-items:center; gap:9px; padding:10px 14px;
+  cursor:pointer; list-style:none; color:var(--ink-mute); font-size:12px;
+  border-radius:var(--r-lg);
+}
+.fold > summary::-webkit-details-marker{ display:none; }
+.fold > summary:hover{ color:var(--ink); }
+.fold__chev{ display:inline-block; font-size:9px; color:var(--ink-faint); transition:transform var(--t-fast) var(--ease); }
+.fold[open] .fold__chev{ transform:rotate(90deg); }
+.fold__spacer{ flex:1 1 auto; }
+.fold__body{
+  margin:0 12px 12px; padding:11px 13px; max-height:132px; overflow-y:auto;
+  border-radius:var(--r-md); border:1px solid var(--edge-soft);
+  background:var(--glass-nested);
+  font-family:var(--mono); font-size:11px; line-height:1.62; color:var(--ink-mute);
+}
+.fold__body p{ margin:0 0 7px; }
+.fold__body p:last-child{ margin:0; }
+
+/* -- tool call cards ------------------------------------------------------- */
+.tool{ padding:0; overflow:hidden; }
+.tool__head{ display:flex; align-items:center; gap:9px; padding:10px 13px; min-width:0; }
+.tool__name{
+  font-family:var(--mono); font-size:11.5px; color:var(--ink); font-weight:500;
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.tool__arg{ color:var(--ink-dim); }
+.tool__spacer{ flex:1 1 auto; min-width:8px; }
+.tool__glyph{ flex:0 0 auto; width:18px; text-align:center; font-family:var(--mono); font-size:12px; }
+.tool__glyph--done{ color:var(--ok); }
+.tool__glyph--bad{ color:var(--bad); }
+.tool__glyph--run{ color:var(--accent); }
+
+.pill{
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:5px;
+  padding:2px 9px; border-radius:var(--r-pill);
+  font-family:var(--mono); font-size:9.5px; font-weight:500; letter-spacing:.05em;
+  text-transform:uppercase; white-space:nowrap;
+  border:1px solid var(--edge-soft);
+}
+.pill--ok{   color:var(--ok);     background:var(--wash-ok);     border-color:var(--wash-ok); }
+.pill--run{  color:var(--accent); background:var(--wash-accent); border-color:var(--ring-accent); }
+.pill--bad{  color:var(--bad);    background:var(--wash-bad);    border-color:var(--wash-bad); }
+.pill--warn{ color:var(--warn);   background:var(--wash-warn);   border-color:var(--wash-warn); }
+.pill--plain{ color:var(--ink-mute); background:var(--glass-field); }
+
+.tool__body{
+  padding:0 13px 11px; margin-top:-2px;
+}
+.tool__out{
+  max-height:96px; overflow:auto;
+  padding:9px 11px; border-radius:var(--r-md);
+  border:1px solid var(--edge-soft); background:var(--glass-nested);
+  font-family:var(--mono); font-size:11px; line-height:1.6; color:var(--ink-dim);
+  white-space:pre;
+}
+.tool--running{ border-color:var(--ring-accent); background:var(--wash-accent-soft); }
+.tool--refused{ border-color:var(--wash-bad); }
+.refusal{
+  display:flex; align-items:flex-start; gap:9px;
+  padding:9px 11px; border-radius:var(--r-md);
+  border:1px solid var(--wash-bad); background:var(--wash-bad);
+  color:var(--ink-dim); font-size:12px;
+}
+.refusal code{ color:var(--bad); background:transparent; border:0; padding:0; }
+.refusal__fix{
+  margin-left:auto; flex:0 0 auto; padding:3px 10px;
+  font:inherit; font-size:11px; color:var(--ink);
+  background:var(--glass-ghost); border:1px solid var(--edge);
+  border-radius:var(--r-pill); cursor:pointer;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.refusal__fix:hover{ background:var(--glass-hover); border-color:var(--edge-strong); }
+
+/* -- MOTION 2/3 : braille spinner ------------------------------------------ */
+/* 1.1em, not 1ch: braille U+28xx is not in JetBrains Mono, so it falls back to a
+   face whose advance is ~0.75em — 1ch (0.6em) clipped the glyph's right edge. */
+.braille{
+  display:inline-block; width:1.1em; height:1.25em; overflow:hidden;
+  vertical-align:-.25em; font-family:var(--mono); line-height:1.25em;
+  color:var(--accent);
+}
+.braille__strip{ display:block; animation:braille-roll 900ms steps(10,end) infinite; }
+.braille__strip i{ display:block; height:1.25em; line-height:1.25em; font-style:normal; }
+@keyframes braille-roll{ from{ transform:translateY(0); } to{ transform:translateY(-12.5em); } }
+
+/* -- MOTION 2/3 : indeterminate ASCII meter -------------------------------- */
+.meter{
+  position:relative; display:block; margin-top:8px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.02em;
+  line-height:1.2; white-space:nowrap; overflow:hidden;
+}
+.meter__track{ display:block; color:var(--ink-faint); }
+.meter__scan{
+  position:absolute; inset:0; display:block; pointer-events:none;
+  background-image:linear-gradient(90deg, transparent 0%, var(--accent) 45%, var(--accent) 55%, transparent 100%);
+  background-size:34% 100%; background-repeat:no-repeat;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:meter-scan 1700ms linear infinite;
+}
+@keyframes meter-scan{ from{ background-position:-40% 0; } to{ background-position:140% 0; } }
+
+/* -- todo list ------------------------------------------------------------- */
+.todo{ padding:12px 14px 13px; }
+.todo__head{ display:flex; align-items:center; gap:9px; margin-bottom:9px; }
+.todo__title{ font-size:12px; font-weight:600; color:var(--ink-dim); }
+.todo__bar{
+  flex:1 1 auto; min-width:40px; height:4px; border-radius:var(--r-pill);
+  background:var(--glass-field); overflow:hidden;
+}
+.todo__fill{ display:block; height:100%; width:25%; border-radius:var(--r-pill); background:var(--accent); }
+.todo__count{ font-family:var(--mono); font-size:10px; color:var(--ink-mute); }
+
+.todo__list{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:3px; }
+.todo__item{
+  display:flex; align-items:flex-start; gap:10px; min-width:0;
+  padding:7px 10px; border-radius:var(--r-md);
+  border:1px solid transparent; font-size:12.5px; color:var(--ink-dim);
+}
+.todo__g{ flex:0 0 auto; width:14px; text-align:center; font-family:var(--mono); font-size:12px; line-height:1.45; }
+.todo__text{ flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
+/* --ink-dim, not --ink-mute: this line sits on the warn wash, where mute is 4.26 */
+.todo__why{ display:block; font-size:11px; color:var(--ink-dim); margin-top:1px; }
+
+.todo__item--done{ color:var(--ink-mute); }
+.todo__item--done .todo__g{ color:var(--ok); }
+.todo__item--done .todo__text{ text-decoration:line-through; text-decoration-color:var(--ink-faint); }
+.todo__item--active{
+  color:var(--ink); background:var(--wash-accent-soft);
+  border-color:var(--ring-accent); font-weight:500;
+}
+.todo__item--active .todo__g{ color:var(--accent); }
+.todo__item--pending .todo__g{ color:var(--ink-faint); }
+.todo__item--blocked{ background:var(--wash-warn); border-color:var(--wash-warn); color:var(--ink-dim); }
+.todo__item--blocked .todo__g{ color:var(--warn); font-weight:700; }
+
+/* -- ONE-SHOT motion: these run once, under a second, then stop ------------- */
+.todo__item--active{ animation:settle 760ms var(--ease-out) 1; }
+@keyframes settle{
+  0%   { transform:translateY(5px); opacity:.25; box-shadow:0 0 0 0 var(--glow-accent); }
+  55%  { box-shadow:0 0 0 5px var(--glow-accent-soft); }
+  100% { transform:translateY(0);   opacity:1;   box-shadow:0 0 0 0 var(--glow-accent-soft); }
+}
+.todo__item--done .todo__g{ animation:landed 620ms var(--ease-out) 1; }
+@keyframes landed{
+  0%  { transform:scale(.4); opacity:0; }
+  60% { transform:scale(1.22); opacity:1; }
+  100%{ transform:scale(1); opacity:1; }
+}
+
+/* -- MOTION 3/3 : subagent capsule ----------------------------------------- */
+.capsule{
+  position:relative; padding:13px 15px; border-radius:var(--r-lg);
+  background:var(--wash-accent-soft); border:1px solid var(--ring-accent);
+  -webkit-backdrop-filter:blur(var(--blur-pane)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-pane)) saturate(var(--sat));
+  box-shadow:inset 0 1px 0 var(--spec-top), inset 0 -1px 0 var(--spec-bottom);
+}
+/* The glow is INSET. An outer glow would be eaten by .sweepable's overflow:hidden,
+   and light living inside the pane reads more like a lit material anyway. */
+.capsule::before{
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  box-shadow:inset 0 0 0 1px var(--ring-accent), inset 0 0 26px 0 var(--glow-accent-soft);
+  animation:breathe 3200ms ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{ opacity:.34; transform:scale(1); }
+  50%    { opacity:.9;  transform:scale(1.006); }
+}
+.capsule__head{ display:flex; align-items:center; gap:9px; min-width:0; }
+.capsule__name{ font-family:var(--mono); font-size:12px; font-weight:700; color:var(--ink); }
+.capsule__spacer{ flex:1 1 auto; min-width:6px; }
+.capsule__clock{ font-family:var(--mono); font-size:11.5px; color:var(--accent); font-variant-numeric:tabular-nums; }
+/* --glass-field (.05), not --glass-nested (.09): this inner layer stacks on the
+   capsule's accent wash. At .09 the composite was bright enough that ink-mute
+   measured 3.82; at .05 ink-dim reads 5.01. See the header contrast table. */
+.capsule__now{
+  display:flex; align-items:center; gap:8px; min-width:0;
+  margin-top:9px; padding:7px 10px; border-radius:var(--r-md);
+  background:var(--glass-field); border:1px solid var(--edge-soft);
+}
+.capsule__label{
+  flex:0 0 auto; font-family:var(--mono); font-size:9.5px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-dim);
+}
+.capsule__tool{
+  flex:1 1 auto; min-width:0; font-family:var(--mono); font-size:11px; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left;
+}
+.capsule__foot{ display:flex; align-items:center; gap:8px; margin-top:9px; flex-wrap:wrap; }
+.capsule__stat{ font-family:var(--mono); font-size:10px; color:var(--ink-mute); }
+
+/* -- edit approval card ---------------------------------------------------- */
+.approval{ padding:0; overflow:hidden; }
+.approval__head{ display:flex; align-items:center; gap:9px; padding:11px 14px 10px; min-width:0; }
+.approval__path{
+  flex:1 1 auto; min-width:0; font-family:var(--mono); font-size:11.5px; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left;
+}
+.approval__stat{ flex:0 0 auto; font-family:var(--mono); font-size:11px; font-variant-numeric:tabular-nums; }
+.stat--add{ color:var(--ok); }
+.stat--rem{ color:var(--bad); }
+
+.diff{
+  margin:0 14px; max-height:216px; overflow:auto;
+  border:1px solid var(--edge-soft); border-radius:var(--r-md);
+  background:var(--glass-nested);
+}
+.diff table{ border-collapse:collapse; width:100%; font-family:var(--mono); font-size:11px; line-height:1.62; }
+.diff td{ padding:0 2px; vertical-align:top; white-space:pre; }
+/* Line numbers are TEXT you read, so --ink-dim, not --ink-faint. They are also
+   deliberately NOT sticky: a sticky column needs its own opaque fill, which
+   would stack a second white layer on the row wash and drag the composite up
+   past the point where the gutter still clears 4.5:1. */
+.diff td.ln{
+  width:1%; padding:0 9px 0 11px; text-align:right;
+  color:var(--ink-dim);
+  font-variant-numeric:tabular-nums; user-select:none;
+}
+.diff td.sg{ width:1%; padding:0 7px 0 3px; user-select:none; }
+.diff td.tx{ padding-right:14px; color:var(--ink-dim); }
+.diff tr.add{ background:var(--wash-add); }
+.diff tr.add .sg, .diff tr.add .tx{ color:var(--ok); }
+.diff tr.rem{ background:var(--wash-rem); }
+.diff tr.rem .sg, .diff tr.rem .tx{ color:var(--bad); }
+.diff tr.hunk .tx{ color:var(--ink-mute); }
+
+.approval__foot{ display:flex; align-items:center; gap:8px; padding:11px 14px 13px; flex-wrap:wrap; }
+.approval__note{ flex:1 1 auto; min-width:120px; font-size:11px; color:var(--ink-mute); }
+
+.btn{
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
+  padding:7px 15px; font:inherit; font-size:12px; font-weight:600;
+  border-radius:var(--r-pill); cursor:pointer;
+  border:1px solid var(--edge); background:var(--glass-ghost); color:var(--ink);
+  -webkit-backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease);
+}
+.btn:hover{ background:var(--glass-hover); border-color:var(--edge-strong); transform:translateY(-1px); }
+.btn:active{ transform:translateY(0); }
+.btn--accept{
+  background:var(--accent-solid); color:var(--on-accent); border-color:var(--accent-solid);
+  box-shadow:0 8px 22px -12px var(--glow-accent);
+}
+.btn--accept:hover{ background:var(--accent-solid); border-color:var(--accent-solid); box-shadow:0 12px 28px -12px var(--glow-accent); }
+.btn--reject{ color:var(--bad); }
+.btn kbd{
+  font-family:var(--mono); font-size:9.5px; opacity:.8; border:0; background:transparent; padding:0;
+}
+
+/* ============================================================================
+   4. COMPOSER
+   ========================================================================= */
+.composer{ flex:0 0 auto; padding:12px 14px 11px; border-top:1px solid var(--edge-soft); }
+.field{
+  display:flex; align-items:flex-start; gap:10px;
+  padding:11px 13px; border-radius:var(--r-lg);
+  background:var(--glass-field); border:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 var(--spec-top), inset 0 -1px 0 var(--spec-bottom);
+  transition:border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.field:focus-within{ border-color:var(--ring-accent); background:var(--glass-ghost); }
+.field__input{
+  flex:1 1 auto; min-width:0; min-height:40px;
+  font:inherit; font-size:13px; color:var(--ink);
+  background:transparent; border:0; resize:none; outline:none; padding:0;
+  line-height:1.5;
+}
+.field__input::placeholder{ color:var(--ink-mute); }
+.field__send{
+  flex:0 0 auto; width:32px; height:32px; padding:0;
+  display:grid; place-items:center; font-size:13px;
+  color:var(--on-accent); background:var(--accent-solid);
+  border:1px solid var(--accent-solid); border-radius:var(--r-pill); cursor:pointer;
+  transition:box-shadow var(--t-fast) var(--ease);
+}
+.field__send:hover{ box-shadow:0 10px 24px -12px var(--glow-accent); }
+
+.controls{ display:flex; align-items:center; gap:7px; margin-top:9px; flex-wrap:wrap; }
+.control{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px; font:inherit; font-size:11.5px; color:var(--ink-dim);
+  background:var(--glass-field); border:1px solid var(--edge-soft);
+  border-radius:var(--r-pill); cursor:pointer;
+  -webkit-backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-chip)) saturate(var(--sat));
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.control:hover{ background:var(--glass-hover); color:var(--ink); border-color:var(--edge-strong); }
+.control .g{ color:var(--ink-faint); font-size:10px; }
+.control__mono{ font-family:var(--mono); font-size:11px; }
+
+.segment{
+  display:inline-flex; align-items:center; gap:2px; padding:2px;
+  background:var(--glass-field); border:1px solid var(--edge-soft);
+  border-radius:var(--r-pill);
+}
+.segment button{
+  padding:4px 12px; font:inherit; font-size:11.5px; color:var(--ink-mute);
+  background:transparent; border:1px solid transparent; border-radius:var(--r-pill); cursor:pointer;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.segment button:hover{ color:var(--ink); background:var(--wash-hover); }
+.segment button[aria-pressed="true"]{
+  color:var(--ink); font-weight:600; background:var(--wash-accent); border-color:var(--ring-accent);
+  box-shadow:inset 0 1px 0 var(--spec-top);
+}
+
+.drive{
+  color:var(--accent); background:var(--wash-accent); border-color:var(--ring-accent);
+  font-weight:600;
+}
+.drive .g{ color:var(--accent); }
+
+.crumb{
+  display:flex; align-items:center; gap:6px; margin-top:9px; min-width:0;
+  font-family:var(--mono); font-size:10.5px; color:var(--ink-mute);
+  overflow:hidden; white-space:nowrap;
+}
+.crumb b{ color:var(--ink-dim); font-weight:500; }
+.crumb__sep{ color:var(--ink-faint); }
+.crumb__grow{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.crumb__spacer{ flex:1 1 auto; }
+
+/* ============================================================================
+   SIDE PANE (Architecture)
+   ========================================================================= */
+.sidepane{ display:flex; flex-direction:column; min-height:0; }
+.sidebody{ flex:1 1 auto; overflow-y:auto; overflow-x:hidden; padding:14px 16px 18px; }
+
+.ascii{
+  font-family:var(--mono); font-size:11px; line-height:1.55; color:var(--ink-mute);
+  white-space:pre; overflow-x:auto; margin:0 0 13px;
+  padding:11px 12px; border-radius:var(--r-md);
+  background:var(--glass-nested); border:1px solid var(--edge-soft);
+}
+.ascii b{ color:var(--ink); font-weight:500; }
+.ascii i{ color:var(--accent); font-style:normal; }
+
+.node{
+  display:flex; align-items:center; gap:10px; min-width:0;
+  padding:9px 12px; margin-bottom:6px; border-radius:var(--r-md);
+  background:var(--glass-card); border:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 var(--spec-top);
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-out);
+}
+.node:hover{ background:var(--glass-hover); border-color:var(--edge-strong); transform:translateY(-1px); }
+.node__kind{
+  flex:0 0 auto; width:22px; height:22px; border-radius:7px; display:grid; place-items:center;
+  font-family:var(--mono); font-size:10px; font-weight:700;
+  color:var(--ink-dim); background:var(--glass-field); border:1px solid var(--edge-strong);
+}
+.node__name{ flex:1 1 auto; min-width:0; font-family:var(--mono); font-size:11.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.node__n{ flex:0 0 auto; font-family:var(--mono); font-size:10px; color:var(--ink-mute); }
+
+.evidence{
+  margin-top:12px; padding:10px 12px; border-radius:var(--r-md);
+  background:var(--wash-ok); border:1px solid var(--wash-ok);
+  font-size:11.5px; color:var(--ink-dim);
+}
+.evidence b{ color:var(--ok); font-weight:600; }
+
+/* ============================================================================
+   CORNER LABEL
+   ========================================================================= */
+.draftlabel{
+  position:fixed; right:16px; bottom:14px; z-index:40;
+  display:flex; align-items:center; gap:7px;
+  padding:6px 13px; border-radius:var(--r-pill);
+  font-size:11px; font-weight:600; letter-spacing:.02em; color:var(--ink-dim);
+  background:var(--glass-raised); border:1px solid var(--edge);
+  -webkit-backdrop-filter:blur(var(--blur-pane)) saturate(var(--sat));
+  backdrop-filter:blur(var(--blur-pane)) saturate(var(--sat));
+  box-shadow:inset 0 1px 0 var(--spec-top), inset 0 -1px 0 var(--spec-bottom), 0 16px 34px -20px var(--shadow-deep);
+  pointer-events:none;
+}
+.draftlabel .dot{ width:7px; height:7px; border-radius:var(--r-pill); background:var(--accent); }
+
+/* ============================================================================
+   SCROLLBARS
+   ========================================================================= */
+*{ scrollbar-width:thin; scrollbar-color:var(--edge-strong) transparent; }
+*::-webkit-scrollbar{ width:9px; height:9px; }
+*::-webkit-scrollbar-track{ background:transparent; }
+*::-webkit-scrollbar-thumb{ background:var(--edge); border-radius:var(--r-pill); border:2px solid transparent; background-clip:padding-box; }
+*::-webkit-scrollbar-thumb:hover{ background:var(--edge-strong); background-clip:padding-box; }
+
+/* ============================================================================
+   FOCUS — a visible, measured ring everywhere
+   ========================================================================= */
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:var(--r-xs); }
+
+/* ============================================================================
+   RESPONSIVE — the page must never scroll sideways
+   ========================================================================= */
+@media (max-width:1180px){
+  .frame{ grid-template-columns:minmax(0,1fr); }
+  .seam, .sidepane{ display:none; }
+}
+@media (max-width:900px){
+  .app{ grid-template-columns:minmax(0,1fr); height:auto; min-height:0; }
+  .rail{ max-height:340px; }
+  .frame{ min-height:70vh; }
+}
+@media (max-width:520px){
+  .controls{ gap:5px; }
+  .approval__note{ flex-basis:100%; }
+}
+
+/* ============================================================================
+   REDUCED MOTION — every animation in this file is switched off here.
+   Note the resting states are all written in normal CSS, and no keyframe uses
+   fill-mode `both`/`forwards`, so turning animation off cannot strand an
+   element mid-flight (no zero-width clip, no held translate, no scale(.4)).
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation:none !important;
+    transition-duration:1ms !important;
+    scroll-behavior:auto !important;
+  }
+  /* the sweep never runs, and is kept off-pane */
+  .sweepable::after{ display:none; }
+  /* no lift, but hover still brightens so it stays discoverable */
+  .liftable:hover, .node:hover, .btn:hover, .railaction:hover{ transform:none; }
+  /* the spinner freezes on a single legible braille glyph */
+  .braille__strip{ transform:none; }
+  /* shimmer becomes flat, fully legible ink */
+  .shimmer{
+    background-image:none; -webkit-background-clip:border-box; background-clip:border-box;
+    color:var(--ink-dim);
+  }
+  /* the meter becomes a static, honest indeterminate bar */
+  .meter__scan{ display:none; }
+  .meter__track{ color:var(--accent); }
+  /* the capsule keeps its ring, without the breath */
+  .capsule::before{ opacity:.8; transform:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="ground" aria-hidden="true"></div>
+
+<div class="app">
+
+  <!-- =====================================================================
+       1. THE SESSION RAIL
+       ================================================================== -->
+  <aside class="rail glass glass--rail sweepable liftable" aria-label="Sessions">
+    <div class="rail__head">
+      <div class="workspace">
+        <h1 class="eyebrow">Workspace</h1>
+      </div>
+      <button class="iconbtn" type="button" aria-label="Workspace menu">⌄</button>
+    </div>
+    <div class="workspace" style="padding:0 6px;margin-top:-8px">
+      <span class="workspace__name">sequence</span>
+      <span class="mono" style="font-size:10px;color:var(--ink-mute)">main</span>
+    </div>
+
+    <div class="railactions">
+      <button class="railaction" type="button"><span class="g" aria-hidden="true">☰</span>Sessions</button>
+      <button class="railaction" type="button"><span class="g" aria-hidden="true">⌕</span>Search</button>
+      <button class="railaction" type="button"><span class="g" aria-hidden="true">＋</span>New chat</button>
+    </div>
+
+    <div class="railscroll">
+
+      <section class="group">
+        <div class="group__head">
+          <h2 class="eyebrow">General</h2>
+          <span class="group__rule" aria-hidden="true"></span>
+          <span class="group__count">2</span>
+        </div>
+
+        <!-- the loaded thread -->
+        <button class="thread thread--loaded" type="button" aria-current="true">
+          <span class="thread__dot" aria-hidden="true"></span>
+          <span class="thread__label">An llm, break it down for me</span>
+          <span class="thread__acts">
+            <span class="act" role="button" tabindex="0" aria-label="More">⋯</span>
+            <span class="act act--danger" role="button" tabindex="0" aria-label="Close">×</span>
+          </span>
+          <span class="thread__meta">now</span>
+        </button>
+
+        <!-- the multi-selected thread -->
+        <button class="thread thread--selected" type="button" aria-pressed="true">
+          <span class="thread__check" aria-hidden="true">✓</span>
+          <span class="thread__label">cs-05</span>
+          <span class="thread__acts">
+            <span class="act" role="button" tabindex="0" aria-label="More">⋯</span>
+            <span class="act act--danger" role="button" tabindex="0" aria-label="Close">×</span>
+          </span>
+          <span class="thread__meta">2 sel</span>
+        </button>
+      </section>
+
+      <section class="group">
+        <div class="group__head">
+          <h2 class="eyebrow">Sequence</h2>
+          <span class="group__rule" aria-hidden="true"></span>
+          <span class="group__count">2</span>
+        </div>
+
+        <button class="thread" type="button">
+          <span class="thread__dot" aria-hidden="true"></span>
+          <span class="thread__label">Which files depend on scan.ts</span>
+          <span class="thread__acts">
+            <span class="act" role="button" tabindex="0" aria-label="More">⋯</span>
+            <span class="act act--danger" role="button" tabindex="0" aria-label="Close">×</span>
+          </span>
+          <span class="thread__meta">4h</span>
+        </button>
+
+        <!-- hover state, pinned open so the draft shows the row actions -->
+        <button class="thread thread--hoverpin" type="button">
+          <span class="thread__dot" aria-hidden="true"></span>
+          <span class="thread__label">harness-04</span>
+          <span class="thread__acts">
+            <span class="act" role="button" tabindex="0" aria-label="More">⋯</span>
+            <span class="act act--danger" role="button" tabindex="0" aria-label="Close">×</span>
+          </span>
+        </button>
+        <p class="caption">↑ hover state, pinned open for this draft</p>
+      </section>
+
+    </div>
+
+    <div class="railfoot">
+      <span class="avatar" aria-hidden="true">M</span>
+      <span class="railfoot__who">Local · no key required</span>
+    </div>
+  </aside>
+
+  <!-- =====================================================================
+       THE STAGE
+       ================================================================== -->
+  <div class="stage">
+
+    <!-- 2. THE WORKSPACE TAB BAR -->
+    <header class="tabbar glass sweepable" aria-label="Workspace tabs">
+      <nav class="tabstrip">
+        <button class="tab tab--active" type="button" aria-current="page">
+          <span class="g" aria-hidden="true">◈</span>Chat
+          <span class="tab__x" role="button" tabindex="0" aria-label="Close Chat tab">×</span>
+        </button>
+        <button class="tab" type="button"><span class="g" aria-hidden="true">▤</span>Files</button>
+        <button class="tab tab--split" type="button">
+          <span class="g" aria-hidden="true">◇</span>Architecture
+          <span class="tab__split">split</span>
+        </button>
+        <button class="tab" type="button"><span class="g" aria-hidden="true">✎</span>Whiteboard</button>
+        <button class="tab" type="button"><span class="g" aria-hidden="true">✦</span>AI Canvas</button>
+        <button class="tab" type="button"><span class="g" aria-hidden="true">▹</span>Terminal</button>
+        <button class="tab" type="button"><span class="g" aria-hidden="true">◍</span>Browser</button>
+      </nav>
+      <span class="pill pill--plain">7 tabs</span>
+    </header>
+
+    <!-- 5. ONE FRAME, TWO SURFACES -->
+    <div class="frame glass">
+
+      <!-- ---- left: chat ---- -->
+      <section class="chatcol" aria-label="Chat">
+        <div class="colhead">
+          <span class="colhead__title">An llm, break it down for me</span>
+          <span class="colhead__spacer"></span>
+          <span class="pill pill--run">
+            <span class="braille" aria-hidden="true"><span class="braille__strip"><i>⠋</i><i>⠙</i><i>⠹</i><i>⠸</i><i>⠼</i><i>⠴</i><i>⠦</i><i>⠧</i><i>⠇</i><i>⠏</i></span></span>
+            working
+          </span>
+        </div>
+
+        <div class="transcript">
+
+          <!-- the ask -->
+          <article class="turn">
+            <div class="turn__gutter"><span class="mark mark--you">M</span></div>
+            <div class="turn__body">
+              <div class="bubble bubble--you sweepable liftable">
+                <p style="margin:0">An llm, break it down for me</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- 3a. prose answer: heading + list + a streaming tail -->
+          <article class="turn">
+            <div class="turn__gutter"><span class="mark mark--ai">S</span></div>
+            <div class="turn__body prose">
+              <h3>A next-token predictor in a loop</h3>
+              <p>Everything else — tools, memory, planning, this harness — is scaffolding
+                around one operation repeated a few thousand times a second.</p>
+              <ol>
+                <li><b>Tokenise.</b> Your text becomes ~4-character pieces the model holds embeddings for.</li>
+                <li><b>Attend.</b> Every token weighs every earlier token and decides what matters.</li>
+                <li><b>Predict.</b> The stack emits a probability over the whole vocabulary; sampling picks one.</li>
+                <li><b>Repeat.</b> The chosen token is appended and the loop runs again from the top.</li>
+              </ol>
+              <p class="streaming"><span class="shimmer">Where this gets interesting for <code>sequence</code> is step four, because that same loop is where a tool call comes from — the model emits</span><span class="cursorblock" aria-hidden="true"></span></p>
+            </div>
+          </article>
+
+          <!-- 3b. thinking fold -->
+          <details class="fold glass glass--card sweepable liftable">
+            <summary>
+              <span class="fold__chev" aria-hidden="true">▶</span>
+              Thought for 6s
+              <span class="fold__spacer"></span>
+              <span class="pill pill--plain">4 steps</span>
+            </summary>
+            <div class="fold__body">
+              <p>User wants a mental model, not an API tour. Lead with the loop; everything
+                else hangs off it.</p>
+              <p>Four steps is the right granularity — three hides attention, five drags
+                sampling temperature in and that is a different question.</p>
+              <p>They are in this repo, so land step four on tool calls; that is the bridge
+                from "what is an LLM" to "what is this harness doing".</p>
+              <p>Do not mention parameter counts. Nobody has ever been helped by that number.</p>
+            </div>
+          </details>
+
+          <!-- 3c. tool call — DONE -->
+          <div class="tool glass glass--card sweepable liftable">
+            <div class="tool__head">
+              <span class="tool__glyph tool__glyph--done" aria-hidden="true">✓</span>
+              <span class="tool__name">read_file <span class="tool__arg">src/scan.ts</span></span>
+              <span class="tool__spacer"></span>
+              <span class="pill pill--ok">done</span>
+              <span class="mono" style="font-size:10px;color:var(--ink-mute)">0.4s</span>
+            </div>
+            <div class="tool__body">
+              <div class="tool__out">  1  import { readFileSync } from 'node:fs';
+  2  import { parse } from '../parser/ts.js';
+  3
+  4  export function scan(root: string): ScanResult {
+  5    const files = walk(root, IGNORED);
+  6    return { files, edges: files.flatMap(edgesOf) };</div>
+            </div>
+          </div>
+
+          <!-- 3c. tool call — RUNNING (motion locus 2) -->
+          <div class="tool glass glass--card tool--running sweepable liftable">
+            <div class="tool__head">
+              <span class="tool__glyph tool__glyph--run" aria-hidden="true">
+                <span class="braille"><span class="braille__strip"><i>⠋</i><i>⠙</i><i>⠹</i><i>⠸</i><i>⠼</i><i>⠴</i><i>⠦</i><i>⠧</i><i>⠇</i><i>⠏</i></span></span>
+              </span>
+              <span class="tool__name">search_files <span class="tool__arg">"propose_chart"</span></span>
+              <span class="tool__spacer"></span>
+              <span class="pill pill--run">running</span>
+              <span class="mono" style="font-size:10px;color:var(--ink-mute)">3.1s</span>
+            </div>
+            <div class="tool__body">
+              <!-- The rule is deliberately longer than any column it can land in.
+                   U+2500 is a continuous horizontal line, so the overflow clips
+                   invisibly and the meter always spans edge to edge; a fixed-length
+                   string under-filled wide columns and stopped halfway. The scan
+                   gradient is sized to the BOX (34%), not to the string, so it
+                   stays in view whatever the width. -->
+              <span class="meter" aria-label="searching, progress unknown">
+                <span class="meter__track">────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+                <span class="meter__scan" aria-hidden="true">────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+              </span>
+              <p class="mono" style="margin:7px 0 0;font-size:10.5px;color:var(--ink-mute)">
+                412 files swept · 3 hits so far
+              </p>
+            </div>
+          </div>
+
+          <!-- 3c. tool call — REFUSED -->
+          <div class="tool glass glass--card tool--refused sweepable liftable">
+            <div class="tool__head">
+              <span class="tool__glyph tool__glyph--bad" aria-hidden="true">⊘</span>
+              <span class="tool__name">run_command <span class="tool__arg">pnpm test</span></span>
+              <span class="tool__spacer"></span>
+              <span class="pill pill--bad">refused</span>
+            </div>
+            <div class="tool__body">
+              <div class="refusal">
+                <span aria-hidden="true" style="color:var(--bad)">!</span>
+                <span><code>refused: run_command is not a Work-mode default</code></span>
+                <button class="refusal__fix" type="button">Allow once</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3d. todo list -->
+          <div class="todo glass glass--card sweepable liftable">
+            <div class="todo__head">
+              <span class="todo__title">Plan</span>
+              <span class="todo__bar" aria-hidden="true"><span class="todo__fill"></span></span>
+              <span class="todo__count">1/4 · 1 blocked</span>
+            </div>
+            <ul class="todo__list">
+              <li class="todo__item todo__item--done">
+                <span class="todo__g" aria-hidden="true">✓</span>
+                <span class="todo__text">Read the analyzer</span>
+              </li>
+              <li class="todo__item todo__item--active">
+                <span class="todo__g" aria-hidden="true">▸</span>
+                <span class="todo__text">Wire the board writers</span>
+              </li>
+              <li class="todo__item todo__item--pending">
+                <span class="todo__g" aria-hidden="true">☐</span>
+                <span class="todo__text">Mount the code card</span>
+              </li>
+              <li class="todo__item todo__item--blocked">
+                <span class="todo__g" aria-hidden="true">!</span>
+                <span class="todo__text">Files tab
+                  <span class="todo__why">blocked: needs the pane cap raised</span>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 3e. the subagent capsule — the centrepiece (motion locus 3) -->
+          <div class="capsule sweepable">
+            <div class="capsule__head">
+              <span class="tool__glyph tool__glyph--run" aria-hidden="true">
+                <span class="braille"><span class="braille__strip"><i>⠋</i><i>⠙</i><i>⠹</i><i>⠸</i><i>⠼</i><i>⠴</i><i>⠦</i><i>⠧</i><i>⠇</i><i>⠏</i></span></span>
+              </span>
+              <span class="capsule__name">review:bugs</span>
+              <span class="pill pill--run">running</span>
+              <span class="capsule__spacer"></span>
+              <span class="capsule__clock">1m 12s</span>
+            </div>
+            <div class="capsule__now">
+              <span class="capsule__label">now</span>
+              <span class="capsule__tool" title="read_file packages/web2/src/app/App.tsx">read_file packages/web2/src/app/App.tsx</span>
+            </div>
+            <div class="capsule__foot">
+              <span class="capsule__stat">14 tools</span>
+              <span class="capsule__stat" aria-hidden="true">│</span>
+              <span class="capsule__stat">3 files read</span>
+              <span class="capsule__stat" aria-hidden="true">│</span>
+              <span class="capsule__stat">no findings yet</span>
+              <span class="capsule__spacer"></span>
+              <button class="btn" type="button" style="padding:4px 12px;font-size:11px">Interrupt</button>
+            </div>
+          </div>
+
+          <!-- 3f. edit approval card -->
+          <div class="approval glass glass--card sweepable liftable">
+            <div class="approval__head">
+              <span class="tool__glyph" style="color:var(--warn)" aria-hidden="true">✎</span>
+              <span class="approval__path" title="packages/web2/src/chat/Composer.tsx">packages/web2/src/chat/Composer.tsx</span>
+              <span class="approval__stat stat--add">+12</span>
+              <span class="approval__stat stat--rem">−3</span>
+              <span class="pill pill--warn">needs you</span>
+            </div>
+
+            <div class="diff" tabindex="0" role="region" aria-label="Proposed diff, scrollable">
+              <table>
+                <tbody>
+                  <tr class="hunk"><td class="ln"></td><td class="sg"></td><td class="tx">@@ -41,9 +41,18 @@ export function Composer({ onSend }: Props) {</td></tr>
+                  <tr><td class="ln">41</td><td class="sg"> </td><td class="tx">  const [draft, setDraft] = useState('');</td></tr>
+                  <tr class="rem"><td class="ln">42</td><td class="sg">−</td><td class="tx">  const [locked, setLocked] = useState(false);</td></tr>
+                  <tr class="rem"><td class="ln">43</td><td class="sg">−</td><td class="tx">  const send = () =&gt; onSend(draft, { mode });</td></tr>
+                  <tr class="add"><td class="ln">42</td><td class="sg">+</td><td class="tx">  const [lock, setLock] = useState&lt;Lock&gt;({ held: false, by: null });</td></tr>
+                  <tr class="add"><td class="ln">43</td><td class="sg">+</td><td class="tx"></td></tr>
+                  <tr class="add"><td class="ln">44</td><td class="sg">+</td><td class="tx">  // Drive: while this conversation holds the lock, every tab it opens</td></tr>
+                  <tr class="add"><td class="ln">45</td><td class="sg">+</td><td class="tx">  // is owned by this session and no sibling may steal focus.</td></tr>
+                  <tr class="add"><td class="ln">46</td><td class="sg">+</td><td class="tx">  const send = () =&gt; onSend(draft, { mode, lock: lock.held ? lock : null });</td></tr>
+                  <tr class="add"><td class="ln">47</td><td class="sg">+</td><td class="tx">  useEffect(() =&gt; {</td></tr>
+                  <tr class="add"><td class="ln">48</td><td class="sg">+</td><td class="tx">    if (!lock.held) return;</td></tr>
+                  <tr class="add"><td class="ln">49</td><td class="sg">+</td><td class="tx">    const release = () =&gt; setLock({ held: false, by: null });</td></tr>
+                  <tr class="add"><td class="ln">50</td><td class="sg">+</td><td class="tx">    window.addEventListener('beforeunload', release);</td></tr>
+                  <tr class="add"><td class="ln">51</td><td class="sg">+</td><td class="tx">    return () =&gt; window.removeEventListener('beforeunload', release);</td></tr>
+                  <tr class="add"><td class="ln">52</td><td class="sg">+</td><td class="tx">  }, [lock.held]);</td></tr>
+                  <tr><td class="ln">53</td><td class="sg"> </td><td class="tx"></td></tr>
+                  <tr class="rem"><td class="ln">44</td><td class="sg">−</td><td class="tx">  return &lt;div className="composer"&gt;</td></tr>
+                  <tr class="add"><td class="ln">54</td><td class="sg">+</td><td class="tx">  return &lt;div className="composer" data-lock={lock.held ? 'held' : 'free'}&gt;</td></tr>
+                  <tr><td class="ln">55</td><td class="sg"> </td><td class="tx">    &lt;Field value={draft} onChange={setDraft} /&gt;</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="approval__foot">
+              <span class="approval__note">Grounded in <span class="mono">session-lock.ts</span> — 2 call sites checked.</span>
+              <button class="btn btn--reject" type="button">Reject <kbd>⌘⌫</kbd></button>
+              <button class="btn btn--accept" type="button">Accept <kbd>⌘⏎</kbd></button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 4. THE COMPOSER -->
+        <div class="composer">
+          <div class="field">
+            <textarea class="field__input" rows="2" placeholder="Ask, or describe the change…" aria-label="Message"></textarea>
+            <button class="field__send" type="button" aria-label="Send">↑</button>
+          </div>
+
+          <div class="controls">
+            <button class="control" type="button">
+              <span class="g" aria-hidden="true">◈</span>
+              <span class="control__mono">minicpm5-hermes</span>
+              <span class="g" aria-hidden="true">⌄</span>
+            </button>
+
+            <div class="segment" role="group" aria-label="Mode">
+              <button type="button" aria-pressed="false">Plan</button>
+              <button type="button" aria-pressed="true">Build</button>
+              <button type="button" aria-pressed="false">Teach</button>
+            </div>
+
+            <button class="control drive" type="button" aria-pressed="true">
+              <span class="g" aria-hidden="true">⚿</span>
+              Drive
+              <span class="mono" style="font-size:10px;opacity:.85">session lock</span>
+            </button>
+          </div>
+
+          <div class="crumb">
+            <b>sequence</b>
+            <span class="crumb__sep" aria-hidden="true">·</span>
+            <b>main</b>
+            <span class="crumb__sep" aria-hidden="true">·</span>
+            <span class="crumb__grow">minicpm5-hermes</span>
+            <span class="crumb__spacer"></span>
+            <span>local</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="seam" aria-hidden="true"></div>
+
+      <!-- ---- right: the second surface, sharing the frame ---- -->
+      <section class="sidepane" aria-label="Architecture">
+        <div class="colhead">
+          <span class="colhead__title">Architecture</span>
+          <span class="pill pill--plain">grounded</span>
+          <span class="colhead__spacer"></span>
+          <button class="iconbtn" type="button" aria-label="Unsplit">⊟</button>
+        </div>
+
+        <div class="sidebody">
+          <pre class="ascii">┌─ <b>analyzer</b> ─────────────┐
+│  scan.ts      <i>12 edges</i> │
+│  server.ts     <i>4 edges</i> │
+└──────┬─────────────────┘
+       │ imports
+       ▼
+┌─ <b>schema</b> ───────────────┐
+│  graph.ts      <i>9 edges</i> │
+└──────┬─────────────────┘
+       │ validates
+       ▼
+┌─ <b>web2</b> ─────────────────┐
+│  App.tsx      <i>21 edges</i> │
+└─────────────────────────┘</pre>
+
+          <div class="node">
+            <span class="node__kind" aria-hidden="true">PK</span>
+            <span class="node__name">packages/analyzer</span>
+            <span class="node__n">16</span>
+          </div>
+          <div class="node">
+            <span class="node__kind" aria-hidden="true">PK</span>
+            <span class="node__name">packages/schema</span>
+            <span class="node__n">9</span>
+          </div>
+          <div class="node">
+            <span class="node__kind" aria-hidden="true">PK</span>
+            <span class="node__name">packages/web2</span>
+            <span class="node__n">21</span>
+          </div>
+          <div class="node">
+            <span class="node__kind" aria-hidden="true">PK</span>
+            <span class="node__name">packages/acp</span>
+            <span class="node__n">7</span>
+          </div>
+
+          <div class="evidence">
+            <b>0 guessed edges.</b> Every arrow above traces to an import statement the
+            scanner read. Selection follows the chat on the left.
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="draftlabel"><span class="dot" aria-hidden="true"></span>C · Liquid</div>
+
+</body>
+</html>

@@ -1,0 +1,151 @@
+From 1c80394099da6d4c2ead50aebe830e0013b8cd3f Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 00:59:30 -0400
+Subject: [PATCH 30/37] Repeat guard: retries sample at temperature 0.8, up to
+ two, and a draft still repeating becomes a short 'already covered' turn
+
+The guard's A/B found a retry at temperature 0 returns the same text and was accepted as the
+draft. Now the repeat check runs on every draft, retries are hot, and after two the turn says it
+already covered that instead of resending it. Still behind SEQUENCE_TEACH_REPEAT_GUARD=1.
+---
+ packages/analyzer/src/server/askPipeline.ts   | 47 ++++++++++++++-----
+ .../analyzer/src/test/ask-tool-loop.test.ts   | 33 +++++++++++++
+ 2 files changed, 68 insertions(+), 12 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 7b8f4f1e..2c5ce066 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -3475,6 +3475,10 @@ export function teachOneChange(problems: readonly string[], draft: string, overv
+  */
+ const REPEAT_PROBLEM = 'it repeats your previous answer almost word for word';
+ const REPEAT_THRESHOLD = 0.6;
++const REPEAT_RETRIES = 2;
++const REPEAT_RETRY_TEMPERATURE = 0.8;
++export const REPEAT_FALLBACK =
++  'I already covered that in my last answer. Which part do you want me to go deeper on, or should I explain it a different way?';
+ 
+ function fiveGrams(text: string): Set<string> {
+   const s = text.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+@@ -5000,6 +5004,9 @@ export async function runAskPipeline(
+   let teachBounces = 0;
+   /** The draft the one bounce sent back, so a retry identical to it is not graded again. */
+   let bouncedDraft: string | undefined;
++  /* See repeatsLastAnswer: hot retries spent on a draft that repeats the last answer. */
++  let repeatRetries = 0;
++  let retryHot = false;
+   /** The harness settled on a draft (`settleClose`): the check-in is held when its close already asks the reader. */
+   let settledOnDraft = false;
+   /** The fullest answer the grader sent back only for its shape — see `isShapeOnlyBounce`. */
+@@ -5214,7 +5221,7 @@ export async function runAskPipeline(
+     const roundThought = holdThinking(roundDeltas.onDelta);
+     try {
+       call = await input.callProvider(
+-        workerCfg,
++        retryHot ? { ...workerCfg, params: { ...workerCfg.params, temperature: REPEAT_RETRY_TEMPERATURE } } : workerCfg,
+         prompt,
+         roundThought.onDelta,
+         { cacheBreakpointChars: promptWithTools.length, onReasoning: pushReasoning },
+@@ -5695,8 +5702,7 @@ ${lastToolSectionText}`);
+           /* 2026-09-23: a comprehension question mid-lesson is what the mode
+              wants. r1 was bounced for one and ended on its thinner retry. */
+           .filter((p) => !MID_LESSON_QUESTION_PROBLEM.test(p));
+-        const repeated = bouncedDraft === undefined ? repeatsLastAnswer(text, input.historyLines) : false;
+-        if (repeated) problems.push(REPEAT_PROBLEM);
++        const repeated = repeatsLastAnswer(text, input.historyLines);
+         /*
+          * REPAIR FIRST, BOUNCE ONCE, NEVER END THINNER (2026-09-23; see
+          * `unreadCitations`, `misplacedCitations`, `removeClosingOffer` and
+@@ -5737,7 +5743,27 @@ ${lastToolSectionText}`);
+          * The draft stands with the repairs that cost no call, and the check-in
+          * below is held back when its last paragraph already asks the reader.
+          */
+-        if (bouncedDraft !== undefined && text.trim() === bouncedDraft.trim()) {
++        if (repeated && repeatRetries < REPEAT_RETRIES) {
++          /* A retry at the same temperature returns the same text (repeat-guard A/B,
++             2026-09-24), so the retry samples hot, and it is checked again. */
++          repeatRetries += 1;
++          retryHot = true;
++          rounds++;
++          const bounce =
++            `### harness: your answer is REJECTED — ${REPEAT_PROBLEM}. The learner asked something ` +
++            `new: "${input.question}". Write a NEW answer to that question: do not reuse your ` +
++            'previous sentences, and give information your last answer did not.';
++          evidenceLedger.push({ round: rounds, body: bounce });
++          if (!seenEvidence.has(bounce)) seenEvidence.add(bounce);
++          lastToolSectionText = renderToolResultsSection(
++            selectCarriedEvidence(evidenceLedger, rounds, evidenceLedgerCap),
++          ).join('\n');
++          prompt = withBudgetCheck(`${promptWithTools}\n\n${lastToolSectionText}`);
++          continue;
++        } else if (repeated) {
++          /* Still the same after the hot retries: say so briefly instead of sending it again. */
++          text = REPEAT_FALLBACK;
++        } else if (bouncedDraft !== undefined && text.trim() === bouncedDraft.trim()) {
+           teachRepairNotes.push(...citeNotes);
+           text = settleClose(marked);
+         } else if (
+@@ -5763,14 +5789,11 @@ ${lastToolSectionText}`);
+             bouncedDraft = text;
+             rounds++;
+             const listed = citeNotes.length > 0 ? rest : problems;
+-            const bounce = repeated
+-              ? `### harness (teach contract): your answer is REJECTED — ${REPEAT_PROBLEM}. ` +
+-                `The learner asked something new: "${input.question}". Write a NEW answer to that question: ` +
+-                'do not reuse your previous sentences, and give information your last answer did not.'
+-              : '### harness (teach contract): your lesson turn is REJECTED — ' +
+-                (listed.length > 0 ? listed.join('; ') : 'it is not yet a lesson for the learner') +
+-                '. ' +
+-                teachOneChange(listed, marked, overviewTurn);
++            const bounce =
++              '### harness (teach contract): your lesson turn is REJECTED — ' +
++              (listed.length > 0 ? listed.join('; ') : 'it is not yet a lesson for the learner') +
++              '. ' +
++              teachOneChange(listed, marked, overviewTurn);
+             evidenceLedger.push({ round: rounds, body: bounce });
+             if (!seenEvidence.has(bounce)) seenEvidence.add(bounce);
+             lastToolSectionText = renderToolResultsSection(
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index c9a642c0..e86e6499 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -7612,3 +7612,36 @@ test('askPipeline teach, repeat guard off: the repeated draft goes out as before
+   const result = await repeatTeachTurn(undefined);
+   assert.match(result.text, /hands it to the orders service/);
+ });
++
++test('askPipeline teach, repeat guard: a retry is sampled hot, and a draft still repeating after two retries becomes a short turn', async () => {
++  const repo = shopfrontRepo();
++  const { callProvider } = makeProviderScript([{ text: LAST_ANSWER }, { text: LAST_ANSWER }, { text: LAST_ANSWER }]);
++  const temps: unknown[] = [];
++  const recording = ((c: { params?: { temperature?: unknown } }, ...rest: unknown[]) => {
++    temps.push(c.params?.temperature);
++    return (callProvider as (...a: unknown[]) => unknown)(c, ...rest);
++  }) as typeof callProvider;
++  const base = await makeAttachedInput(repo, recording);
++  const before = process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++  process.env.SEQUENCE_TEACH_REPEAT_GUARD = '1';
++  try {
++    const result = await runAskPipeline(
++      {
++        ...base,
++        question: 'i still dont get it, why does it exist?',
++        teach: true,
++        historyLines: ['User: what is this app?', `Assistant: ${LAST_ANSWER}`],
++      },
++      () => {},
++    );
++    const { REPEAT_FALLBACK } = await import('../server/askPipeline.js');
++    assert.equal(result.text.trim(), REPEAT_FALLBACK);
++    assert.equal(temps.length, 3);
++    assert.notEqual(temps[0], 0.8);
++    assert.equal(temps[1], 0.8);
++    assert.equal(temps[2], 0.8);
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++    else process.env.SEQUENCE_TEACH_REPEAT_GUARD = before;
++  }
++});
+-- 
+2.51.1.windows.1
+

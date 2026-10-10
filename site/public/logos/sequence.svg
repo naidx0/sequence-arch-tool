@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sequence mark — SOURCE OF TRUTH (monochrome)
+  ════════════════════════════════════════════════════════════════
+  Black / white / currentColor only. Never gold on the glyph.
+  Decision 26. Masters live here; site/desktop copies must match.
+
+  Craft: rotational, one ink, central void, edged nodes (rx 2.25).
+  Meaning: ring = graph · nodes = services · void = live canvas · 4-fold.
+
+  Construction (64-unit grid):
+    centre           32, 32
+    ring outer R     22
+    ring inner R     11
+    node             16×16, rx 2.25  (edged — readable at 14–28px nav)
+    node centres     on R=19
+    viewBox          = mark bounds; clear space ≥ 1/8 applied *outside*
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Sequence">
+  <title>Sequence</title>
+  <g fill="currentColor">
+<rect x="11" y="11" width="24" height="6" rx="3"/>
+<rect x="29" y="11" width="6" height="24" rx="3"/>
+<rect x="29" y="29" width="24" height="6" rx="3"/>
+<rect x="47" y="29" width="6" height="24" rx="3"/>
+<rect x="5" y="5" width="18" height="18" rx="3.5"/>
+<rect x="23" y="23" width="18" height="18" rx="3.5"/>
+<rect x="41" y="41" width="18" height="18" rx="3.5"/>
+  </g>
+</svg>

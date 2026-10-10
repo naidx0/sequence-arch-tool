@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" class="lt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sequence — architecture grounded in your code</title>
+    <meta
+      name="description"
+      content="Local-first desktop app. Live architecture canvas. Chat drives it. Every solid edge has a file and a line."
+    />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#ffffff" />
+    <!-- No flash before the stylesheet lands: the page ground is white. -->
+    <style>html.lt{background:#fff;color-scheme:light}</style>
+    <!-- The two Inter cuts above the fold, fetched with the HTML so the swap lands before first paint where it can. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sequence — architecture grounded in your code" />
+    <meta
+      property="og:description"
+      content="Local-first desktop app. Live architecture canvas. Chat drives it. Every solid edge has a file and a line."
+    />
+    <meta property="og:url" content="https://trysequence.app/" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

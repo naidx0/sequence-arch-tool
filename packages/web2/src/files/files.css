@@ -1,0 +1,1678 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE FILES PANEL — the tree, the source, the diff, the field
+   packages/web2/src/files/files.css                                 item 2.1
+
+   EVERY SELECTOR IS SCOPED UNDER .files-scope, WITHOUT EXCEPTION. R7's audit of
+   v1 found roughly fifty unscoped selectors — "essentially the whole
+   .arch-rf-* family" — and the legibility gate exists because ONE stray
+   `.board-chat-input button` rule crushed a whole menu while every other check
+   in the repository stayed green. A pane that can only paint inside its own
+   root cannot do that to anybody else.
+
+   NO HEX, NO px FONT-SIZE, NO RAW font-weight, NO RAW RUNG HEIGHT.
+   tokens/graphite.css is the one file allowed to declare a colour, a size, a
+   weight or a rung, and test/firewall.test.ts fails the build over any of the
+   four. Everything below is a var(), and every var() below is a token that
+   exists — the firewall checks that too, and it had to: a reach for a 14-step
+   on the space ramp, which runs 2 4 6 8 10 12 16 and has no 14, once resolved
+   to nothing, sized a caret to zero, and passed every gate in the repository.
+   (The bad name is described rather than written out, because this rule reads
+   comments as well as declarations — as it must, since a token name written
+   down anywhere is a name waiting to be pasted.)
+
+   ── THE HUE LEDGER FOR THIS WHOLE SHEET ──────────────────────────────────
+   Three tokens, and each one is a claim about the world:
+
+     --diff-add-bg / --diff-del-bg      the book's THIRD disjoint colour
+       channel. A background WASH and an inset gutter, never a foreground —
+       the token sheet's own words, "so a removed line can never be misread as
+       'won't fit'".
+     --fits / --wont                    the diff's arithmetic, `+340 −118`, and
+       nothing else on this surface. That IS a claim about what happened, which
+       is what law 1 lets a hue pay for. review.css reached the same conclusion
+       for the same two numbers; this is the reuse, not a second argument.
+     --accent                           the focus ring, which is the substrate's
+       and is not this sheet's to choose.
+
+   AND THE THINGS THAT DELIBERATELY GET NO HUE: selection ("selection is where
+   the keyboard is, and is neutral" — sheet 11.4), a changed file (a fact, not a
+   verdict — it takes a LETTER), a disabled action (a colour change, never an
+   opacity one, following the convention whiteboard.css records).
+
+   ── NO GLASS ON A ROW, AND THAT IS DECISION 14 VERBATIM ──────────────────
+   "`backdrop-filter` costs a compositing layer per box. Glass goes on the
+   chrome's fixed, small set of controls — never a list item, never a transcript
+   row." This tree mounts up to three hundred rows. Nothing here declares
+   `backdrop-filter`, and `.files-row` is deliberately absent from Decision 16's
+   frosted-selection selector list in tokens/graphite.css.
+
+   ── COMPACT IS THE ONLY DENSITY (law 3) ──────────────────────────────────
+   Tree rows on --row-h-tool, diff lines on --diffx-line-h, controls on
+   --control-h, type at --t-10 / --t-11 / --t-12. "Airy is a defect."
+
+   THE ROWS WERE ON --row-h UNTIL 2026-09-19, which is this sheet breaking its
+   own law three lines after stating it. Owner, walking the built app: "for the
+   files, have it just condensed a little bit smaller, because right now the
+   files opens up the file directory very large."
+
+   --row-h is 30px and sheet 10 assigns it to a folder, a rail item, a menu
+   item - CHROME, a fixed small set of things. --row-h-tool is 26px and the
+   sheet's own reason for it is that "a tool call is 26px because it is a
+   footnote". A file tree is the densest list in this product: it mounts up to
+   three hundred rows and a reader SCANS it rather than reading it. Measured on
+   this repository, 56 top-level rows at 30px against 26px is 224px - about a
+   third of the pane's height, given back without losing a row.
+
+   ── WHERE THIS FILE IS IMPORTED: NOWHERE YET, AND THAT IS THE HANDBACK ────
+   `app/App.tsx` owns one ordered style block and argues the position of every
+   sheet in it — "a sheet whose position cannot be argued does not go in". This
+   lane may not edit that file. This sheet belongs BESIDE rail.css and BEFORE
+   review.css: it is a surface inside the frame, like the rail, and the review
+   overlay must still win over it. The line is
+
+       import '../files/files.css';
+
+   directly after the rail.css line. Until it is added the panel renders
+   unstyled in the app and fully styled under test, which imports it directly.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the frame ───────────────────────────────────────────────────────────
+   `min-height: 0` and `min-width: 0` on every flex and grid child that holds a
+   scroller. Without them `overflow: auto` never scrolls: the child grows to its
+   content instead, the whole column scrolls with the page, and the box the
+   reader is looking at silently extends past the window. That is the exact
+   defect the legibility gate exists to catch, and it is one missing line. */
+/* ── THREE TRACKS: THE TREE, ITS GRAB STRIP, AND THE FILE ────────────────
+   The tree was `minmax(0, var(--rail-w))` — 280 from the token ladder,
+   identical on a 1400px window and inside a 240px pane. Owner, 2026-09-21:
+   "this should all be draggable the same way all the other rails are ... right
+   now it's stuck, it's fixed."
+
+   `--files-tree-w` is written on the element by `FilesPanel` and is the
+   reader's own number once they have dragged it; the token is the default the
+   component starts from. `minmax(0, …)` so the track can still be squeezed by
+   a narrow pane rather than forcing the panel to overflow. */
+/* ── THE PANEL'S OWN CONTAINER ────────────────────────────────────────────
+   Everything below that used to ask the VIEWPORT now asks this. The panel
+   lives in a live pane whose width the reader sets; on a 1280 screen with
+   three panes open that pane is 200px, and a viewport query saw 1280 and kept
+   two columns in it. */
+.files-container {
+  container: files-pane / inline-size;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.files-scope {
+  display: grid;
+  /* DECLARED HERE, overwritten inline by `FilesPanel` once the reader has
+     dragged it. Putting the default in a fallback argument at the use site
+     instead would hide it from anyone reading this rule — and from the token
+     gate, which reads sheets and cannot see a property only ever set from
+     JavaScript. (Named in words rather than written out: the gate scans raw
+     text, comments included, so an example of the construct IS the construct.
+     Third time today.) */
+  --files-tree-w: var(--rail-w);
+  /* A drawn diagram's intrinsic width in px, stamped on its svg by FilePreview;
+     300 until it is. */
+  --dgm-w: 300;
+  /* The compressed tree: four list rungs wide (sheet 10's --row-h), which
+     holds a short name and its triangle and nothing it does not need. */
+  --files-tree-rail: calc(var(--row-h) * 4);
+  /* Round 7: with a file open the tree keeps ~30 % of the card, 180 to 320 px
+     (it was the 120 px rail, and names were cut at the edge). */
+  --files-tree-open: clamp(calc(var(--row-h) * 6), 30%, calc(var(--sp-32) * 10));
+  grid-template-columns: minmax(0, min(var(--files-tree-w), calc(100% - var(--sp-56) * 4))) auto minmax(0, 1fr);
+  /* THE HEIGHT CHAIN (audit R8): one row exactly as tall as the pane. An
+     implicit `auto` row grows to its tallest child, so an expanded tree used to
+     make the whole panel 2.5k px tall and push the header off the top of
+     `.v3-files-wrap`. `minmax(0, 1fr)` pins the row; `.files-side` and
+     `.files-main` then clip to it and the tree and the body are the scrollers. */
+  grid-template-rows: minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  /* Glass: the pane's own ground shows through; the panel paints no slab of its own (owner, 2026-10-09). */
+  background-color: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+}
+
+/* ══ WHEN THE PANE IS NARROW, THE TREE COMPRESSES — IT DOES NOT STACK ════
+   Owner, 2026-09-21: "I don't like how we made files be on top of each other
+   natively. It should minimize the file side row natively instead of stacking
+   it on top of each other ... it's just compress the sidebar."
+
+   He is reversing a change from a few hours earlier, and he is right to. The
+   stack was chosen to stop the tree and the file fighting inside a 200px pane,
+   and it solved that by making the file a SHORT BOX under a SHORT TREE — two
+   cramped things where there had been one. A file you are reading wants
+   height, and height is the one thing a stack takes away.
+
+   So below the threshold the tree becomes a RAIL: narrow enough to leave the
+   file the room, wide enough to still show a name. The columns stay columns,
+   which is also what keeps the reader's model of this panel the same at every
+   width.
+
+   `--files-tree-rail` is `--row-h * 4` — wide enough for a short filename and
+   the disclosure triangle, narrow enough that the file beside it is the thing
+   being read. It is not draggable at this size, because the seam would land on
+   the pane's own splitter; the header toggle is the control here. */
+@container files-pane (max-width: 420px) {
+  .files-scope {
+    grid-template-columns: minmax(0, var(--files-tree-rail)) auto minmax(0, 1fr);
+  }
+
+  /* THE GRAB STRIP STAYS (owner, 2026-09-22: "you should be able as well to
+     drag the files bar to see names"). It was hidden here for a collision with
+     the pane's splitter; at the rail's width it sits a rail's width inside the
+     pane, clear of that splitter. Hiding it also moved the file view into the
+     wrong grid track — measured: columns `120px 180px 0px`, the file in the
+     `auto` slot and the 1fr track empty. */
+  .files-scope.is-tree-wide {
+    grid-template-columns: minmax(0, min(var(--files-tree-w), calc(100% - var(--sp-56) * 4))) auto minmax(0, 1fr);
+  }
+
+  /* The filter field's placeholder does not fit a rail; the glyph does, and it
+     is the same control. */
+  .files-scope .files-field {
+    padding-left: var(--sp-4);
+  }
+}
+
+/* ── AND OPENING A FILE COMPRESSES IT, WHATEVER THE WIDTH ────────────────
+   "If there's a file open, it should obviously, like, say, choose a file from
+   the side — or the second you choose one, compress the sidebar, let people
+   read it."
+
+   The same rail, asked for by the STATE rather than by the width: the moment
+   there is a file to read, the tree stops being the subject. It is one click
+   back — the header toggle re-opens it — and the reader's own drag, once they
+   make one, wins over both (see `is-tree-wide`). */
+.files-scope.is-tree-rail {
+  grid-template-columns: minmax(0, var(--files-tree-open)) auto minmax(0, 1fr);
+}
+/* A mid pane (441 to 560 px, e.g. 1440 with Architecture beside): the tree is a
+   compact 150 px column and the file keeps the rest (>= 290). */
+@container files-pane (max-width: 560px) {
+  .files-scope.is-tree-rail {
+    grid-template-columns: minmax(0, 176px) auto minmax(0, 1fr);
+  }
+}
+/* In a narrow pane the open tree is the rail again. The 180 px floor of
+   --files-tree-open is more than 30 % of a pane this size, and it won over the
+   narrow rule above (later and more specific): in a 1024 window with two
+   surfaces the Files pane is about 270 px and the preview was left 61 px
+   (round 8 integration, measured in the built app). */
+@container files-pane (max-width: 420px) {
+  .files-scope.is-tree-rail {
+    grid-template-columns: minmax(0, var(--files-tree-rail)) auto minmax(0, 1fr);
+  }
+}
+
+/* The field never scrolls away: a filter you have to scroll back up to reach is
+   a filter nobody uses twice. */
+/* The tree column: a flex column that is exactly the row's height, so the
+   header strip above the tree stays put and `.files-tree` (below) scrolls. */
+.files-scope .files-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.files-scope .files-top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-8);
+}
+
+.files-scope .files-fieldwrap {
+  position: relative;
+  display: block;
+}
+
+/* The glyph sits in the same 14px slot the rows use, so the search mark lands
+   on the panel's one vertical alignment rather than beside it. */
+.files-scope .files-fieldicon {
+  position: absolute;
+  left: var(--sp-8);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  pointer-events: none;
+  display: flex;
+}
+
+.files-scope .files-field {
+  width: 100%;
+  /* The compact field rung, written off the space ramp rather than as a literal
+     so it moves when the ramp does. */
+  height: var(--sp-24);
+  box-sizing: border-box;
+  padding: 0 var(--sp-8) 0 var(--sp-32);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background-color: var(--state-hover);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  appearance: none;
+}
+.files-scope .files-field::placeholder { color: var(--ink-3); }
+.files-scope .files-field::-webkit-search-cancel-button { display: none; }
+
+.files-scope .files-matches {
+  margin: 0;
+  min-height: var(--lh-10);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-scope .files-treewrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── the tree ─────────────────────────────────────────────────────────────
+   The ONE scroller in this column. Both axes: a deeply indented path is wider
+   than the rail, and a tree that reflowed its rows to fit would put the
+   filename under the folder it belongs to. */
+.files-scope .files-tree {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-4);
+}
+
+/* The double ring — the page colour, then the accent — never removed. It is the
+   substrate's focus treatment and the only place this sheet spends --accent. */
+.files-scope .files-tree:focus-visible,
+.files-scope .files-field:focus-visible,
+.files-scope .files-btn:focus-visible,
+.files-scope .files-mode:focus-visible,
+.files-scope .files-editor:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ONE ROW FOR EVERY RAIL (round 8, Jaden: "file rail and the session rails...
+   should realistically be matching"). A file row is the shell's rail row
+   (shell2/RailRow.tsx, shell2.css "ONE RAIL ROW"): its height, inset, indent
+   per level, chevron and icon slots, type, hover and selected fills all come
+   from there, and nothing here restates them. What stays here is the tree's
+   own: the name's truncation and the change mark. */
+.files-scope .files-row {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* NAMES IN FULL, AND THE TREE SCROLLS SIDEWAYS (owner, 2026-09-22: "you
+   should be able to scroll side to side to read the file names"). Each name
+   used to ellipsize to its row, so a narrow rail showed "resear…" and the
+   tree's horizontal scroll had nothing to scroll to. A row is now as wide as
+   its name, at least the column's width, and the selection wash spans it. */
+/* Round 7 (coordinator, from Jaden's walkthrough shots: "docker-comp",
+   "ground-trut" cut at the edge): a row is the column's width and a long name
+   gives way IN THE MIDDLE, keeping its extension; the full path is the row's
+   title. Nothing is clipped sideways, and the tree no longer scrolls sideways
+   to read one. */
+.files-scope .files-tree .files-row {
+  width: auto;
+  min-width: 0;
+}
+.files-scope .files-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.files-scope .files-name.files-name-mid {
+  display: flex;
+  /* The name's box is the room the row leaves it, whatever the text, so FitName
+     can measure against it and re-fit when it changes. */
+  flex: 1 1 0;
+}
+.files-scope .files-name-head {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.files-scope .files-name-end {
+  flex: none;
+  white-space: nowrap;
+}
+
+/*
+  A COLLAPSED CHAIN TRUNCATES AT THE FRONT, because the identity of
+  `packages/web2/src/files` is its tail. `direction: rtl` is the only way CSS
+  puts the ellipsis on the left without measuring the string in JavaScript, and
+  the inner <bdi> keeps the path's own characters running left to right inside
+  that RTL line box.
+
+  `display: block` IS THE WHOLE FIX AND IT COST A SCREENSHOT TO FIND ONE LANE
+  OVER: text-align has no effect on a flex container, so under `direction: rtl`
+  every SHORT path packs against the right edge and the list renders as a ragged
+  right column. Every unit assertion passed; only the render showed it.
+*/
+.files-scope .files-name-tail {
+  direction: rtl;
+  text-align: left;
+}
+
+/* THE CHANGE MARK IS A LETTER, AND THE ROW NOW WEARS THE STATUS COLOUR (owner,
+   2026-10-09: "yellow as in progress, red as files with issues, regular VS
+   Code style information"). This replaces the older "no hue" ruling for the
+   tree and the header only; the diff keeps --fits / --wont for its own
+   arithmetic and nothing here adds a hue: amber is --spills, green --fits, red
+   --wont. The letter and the word stay, so the state survives greyscale.
+
+     progress  amber, pulsing (an agent is editing it, or unsaved edits)
+     modified  amber            added / untracked  green
+     conflict  red              deleted            muted, struck through
+   The NAME and the LETTER take the colour; a folder's dot takes the strongest
+   tone beneath it. */
+.files-scope .files-mark {
+  flex: 0 0 auto;
+  min-width: var(--sp-10);
+  text-align: center;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* A directory says only THAT something under it changed, in the strongest
+   colour beneath it: no letter could stand for seven files' statuses. */
+.files-scope .files-mark-dot {
+  width: var(--dot);
+  height: var(--dot);
+  min-width: var(--dot);
+  border-radius: var(--r-full);
+  background-color: var(--ink-4);
+}
+
+.files-scope .files-crumb-leaf.files-tone-modified,
+.files-scope .files-crumb-leaf.files-tone-progress,
+.files-scope .files-hd-status.files-tone-modified,
+.files-scope .files-hd-status.files-tone-progress,
+.files-scope .files-row-file.files-tone-modified .files-name,
+.files-scope .files-row-file.files-tone-modified .files-mark,
+.files-scope .files-row-file.files-tone-progress .files-name,
+.files-scope .files-row-file.files-tone-progress .files-mark { color: var(--spills); }
+.files-scope .files-crumb-leaf.files-tone-added,
+.files-scope .files-hd-status.files-tone-added,
+.files-scope .files-row-file.files-tone-added .files-name,
+.files-scope .files-row-file.files-tone-added .files-mark { color: var(--fits); }
+.files-scope .files-crumb-leaf.files-tone-conflict,
+.files-scope .files-hd-status.files-tone-conflict,
+.files-scope .files-row-file.files-tone-conflict .files-name,
+.files-scope .files-row-file.files-tone-conflict .files-mark { color: var(--wont); }
+.files-scope .files-crumb-leaf.files-tone-deleted,
+.files-scope .files-hd-status.files-tone-deleted,
+.files-scope .files-row-file.files-tone-deleted .files-name,
+.files-scope .files-row-file.files-tone-deleted .files-mark { color: var(--ink-3); }
+.files-scope .files-row-file.files-tone-deleted .files-name,
+.files-scope .files-crumb-leaf.files-tone-deleted { text-decoration: line-through; }
+
+.files-scope .files-row.files-tone-modified .files-mark-dot,
+.files-scope .files-row.files-tone-progress .files-mark-dot { background-color: var(--spills); }
+.files-scope .files-row.files-tone-added .files-mark-dot { background-color: var(--fits); }
+.files-scope .files-row.files-tone-conflict .files-mark-dot { background-color: var(--wont); }
+.files-scope .files-row.files-tone-deleted .files-mark-dot { background-color: var(--ink-3); }
+
+/* In progress: a slow, subtle pulse on the row's letter and dot and on the
+   header's status word. The names themselves do not animate. */
+@keyframes files-progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.files-scope .files-row-file.files-tone-progress .files-mark,
+.files-scope .files-row.files-tone-progress .files-mark-dot,
+.files-scope .files-hd-status.files-tone-progress {
+  animation: files-progress-pulse 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .files-scope .files-row-file.files-tone-progress .files-mark,
+  .files-scope .files-row.files-tone-progress .files-mark-dot,
+  .files-scope .files-hd-status.files-tone-progress { animation: none; }
+}
+
+/* ── the right column ────────────────────────────────────────────────────── */
+
+/* ── THE GRAB STRIP ───────────────────────────────────────────────────────
+   A hairline drawn, a real target to hit. The same trade the shell's splitters
+   make and for the same reason: the SEAM should be invisible and the TARGET
+   must clear WCAG 2.2 AA 2.5.8's 24px floor, so `::before` stretches past the
+   1px element on both sides. 1 + 12 + 12 = 25.
+
+   `col-resize` and `touch-action: none` so a drag is a drag and not a scroll.
+   Double-click shuts the tree, which is the convention every editor with a
+   sidebar already taught the reader. */
+.files-scope .files-resizer {
+  position: relative;
+  /* A real strip, not a hairline (owner: the little rail was hard to grab). */
+  width: var(--sp-8);
+  cursor: col-resize;
+  touch-action: none;
+  background: transparent;
+  z-index: 1;
+}
+
+.files-scope .files-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -8px;
+}
+
+/* THE GRIP: always drawn, so the seam reads as something to take hold of. */
+.files-scope .files-resizer::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--sp-2);
+  height: var(--sp-32);
+  transform: translate(-50%, -50%);
+  border-radius: var(--r-full);
+  background: var(--ink-4);
+}
+
+.files-scope .files-resizer:hover,
+.files-scope .files-resizer:focus-visible,
+.files-scope .files-resizer.is-dragging {
+  background: var(--accent-wash);
+}
+.files-scope .files-resizer:hover::after,
+.files-scope .files-resizer:focus-visible::after,
+.files-scope .files-resizer.is-dragging::after {
+  background: var(--accent);
+}
+
+/* ── SHUT ─────────────────────────────────────────────────────────────────
+   The track goes to zero and the column is taken out of the tab order and the
+   accessibility tree by `aria-hidden` on the element itself — a shut panel
+   whose rows a screen reader still walks is not shut, it is invisible.
+
+   THE GRAB STRIP STAYS. Dragging it is the other way back, and a control that
+   removes its own handle leaves only the header button, which the reader has
+   to find. */
+.files-scope.is-tree-shut {
+  grid-template-columns: 0 auto minmax(0, 1fr);
+}
+
+.files-scope.is-tree-shut .files-side {
+  overflow: hidden;
+  visibility: hidden;
+}
+
+/* The toggle sits with the file's own controls, at the head of the row. A
+   square on the control rung (28px), so the hit area clears the 24px floor and
+   its glyph is centred rather than floating in a 10px-padded pill. */
+.files-scope .files-treetoggle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  padding: 0;
+  margin-right: var(--sp-4);
+}
+
+.files-scope .files-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.files-scope .files-hd {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  /* ONE LINE, AT EVERY WIDTH (owner, 2026-10-09). It used to wrap; now the
+     breadcrumb is the part that gives (elides at the front) and the mode control
+     folds to icons by the pane's own width, so nothing needs a second row. */
+  flex-wrap: nowrap;
+  gap: var(--sp-6);
+  min-height: var(--diffx-file-hd-h);
+  padding: var(--sp-4) var(--sp-8);
+  /* No band, no rule: the header floats on the pane's glass. */
+  border: 0;
+  background: transparent;
+}
+
+/* ══ THE FILE ICONS HAD NO SIZE AT ALL ═══════════════════════════════════
+   Owner, 2026-09-22, with a screenshot of the Files rail: black blocks where
+   the folder glyphs should be, each one swallowing the name beside it.
+
+   `FilesIcon` emits `files-i files-i-${size}` for a size of 12, 14 or 16 and
+   NOTHING IN ANY SHEET ANSWERED THOSE CLASSES. An `<svg>` with a viewBox and
+   no width, no height and no rule has no intrinsic size a flex row can agree
+   on, so each icon took whatever its container happened to give it. Measured
+   in the running app, three instances of the same component in one panel:
+
+     .files-i-12   12 x 12     (a tight slot, correct by luck)
+     .files-i-14   48 x 48     (a loose slot — the black blocks)
+     .files-i-14    0 x 0      (a slot with nothing spare — invisible)
+
+   The same class, three sizes, none of them declared. That is the
+   `fe6f644e` shape once more: markup naming a class the stylesheet does not
+   answer.
+
+   `flex: 0 0 auto` matters as much as the pixels — without it a row that runs
+   out of width solves the problem by crushing the icon to nothing, which is
+   the 0 x 0 above. An icon is a fixed part of the row; the NAME is the part
+   that gives. */
+.files-scope .files-i {
+  flex: 0 0 auto;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--w-flow);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.files-scope .files-i-12 { width: 12px; height: 12px; }
+.files-scope .files-i-14 { width: 14px; height: 14px; }
+.files-scope .files-i-16 { width: 16px; height: 16px; }
+
+/* THE BREADCRUMB: repo / dirs / file, one line, ellipsis at the FRONT (rtl with an
+   inner <bdi>, rail.css's recipe), so the file's own name is the last thing to go. */
+.files-scope .files-hd-path {
+  flex: 1 1 0;
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.files-scope .files-crumb { font-variant-ligatures: none; user-select: text; }
+.files-scope .files-crumb-dir { color: var(--ink-3); }
+.files-scope .files-crumb-sep { color: var(--ink-4); padding: 0 var(--sp-2); }
+.files-scope .files-crumb-leaf {
+  color: var(--ink-1);
+  font-weight: var(--fw-head);
+}
+
+/* The branch: a quiet chip at the end of the row. */
+.files-scope .files-hd-branch {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--state-hover);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-12);
+}
+
+.files-scope .files-hd-status {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── the segmented view control ──────────────────────────────────────────── */
+
+.files-scope .files-modes {
+  flex: 0 0 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  /* No track, no border: the three options float on the glass. */
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.files-scope .files-mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  height: var(--row-h);
+  min-width: var(--row-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  transition: background-color var(--dur-1, 120ms) var(--ease, ease), color var(--dur-1, 120ms) var(--ease, ease), transform var(--dur-1, 120ms) var(--ease, ease);
+}
+.files-scope .files-mode:hover { background-color: var(--state-hover); color: var(--ink-1); }
+.files-scope .files-mode:active { transform: scale(0.96); }
+
+/* Chosen mode: a quiet wash, not a slab. */
+.files-scope .files-mode[aria-pressed='true'] {
+  background-color: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* PANE-WIDTH FOLDING (the pane's own container, not the window). Below 560 the
+   mode control drops its words and keeps its icons (each has a tooltip and an
+   aria-label); the status word goes below 420. Nothing wraps. */
+@container files-pane (max-width: 560px) {
+  .files-scope .files-mode { padding: 0; }
+  .files-scope .files-mode-word { display: none; }
+  /* The branch chip gives its room to the breadcrumb in a mid pane. */
+  .files-scope .files-hd-branch { display: none; }
+}
+@container files-pane (max-width: 420px) {
+  .files-scope .files-hd-status { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .files-scope .files-mode,
+  .files-scope .files-btn { transition: none; }
+  .files-scope .files-mode:active,
+  .files-scope .files-btn:active { transform: none; }
+}
+
+/* Disabled is a COLOUR change and not an opacity one — whiteboard.css records
+   the convention, and the reason is that an opacity fade dims the label along
+   with the affordance and makes "cannot press this" read as "press this, it is
+   just quiet". */
+.files-scope .files-mode:disabled,
+.files-scope .files-btn:disabled {
+  color: var(--ink-4);
+  cursor: default;
+  background-color: transparent;
+}
+
+/* ── the action row ──────────────────────────────────────────────────────── */
+
+.files-scope .files-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-6) var(--sp-8);
+}
+
+.files-scope .files-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-radius: var(--r-8);
+  background-color: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  transition: background-color var(--dur-1, 120ms) var(--ease, ease), color var(--dur-1, 120ms) var(--ease, ease), transform var(--dur-1, 120ms) var(--ease, ease);
+}
+.files-scope .files-btn:hover:not(:disabled) {
+  background-color: var(--state-hover);
+  color: var(--ink-1);
+}
+.files-scope .files-btn:active:not(:disabled) { transform: scale(0.96); }
+
+/* ── the body, which is the second and last scroller ─────────────────────── */
+
+.files-scope .files-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: var(--sp-8);
+}
+
+.files-scope .files-note {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-4);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  max-width: var(--col-max);
+}
+.files-scope .files-note-fail { color: var(--wont); }
+/* Quiet, but read: ink-2 (ink-4 was too faint in dark). */
+.files-scope .files-note-quiet { color: var(--ink-2); }
+/* The unattached line sits on the header's text edge (the header pads 8px). */
+.files-scope .files-note-line {
+  padding-left: var(--sp-8);
+  padding-right: var(--sp-8);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+.files-scope .files-retry {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-1);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.files-scope .files-retry:focus-visible {
+  outline: var(--w-hair) solid var(--ink-2);
+  outline-offset: 2px;
+}
+
+/* ── the source listing ──────────────────────────────────────────────────── */
+
+/* ── CODE AND DIFF READ AT 13, NOT 11 (owner, 2026-09-21) ────────────────
+   "diff shows really bad and really blurry ... code also is hard to read."
+
+   Both listings were `--t-11` under `--diffx-line-h`, which is `--lh-13` — an
+   18px line box built for 13px type. So the size and the leading disagreed:
+   small glyphs adrift in a tall row, which reads as both cramped and loose at
+   once and is the worst of the two. Eleven pixels of monospace is also below
+   what this ladder uses for prose anywhere, and code is the one thing in the
+   product a reader looks at character by character.
+
+   `--t-13` is what the line height already assumed. Nothing else moves: the
+   gutter, the number column and the row height are unchanged, because they
+   were sized against that same 18px box. */
+
+
+.files-scope .files-code { min-width: 0; }
+
+.files-scope .files-code-pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-13);
+  line-height: var(--diffx-line-h);
+  font-variant-numeric: var(--num);
+  /*
+    A LONG LINE SCROLLS HERE AND NOWHERE ELSE. Without this the widest line in
+    the file sets the width of the pane, and on a monorepo that means one
+    minified import pushes the tree and the rest of the shell sideways.
+
+    THE SCROLLBAR ITSELF IS DELIBERATELY NOT STYLED. styles/base.css already
+    declares ::-webkit-scrollbar for the whole app, and a second declaration
+    here would be a second specification of one control — the exact defect that
+    cost this project a repair cycle when twelve agents produced three
+    specifications of one thing.
+  */
+  overflow-x: auto;
+}
+
+.files-scope .files-code-line {
+  display: grid;
+  grid-template-columns: var(--diffx-num-w) 1fr;
+  gap: var(--sp-8);
+  min-height: var(--diffx-line-h);
+  white-space: pre;
+}
+
+/* ── the diff ────────────────────────────────────────────────────────────── */
+
+.files-scope .files-diff {
+  font-family: var(--font-mono);
+  font-size: var(--t-13);
+  line-height: var(--diffx-line-h);
+  font-variant-numeric: var(--num);
+  overflow-x: auto;
+}
+
+.files-scope .files-diff-sum {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--nest-hd-h);
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* THE DIFF'S OWN ARITHMETIC, AND THE ONLY VERDICT HUES ON THIS SHEET. A count
+   of what was added and removed is a claim about what happened, which is
+   exactly what law 1 lets a hue pay for. review.css spends the same two tokens
+   on the same two numbers. */
+.files-scope .files-stat-add { color: var(--fits); font-weight: var(--fw-label); }
+.files-scope .files-stat-del { color: var(--wont); font-weight: var(--fw-label); }
+
+.files-scope .files-diff-file {
+  margin-top: var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  overflow: hidden;
+  background-color: var(--surface-1);
+}
+
+.files-scope .files-diff-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--diffx-file-hd-h);
+  padding: 0 var(--sp-8);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background-color: var(--surface-2);
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+.files-scope .files-diff-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.files-scope .files-diff-from {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+.files-scope .files-hunk-hd {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: center;
+  padding: var(--sp-2) var(--sp-8);
+  background-color: var(--diffx-hunk-bg);
+  color: var(--diffx-hunk-ink);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  border-top: var(--w-hair) solid var(--edge-faint);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.files-scope .files-hunk-sect {
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-scope .files-line {
+  display: grid;
+  grid-template-columns: var(--diffx-num-w) var(--diffx-num-w) var(--diffx-sign-w) 1fr;
+  align-items: baseline;
+  min-height: var(--diffx-line-h);
+  white-space: pre;
+}
+
+/* THE WASH IS THE BACKGROUND AND THE GUTTER IS THE BRIGHTER EDGE. The book's
+   diff channel is "background wash only, never foreground": the text of an
+   added line is the same ink as the text of a context line, because a line
+   being added is not a claim that the line is good. The 2px inset edge carries
+   the signal at a glance without spending saturation on eighty characters of
+   code. */
+.files-scope .files-line-add {
+  background-color: var(--diff-add-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-add-gutter);
+}
+.files-scope .files-line-del {
+  background-color: var(--diff-del-bg);
+  box-shadow: inset var(--diffx-gutter-w) 0 0 var(--diff-del-gutter);
+}
+
+/* MUTED IS --ink-3 AND NOT --ink-4, AND THAT IS A MEASUREMENT RATHER THAN A
+   PREFERENCE. review.css records the reading: --ink-4 measured 2.05:1 against
+   the add wash, below every legibility floor there is, on the one column that
+   says which line changed. --ink-4 is the ramp's DISABLED step; --ink-3 is its
+   quiet step and measures 5.5:1. Nothing about that was visible to a jsdom
+   assertion — both are valid token names. */
+.files-scope .files-num {
+  color: var(--ink-3);
+  text-align: right;
+  padding-right: var(--sp-6);
+  user-select: none;
+}
+
+/* THE SIGN TAKES THE GUTTER HUE ITSELF. The --diffx-*-strong pair is INTRALINE
+   emphasis — a 46%-alpha fill behind a run of characters — and used as a
+   foreground on one glyph it measured 1.19:1 one lane over: the + and the −
+   were, in practice, not on the screen. A glyph carrying the whole meaning of
+   its row gets the solid token. */
+.files-scope .files-sign {
+  color: var(--ink-3);
+  text-align: center;
+  user-select: none;
+}
+.files-scope .files-line-add .files-sign { color: var(--diff-add-gutter); }
+.files-scope .files-line-del .files-sign { color: var(--diff-del-gutter); }
+
+.files-scope .files-code-text { color: var(--ink-1); }
+
+/* RESTRAINED SYNTAX HIGHLIGHTING, AND THE HUE BUDGET IS ZERO. Which token is a
+   keyword is a claim about GRAMMAR, and spending five hues on it — on the one
+   surface whose two real hues are the add and remove washes — would stop the
+   diff's own arithmetic being the loudest thing present. The separation is the
+   ink ramp and the weight ladder, which is what the book already spends on
+   hierarchy everywhere else. `review/syntax.ts` asserts there are four classes
+   and only four; these are those four. */
+.files-scope .files-t-kw { color: var(--ink-1); font-weight: var(--fw-solid); }
+.files-scope .files-t-str { color: var(--ink-2); }
+.files-scope .files-t-num { color: var(--ink-2); }
+.files-scope .files-t-com { color: var(--ink-4); font-style: italic; }
+
+.files-scope .files-diff-tail {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  flex-wrap: wrap;
+  padding: var(--sp-8) var(--sp-4);
+  font-family: var(--font-sans);
+}
+
+/* ── the field ───────────────────────────────────────────────────────────── */
+
+.files-scope .files-edit {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  gap: var(--sp-4);
+}
+
+.files-scope .files-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  padding: var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background-color: var(--surface-1);
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  /* The field scrolls in BOTH directions rather than wrapping. A wrapped source
+     line is a line that is not the line in the file, and on a surface whose
+     whole claim is `file:line` that is the defect, not the convenience. */
+  white-space: pre;
+  overflow: auto;
+}
+
+.files-scope .files-editnote {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* ── the rendered file (round 7, B8): HTML, Markdown, an image ─────────── */
+.files-scope .files-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.files-scope .files-preview-html {
+  height: 100%;
+  /* Round 8: the page is a framed card on the theme's ground, padded round. */
+  padding: var(--sp-12);
+  background: var(--bg-ground);
+}
+.files-scope .files-pv-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background: var(--surface-2);
+  overflow: hidden;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink-1) 6%, transparent);
+}
+.files-scope .files-pv-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--control-h-lg);
+  padding: var(--sp-4) var(--sp-8) var(--sp-4) var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+  color: var(--ink-3);
+  font-size: var(--t-12);
+}
+.files-scope .files-pv-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+}
+.files-scope .files-pv-grow {
+  flex: 1;
+}
+.files-scope .files-pv-seg {
+  display: inline-flex;
+  padding: var(--sp-2);
+  gap: var(--sp-2);
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--edge);
+}
+.files-scope .files-pv-segb {
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  cursor: pointer;
+}
+.files-scope .files-pv-segb[aria-pressed='true'] {
+  background: var(--glass-ctl-hover);
+  color: var(--ink-1);
+}
+.files-scope .files-pv-segb:hover {
+  color: var(--ink-1);
+}
+.files-scope .files-pv-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--edge);
+  font-size: var(--t-11);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.files-scope .files-pv-chip[data-on='true'] {
+  color: var(--accent-ink, var(--accent));
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+}
+/* The frame fills the card; an unstyled page carries the theme's own ground
+   (FilePreview.readingStyle), a styled one paints what it says. */
+.files-scope .files-preview-frame {
+  flex: 1 1 auto;
+  min-height: 240px;
+  width: 100%;
+  border: 0;
+  display: block;
+  background: var(--surface-2);
+}
+/* A page with its own styles is shown as a browser would: on a light canvas. */
+.files-scope .files-preview[data-styled='own'] .files-preview-frame {
+  color-scheme: light;
+  background: Canvas;
+}
+.files-scope .files-preview-md {
+  padding: var(--sp-12) var(--sp-16) var(--sp-24);
+}
+/* ══ THE MARKDOWN READING COLUMN (owner, 2026-10-09: "not a big fan; spacing;
+   the code doesn't look right; should be centered") ══════════════════════════
+   A comfortable measure, centred in the pane; one rhythm between every block;
+   code with real padding that scrolls sideways instead of wrapping and a Copy
+   that floats inside the block's corner; a diagram centred in its own room. */
+.files-scope .files-md {
+  width: 100%;
+  max-width: 72ch;
+  margin-inline: auto;
+  color: var(--ink-1);
+  font-size: var(--t-13, var(--t-12));
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+/* ONE RHYTHM: every block owns no margin of its own; the gap is the margin-top
+   of the block that follows (12 between blocks, 24 before a heading, 8 after). The
+   selectors carry the same weight as the block rules below, which set no margins. */
+.files-scope .files-md > * { margin: 0; }
+.files-scope .files-md > * + * { margin-top: var(--sp-12); }
+.files-scope .files-md > * + .prose-h { margin-top: var(--sp-24); }
+.files-scope .files-md > .prose-h + * { margin-top: var(--sp-8); }
+.files-scope .files-md .prose-list { padding-left: var(--sp-20); }
+.files-scope .files-md .prose-list > li + li { margin-top: var(--sp-4); }
+
+.files-scope .files-md .r9-code {
+  position: relative;
+  border: 0;
+  border-radius: var(--r-10);
+  background: var(--glass-ctl, var(--state-hover));
+}
+.files-scope .files-md .r9-code-hd {
+  position: absolute;
+  top: var(--sp-6);
+  right: var(--sp-6);
+  z-index: 1;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.files-scope .files-md .r9-code-lang { display: none; }
+.files-scope .files-md .r9-code-copy {
+  border: 0;
+  background: var(--glass-ctl, var(--state-hover));
+  opacity: 0;
+  transition: opacity var(--dur-1, 120ms) var(--ease, ease), background-color var(--dur-1, 120ms) var(--ease, ease), transform var(--dur-1, 120ms) var(--ease, ease);
+}
+.files-scope .files-md .r9-code:hover .r9-code-copy,
+.files-scope .files-md .r9-code:focus-within .r9-code-copy,
+.files-scope .files-md .r9-code-copy:focus-visible { opacity: 1; }
+.files-scope .files-md .r9-code-copy:hover { background: var(--glass-ctl-hover, var(--state-hover)); }
+.files-scope .files-md .r9-code-copy:active { transform: scale(0.96); }
+@media (hover: none) { .files-scope .files-md .r9-code-copy { opacity: 1; } }
+.files-scope .files-md .r9-code .prose-code {
+  margin: 0;
+  padding: var(--sp-12) var(--sp-16);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  max-width: 100%;
+  overflow-x: auto;
+  text-align: left;
+}
+.files-scope .files-md .r9-code .prose-code code {
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: 1.6;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.files-scope .files-md .dgm {
+  border: 0;
+  border-radius: var(--r-10);
+  background: transparent;
+  overflow: visible;
+}
+.files-scope .files-md .dgm-bar {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  z-index: 1;
+  padding: 0;
+}
+.files-scope .files-md .dgm { position: relative; }
+.files-scope .files-md .dgm-label { display: none; }
+/* The shared drawing card (chat/VisualCard.tsx) in a document. The file is the page, so the card is quiet:
+   no title line (it stays for screen readers and the tooltip), the hover actions float at the top-right in the
+   art's own top margin (never over the drawing), the body is never clipped to the chat's 420px cap and has no
+   bottom fade, and the resize bar and the collapsed row are chat chrome that a document does not need. */
+.files-scope .files-md .dgm .dgm-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  margin: 0;
+}
+.files-scope .files-md .dgm .dgm-acts { margin-left: 0; }
+.files-scope .files-md .dgm .dgm-body {
+  max-height: none !important;
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+  transition: none;
+}
+.files-scope .files-md .dgm .dgm-grip { display: none; }
+.files-scope .files-md .dgm-art,
+.files-scope .files-md .dgm[data-kind='mermaid'] .dgm-art {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  padding: calc(var(--sp-20) + var(--sp-8)) var(--sp-16) var(--sp-20);
+}
+/* A diagram draws at 1.15x its own size, never more: mermaid's labels are 16px,
+   so that is about 1.25x the body text and no louder. `--dgm-w` is the drawing's
+   intrinsic width, written onto the svg by FilePreview (CSS cannot read it); the
+   svg is centred with room above and below. mermaid's inline px size is overridden. */
+.files-scope .files-md .dgm[data-kind='mermaid'] .dgm-art svg {
+  flex: 0 0 auto;
+  display: block;
+  margin-inline: auto;
+  /* NEVER BELOW NATURAL SIZE (audit R9): in a ~300px pane a left-to-right
+     diagram shrank to 226x41 and its 16px labels to about 4px. The floor is the
+     drawing's own width (`--dgm-w`, labels at their drawn 16px, above the 13px
+     body); a pane narrower than that scrolls the block sideways instead. */
+  width: max(min(100%, calc(var(--dgm-w) * 1.15px)), calc(var(--dgm-w) * 1px)) !important;
+  max-width: none !important;
+  height: auto !important;
+}
+.files-scope .files-md .dgm[data-kind='mermaid'] .dgm-art {
+  overflow-x: auto;
+  justify-content: safe center;
+}
+
+/* Tables: chat/r9.css styles them only under the transcript, so a README table
+   in the Files preview had no cells at all. */
+.files-scope .files-md .prose-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.files-scope .files-md .prose-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--t-12);
+}
+.files-scope .files-md .prose-table th,
+.files-scope .files-md .prose-table td {
+  padding: var(--sp-6) var(--sp-10);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.files-scope .files-md .prose-table th {
+  color: var(--ink-3);
+  font-weight: var(--fw-head);
+}
+.files-scope .files-md .prose-table tr:last-child td { border-bottom: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .files-scope .files-md .r9-code-copy { transition: none; }
+}
+.files-scope .files-preview-img {
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-16);
+  /* A checkerboard, so a transparent image reads as transparent. */
+  background-color: var(--surface-1);
+  background-image:
+    linear-gradient(45deg, var(--edge-faint) 25%, transparent 25%, transparent 75%, var(--edge-faint) 75%),
+    linear-gradient(45deg, var(--edge-faint) 25%, transparent 25%, transparent 75%, var(--edge-faint) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+  border-radius: var(--r-10);
+}
+.files-scope .files-preview-img img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 8: THE CODE EDITOR (CodeEditor.tsx), in B's components
+   One scroller holds the gutter, the highlighted listing and the field; the
+   field is transparent text over the listing with only its caret and its
+   selection drawn, so what the reader sees is the listing and what they type
+   into is the field, on the same pixels. The find bar is the shared popover;
+   the status row's buttons are B's pills.
+   ══════════════════════════════════════════════════════════════════════════ */
+.files-scope .files-edit {
+  gap: 0;
+}
+.files-scope .files-ed {
+  --files-ed-lh: 20px;
+  --files-ed-pad: var(--sp-8);
+  --files-ed-gutter: 52px;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+.files-scope .files-ed-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.files-scope .files-ed-inner {
+  display: flex;
+  min-height: 100%;
+}
+.files-scope .files-ed-gutter,
+.files-scope .files-ed-hl,
+.files-scope .files-ed-ta {
+  font-family: var(--font-mono);
+  font-size: var(--t-12-5);
+  line-height: var(--files-ed-lh);
+  tab-size: 4;
+  letter-spacing: 0;
+}
+.files-scope .files-ed-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: none;
+  width: var(--files-ed-gutter);
+  display: flex;
+  flex-direction: column;
+  padding: var(--files-ed-pad) var(--sp-10) var(--files-ed-pad) 0;
+  box-sizing: border-box;
+  text-align: right;
+  color: var(--ink-4);
+  background: var(--surface-1);
+  border-right: var(--w-hair) solid var(--edge-faint);
+  user-select: none;
+}
+.files-scope .files-ed-gutter > span {
+  height: var(--files-ed-lh);
+}
+.files-scope .files-ed-gutter > span.is-cur {
+  color: var(--ink-2);
+}
+.files-scope .files-ed-code {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.files-scope .files-ed-curline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--files-ed-lh);
+  background: var(--state-hover);
+  pointer-events: none;
+}
+.files-scope .files-ed-hl {
+  position: relative;
+  margin: 0;
+  padding: var(--files-ed-pad) var(--sp-12);
+  white-space: pre;
+  color: var(--ink-body, var(--ink-1));
+  pointer-events: none;
+}
+.files-scope .files-editor.files-ed-ta {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: var(--files-ed-pad) var(--sp-12);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--ink-1);
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+  outline: none;
+  box-shadow: none;
+}
+.files-scope .files-editor.files-ed-ta::selection {
+  background: var(--selection-bg);
+}
+.files-scope .files-ed:focus-within {
+  border-color: var(--accent-edge);
+}
+.files-scope .files-ed-find {
+  position: absolute;
+  top: var(--sp-8);
+  right: var(--sp-12);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-10);
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  background: var(--float-fill);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink-1) 14%, transparent);
+  color: var(--ink-3);
+}
+.files-scope .files-ed-find-in {
+  width: 180px;
+  height: var(--target-min);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+}
+.files-scope .files-ed-find-n {
+  min-width: 56px;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.files-scope .files-ed-ib {
+  width: var(--control-h);
+  height: var(--control-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.files-scope .files-ed-ib:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+  color: var(--ink-1);
+}
+.files-scope .files-ed-ib:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.files-scope .files-ed-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+  min-height: var(--control-h-lg);
+  padding: var(--sp-2) var(--sp-6) var(--sp-2) var(--sp-12);
+  border-top: var(--w-hair) solid var(--edge);
+  font-size: var(--t-11-5);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.files-scope .files-ed-grow {
+  flex: 1;
+}
+.files-scope .files-ed-state.is-dirty {
+  color: var(--spills);
+}
+.files-scope .files-ed-pill {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  background: var(--glass-ctl);
+  color: var(--ink-1);
+  font: inherit;
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.files-scope .files-ed-pill:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+}
+.files-scope .files-ed-pill.is-solid {
+  background: var(--accent-solid);
+  border-color: transparent;
+  color: var(--accent-on-solid);
+}
+.files-scope .files-ed-pill:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.files-scope .files-ed-pill:focus-visible,
+.files-scope .files-ed-ib:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+/* The tab's dirty dot. */
+.files-scope .files-hd-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--spills);
+}
+
+/* ── organising the tree (round 9, ask 20) ──────────────────────────────── */
+.files-scope .files-row.is-dragging {
+  opacity: 0.45;
+}
+/* The folder a drag would drop into. Accent wash, no new hue. */
+.files-scope .files-row.is-drop {
+  background: var(--accent-wash);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.files-scope .files-tree.is-drop-root {
+  box-shadow: inset 0 0 0 1px var(--accent);
+  border-radius: 12px;
+}
+.files-scope .files-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: calc(var(--row-h) - 8px);
+  margin: 0;
+  padding: 0 var(--sp-6);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-base);
+  color: var(--ink-1);
+  font: inherit;
+  outline: none;
+}
+.files-scope .files-row.files-row-new {
+  cursor: default;
+}
+/* The menu is portalled to <body>, outside .files-scope, so it is styled
+   here by its own class and borrows shell2's .s2-menu / .s2-mi look. */
+.files-ctx {
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  /* Opaque: the shell's glass fill lets a row's name through, and a menu you
+     cannot read over the row it is about is worse than a flat one. */
+  background: var(--bg-base);
+}
+.files-scope .files-ops-note {
+  color: var(--wont);
+  white-space: normal;
+}
+
+/* ── THE TREE IS A DRAWER IN A NARROW PANE (round 9, ask 24) ───────────────
+   `is-narrow` is set from the pane's own measured width (FilesPanel). The file
+   gets the whole pane; the tree, when asked for, covers it from the left and
+   leaves a strip of the file to press to put it away. With no file open the
+   tree is the pane. These come last and carry three classes so the rail rules
+   above (rail, wide, open) cannot win back the squeeze. */
+.files-scope.is-narrow {
+  position: relative;
+  /* The drawer is out of flow, so the seam and the file are placed by hand: the
+     file takes the whole width (it used to fall into the auto track). */
+  grid-template-columns: 0 0 minmax(0, 1fr);
+}
+.files-scope.is-narrow .files-resizer { grid-column: 2; grid-row: 1; width: 0; }
+/* A zero-width seam must not draw its grip: it painted a stray bar on the main
+   view's left edge (audit R9). The drawer has no splitter to grab. */
+.files-scope.is-narrow .files-resizer::before,
+.files-scope.is-narrow .files-resizer::after,
+.files-scope.is-tree-shut .files-resizer:not(:hover):not(:focus-visible):not(.is-dragging)::after { display: none; }
+.files-scope.is-narrow .files-main { grid-column: 3; grid-row: 1; }
+.files-scope.is-narrow .files-side {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: var(--sp-32);
+  background-color: var(--bg-base);
+  box-shadow: 0 0 0 var(--w-hair) var(--edge), var(--e2, 0 8px 24px rgb(0 0 0 / 0.25));
+}
+.files-scope.is-narrow:not(.has-file) .files-side {
+  right: 0;
+  box-shadow: none;
+}
+/* The header toggle stays above the drawer, or a drawer opened over the file
+   would cover the one button that puts it away. */
+.files-scope.is-narrow .files-treetoggle {
+  position: relative;
+  z-index: 5;
+}
+/* With no file open the drawer IS the pane and has nothing to put away: the
+   toggle used to sit on top of the filter field (audit, filter/toggle overlap). */
+.files-scope.is-narrow:not(.has-file) .files-treetoggle { display: none; }
+/* ...and the drawer leaves that button's row clear, so the toggle does not sit
+   on top of the filter field. */
+.files-scope.is-narrow.has-file .files-side {
+  padding-top: calc(var(--control-h) + var(--sp-12));
+  box-sizing: border-box;
+}
+.files-scope.is-narrow.is-tree-shut .files-side {
+  visibility: hidden;
+  box-shadow: none;
+}
+
+/* ── ROUND 11: an empty folder is one quiet line ──────────────────────────
+   Jaden: "if there's no files under, it doesn't expand further ... we don't
+   need this huge ugly error message". With nothing to list there is no filter,
+   no splitter and no preview pane: the tree's own note is the whole panel,
+   and it still takes a right-click to create the first file. */
+.files-scope.is-bare {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  height: auto;
+}
+.files-scope.is-bare .files-top,
+.files-scope.is-bare .files-resizer,
+.files-scope.is-bare .files-main {
+  display: none;
+}
+.files-scope.is-bare .files-tree {
+  overflow: visible;
+}
+.files-scope.is-bare .files-note:not(.files-note-fail) {
+  color: var(--ink-2);
+}
+
+/* A page that navigated itself was stopped (FilePreview): one quiet line where the frame was. */
+.files-scope .files-pv-note,
+.files-pv-note {
+  margin: 0;
+  padding: var(--sp-8, 8px) var(--sp-12, 12px);
+  font-size: var(--t-11-5);
+  color: var(--ink-3);
+}

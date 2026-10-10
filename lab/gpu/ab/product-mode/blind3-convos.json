@@ -1,0 +1,42 @@
+[
+  {"id": "ml-harness-c1", "repo": "ml-harness", "questions": [
+    "hi, i just got pointed at this project and honestly have no idea what it's for. what is this thing and who is supposed to use it?",
+    "ok but i still dont get it... if it doesnt actually train the model itself then what do i get out of it? like what's the point",
+    "could you draw me the path someone goes through from start to finish, from 'i think i need to fine-tune' to getting an answer? a simple picture is fine"
+  ]},
+  {"id": "ml-harness-c2", "repo": "ml-harness", "questions": [
+    "eli5 please. why would anyone want this instead of just asking chatgpt whether they should fine tune, or just running unsloth directly?",
+    "Sorry, I am not native english. You say it is 'deciding before training'. What steps does the user do, one by one? Please make it simple.",
+    "only the part where it decides yes or no. what happens there exactly, and what does user see at the end of it"
+  ]},
+  {"id": "shopfront-c1", "repo": "shopfront", "questions": [
+    "what is this",
+    "no i mean what does it do for a customer. like if im shopping, what happens",
+    "diagram of that. order to delivery."
+  ]},
+  {"id": "shopfront-c2", "repo": "shopfront", "questions": [
+    "Hello! I'm new on the team and trying to get my bearings. Could you explain what this shop product is, who its users are, and what they get out of it? Thanks so much.",
+    "That helps a bit, but I'm still fuzzy on the big picture — when someone buys something, what are all the stages they go through, in order? I keep getting lost in all the separate pieces.",
+    "Could we zoom in on just the paying step? What does the shopper experience there and what happens right after they pay?"
+  ]},
+  {"id": "makemore-c1", "repo": "makemore", "questions": [
+    "so what is this project actually for?? someone said it 'makes names' which sounds made up lol",
+    "still confused tbh. is it like an app i use or a learning thing? who is it meant for and what do they get from it",
+    "can u show it as a flowchart, like from the list of names to it spitting out new ones"
+  ]},
+  {"id": "makemore-c2", "repo": "makemore", "questions": [
+    "I'm a product manager, not an ML person. In plain terms, what is this, why does it exist, and how is it different from just picking random names off a baby-name website?",
+    "I read your answer twice and I'm still not sure what the two approaches here are or why there are two. Could you explain it again, more slowly?",
+    "just the last bit - generating a new name. what actually happens step by step when it makes one"
+  ]},
+  {"id": "sequence-c1", "repo": "sequence", "questions": [
+    "whats sequence and why would i use it over like just drawing my architecture in miro or excalidraw",
+    "hmm ok but who is it for really? solo devs? teams? and what do i walk away with after using it",
+    "give me the user journey as a diagram, from downloading it to having a board i trust"
+  ]},
+  {"id": "sequence-c2", "repo": "sequence", "questions": [
+    "Explain like I'm five: what problem does this tool solve? My boss keeps saying our architecture docs are 'lying' and told me to look at this.",
+    "I don't follow the part about solid and dashed lines. Can you re-explain what the user actually sees and does, step by step, without jargon?",
+    "Let's narrow it to the very first stage: I point it at my repo. What happens and what do I see after that?"
+  ]}
+]

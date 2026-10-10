@@ -1,0 +1,20 @@
+flowchart TD
+    subgraph Services
+        gateway["gateway"]
+        worker["worker"]
+        api["api"]
+    end
+    subgraph Datastores
+        postgres[("postgres")]
+    end
+    subgraph Topics
+        topic_ticket_created{{"topic:ticket.created"}}
+    end
+    gateway -->|GET /tickets/*, POST /tickets| api
+    worker -->|consume ticket.created| topic_ticket_created
+    api -->|table tickets| postgres
+    api -->|publish ticket.created| topic_ticket_created
+    linkStyle 0 stroke:#2f6fdb,stroke-width:2px;
+    linkStyle 1 stroke:#d98a2b,stroke-width:2px;
+    linkStyle 2 stroke:#2e9e5b,stroke-width:2px;
+    linkStyle 3 stroke:#d98a2b,stroke-width:2px;

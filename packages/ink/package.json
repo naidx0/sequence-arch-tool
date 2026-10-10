@@ -1,0 +1,30 @@
+{
+  "name": "@sequence/ink",
+  "version": "0.1.4",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test dist/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./shape": {
+      "types": "./dist/shape.d.ts",
+      "default": "./dist/shape.js"
+    },
+    "./shape-model": {
+      "types": "./dist/shapeModel.d.ts",
+      "default": "./dist/shapeModel.js"
+    }
+  }
+}

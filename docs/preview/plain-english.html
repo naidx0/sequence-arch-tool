@@ -1,0 +1,237 @@
+<style>
+:root{
+  --bg:#f4efe4; --panel:#fffdf8; --panel-2:#faf6ec; --border:#e5ddca;
+  --text:#2a2620; --muted:#8c8375; --faint:#b6ad9a;
+  --front:#2f6fdb; --back:#7c5cbf; --data:#2e9e5b; --msg:#cf871f;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:12px; --shadow:0 1px 2px rgba(60,50,30,.06),0 6px 20px rgba(60,50,30,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#1b1813; --panel:#232019; --panel-2:#2a261e; --border:#3a3327;
+    --text:#ece6d9; --muted:#9a917f; --faint:#6f6858;
+    --front:#6d9bf0; --back:#a892e0; --data:#5cc489; --msg:#e0a24e;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28);
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4efe4; --panel:#fffdf8; --panel-2:#faf6ec; --border:#e5ddca;
+  --text:#2a2620; --muted:#8c8375; --faint:#b6ad9a;
+  --front:#2f6fdb; --back:#7c5cbf; --data:#2e9e5b; --msg:#cf871f;
+  --shadow:0 1px 2px rgba(60,50,30,.06),0 6px 20px rgba(60,50,30,.05);
+}
+:root[data-theme="dark"]{
+  --bg:#1b1813; --panel:#232019; --panel-2:#2a261e; --border:#3a3327;
+  --text:#ece6d9; --muted:#9a917f; --faint:#6f6858;
+  --front:#6d9bf0; --back:#a892e0; --data:#5cc489; --msg:#e0a24e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  line-height:1.5;-webkit-font-smoothing:antialiased;}
+#app{max-width:760px;margin:0 auto;padding:28px 18px 64px;}
+
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--msg);font-weight:600;}
+.hd h1{font-size:clamp(26px,6vw,38px);line-height:1.1;margin:.35em 0 .3em;font-weight:750;
+  letter-spacing:-.02em;text-wrap:balance;}
+.hd .sub{color:var(--muted);font-size:15.5px;max-width:60ch;margin:0;}
+
+.controls{display:flex;gap:6px;margin:26px 0 14px;background:var(--panel-2);
+  border:1px solid var(--border);border-radius:999px;padding:5px;width:fit-content;max-width:100%;}
+.seg{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:600;
+  font-size:13.5px;padding:8px 15px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+.seg.active{background:var(--panel);color:var(--text);box-shadow:var(--shadow);}
+.seg:focus-visible{outline:2px solid var(--front);outline-offset:2px;}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:0 2px 18px;color:var(--muted);font-size:12.5px;}
+.lg{display:inline-flex;align-items:center;gap:6px;}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--faint);}
+.d-front{background:var(--front)} .d-back{background:var(--back)}
+.d-data{background:var(--data)} .d-msg{background:var(--msg)}
+.area-dot{background:currentColor}
+
+.root-title{display:flex;flex-direction:column;gap:2px;padding:2px 2px 16px;}
+.root-name{font-size:19px;font-weight:750;letter-spacing:-.01em;}
+.root-sub{color:var(--muted);font-size:13.5px;}
+
+.tree{display:flex;flex-direction:column;gap:12px;}
+.node.is-area{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:var(--shadow);overflow:hidden;position:relative;}
+.node.is-area::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--faint);}
+.node.is-area.a-front{color:var(--front)} .node.is-area.a-back{color:var(--back)}
+.node.is-area.a-data{color:var(--data)} .node.is-area.a-neutral{color:var(--muted)}
+.node.is-area::before{background:currentColor;opacity:.85;}
+
+.row{display:flex;align-items:center;gap:9px;width:100%;text-align:left;appearance:none;
+  border:0;background:transparent;font:inherit;color:var(--text);cursor:default;
+  padding:11px 14px 11px 13px;}
+button.row{cursor:pointer;}
+button.row:hover{background:color-mix(in srgb,var(--panel-2) 60%,transparent);}
+.row:focus-visible{outline:2px solid var(--front);outline-offset:-2px;border-radius:8px;}
+.is-area>.row{padding:13px 16px;}
+.is-area>.row .ttl{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+
+.chev{flex:none;width:14px;color:var(--faint);font-size:17px;line-height:1;
+  transform:rotate(0deg);transition:transform .18s ease;font-weight:700;}
+button.row[aria-expanded="true"] .chev{transform:rotate(90deg);}
+.chev.ph{visibility:hidden;}
+.ttl{font-weight:600;font-size:14.5px;}
+.fdot{flex:none;width:5px;height:5px;border-radius:50%;background:var(--faint);margin:0 2px;}
+
+.pill{font-size:10.5px;font-weight:650;letter-spacing:.03em;text-transform:uppercase;
+  padding:2px 8px;border-radius:999px;color:var(--muted);background:var(--panel-2);
+  border:1px solid var(--border);white-space:nowrap;}
+.p-service{color:var(--back);} .p-database{color:var(--data);} .p-messages{color:var(--msg);}
+
+.summary{color:var(--muted);font-size:13px;padding:0 16px 12px 36px;margin-top:-6px;max-width:64ch;}
+.is-area>.summary{padding-left:40px;}
+
+.kids{display:flex;flex-direction:column;padding:0 8px 8px 8px;}
+.node:not(.is-area)>.kids{padding:0 0 0 20px;border-left:1px solid var(--border);margin:0 0 4px 24px;}
+.kids.collapsed{display:none;}
+
+.is-file>.row{padding:6px 14px 6px 13px;}
+.fpath{color:var(--muted);font-size:12.5px;}
+.mono{font-family:var(--mono);}
+.fmeta{margin-left:auto;color:var(--faint);font-size:11px;font-variant-numeric:tabular-nums;
+  padding-left:10px;white-space:nowrap;}
+
+.ft{margin-top:34px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;}
+.ft strong{color:var(--text);} .ft em{font-style:normal;color:var(--text);font-weight:600;}
+.ft p{max-width:64ch;margin:0;}
+
+@media (prefers-reduced-motion:reduce){.chev{transition:none;}}
+@media (max-width:520px){
+  #app{padding:22px 13px 52px;}
+  .fmeta{display:none;}
+  .summary{padding-left:32px;}
+}
+
+</style>
+<div id="app">
+  <header class="hd">
+    <div class="eyebrow">Sequence · preview</div>
+    <h1>Your codebase, in plain English.</h1>
+    <p class="sub">Sequence reads a repository and reorganizes it into a hierarchy anyone can follow —
+    areas, then features, down to the real files. Tap any row to open it. Two real repositories are shown below.</p>
+  </header>
+
+  <div class="controls" role="tablist" aria-label="Example repository">
+    <button class="seg active" data-repo="ticketing" role="tab" aria-selected="true">Ticketing app</button>
+    <button class="seg" data-repo="robotshop" role="tab" aria-selected="false">Robot Shop (10 services)</button>
+  </div>
+
+  <div class="legend">
+    <span class="lg"><i class="dot d-front"></i>Frontend</span>
+    <span class="lg"><i class="dot d-back"></i>Backend</span>
+    <span class="lg"><i class="dot d-data"></i>Data</span>
+    <span class="lg"><i class="dot d-msg"></i>Messages</span>
+  </div>
+
+  <main id="tree" class="tree"></main>
+
+  <footer class="ft">
+    <p><strong>What this is.</strong> A preview of Sequence's plain-English view, rendered from the actual
+    scan of each repo. The <em>structure</em> is real — every row traces to a real file or service. The
+    <em>labels</em> here are the no-key fallback; with your own AI connected they get sharper (e.g. two
+    "Shipping" groups become "Shipping calculation" and "Shipping data"). This is a static preview, not the
+    live app — the real thing runs on your machine and reads your repos.</p>
+  </footer>
+</div>
+
+<script>
+const TREES = {"ticketing":{"id":"p:repo","title":"Ticketing Scaffold","summary":"Your whole application, grouped into plain-English areas.","kind":"group","children":[{"id":"p:area:backend","title":"Backend","summary":"The services that do the work behind the scenes.","kind":"area","children":[{"id":"p:svc:gateway","title":"Gateway service","summary":"A backend service (built with express).","kind":"service","children":[{"id":"p:file:gateway/index.ts","title":"index.ts","summary":"gateway/index.ts (ts, 29 lines)","kind":"file","children":[],"sourceRefs":["file:gateway/index.ts"],"edgeRefs":["e1:http","e2:http"]}],"sourceRefs":["svc:gateway"],"edgeRefs":["e1:http","e2:http"]},{"id":"p:svc:api","title":"Api service","summary":"A backend service (built with fastapi).","kind":"service","children":[{"id":"p:file:api/app/main.py","title":"main.py","summary":"api/app/main.py (py, 42 lines)","kind":"file","children":[],"sourceRefs":["file:api/app/main.py"],"edgeRefs":["e1:http","e2:http","e3:queue_publish","e5:db_read","e6:db_write","e7:db_access"]}],"sourceRefs":["svc:api"],"edgeRefs":["e1:http","e2:http","e3:queue_publish","e5:db_read","e6:db_write","e7:db_access"]},{"id":"p:svc:worker","title":"Worker service","summary":"A backend service that does work behind the scenes.","kind":"service","children":[{"id":"p:file:worker/index.ts","title":"index.ts","summary":"worker/index.ts (ts, 18 lines)","kind":"file","children":[],"sourceRefs":["file:worker/index.ts"],"edgeRefs":["e4:queue_consume"]}],"sourceRefs":["svc:worker"],"edgeRefs":["e4:queue_consume"]}],"sourceRefs":["svc:gateway","svc:api","svc:worker"],"edgeRefs":["e3:queue_publish","e4:queue_consume","e5:db_read","e6:db_write","e7:db_access"]},{"id":"p:area:data","title":"Data","summary":"Where information is stored and passed between services.","kind":"area","children":[{"id":"p:ds:postgres","title":"Postgres database","summary":"A database that stores information.","kind":"data","children":[],"sourceRefs":["ds:postgres"],"edgeRefs":["e5:db_read","e6:db_write","e7:db_access"]},{"id":"p:ds:redis","title":"Redis (cache & message queue)","summary":"Fast storage that also passes messages between services.","kind":"data","children":[{"id":"p:topic:ticket.created","title":"Ticket Created messages","summary":"A stream of \"ticket.created\" messages.","kind":"data","children":[],"sourceRefs":["topic:ticket.created"],"edgeRefs":["e3:queue_publish","e4:queue_consume"]}],"sourceRefs":["ds:redis"],"edgeRefs":["e3:queue_publish","e4:queue_consume"]}],"sourceRefs":["ds:postgres","ds:redis"],"edgeRefs":["e3:queue_publish","e4:queue_consume","e5:db_read","e6:db_write","e7:db_access"]}],"sourceRefs":["repo"]},"robotshop":{"id":"p:repo","title":"Robot Shop","summary":"Your whole application, grouped into plain-English areas.","kind":"group","children":[{"id":"p:area:frontend","title":"Frontend","summary":"The parts of the app people see and interact with.","kind":"area","children":[{"id":"p:svc:web","title":"Web","summary":"The part of the app that users see and click.","kind":"service","children":[{"id":"p:file:web/static/js/auto-complete.js","title":"auto-complete.js","summary":"web/static/js/auto-complete.js (js, 224 lines)","kind":"file","children":[],"sourceRefs":["file:web/static/js/auto-complete.js"]},{"id":"p:file:web/static/js/controller.js","title":"controller.js","summary":"web/static/js/controller.js (js, 563 lines)","kind":"file","children":[],"sourceRefs":["file:web/static/js/controller.js"]},{"id":"p:file:web/default.conf.template","title":"default.conf.template","summary":"web/default.conf.template","kind":"file","children":[],"sourceRefs":["file:web/default.conf.template"],"edgeRefs":["e10:http","e5:http","e6:http","e7:http","e8:http","e9:http"]}],"sourceRefs":["svc:web"],"edgeRefs":["e10:http","e5:http","e6:http","e7:http","e8:http","e9:http"]}],"sourceRefs":["svc:web"],"edgeRefs":["e10:http","e5:http","e6:http","e7:http","e8:http","e9:http"]},{"id":"p:area:backend","title":"Backend","summary":"The services that do the work behind the scenes.","kind":"area","children":[{"id":"p:svc:catalogue","title":"Catalogue service","summary":"A backend service (built with express).","kind":"service","children":[{"id":"p:file:catalogue/server.js","title":"server.js","summary":"catalogue/server.js (js, 189 lines)","kind":"file","children":[],"sourceRefs":["file:catalogue/server.js"],"edgeRefs":["e13:db_access","e1:http"]}],"sourceRefs":["svc:catalogue"],"edgeRefs":["e13:db_access","e1:http","e5:http"]},{"id":"p:svc:user","title":"User service","summary":"A backend service (built with express).","kind":"service","children":[{"id":"p:file:user/server.js","title":"server.js","summary":"user/server.js (js, 304 lines)","kind":"file","children":[],"sourceRefs":["file:user/server.js"],"edgeRefs":["e14:db_access","e15:db_access","e2:http","e3:http"]}],"sourceRefs":["svc:user"],"edgeRefs":["e14:db_access","e15:db_access","e2:http","e3:http","e6:http"]},{"id":"p:svc:cart","title":"Cart service","summary":"A backend service (built with express).","kind":"service","children":[{"id":"p:file:cart/server.js","title":"server.js","summary":"cart/server.js (js, 408 lines)","kind":"file","children":[],"sourceRefs":["file:cart/server.js"],"edgeRefs":["e16:db_access","e1:http","e4:http"]}],"sourceRefs":["svc:cart"],"edgeRefs":["e16:db_access","e1:http","e4:http","e7:http"]},{"id":"p:svc:shipping","title":"Shipping service","summary":"A backend service that does work behind the scenes.","kind":"service","children":[{"id":"p:mod:shipping/0","title":"Shipping","summary":"A group of 5 related files.","kind":"feature","children":[{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/Calculator.java","title":"Calculator.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/Calculator.java (java, 44 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/Calculator.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/CartHelper.java","title":"CartHelper.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/CartHelper.java (java, 76 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/CartHelper.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/City.java","title":"City.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/City.java (java, 86 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/City.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/CityRepository.java","title":"CityRepository.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/CityRepository.java (java, 18 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/CityRepository.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/CodeRepository.java","title":"CodeRepository.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/CodeRepository.java (java, 13 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/CodeRepository.java"]}],"sourceRefs":["mod:shipping/0"]},{"id":"p:mod:shipping/1","title":"Shipping","summary":"A group of 6 related files.","kind":"feature","children":[{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/Code.java","title":"Code.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/Code.java (java, 48 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/Code.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/Controller.java","title":"Controller.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/Controller.java (java, 146 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/Controller.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/JpaConfig.java","title":"JpaConfig.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/JpaConfig.java (java, 30 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/JpaConfig.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/RetryableDataSource.java","title":"RetryableDataSource.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/RetryableDataSource.java (java, 31 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/RetryableDataSource.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/Ship.java","title":"Ship.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/Ship.java (java, 42 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/Ship.java"]},{"id":"p:file:shipping/src/main/java/com/instana/robotshop/shipping/ShippingServiceApplication.java","title":"ShippingServiceApplication.java","summary":"shipping/src/main/java/com/instana/robotshop/shipping/ShippingServiceApplication.java (java, 77 lines)","kind":"file","children":[],"sourceRefs":["file:shipping/src/main/java/com/instana/robotshop/shipping/ShippingServiceApplication.java"]}],"sourceRefs":["mod:shipping/1"]}],"sourceRefs":["svc:shipping"],"edgeRefs":["e17:db_access","e8:http"]},{"id":"p:svc:ratings","title":"Ratings service","summary":"A backend service that does work behind the scenes.","kind":"service","children":[],"sourceRefs":["svc:ratings"],"edgeRefs":["e10:http"]},{"id":"p:svc:payment","title":"Payment service","summary":"A backend service (built with flask).","kind":"service","children":[{"id":"p:file:payment/payment.py","title":"payment.py","summary":"payment/payment.py (py, 158 lines)","kind":"file","children":[],"sourceRefs":["file:payment/payment.py"],"edgeRefs":["e2:http","e3:http","e4:http","imp1"]},{"id":"p:file:payment/rabbitmq.py","title":"rabbitmq.py","summary":"payment/rabbitmq.py (py, 51 lines)","kind":"file","children":[],"sourceRefs":["file:payment/rabbitmq.py"],"edgeRefs":["e11:queue_publish","imp1"]}],"sourceRefs":["svc:payment"],"edgeRefs":["e11:queue_publish","e2:http","e3:http","e4:http","e9:http"]},{"id":"p:svc:dispatch","title":"Dispatch service","summary":"A backend service that does work behind the scenes.","kind":"service","children":[{"id":"p:file:dispatch/main.go","title":"main.go","summary":"dispatch/main.go (go, 234 lines)","kind":"file","children":[],"sourceRefs":["file:dispatch/main.go"],"edgeRefs":["e12:queue_consume"]}],"sourceRefs":["svc:dispatch"],"edgeRefs":["e12:queue_consume"]}],"sourceRefs":["svc:catalogue","svc:user","svc:cart","svc:shipping","svc:ratings","svc:payment","svc:dispatch"],"edgeRefs":["e10:http","e11:queue_publish","e12:queue_consume","e13:db_access","e14:db_access","e15:db_access","e16:db_access","e17:db_access","e5:http","e6:http","e7:http","e8:http","e9:http"]},{"id":"p:area:data","title":"Data","summary":"Where information is stored and passed between services.","kind":"area","children":[{"id":"p:ds:mongodb","title":"Mongodb database","summary":"A database that stores documents/records.","kind":"data","children":[],"sourceRefs":["ds:mongodb"],"edgeRefs":["e13:db_access","e15:db_access"]},{"id":"p:ds:redis","title":"Redis (cache & message queue)","summary":"Fast storage that also passes messages between services.","kind":"data","children":[],"sourceRefs":["ds:redis"],"edgeRefs":["e14:db_access","e16:db_access"]},{"id":"p:ds:rabbitmq","title":"Rabbitmq (message queue)","summary":"Passes messages between services.","kind":"data","children":[{"id":"p:topic:orders","title":"Orders messages","summary":"A stream of \"orders\" messages.","kind":"data","children":[],"sourceRefs":["topic:orders"],"edgeRefs":["e12:queue_consume"]}],"sourceRefs":["ds:rabbitmq"],"edgeRefs":["e11:queue_publish","e12:queue_consume"]},{"id":"p:ds:mysql","title":"Mysql database","summary":"A database that stores information.","kind":"data","children":[],"sourceRefs":["ds:mysql"],"edgeRefs":["e17:db_access"]}],"sourceRefs":["ds:mongodb","ds:redis","ds:rabbitmq","ds:mysql"],"edgeRefs":["e11:queue_publish","e12:queue_consume","e13:db_access","e14:db_access","e15:db_access","e16:db_access","e17:db_access"]}],"sourceRefs":["repo"]}};
+
+function areaClass(title){
+  const t = (title||'').toLowerCase();
+  if (/front/.test(t)) return 'a-front';
+  if (/back/.test(t)) return 'a-back';
+  if (/data/.test(t)) return 'a-data';
+  return 'a-neutral';
+}
+function kindDot(node, inheritedArea){
+  const t = (node.title||'').toLowerCase();
+  if (node.kind === 'data') {
+    if (/message|queue|stream/.test((node.summary||'')+t)) return 'd-msg';
+    return 'd-data';
+  }
+  if (node.kind === 'service') return inheritedArea === 'a-front' ? 'd-front' : 'd-back';
+  if (/message|stream/.test(t)) return 'd-msg';
+  return '';
+}
+function pill(node){
+  if (node.kind === 'service') return 'service';
+  if (node.kind === 'data') return /message|queue|stream/.test((node.summary||'')+node.title.toLowerCase()) ? 'messages' : 'database';
+  if (node.kind === 'feature') return 'group';
+  return '';
+}
+let uid = 0;
+function render(node, depth, area){
+  const hasKids = node.children && node.children.length;
+  const isArea = node.kind === 'area';
+  const thisArea = isArea ? areaClass(node.title) : area;
+  const id = 'n'+(uid++);
+  const wrap = document.createElement('div');
+  wrap.className = 'node depth-'+depth + (isArea ? ' is-area '+thisArea : '') + (node.kind==='file'?' is-file':'');
+
+  const row = document.createElement(hasKids ? 'button' : 'div');
+  row.className = 'row';
+  if (hasKids){ row.setAttribute('aria-expanded', depth<=0 ? 'true':'false'); row.setAttribute('aria-controls', id); }
+
+  const chev = hasKids ? '<span class="chev" aria-hidden="true">›</span>' : '<span class="chev ph" aria-hidden="true"></span>';
+  const dotc = kindDot(node, thisArea);
+  const dot = node.kind==='file' ? '<span class="fdot" aria-hidden="true"></span>' : (dotc? '<i class="dot '+dotc+'"></i>' : (isArea?'<i class="dot area-dot"></i>':''));
+  const p = pill(node);
+  const pillHtml = p ? '<span class="pill p-'+p+'">'+p+'</span>' : '';
+
+  if (node.kind === 'file'){
+    row.innerHTML = chev + dot + '<span class="mono fpath">'+esc(node.title)+'</span>' + meta(node);
+  } else {
+    row.innerHTML = chev + dot + '<span class="ttl">'+esc(node.title)+'</span>' + pillHtml +
+      (node.summary && !isArea ? '' : '') ;
+    if (node.summary){ const s=document.createElement('span'); }
+  }
+  wrap.appendChild(row);
+
+  if (node.summary && node.kind!=='file'){
+    const sm = document.createElement('div'); sm.className='summary'; sm.textContent = node.summary; wrap.appendChild(sm);
+  }
+
+  if (hasKids){
+    const kids = document.createElement('div');
+    kids.className = 'kids'; kids.id = id;
+    if (depth>0) kids.classList.add('collapsed');
+    node.children.forEach(k => kids.appendChild(render(k, depth+1, thisArea)));
+    wrap.appendChild(kids);
+    row.addEventListener('click', () => {
+      const open = kids.classList.toggle('collapsed') === false;
+      row.setAttribute('aria-expanded', String(open));
+    });
+  }
+  return wrap;
+}
+function meta(node){
+  const m = /\((\w+), (\d+) lines\)/.exec(node.summary||'');
+  if (m) return '<span class="fmeta mono">'+m[2]+' lines</span>';
+  return '';
+}
+function esc(s){ return String(s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function draw(repo){
+  uid=0;
+  const root = TREES[repo];
+  const host = document.getElementById('tree');
+  host.innerHTML='';
+  const title = document.createElement('div'); title.className='root-title';
+  title.innerHTML = '<span class="root-name">'+esc(root.title)+'</span><span class="root-sub">'+esc(root.summary||'')+'</span>';
+  host.appendChild(title);
+  root.children.forEach(c => host.appendChild(render(c, 0, areaClass(c.title))));
+}
+document.querySelectorAll('.seg').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.seg').forEach(x=>{x.classList.remove('active');x.setAttribute('aria-selected','false');});
+  b.classList.add('active'); b.setAttribute('aria-selected','true');
+  draw(b.dataset.repo);
+}));
+draw('ticketing');
+</script>

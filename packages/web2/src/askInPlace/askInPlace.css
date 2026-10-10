@@ -1,0 +1,224 @@
+/* Ask in place: the popover, the hover button and the menu both boards share.
+   Tokens only, and the SAME ones the whiteboard's toolbar pill and Ask panel
+   use (whiteboard.css .wb-tools, .wb-askpanel, .wb-tool): glass fill with a
+   hairline edge, --r-14 for the box, --e3 for the lift, round --icon-btn-lg
+   controls, and the single filled accent button for Send.
+
+   Each of these sits in a container (the board), so widths are the BOARD's
+   (100cqw), never the window's: at three surfaces the board is ~300px. */
+
+.ask-pop,
+.ask-menu,
+.ask-aff {
+  position: absolute;
+  z-index: 40;
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+
+/* SOLID, not glass (owner round 2: "too transparent when you click to edit"):
+   an opaque panel, so what is typed is read against a plain ground. Minimal: the
+   field (with its chip inside), Send, and the X. */
+.ask-pop {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-8);
+  width: min(340px, calc(100cqw - 2 * var(--sp-12)));
+  padding: var(--sp-8);
+  border: var(--w-hair) solid var(--edge-strong);
+  border-radius: var(--r-14);
+  background: var(--bg-base);
+  box-shadow: var(--e3);
+}
+
+/* One bordered box: the chip sits inside it above the words. */
+.ask-pop-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-6) var(--sp-8);
+  border: var(--w-hair) solid var(--edge-strong);
+  border-radius: var(--r-10);
+  background: var(--surface-1);
+}
+/* The words box is where the cursor is, so its focus must show (WCAG 2.4.7): the hairline turns accent and a soft accent glow
+   surrounds it, the terminal's calm focus style. The inner textarea has no outline of its own. */
+.ask-pop-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* What is referenced: a small inline chip, the same one the chat will show. */
+.ask-pop-chip {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--sp-4);
+  min-width: 0;
+  max-width: 100%;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.ask-pop-chip .i {
+  flex: none;
+}
+.ask-pop-chip-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ask-pop-input {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: var(--lh-13);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  resize: none;
+  overflow-y: auto;
+  outline: none;
+}
+.ask-pop-input::placeholder {
+  color: var(--ink-3);
+}
+
+.ask-pop-btns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex: none;
+}
+
+/* The round control, the pill's own: quiet until hovered. */
+.ask-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--icon-btn-lg);
+  height: var(--icon-btn-lg);
+  padding: 0;
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+.ask-btn:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+  border-color: var(--glass-ctl-edge);
+  color: var(--ink-1);
+}
+.ask-btn:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+.ask-btn-solid {
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+}
+.ask-btn-solid:hover:not(:disabled) {
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  border-color: transparent;
+  opacity: 0.92;
+}
+.ask-btn-solid:disabled {
+  background: var(--glass-ctl);
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+
+/* The hover affordance: a small glass pill beside the selection. */
+.ask-aff {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--icon-btn-lg);
+  padding: 0 var(--sp-10) 0 var(--sp-8);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--bg-base);
+  box-shadow: var(--e1);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.ask-aff:hover {
+  background: var(--glass-ctl-hover);
+}
+.ask-aff:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The right-click menu: the board menus' own rung, in glass. */
+.ask-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 176px;
+  padding: var(--sp-4);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3);
+}
+.ask-menuitem {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  min-height: var(--icon-btn-lg);
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ask-menuitem:hover,
+.ask-menuitem:focus-visible {
+  background: var(--glass-ctl-hover);
+  outline: none;
+}
+
+/* What the agent was told about: marked while the box is open, glowing briefly
+   after a send. A filter, so it works on an svg mark and an html card alike. */
+[data-ask-target='true'],
+[data-ask-flash='true'] {
+  filter: drop-shadow(0 0 var(--sp-6) var(--accent));
+}
+[data-ask-flash='true'] {
+  animation: ask-flash var(--dur-4) var(--ease) 2;
+}
+@keyframes ask-flash {
+  50% {
+    filter: drop-shadow(0 0 var(--sp-12) var(--accent));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-ask-flash='true'] {
+    animation: none;
+  }
+}

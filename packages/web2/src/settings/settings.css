@@ -1,0 +1,1196 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   SETTINGS, IN B's LANGUAGE (Decision 49)
+   packages/web2/src/settings/settings.css
+
+   The picked direction's components (the session's BArc.dc.html, uiarc.dev,
+   "very soft, very glass, very straightforward"): a header with its glyph, a
+   nav of rounded rows each with B's icon, and the panes as grouped cards
+   (a mono micro-label over a rounded card of rows). Controls are soft glass
+   pills, switches and B's menu (MenuSelect); the primary act on a pane is the
+   solid accent pill. Radii from B: 18px cards, pills at --r-full, 12px rows.
+   Shadows are light: a hairline and a glass tint; only the menu lifts.
+
+   Tokens only (Decision 49's room), no hex and no px font-size.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.settings-scope .sb-advanced { border: 1px solid var(--b-edge, var(--edge)); border-radius: var(--r-14); background: var(--b-s1, var(--surface-1)); margin: 0 0 var(--sp-12); }
+.settings-scope .sb-advanced > summary { cursor: pointer; padding: var(--sp-12); color: var(--b-ink2, var(--ink-2)); font-weight: var(--fw-head); }
+.settings-scope .sb-advanced > summary:focus-visible { outline: 2px solid var(--b-acc, var(--accent)); outline-offset: 1px; border-radius: var(--r-14); }
+.settings-scope .sb-advanced > .sb-group { padding: 0 var(--sp-12) var(--sp-12); margin: 0; }
+.settings-scope .sb-advanced > .sb-group > .sb-lab { display: none; }
+.settings-scope .sb-theme { display: flex; align-items: center; gap: var(--sp-12); }
+/* Theme picker: the shell's .s2-seg look (track, pill segments, the chosen one lifted), equal widths. */
+.settings-scope .sb-seg {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--sp-4);
+  flex: none;
+  padding: var(--sp-4);
+  border-radius: var(--r-full);
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--edge);
+}
+.settings-scope .sb-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-8);
+  min-width: 88px;
+  height: var(--row-h);
+  padding: 0 var(--sp-16);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.settings-scope .sb-seg button:hover { color: var(--ink-1); }
+.settings-scope .sb-seg button.is-on { background: var(--surface-3); color: var(--ink-1); }
+.settings-scope .sb-seg button:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+
+.settings-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  box-sizing: border-box;
+  width: var(--settings-w);
+  max-width: min(var(--settings-w), calc(100vw - var(--sp-32)));
+  height: var(--settings-h);
+  max-height: min(var(--settings-h), calc(100vh - var(--sp-32)));
+  padding: var(--sp-16);
+  overflow: hidden;
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+}
+/* Hosted as the shell's overlay panel, the panel fills what the shell gives. */
+.v3-overlay-panel .settings-scope {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ── THE HEADER ─────────────────────────────────────────────────────────── */
+.settings-scope .sb-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  padding: 0 var(--sp-4);
+}
+.settings-scope .sb-hd-ic {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-10);
+  background: color-mix(in srgb, var(--ink-1) 7%, transparent);
+  color: var(--ink-2);
+}
+.settings-scope .sb-title {
+  margin: 0;
+  font-size: var(--t-15);
+  line-height: var(--lh-15);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+.settings-scope .sb-i {
+  flex: none;
+  display: block;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── THE FRAME: NAV AT THE LEFT, ONE SCROLLING BODY ─────────────────────── */
+.settings-scope .sb-shell {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: var(--sp-16);
+}
+.settings-scope .sb-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex: 0 0 200px;
+  min-width: 0;
+}
+.settings-scope .sb-nav-it {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  height: 36px;
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-14);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: var(--fw-label);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.settings-scope .sb-nav-it:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.settings-scope .sb-nav-it[data-selected='true'] {
+  background: var(--surface-2);
+  border-color: var(--edge-strong);
+  color: var(--ink-1);
+}
+.settings-scope .sb-nav-it:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+.settings-scope .sb-nav-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-scope .sb-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-20);
+  padding: var(--sp-2) var(--sp-4) var(--sp-24);
+}
+
+/* ── A GROUP: B's micro-label over one card ─────────────────────────────── */
+.settings-scope .sb-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  margin: 0;
+}
+.settings-scope .sb-lab {
+  margin: 0;
+  padding: 0 var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.settings-scope .sb-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  padding: var(--sp-16);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+.settings-scope .sb-card > :first-child { margin-top: 0; }
+
+/* ── TEXT ────────────────────────────────────────────────────────────────── */
+.settings-scope .sb-note,
+.settings-scope .settings-note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+}
+.settings-scope .sb-hint {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.settings-scope .sb-meta {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.settings-scope .sb-ok { color: var(--ink-2); font-size: var(--t-12); }
+.settings-scope .sb-fail {
+  margin: 0;
+  padding: var(--sp-10) var(--sp-12);
+  border-radius: var(--r-14);
+  background: var(--wont-wash);
+  color: var(--ink-1);
+}
+.settings-scope code {
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-4);
+  background: color-mix(in srgb, var(--ink-1) 7%, transparent);
+}
+
+/* ── ROWS ────────────────────────────────────────────────────────────────── */
+.settings-scope .sb-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.settings-scope .sb-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4) var(--sp-10);
+  min-height: 40px;
+  padding: var(--sp-8) 0;
+  border-top: var(--w-hair) solid var(--edge);
+}
+.settings-scope .sb-list > .sb-row:first-child,
+.settings-scope .sb-card > .sb-row:first-child { border-top: 0; padding-top: 0; }
+.settings-scope .sb-row-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.settings-scope .sb-row-t { font-weight: var(--fw-label); color: var(--ink-1); min-width: 0; }
+.settings-scope .sb-row-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.settings-scope .sb-row-sub,
+.settings-scope .sb-row-sub2 {
+  flex: 1 1 100%;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.settings-scope .sb-row-act { flex-wrap: nowrap; }
+.settings-scope .sb-row-act .sb-row-t { flex: 1 1 auto; }
+.settings-scope .sb-badge {
+  margin-left: auto;
+  height: 22px;
+  padding: 0 var(--sp-8);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink-1) 7%, transparent);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+}
+.settings-scope .sb-badge[data-state='ready'] { color: var(--ink-3); }
+.settings-scope .sb-badge[data-state='limited'] { color: var(--spills); background: var(--spills-wash); }
+
+/* ── THE AGENTS PANE ─────────────────────────────────────────────────────── */
+.settings-scope .sb-agent { flex-wrap: nowrap; gap: var(--sp-12); }
+/* UX audit R11 #12: the status and the action sit in fixed columns, so the pills and the buttons line up down the list whatever the row's name or detail. */
+.settings-scope .sb-agent {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 124px 128px;
+  align-items: center;
+  column-gap: var(--sp-12);
+}
+.settings-scope .sb-agent .sb-badge { margin-left: 0; flex: none; justify-self: start; }
+.settings-scope .sb-agent > .sb-pill { justify-self: end; min-width: 0; }
+.settings-scope .sb-agent-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-10);
+  background: color-mix(in srgb, var(--ink-1) 7%, transparent);
+  color: var(--ink-1);
+}
+.settings-scope .sb-agent-ic svg { display: block; width: 18px; height: 18px; }
+/* A command to copy (sign in, install): shown, never run. */
+.settings-scope .sb-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+  margin-top: var(--sp-4);
+}
+.settings-scope .sb-copy-lab { font-size: var(--t-12); color: var(--ink-3); }
+.settings-scope .sb-copy-cmd { user-select: all; }
+.settings-scope .sb-pill-sm { height: var(--icon-btn); padding: 0 var(--sp-10); font-size: var(--t-11); }
+.settings-scope .sb-kbd {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: 18px;
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid var(--edge-strong);
+  border-radius: var(--r-8);
+  color: var(--ink-3);
+}
+
+/* ── THE SWITCH (B's toggle) ─────────────────────────────────────────────
+   A native checkbox with role="switch", drawn as a 36x20 track and a thumb,
+   so the keyboard, the label and assistive tech keep the platform's
+   behaviour. The switch sits at the row's right. */
+.settings-scope .sb-row-switch {
+  flex-wrap: nowrap;
+  cursor: pointer;
+}
+.settings-scope .sb-row-switch > .sb-switch { order: 2; }
+.settings-scope .sb-row-switch > :not(.sb-switch) { flex: 1 1 auto; min-width: 0; }
+.settings-scope .sb-switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  /* Round 13 (O5): a global input border (1px) offset the thumb, whose position is measured inside it: 3px/1px/3px/1px instead of 2px all round. */
+  border: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink-1) 22%, transparent);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease);
+}
+.settings-scope .sb-switch::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-full);
+  /* B's toggle: a white thumb on both rooms. */
+  background: var(--accent-on-solid);
+  transition: translate var(--dur-1) var(--ease);
+}
+.settings-scope .sb-switch:checked { background: var(--accent-solid); }
+.settings-scope .sb-switch:checked::before { translate: 16px 0; }
+.settings-scope .sb-switch:disabled { opacity: .45; cursor: not-allowed; }
+.settings-scope .sb-switch:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+
+/* ── PILLS (B's .btn: soft glass; the primary act is the solid accent) ───── */
+.settings-scope .sb-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+}
+.settings-scope .sb-acts-row { gap: var(--sp-8); }
+.settings-scope .sb-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: 32px;
+  padding: 0 calc(var(--sp-12) + var(--sp-2));
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.settings-scope .sb-pill:hover:not(:disabled) { background: var(--glass-ctl-hover); border-color: var(--glass-ctl-edge-hover); }
+.settings-scope .sb-pill:disabled { color: var(--ink-4); cursor: not-allowed; }
+.settings-scope .sb-pill:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+.settings-scope .sb-pill-solid {
+  border-color: transparent;
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+}
+.settings-scope .sb-pill-solid:hover:not(:disabled) { background: var(--accent-solid-hover); border-color: transparent; }
+.settings-scope .sb-pill-solid:disabled { background: color-mix(in srgb, var(--accent-solid) 40%, transparent); color: var(--accent-on-solid); }
+.settings-scope .sb-link {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: var(--sp-4);
+}
+.settings-scope .sb-link:hover { color: var(--ink-1); }
+.settings-scope .sb-disclosure {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+.settings-scope .sb-disclosure:hover { color: var(--ink-1); }
+
+/* ── FIELDS (B: soft, rounded, glass) ────────────────────────────────────── */
+.settings-scope .sb-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.settings-scope .sb-field-lab {
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+.settings-scope .sb-input,
+.settings-scope .sb-mcp-add input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge-strong);
+  border-radius: var(--r-14);
+  background: color-mix(in srgb, var(--surface-1) 70%, transparent);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-13);
+  outline: none;
+  transition: border-color var(--dur-1) var(--ease);
+}
+.settings-scope .sb-input:focus,
+.settings-scope .sb-mcp-add input:focus { border-color: var(--accent-edge); }
+.settings-scope .sb-input-num { width: 88px; flex: none; }
+.settings-scope .sb-area {
+  height: auto;
+  min-height: 160px;
+  padding: var(--sp-10) var(--sp-12);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  resize: vertical;
+}
+.settings-scope .sb-mcp-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-12);
+  border-radius: var(--r-14);
+  background: color-mix(in srgb, var(--ink-1) 3%, transparent);
+}
+.settings-scope .sb-mcp-add .sb-row { border-top: 0; padding: 0; min-height: 0; }
+
+/* ── B's MENU SELECT (sbParts.tsx MenuSelect) ────────────────────────────── */
+.settings-scope .sb-select { position: relative; display: inline-flex; align-self: flex-start; }
+.settings-scope .sb-select-btn { padding: 0 var(--sp-10) 0 calc(var(--sp-12) + var(--sp-2)); gap: var(--sp-8); }
+.settings-scope .sb-select-btn .sb-i { color: var(--ink-3); }
+.settings-scope .sb-select-v { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-scope .sb-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-6));
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 260px;
+  padding: 6px;
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-18);
+  background: color-mix(in srgb, var(--surface-2) 94%, transparent);
+  box-shadow: var(--e3);
+  animation: sb-menu-in 160ms var(--ease);
+}
+@keyframes sb-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+.settings-scope .sb-mi {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  padding: var(--sp-8) var(--sp-10);
+  border: 0;
+  border-radius: var(--r-10);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-scope .sb-mi:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.settings-scope .sb-mi[aria-selected='true'] { background: var(--accent-wash); color: var(--ink-1); }
+.settings-scope .sb-mi[aria-selected='true'] .sb-i { color: var(--accent); }
+.settings-scope .sb-mi:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: -2px; }
+.settings-scope .sb-mi-d { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.settings-scope .sb-mi-t { font-weight: var(--fw-label); }
+.settings-scope .sb-mi-sub { font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-3); }
+
+/* ── OPTION TILES (where a model runs; the accent) ───────────────────────── */
+.settings-scope .sb-presets { display: flex; flex-direction: column; gap: var(--sp-10); }
+.settings-scope .sb-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--sp-8);
+}
+.settings-scope .sb-tile {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--sp-10) var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background: var(--glass-ctl);
+  color: var(--ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.settings-scope .sb-tile:hover { background: var(--glass-ctl-hover); border-color: var(--edge-strong); }
+.settings-scope .sb-tile[data-selected='true'] {
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+}
+.settings-scope .sb-tile:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+.settings-scope .sb-tile-t { font-weight: var(--fw-label); }
+.settings-scope .sb-tile-sub { font-size: var(--t-11); color: var(--ink-3); }
+.settings-scope .sb-tile-absent { color: var(--ink-3); }
+
+/* ── SAVED MODELS ────────────────────────────────────────────────────────── */
+.settings-scope .sb-profiles { display: flex; flex-direction: column; gap: var(--sp-8); }
+.settings-scope .sb-profile {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-8);
+  padding: var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background: color-mix(in srgb, var(--ink-1) 2%, transparent);
+}
+.settings-scope .sb-profile[data-active='true'] { border-color: var(--accent-edge); }
+.settings-scope .sb-profile-hd { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8); }
+.settings-scope button.sb-profile-name {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-1);
+  font: inherit;
+  font-weight: var(--fw-head);
+  text-align: left;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+.settings-scope button.sb-profile-name:hover { text-decoration: underline; text-underline-offset: var(--sp-4); }
+.settings-scope button.sb-profile-name:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+.settings-scope .sb-profile-model { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); }
+.settings-scope .sb-chip,
+.settings-scope .sb-mark {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-full);
+  font-size: var(--t-11);
+  font-weight: var(--fw-label);
+}
+.settings-scope .sb-chip { background: color-mix(in srgb, var(--ink-1) 7%, transparent); color: var(--ink-2); }
+.settings-scope .sb-mark { background: var(--accent-wash); color: var(--ink-1); }
+.settings-scope .sb-profile-acts { display: flex; flex-wrap: wrap; gap: var(--sp-8); }
+.settings-scope .sb-profile-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-6); }
+.settings-scope .sb-profile-rename { width: auto; min-width: 180px; height: var(--row-h); }
+
+/* The models found running on this machine: a list of rows under its
+   disclosure, each one a model and the act of using it. */
+.settings-scope .sb-local { display: flex; flex-direction: column; gap: var(--sp-6); }
+.settings-scope .sb-local-row { flex-wrap: nowrap; padding: var(--sp-6) 0; }
+/* ── ONE CLICK TO A LOCAL MODEL ──────────────────────────────────────────── */
+.settings-scope .sb-local-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: calc(var(--sp-12) + var(--sp-2)) var(--sp-16);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-18);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.settings-scope .sb-local-head { margin: 0; font-weight: var(--fw-head); color: var(--ink-1); }
+.settings-scope .sb-local-quiet { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8); color: var(--ink-3); font-size: var(--t-12); }
+.settings-scope .sb-local-bar {
+  height: 6px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink-1) 10%, transparent);
+  overflow: hidden;
+}
+.settings-scope .sb-local-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-solid);
+}
+.settings-scope .sb-local-bar > span[data-indeterminate='yes'] {
+  width: 30%;
+  animation: sb-sweep 1.4s var(--ease) infinite;
+}
+@keyframes sb-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(340%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-scope .sb-local-bar > span[data-indeterminate='yes'] { animation: none; }
+}
+.settings-scope .sb-skel {
+  height: 12px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink-1) 8%, transparent);
+}
+.settings-scope .sb-skel.l40 { width: 40%; }
+.settings-scope .sb-skel.l60 { width: 60%; }
+.settings-scope .sb-skel.l90 { width: 90%; }
+
+/* ── THE AUTONOMY MATRIX ─────────────────────────────────────────────────── */
+.settings-scope .sb-matrix-wrap {
+  overflow-x: auto;
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+}
+.settings-scope .sb-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-12);
+}
+.settings-scope .sb-matrix th,
+.settings-scope .sb-matrix td {
+  padding: var(--sp-8) var(--sp-10);
+  border-top: var(--w-hair) solid var(--edge);
+  text-align: center;
+}
+.settings-scope .sb-matrix thead th {
+  border-top: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-weight: var(--fw-label);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.settings-scope .sb-matrix tbody th { text-align: left; }
+.settings-scope .sb-matrix-mode { display: block; font-weight: var(--fw-label); color: var(--ink-1); }
+.settings-scope .sb-matrix-sub { display: block; color: var(--ink-3); font-size: var(--t-11); font-weight: var(--fw-body); }
+.settings-scope .sb-matrix td[data-on='true'] { color: var(--ink-1); }
+.settings-scope .sb-matrix td[data-on='false'] { color: var(--ink-3); } /* UX audit R11 #20: a "no" was ink-4 text, 4.44:1 in dark; ink-3 clears 4.5 on every surface */
+
+/* ── NARROW: the nav becomes a row of pills over the body ───────────────── */
+@media (max-width: 760px) {
+  .settings-scope .sb-shell { flex-direction: column; }
+  .settings-scope .sb-nav { flex-direction: row; flex: 0 0 auto; overflow-x: auto; }
+  .settings-scope .sb-nav-it { border-radius: var(--r-full); flex: none; }
+}
+
+
+/* ── THE SESSIONS LIST (the shell's overlay and the hooks list share this
+   scope; carried over as it was, it is not Settings' own drawing). ── */
+/* Sessions sidebar section mark — glyph only; words live in aria / .sr. */
+.settings-scope .sessions-heading {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  color: var(--ink-3);
+  line-height: 1;
+}
+.settings-scope .sessions-heading-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── SESSIONS ────────────────────────────────────────────────────────────
+   Shares `.settings-scope` deliberately: it is the same kind of surface — an
+   overlay panel of rows and one action — and giving it a second scope would be
+   a second set of answers to questions this one already settled. Rows sit on
+   the 30px rung, like every other list row in the product (sheet 10). */
+.settings-scope .sessions-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  max-height: calc(var(--row-h) * 10); overflow-y: auto;
+}
+.settings-scope .sessions-group + .sessions-group {
+  margin-top: var(--sp-12);
+}
+.settings-scope .sessions-group-label {
+  margin: 0 0 var(--sp-4);
+  padding: 0 var(--sp-8);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.settings-scope .sessions-row {
+  appearance: none; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: var(--sp-8);
+  height: var(--row-h); padding: 0 var(--sp-8);
+  background-color: transparent; border: 0; border-radius: var(--r-8);
+  font-family: inherit; font-size: var(--t-12); color: var(--ink-2);
+  cursor: pointer; white-space: nowrap;
+}
+.settings-scope .sessions-row:hover:not([disabled]) {
+  background-color: var(--state-hover); color: var(--ink-1);
+}
+/* The CURRENT session is selected, not hovered — `--state-selected` is the
+   token for "this is the one", and it is paired with `aria-current` in the
+   markup so the fact survives for a reader who cannot see it. */
+.settings-scope .sessions-row[data-active='true'] {
+  background-color: var(--state-selected); color: var(--ink-1); cursor: default;
+}
+.settings-scope .sessions-name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+/* A CATEGORY, so neutral mono at --ink-3 and never a badge — the same ruling
+   the node card's kind tag follows. */
+.settings-scope .sessions-tag,
+.settings-scope .sessions-when {
+  flex: 0 0 auto;
+  font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-3);
+}
+.settings-scope .sessions-when { color: var(--ink-4); }
+.settings-scope .sessions-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── G1 TAIL — per-row actions and rename-in-place ──────────────────────
+   The row is a flex line: the activate button takes the free width and the
+   action cluster rides beside it at the same 30px rung. Seat-walk: actions
+   are opacity-0 until hover/focus-within (chat prose-copy pattern) so a
+   216px sidebar can show the title. Selection chrome wraps the whole item. */
+.settings-scope .sessions-item {
+  display: flex; align-items: center; gap: var(--sp-2);
+  border-radius: var(--r-8);
+  position: relative;
+}
+.settings-scope .sessions-item:has(.sessions-row[data-active='true']) {
+  background-color: var(--state-selected);
+}
+.settings-scope .sessions-item .sessions-row { flex: 1 1 auto; min-width: 0; }
+.settings-scope .sessions-item .sessions-row[data-active='true'] {
+  background-color: transparent;
+}
+.settings-scope .sessions-pin-mark {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+.settings-scope .sessions-acts {
+  display: inline-flex; align-items: center; gap: var(--sp-2); flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.settings-scope .sessions-item:hover .sessions-acts,
+.settings-scope .sessions-item:focus-within .sessions-acts {
+  opacity: 1;
+}
+.settings-scope .sessions-act {
+  appearance: none;
+  width: var(--icon-btn); height: var(--icon-btn);
+  display: inline-grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--r-8);
+  background-color: transparent; color: var(--ink-4);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.settings-scope .sessions-act:hover:not([disabled]) {
+  background-color: var(--state-hover); color: var(--ink-1);
+}
+.settings-scope .sessions-act:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.settings-scope .sessions-act[disabled] { color: var(--ink-4); cursor: not-allowed; opacity: .6; }
+.settings-scope .sessions-rename {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: var(--row-h);
+}
+.settings-scope .sessions-rename-field {
+  flex: 1 1 auto; min-width: 0; height: var(--control-h);
+}
+
+
+
+/* The settings panel's session list follows the rail's rule: the one you are
+   in is DARKENED, never lit (see sessions.css). */
+.settings-scope .sessions-row[data-active='true'] {
+  background-color: var(--bg-ground);
+  color: var(--ink-1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 9 (ask 18): FULLER SCREEN, A ROW PER SETTING, FAR LESS TEXT.
+   Like ChatGPT's and Codex's settings: a left nav of a few stops, and in the
+   body each setting is one row (label, one short hint, the control at the
+   right). The shell gives the panel most of the window (v3.css); the body
+   keeps a readable column so a control never sits a screen away from its
+   label.
+   ══════════════════════════════════════════════════════════════════════════ */
+.settings-scope .sb-hd { padding: var(--sp-4) var(--sp-4) 0; }
+.settings-scope .sb-title { font-size: var(--t-15); font-weight: var(--fw-label); letter-spacing: -0.01em; }
+.settings-scope .sb-shell { gap: var(--sp-24); }
+.settings-scope .sb-nav { flex: 0 0 224px; gap: var(--sp-2); padding-top: var(--sp-8); }
+.settings-scope .sb-nav-it { height: 40px; font-size: var(--t-13); }
+.settings-scope .sb-body { align-items: flex-start; padding: var(--sp-8) var(--sp-16) var(--sp-32) var(--sp-8); }
+.settings-scope .sb-body > * { width: 100%; max-width: 780px; flex: none; }
+.settings-scope .sb-card { gap: var(--sp-8); padding: var(--sp-8) var(--sp-16); }
+.settings-scope .sb-card > .sb-row:first-child { padding-top: var(--sp-4); }
+.settings-scope .sb-row { min-height: 52px; gap: var(--sp-4) var(--sp-16); }
+.settings-scope .sb-row-txt { gap: 1px; }
+.settings-scope .sb-row-act .sb-row-txt,
+.settings-scope .sb-row-switch .sb-row-txt,
+.settings-scope .sb-row-knob .sb-row-txt,
+.settings-scope .sb-row-choice .sb-row-txt { flex: 1 1 0; }
+.settings-scope .sb-row-sub { flex: 0 1 auto; }
+
+/* The primary act is the solid pill, and it reads as one. */
+.settings-scope .sb-pill-solid { min-width: 72px; font-weight: var(--fw-label); }
+
+/* A knob: label left, slider and value box right. */
+.settings-scope .sb-row-knob { flex-wrap: nowrap; }
+.settings-scope .sb-slider {
+  appearance: none;
+  flex: 0 0 180px;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.settings-scope .sb-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink-1) 18%, transparent);
+}
+.settings-scope .sb-slider::-moz-range-track {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink-1) 18%, transparent);
+}
+.settings-scope .sb-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: var(--r-full);
+  background: var(--accent-on-solid);
+  box-shadow: 0 0 0 var(--w-hair) var(--edge-strong);
+}
+.settings-scope .sb-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--accent-on-solid);
+  box-shadow: 0 0 0 var(--w-hair) var(--edge-strong);
+}
+.settings-scope .sb-slider:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 4px; border-radius: var(--r-full); }
+.settings-scope .sb-row-knob .sb-input-num { width: 84px; }
+
+/* A choice row (the accent): the tiles shrink to chips at the right. */
+.settings-scope .sb-row-choice { flex-wrap: nowrap; }
+.settings-scope .sb-tiles-inline { display: flex; flex: none; gap: var(--sp-6); }
+.settings-scope .sb-tiles-inline .sb-tile { padding: var(--sp-6) var(--sp-12); border-radius: var(--r-full); }
+.settings-scope .sb-tiles-inline .sb-tile-sub { display: none; }
+
+/* The row whose act sits at the right and may wrap its hint. */
+.settings-scope .sb-row-end { flex-wrap: nowrap; align-items: center; }
+.settings-scope .sb-row-end .sb-pill { flex: none; }
+
+/* A disclosure for what most people never open. */
+.settings-scope .sb-more { border-top: var(--w-hair) solid var(--edge); padding: var(--sp-8) 0; }
+.settings-scope .sb-more-sum {
+  cursor: pointer;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  list-style: none;
+}
+.settings-scope .sb-more-sum::-webkit-details-marker { display: none; }
+.settings-scope .sb-more-sum:hover { color: var(--ink-1); }
+.settings-scope .sb-more[open] .sb-more-sum { margin-bottom: var(--sp-8); }
+
+/* A form field is a row too: the label at the left, the box at the right. */
+.settings-scope .sb-field {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--sp-16);
+  min-height: 48px;
+}
+.settings-scope .sb-field > :not(.sb-field-lab) { grid-column: 2; min-width: 0; }
+.settings-scope .sb-field-lab { font-size: var(--t-13); color: var(--ink-1); }
+/* UX audit R11 #16: the Provider select is a 36px control like the Name, Model and Base URL inputs, centred on its label. */
+.settings-scope .sb-field > .sb-select { align-self: center; }
+.settings-scope .sb-field > .sb-select > .sb-select-btn { height: 36px; }
+.settings-scope .sb-card > .sb-hint[data-testid='settings-key-hint'] { padding-left: 176px; }
+@media (max-width: 760px) {
+  .settings-scope .sb-field { grid-template-columns: 1fr; }
+  .settings-scope .sb-field > :not(.sb-field-lab) { grid-column: 1; }
+  .settings-scope .sb-card > .sb-hint[data-testid='settings-key-hint'] { padding-left: 0; }
+}
+
+/* Round 10: the accent as round swatches with their names. */
+.settings-scope .sb-row-choice:has(.sb-swatches) { flex-wrap: wrap; row-gap: var(--sp-8); }
+/* The text keeps a floor width, so the label stays on one line and the hint
+   wraps at most twice; the swatches then drop under the text when the row is
+   too narrow for both side by side. */
+.settings-scope .sb-row-choice:has(.sb-swatches) .sb-row-txt { min-width: calc(var(--sp-32) * 6); }
+.settings-scope .sb-swatches { display: flex; flex-wrap: wrap; flex: 1 1 auto; justify-content: flex-end; gap: var(--sp-4) var(--sp-8); }
+.settings-scope .sb-swatch {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 52px;
+  padding: var(--sp-4);
+  border: 0;
+  border-radius: var(--r-10);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-11);
+  cursor: pointer;
+}
+.settings-scope .sb-swatch-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-full);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.settings-scope .sb-swatch:hover { color: var(--ink-1); }
+.settings-scope .sb-swatch:hover .sb-swatch-dot { transform: scale(1.08); }
+.settings-scope .sb-swatch[data-selected='true'] { color: var(--ink-1); font-weight: var(--fw-label); }
+.settings-scope .sb-swatch[data-selected='true'] .sb-swatch-dot {
+  box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 3.5px var(--ink-1);
+}
+.settings-scope .sb-swatch:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .settings-scope .sb-swatch-dot { transition: none; } }
+
+.settings-scope .sb-swatch-t { white-space: nowrap; }
+.settings-scope .sb-swatch[data-accent-choice='blue'] .sb-swatch-dot { background: var(--swatch-blue); }
+.settings-scope .sb-swatch[data-accent-choice='violet'] .sb-swatch-dot { background: var(--swatch-violet); }
+.settings-scope .sb-swatch[data-accent-choice='green'] .sb-swatch-dot { background: var(--swatch-green); }
+.settings-scope .sb-swatch[data-accent-choice='rose'] .sb-swatch-dot { background: var(--swatch-rose); }
+.settings-scope .sb-swatch[data-accent-choice='graphite'] .sb-swatch-dot { background: var(--swatch-graphite); }
+.settings-scope .sb-swatch[data-accent-choice='white'] .sb-swatch-dot { background: var(--swatch-white); }
+.settings-scope .sb-swatch[data-accent-choice='gold'] .sb-swatch-dot { background: var(--swatch-gold); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 12 (ask 17): ONE SYSTEM, UIARC'S SOFT GLASS
+   The pass over the layers above: no drop shadows anywhere in the panel (the
+   dialog is a hairline over the scrim; only a floating menu lifts); one pill
+   for every button, never stretched across a card; one card padding whatever
+   its first child is; one micro-label for every section; one 8px rhythm
+   between a label, its card and the next section; the native Theme select
+   drawn as the same soft pill.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2 .v3-overlay-scrim[data-kind='settings'] .v3-overlay-panel {
+  border-radius: var(--r-18);
+  box-shadow: 0 0 0 var(--w-hair) var(--edge-strong);
+}
+/* The frame is one centred column, so the nav and the body never drift apart on a wide window. */
+.v3-overlay-panel .settings-scope > .sb-hd,
+.v3-overlay-panel .settings-scope > .sb-shell {
+  width: 100%;
+  max-width: 1040px;
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+.settings-scope .sb-body { gap: var(--sp-24); }
+.settings-scope .sb-group { gap: var(--sp-8); }
+/* Prose that opens or closes a card keeps the row's vertical air. */
+.settings-scope .sb-card > .sb-note,
+.settings-scope .sb-card > .sb-hint,
+.settings-scope .sb-card > .sb-meta,
+.settings-scope .sb-card > .settings-note { padding: var(--sp-4) 0; }
+/* A button is a soft pill at its own width; a card never stretches it. */
+.settings-scope .sb-card > .sb-pill,
+.settings-scope .sb-card > .sb-acts,
+.settings-scope :is(.sb-profiles, .sb-presets, .sb-local, .sb-mcp-add) > .sb-pill { align-self: flex-start; }
+.settings-scope .sb-pill { min-width: 0; }
+.settings-scope .sb-pill-solid { min-width: 72px; }
+.settings-scope .sb-profile-acts .sb-pill,
+.settings-scope .sb-acts .sb-pill,
+.settings-scope .sb-copy .sb-pill { height: var(--row-h-thread); padding: 0 var(--sp-12); font-size: var(--t-12); }
+/* The native Theme select, as the same pill with a drawn chevron. */
+.settings-scope .sb-native { position: relative; display: inline-flex; align-items: center; flex: none; }
+.settings-scope .sb-native > select {
+  appearance: none;
+  height: 32px;
+  width: auto;
+  padding: 0 calc(var(--sp-12) + var(--sp-16)) 0 calc(var(--sp-12) + var(--sp-2));
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.settings-scope .sb-native > select:hover { background: var(--glass-ctl-hover); border-color: var(--glass-ctl-edge-hover); }
+.settings-scope .sb-native > select:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+.settings-scope .sb-native::after {
+  content: '';
+  position: absolute;
+  right: var(--sp-12);
+  top: 50%;
+  width: var(--sp-6);
+  height: var(--sp-6);
+  border-right: var(--w-rule) solid var(--ink-3);
+  border-bottom: var(--w-rule) solid var(--ink-3);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.settings-scope .sb-theme { width: 100%; justify-content: space-between; }
+
+/* ── ROUND 13 (O3): the two one-line choices (Local model, API key) ─────── */
+.settings-scope .sb-choices { display: flex; flex-direction: column; gap: var(--sp-8); }
+.settings-scope .sb-choice {
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-14);
+  background: var(--glass-ctl);
+  overflow: hidden;
+}
+.settings-scope .sb-choice-hd {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: var(--sp-8) var(--sp-12);
+  border: 0;
+  background: none;
+  color: var(--ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.settings-scope .sb-choice-hd:hover { background: var(--glass-ctl-hover); }
+.settings-scope .sb-choice-hd:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: -2px; }
+.settings-scope .sb-choice-t { font-weight: var(--fw-label); white-space: nowrap; }
+.settings-scope .sb-choice-sub { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-12); color: var(--ink-3); }
+.settings-scope .sb-choice .sb-tiles { display: flex; flex-direction: column; gap: var(--sp-8); padding: 0 var(--sp-12) var(--sp-12); }
+/* One line per provider: the name and what it needs side by side, never wrapped. */
+.settings-scope .sb-choice .sb-tile { flex-direction: row; align-items: center; gap: var(--sp-12); padding: var(--sp-6) var(--sp-12); }
+.settings-scope .sb-choice .sb-tile-t,
+.settings-scope .sb-choice .sb-tile-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.settings-scope .sb-choice .sb-tile-cell { flex-direction: row; align-items: center; gap: var(--sp-8); }
+.settings-scope .sb-choice .sb-tile-cell .sb-tile { flex: 1 1 auto; min-width: 0; }
+.settings-scope .sb-choice .sb-tile-cell .sb-pill { align-self: center; flex: none; }
+.settings-scope .sb-tile-cell { display: flex; flex-direction: column; gap: var(--sp-6); align-items: stretch; }
+.settings-scope .sb-tile-cell .sb-pill { align-self: flex-start; }
+
+/* ── ROUND 13 (O4): AGENTS.md, open and edit in place ─────────────────────── */
+.settings-scope .sb-instr-where { align-items: center; }
+.settings-scope .sb-instr-where .sb-copy-cmd { display: block; overflow-wrap: anywhere; }
+.settings-scope .sb-instr-preview {
+  margin: 0;
+  max-height: 220px;
+  /* A glance, not a scroller: the owner could only scroll inside this box and not the page. The wheel passes
+     through to the page; Edit opens the whole file. */
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, var(--ink-1) calc(100% - var(--sp-24)), transparent);
+  mask-image: linear-gradient(to bottom, var(--ink-1) calc(100% - var(--sp-24)), transparent);
+  padding: var(--sp-8) var(--sp-12);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge-faint);
+  background: var(--bg-base);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.settings-scope .sb-instr-edit { display: flex; flex-direction: column; gap: var(--sp-8); }
+.settings-scope .sb-instr-text {
+  width: 100%;
+  min-height: 220px;
+  height: auto;
+  padding: var(--sp-8) var(--sp-12);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+/* ══ ROUND 13 (N3): ONE BUTTON HIERARCHY, applied across Settings ══════════
+   PRIMARY    .sb-pill-solid   the accent fill and a soft lift: the one act this card is for
+                               (Save, Add another model, Use it, Edit, Connect when ready).
+   CHOICE     .sb-choice       a pick among options (Local model, API key): an accent outline,
+                               a faint accent wash and the same lift, so it reads as a door to
+                               open, stronger than any ordinary button.
+   SECONDARY  .sb-pill         a clear outline on glass: Test, Remove, Copy, Check again.
+   QUIET      .sb-pill-quiet   words only, no outline: Cancel, Hide advanced, dismissals.
+   One primary per card; nothing quiet is ever the only way to do something. */
+.settings-scope .sb-pill-solid { box-shadow: var(--e1); }
+.settings-scope .sb-pill-solid:disabled { box-shadow: none; }
+.settings-scope .sb-pill-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-3);
+  font-weight: var(--fw-body);
+}
+.settings-scope .sb-pill-quiet:hover:not(:disabled) { background: var(--state-hover); border-color: transparent; color: var(--ink-1); }
+.settings-scope .sb-choice {
+  border-color: var(--accent-edge);
+  background: color-mix(in srgb, var(--accent-wash) 55%, var(--glass-ctl));
+  box-shadow: var(--e1);
+}
+.settings-scope .sb-choice-hd { min-height: var(--control-h); }
+.settings-scope .sb-choice-hd .sb-i, .settings-scope .sb-choice-hd svg { color: var(--accent); }
+.settings-scope .sb-choice-t { font-size: var(--t-13); }
+.settings-scope .sb-choice-hd:hover { background: var(--accent-wash); }
+.settings-scope .sb-choice[data-open='true'] { box-shadow: var(--e2); }
+
+/* Round 13 (N4): the models an agent brings with its subscription: a plain read-only list. */
+.settings-scope .sb-agent-models { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-4); }
+.settings-scope .sb-agent-model-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-4); }
+.settings-scope .sb-agent-model {
+  padding: 0 var(--sp-8); height: var(--control-h); display: inline-flex; align-items: center;
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-full);
+  font-size: var(--t-12); color: var(--ink-2);
+}
+
+/* Round 13 (N5, N6): a section that takes a dropped file shows its edge while one is over it. */
+.settings-scope .sb-group[data-dropping='true'] > .sb-card {
+  outline: var(--w-hair) dashed var(--accent-edge);
+  outline-offset: calc(var(--sp-4) * -1);
+  background: color-mix(in srgb, var(--accent-wash) 40%, transparent);
+}
+
+/* Round 13 (merge): the skills drop zone shows its edge while files are over it, like the sections above. */
+.settings-scope .sb-skill-import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  border-radius: var(--r-8);
+}
+.settings-scope .sb-skill-import[data-dropping='true'] {
+  outline: var(--w-hair) dashed var(--accent-edge);
+  outline-offset: var(--sp-2);
+  background: color-mix(in srgb, var(--accent-wash) 40%, transparent);
+}

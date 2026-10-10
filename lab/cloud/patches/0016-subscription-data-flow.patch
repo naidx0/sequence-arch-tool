@@ -1,0 +1,266 @@
+diff --git a/packages/analyzer/src/server/askTools.ts b/packages/analyzer/src/server/askTools.ts
+index d854667..0f47347 100644
+--- a/packages/analyzer/src/server/askTools.ts
++++ b/packages/analyzer/src/server/askTools.ts
+@@ -43,7 +43,7 @@ import { repoExecutionRefusal } from './repoTrust.js';
+ import { gitDiff, gitStatus, GitWorkspaceError } from './gitWorkspace.js';
+ import type { ArchGraph } from '@sequence/schema';
+ import { validatePlan, type Concept } from './lessonState.js';
+-import { validateChart, CHART_KINDS, compileFlowLines, flowProblemLine, isChartKind } from '@sequence/schema';
++import { validateChart, CHART_KINDS, compileFlowLines, flowProblemLine, groundingEdgeKeys, isChartKind } from '@sequence/schema';
+ import type { CompiledFlow } from '@sequence/schema';
+ import type { Digest } from '../explain/explain.js';
+ import {
+@@ -3212,9 +3212,7 @@ function executeProposeChart(
+      repository actually has. Built here rather than passed in because `known`
+      is built the same way one line above, and the two must come from the same
+      graph or the chart is checked against a mixture. */
+-  const knownEdges = new Set<string>(
+-    (ctx.graph?.edges ?? []).map((e) => `${e.srcId}>${e.dstId}`),
+-  );
++  const knownEdges = groundingEdgeKeys(ctx.graph?.edges ?? []);
+   const result = validateChart(stems.raw, known, knownEdges);
+   if (!result.ok) {
+     const lines = result.problems
+diff --git a/packages/analyzer/src/test/chart-flow-lines.test.ts b/packages/analyzer/src/test/chart-flow-lines.test.ts
+index c670a0c..3781045 100644
+--- a/packages/analyzer/src/test/chart-flow-lines.test.ts
++++ b/packages/analyzer/src/test/chart-flow-lines.test.ts
+@@ -142,3 +142,32 @@ test('flag on: the tool asks for flow lines, items stay available, and items win
+   assert.equal(both.ok, true, both.evidence);
+   assert.deepEqual(both.chart?.items.map((i) => i.id), ['a']);
+ });
++
++test('a subscription drawn topic -> consumer is grounded (data-flow direction)', async () => {
++  const c = await ctx();
++  const edges = (c as unknown as { graph: { edges: { srcId: string; dstId: string; kind: string }[] } }).graph.edges;
++  const sub = edges.find((e) => e.kind === 'queue_consume');
++  assert.ok(sub, 'the shopfront scan has a queue consumer');
++  const drawn = (from: string, to: string) =>
++    executeAskTool(
++      'propose_chart',
++      {
++        kind: 'data-flow',
++        title: 'Who hears about a new order',
++        items: [
++          { id: 't', label: 'topic', nodeId: from },
++          { id: 'w', label: 'consumer', nodeId: to },
++        ],
++        links: [{ from: 't', to: 'w', label: 'the event' }],
++      },
++      c,
++    );
++  const r = await drawn(sub!.dstId, sub!.srcId);
++  assert.equal(r.ok, true, r.evidence);
++  /* A publish edge still has one direction: topic -> publisher is invented. */
++  const pub = edges.find((e) => e.kind === 'queue_publish');
++  if (pub) {
++    const back = await drawn(pub.dstId, pub.srcId);
++    assert.equal(back.ok, false);
++  }
++});
+diff --git a/packages/schema/src/chart.ts b/packages/schema/src/chart.ts
+index 3ec743a..1ab21bf 100644
+--- a/packages/schema/src/chart.ts
++++ b/packages/schema/src/chart.ts
+@@ -419,3 +419,28 @@ export function validateChart(
+      does. */
+   return { ok: true, chart: (o.version === 1 ? o : { ...o, version: 1 }) as SeqChart };
+ }
++
++/**
++ * THE EDGE SET A CHART IS GROUNDED AGAINST, in the direction a reader draws.
++ *
++ * A scan stores a queue consumer's edge as `consumer -> topic`: the subscribe
++ * call is in the consumer's code. Data moves the other way, and that is how a
++ * person and a model both draw it: `topic -> worker`. validateChart treats
++ * direction as part of the claim, so the reader's drawing of a real
++ * subscription was refused as an invented connection. On the hard A/B set,
++ * that was 12 of the 44 refusals, in every language.
++ *
++ * So a `queue_consume` edge is accepted either way round, and no other kind
++ * is: `a -> b` still does not stand for `b -> a` on an http, grpc, import or
++ * publish edge.
++ */
++export function groundingEdgeKeys(
++  edges: readonly { srcId: string; dstId: string; kind?: string }[],
++): Set<string> {
++  const keys = new Set<string>();
++  for (const e of edges) {
++    keys.add(`${e.srcId}>${e.dstId}`);
++    if (e.kind === 'queue_consume') keys.add(`${e.dstId}>${e.srcId}`);
++  }
++  return keys;
++}
+diff --git a/packages/schema/src/drawLanguages.ts b/packages/schema/src/drawLanguages.ts
+index c0976ba..d84462d 100644
+--- a/packages/schema/src/drawLanguages.ts
++++ b/packages/schema/src/drawLanguages.ts
+@@ -41,6 +41,7 @@ import {
+   type ChartProblem,
+   type SeqChart,
+   validateChart,
++  groundingEdgeKeys,
+ } from './chart.js';
+ import {
+   type FlowLineProblem,
+@@ -1064,7 +1065,7 @@ export function groundDrawing(
+   }
+   const resolve = scanResolver(scan);
+   const known = new Set(scan.nodes.map((n) => n.id));
+-  const knownEdges = new Set(scan.edges.map((e) => `${e.srcId}>${e.dstId}`));
++  const knownEdges = groundingEdgeKeys(scan.edges);
+   const problems: string[] = [];
+   const rawItems = Array.isArray(compiled.chart.items) ? compiled.chart.items : [];
+   const ambiguousAt = new Set<number>();
+diff --git a/packages/schema/src/groundingEdgeKeys.test.ts b/packages/schema/src/groundingEdgeKeys.test.ts
+new file mode 100644
+index 0000000..c4086d0
+--- /dev/null
++++ b/packages/schema/src/groundingEdgeKeys.test.ts
+@@ -0,0 +1,47 @@
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++import { groundingEdgeKeys, validateChart } from './index.js';
++
++/*
++ * A queue consumer's scan edge points at the topic (the subscribe call lives
++ * in the consumer), but data flows from the topic to the consumer, and that is
++ * how people and models draw it. Only that edge kind reads both ways.
++ */
++const EDGES = [
++  { srcId: 'file:events.py', dstId: 'topic:order.created', kind: 'queue_publish' },
++  { srcId: 'file:worker.py', dstId: 'topic:order.created', kind: 'queue_consume' },
++  { srcId: 'file:gateway.ts', dstId: 'file:routes.py', kind: 'http' },
++];
++const NODES = new Set(['file:events.py', 'file:worker.py', 'file:gateway.ts', 'file:routes.py', 'topic:order.created']);
++
++function chart(from: string, to: string) {
++  return {
++    kind: 'data-flow',
++    title: 't',
++    items: [
++      { id: 'a', label: 'a', nodeId: from },
++      { id: 'b', label: 'b', nodeId: to },
++    ],
++    links: [{ from: 'a', to: 'b' }],
++  };
++}
++
++test('every scanned edge is kept in its own direction', () => {
++  const keys = groundingEdgeKeys(EDGES);
++  for (const e of EDGES) assert.ok(keys.has(`${e.srcId}>${e.dstId}`));
++});
++
++test('a subscription may be drawn in data-flow direction, topic -> consumer', () => {
++  const keys = groundingEdgeKeys(EDGES);
++  assert.equal(validateChart(chart('topic:order.created', 'file:worker.py'), NODES, keys).ok, true);
++  /* The old edge set refused exactly this drawing. */
++  const old = new Set(EDGES.map((e) => `${e.srcId}>${e.dstId}`));
++  assert.equal(validateChart(chart('topic:order.created', 'file:worker.py'), NODES, old).ok, false);
++});
++
++test('no other kind reads backwards: publish, http', () => {
++  const keys = groundingEdgeKeys(EDGES);
++  assert.equal(validateChart(chart('topic:order.created', 'file:events.py'), NODES, keys).ok, false);
++  assert.equal(validateChart(chart('file:routes.py', 'file:gateway.ts'), NODES, keys).ok, false);
++  assert.equal(keys.size, 4);
++});
+diff --git a/tools/measure/questions.shopfront-hard.json b/tools/measure/questions.shopfront-hard.json
+new file mode 100644
+index 0000000..736b9b9
+--- /dev/null
++++ b/tools/measure/questions.shopfront-hard.json
+@@ -0,0 +1,92 @@
++{
++  "about": "Harder draw-language A/B questions over the shopfront fixture, to separate arms that all ground the easy set. Every question needs a 5+ hop chain, a fan-out to 3+ backends, or two flows that meet; several invite a plausible shortcut the scan does NOT have (noted per question in trap). Every expectPath hop is a real, same-direction scan edge; the driver re-checks that. focus starts with \"repo\" so the slice is the whole 36-node repo at --max-nodes 36: the repo's edgeless focus pulls in its services and stores, and the breadth-first walk reaches every file.",
++  "questions": [
++    {
++      "id": "card-charge-every-way",
++      "kind": "join, 5+ hops",
++      "question": "Starting at the gateway's entry file, draw every way a request can end up at the Stripe code in the payments service. Show each file it passes through.",
++      "focus": ["repo", "gateway/src/index.ts", "payments/src/stripe.js"],
++      "trap": "orders/app/routes.py -> payments/src/index.js (skipping payments_client.py) is not a scan edge",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/payments.ts", "payments/src/index.js", "payments/src/stripe.js"],
++        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/stripe.js"]
++      ]
++    },
++    {
++      "id": "gateway-fanout",
++      "kind": "fan-out to 4 backends",
++      "question": "Draw every backend file the gateway's entry file reaches through its route files, and which route files use the gateway's shared HTTP helper.",
++      "focus": ["repo", "gateway/src/index.ts", "gateway/src/lib/http.ts"],
++      "trap": "gateway/src/routes/payments.ts -> gateway/src/lib/http.ts is not a scan edge (the other three routes import it)",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java"],
++        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py"],
++        ["gateway/src/index.ts", "gateway/src/routes/payments.ts", "payments/src/index.js"],
++        ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go"],
++        ["gateway/src/routes/invoices.ts", "gateway/src/lib/http.ts"],
++        ["gateway/src/routes/orders.ts", "gateway/src/lib/http.ts"],
++        ["gateway/src/routes/shipments.ts", "gateway/src/lib/http.ts"]
++      ]
++    },
++    {
++      "id": "order-notify",
++      "kind": "4-hop chain + topic shared by two services",
++      "question": "How does a customer get notified after placing an order through the gateway? Draw from the gateway's entry file to the notifications worker, with arrows in the direction the scan records them.",
++      "focus": ["repo", "gateway/src/index.ts", "notifications/worker.py"],
++      "trap": "orders/app/events.py -> notifications/worker.py is not a scan edge, and neither is order.created -> notifications/worker.py (the worker's edge points at the topic)",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
++        ["notifications/worker.py", "topic:order.created"]
++      ]
++    },
++    {
++      "id": "invoice-and-charge",
++      "kind": "two flows joining at a store",
++      "question": "An invoice request comes in at the edge proxy. Draw how it reaches invoice data, and how the invoice service's payment calls reach stored payments. Show where the two flows meet.",
++      "focus": ["repo", "edge/default.conf", "invoices/src/main/java/shop/invoices/PaymentClient.java"],
++      "trap": "InvoiceController.java -> PaymentClient.java is not a scan edge; the controller and the payment client are not linked",
++      "expectPath": [
++        ["edge/default.conf", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"],
++        ["invoices/src/main/java/shop/invoices/PaymentClient.java", "payments/src/index.js", "payments/src/db.js", "ds:postgres"]
++      ]
++    },
++    {
++      "id": "postgres-sharers",
++      "kind": "store reached from 4 services",
++      "question": "Which services share the postgres database? For each one, draw the path from that service's entry file to postgres. Leave out services that never touch it.",
++      "focus": ["repo", "ds:postgres"],
++      "trap": "inventory/server.py -> postgres and payments/src/stripe.js -> postgres are not scan edges",
++      "expectPath": [
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"],
++        ["payments/src/index.js", "payments/src/db.js", "ds:postgres"],
++        ["shipping/main.go", "ds:postgres"],
++        ["invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"]
++      ]
++    },
++    {
++      "id": "shipping-two-triggers",
++      "kind": "two flows into one service",
++      "question": "The shipping service is reached two ways: a gateway request and the order.created event. Draw both, the request all the way to where the shipment is stored and the event from the orders code that publishes it.",
++      "focus": ["repo", "shipping/main.go", "shipping/subscriber.go"],
++      "trap": "shipping/subscriber.go -> shipping/main.go is not a scan edge (the subscriber does not hand off to main.go), and order.created -> subscriber.go is backwards",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go", "ds:postgres"],
++        ["orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
++        ["shipping/subscriber.go", "topic:order.created"]
++      ]
++    },
++    {
++      "id": "orders-main-fanout",
++      "kind": "fan-out to 4 backends, one 5-hop branch",
++      "question": "Starting at the orders service's main file, draw every backend it reaches (other services, stores and topics), following each branch to its end.",
++      "focus": ["repo", "orders/app/main.py"],
++      "trap": "inventory/server.py -> postgres and orders/app/routes.py -> orders/app/models.py are not scan edges",
++      "expectPath": [
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/inventory_client.py", "inventory/server.py"],
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/db.js", "ds:postgres"],
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"]
++      ]
++    }
++  ]
++}

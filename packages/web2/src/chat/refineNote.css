@@ -1,0 +1,45 @@
+/* The note card (chat/RefineNoteCard.tsx): layout only. The surface is the notice's card (shell2/chat2.css) and
+   the answers are the app's own .s2-btn.s2-btn-sm. */
+.s2-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0;
+  padding: 10px 12px;
+  font-size: var(--t-13);
+  color: var(--b-ink1);
+}
+.s2-note p {
+  margin: 0;
+}
+.s2-note-lab {
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}
+.s2-note-tip {
+  overflow-wrap: anywhere;
+}
+.s2-note-why {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-12);
+  color: var(--b-ink2);
+}
+.s2-note-ask {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.s2-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.s2-note-actions .s2-note-why-btn {
+  margin-left: auto;
+}
+.s2-note-err {
+  color: var(--b-del);
+  font-size: var(--t-12);
+}

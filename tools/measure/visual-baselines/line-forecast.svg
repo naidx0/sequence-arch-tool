@@ -1,0 +1,50 @@
+<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="12">
+  <title>Requests per second with forecast</title>
+  <text x="10" y="18" font-size="14" font-weight="600" fill="currentColor">Gateway requests per second</text>
+  <!-- gridlines and y labels -->
+  <g stroke="currentColor" stroke-opacity="0.15">
+    <line x1="50" y1="40" x2="700" y2="40"/>
+    <line x1="50" y1="82" x2="700" y2="82"/>
+    <line x1="50" y1="124" x2="700" y2="124"/>
+    <line x1="50" y1="166" x2="700" y2="166"/>
+    <line x1="50" y1="208" x2="700" y2="208"/>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" text-anchor="end" font-size="11">
+    <text x="44" y="212">0</text>
+    <text x="44" y="170">200</text>
+    <text x="44" y="128">400</text>
+    <text x="44" y="86">600</text>
+    <text x="44" y="44">800</text>
+  </g>
+  <!-- x labels -->
+  <g fill="currentColor" fill-opacity="0.65" text-anchor="middle" font-size="11">
+    <text x="50" y="228">Jan</text>
+    <text x="104" y="228">Feb</text>
+    <text x="158" y="228">Mar</text>
+    <text x="212" y="228">Apr</text>
+    <text x="266" y="228">May</text>
+    <text x="320" y="228">Jun</text>
+    <text x="374" y="228">Jul</text>
+    <text x="428" y="228">Aug</text>
+    <text x="482" y="228">Sep</text>
+    <text x="536" y="228">Oct</text>
+    <text x="590" y="228">Nov</text>
+    <text x="644" y="228">Dec</text>
+  </g>
+  <!-- forecast band -->
+  <polygon points="482,134 536,125 590,115 644,104 644,134 590,138 536,141 482,134" fill="#2f6fed" fill-opacity="0.15"/>
+  <!-- threshold -->
+  <line x1="50" y1="82" x2="700" y2="82" stroke="#d94a44" stroke-dasharray="5 3"/>
+  <text x="700" y="76" text-anchor="end" font-size="11" fill="#d94a44">gateway capacity 600</text>
+  <!-- actual -->
+  <polyline points="50,183 104,179 158,176 212,171 266,166 320,160 374,153 428,145 482,137" fill="none" stroke="#2f6fed" stroke-width="2"/>
+  <!-- forecast -->
+  <polyline points="482,137 536,132 590,127 644,120" fill="none" stroke="#2f6fed" stroke-width="2" stroke-dasharray="5 4"/>
+  <circle cx="482" cy="137" r="3" fill="#2f6fed"/>
+  <text x="652" y="124" font-size="11" font-weight="600" fill="#2f6fed">~390</text>
+  <!-- legend -->
+  <line x1="50" y1="256" x2="70" y2="256" stroke="#2f6fed" stroke-width="2"/>
+  <text x="76" y="260" font-size="11" fill="currentColor">Actual</text>
+  <line x1="130" y1="256" x2="150" y2="256" stroke="#2f6fed" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="156" y="260" font-size="11" fill="currentColor">Forecast (with range)</text>
+</svg>

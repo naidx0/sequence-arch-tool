@@ -1,0 +1,1004 @@
+<!doctype html><meta charset="utf-8"><title>Sequence Build Spec, Parts 4-7</title><style>body{font:14px/1.5 system-ui;max-width:900px;margin:24px auto;padding:0 16px}table{border-collapse:collapse;font-size:12px}td,th{border:1px solid #ccc;padding:4px 6px;vertical-align:top}pre{background:#f4f4f4;padding:8px;overflow-x:auto}</style>
+<p>Copied from the coordinator's Sequence Build Spec artifact (Parts 4-7), 2026-10-06, for builders to read offline.</p>
+<section id="plan"><h1>Part 4: Next build slices (6 Oct 2026)</h1>
+<p>Inputs: the parity checklist (Part 5), the harness study of T3 Code, OpenCode and Synara (Part 6), and the uiarc.dev and Bastion UI pass (Part 7). "SYNARA" is <strong>Synara</strong> (github.com/Emanuele-web04/synara, MIT). It is an open-source desktop GUI for Claude Code, Codex, OpenCode and others, started from a T3 Code clone.</p>
+<p><strong>Main finding.</strong> Most of the distance to Claude Code or Codex is data the two CLIs already send that Sequence throws away. The ACP client sends <code>clientCapabilities: {}</code> and <code>mcpServers: []</code>, sends prompts as text only, never resumes a session, and reads only message text. Closing that is mostly wiring, not invention.</p>
+<h2>How every slice is checked (applies to all)</h2>
+<ul>
+<li>Replay first. Record a few Codex sessions once, covering edits, a command approval, a plan, a todo list, a long silent tool and usage updates, with 5 runs at most on the ChatGPT plan. Then replay them through the real adapter, reducer and UI state, as T3 Code does in <code>replay.ts</code>. Claude is signed out on this machine, so build its fixtures from the ACP schema and the claude-agent-acp tests (Apache-2.0), and label Claude as "not run live".</li>
+<li>Tests wait for queues to drain and never sleep. Fake clocks handle anything with timeouts.</li>
+<li>Each merge runs changed-package tests only. Screenshots are taken once per batch, and are always taken before a big visual change. The full gate runs late.</li>
+<li>Perf claims use the ratchet file's deterministic counts.</li>
+</ul>
+<h2>Slices, in order (three run in parallel)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Slice</th>
+<th>What changes</th>
+<th>Sources</th>
+<th>Check without live calls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S0</td>
+<td>Replay harness</td>
+<td>Record and replay Codex app-server and ACP frames; drainable queues</td>
+<td>T3 <code>replay.ts</code>, <code>DrainableWorker.ts</code>; OpenCode <code>http-recorder</code></td>
+<td>It is the check</td>
+</tr>
+<tr>
+<td>S1</td>
+<td>Agents that don't forget</td>
+<td>Persist the ACP sessionId and Codex threadId per chat, and resume on reopen instead of the 10-minute in-memory TTL. Separate "turn ended", "settled" and "hung", with no wall-clock cap; the idle watchdog pauses during approvals. Gate load replay and teardown. Add recovery cards (Sign in again / Retry) and respawn the server once before the restart dialog</td>
+<td>Parity gaps 1 and 11; Synara <code>AcpTurnIdleWatchdog.ts</code>, <code>AcpLoadReplayGate.ts</code>, <code>SessionTeardownGate.ts</code>; T3 <code>RunFinalizationService.ts</code></td>
+<td>Recorded frames under a fake clock: silent tool, approval wait, hung child, restart then resume</td>
+</tr>
+<tr>
+<td>S2a</td>
+<td>The agent sees the board</td>
+<td>Inject Sequence's own MCP server (<code>packages/mcp</code>, 15 tools) into every Claude and Codex session. Image paste and drop, and "send board PNG to agent". Send @-mentions as <code>resource_link</code> with the node's paths and edges</td>
+<td>Gaps 2, 3 and row 6</td>
+<td>Recorded <code>session/new</code> frames contain the server; attachment unit tests</td>
+</tr>
+<tr>
+<td>S2b</td>
+<td>Show what the CLI is doing</td>
+<td>The CLI's plan goes into PlanApprovalCard, and Plan/Build maps to <code>set_mode</code> or Codex plan mode. A todo and subagent strip sits above the composer, and the board reuses that data. The model and effort picker is filled from <code>configOptions</code> and <code>model/list</code>. The context ring follows usage and rate limits, with a Compact action. CLI slash commands and skills appear in <code>/</code>. Runs of tool calls fold into one row ("Ran 3 commands, edited 2 files") with readable command labels</td>
+<td>Gaps 7-10; T3 <code>ComposerTasksBadge</code>, <code>ProviderSubagentBar</code>, <code>commandLabel.ts</code>; Synara <code>toolCallGroup.logic.ts</code></td>
+<td>Recorded frames through the mappers; table tests</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Undo anything the agent did</td>
+<td>Shadow git directory checkpoints (<code>write-tree</code>, no commits) at each turn start, with "Revert to here" and "Undo revert". The Last-turn diff is built from the snapshot plus <code>turn/diff/updated</code>, and each hunk can be reverted. Folds into the Diff view</td>
+<td>Gaps 4 and 5; OpenCode <code>snapshot/index.ts</code>, <code>session/revert.ts</code></td>
+<td>A temporary-repo integration test</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>Motion and glass pass</td>
+<td>Follows the usebastion.io audit, and needs PNGs before merging (see the rules below)</td>
+<td>Part 7</td>
+<td>Count ratchets: infinite animations and backdrop-filter uses. GPU-process CPU measured once on a static fixture</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>Never miss a turn</td>
+<td>A notification when a turn ends or an approval waits while the window is hidden, plus a dock badge or flashFrame. Keys: Cmd+N, Ctrl+Tab, Shift+Tab mode cycle, Y/N on approvals, Up for the last prompt. Codex steering (<code>turn/steer</code>) and an editable queue. "Allow always" scoped to the command prefix (<code>git checkout</code>, not <code>git</code>); rejecting can carry feedback</td>
+<td>Gaps 6 and 9, rows 18 and 22; OpenCode <code>permission/arity.ts</code></td>
+<td>Store unit tests, recorded frames</td>
+</tr>
+<tr>
+<td>S6</td>
+<td>Long chats stay smooth</td>
+<td>Merge stream events within 50 ms on the server and apply them once per frame. Virtualize the transcript with <code>@legendapp/list</code> (MIT, React 18), pinned to the bottom. Send bounded payloads, with bodies loaded on expand</td>
+<td>Principles 1, 4 and 9</td>
+<td>A replayed long reply and a 2,000-row fixture: commits per chunk, DOM node count</td>
+</tr>
+<tr>
+<td>S7</td>
+<td>Chats in their own worktree</td>
+<td>A worktree toggle on New chat starts the agent in it. The Agents tree groups by worktree, and there is a merge-back action. The cap of 8 becomes a setting</td>
+<td>Gap 12</td>
+<td>Temporary-repo test</td>
+</tr>
+</tbody>
+</table>
+<h2>UI rules for S4 (from Part 7, adjusted for Jaden)</h2>
+<ol>
+<li>CSS only: use Arc's numbers, not its code, and add no Motion library.</li>
+<li>Durations: hover 120 ms; exit and tooltip 160; enter, popover and toast 240; showpieces 480.</li>
+<li>Easing: enter <code>cubic-bezier(.16,1,.3,1)</code>, exit <code>cubic-bezier(.7,0,.84,0)</code>.</li>
+<li>Fix the 24 loops that never stop:</li>
+<li>Pause everything when the window is hidden.</li>
+<li>Repaint loops use <code>steps()</code>: the board edge runs at <code>steps(9)</code>.</li>
+<li>Replace <code>chatpot</code> with a translateX band.</li>
+<li>Skeletons stop after about 20 s.</li>
+<li>At most one shimmer and one spinner per surface.</li>
+<li>Loader tiers:</li>
+<li>nothing under 250 ms;</li>
+<li>inline wait: ring or braille (<code>⠋⠙⠹…</code> at 80 ms, the Bastion loader);</li>
+<li>live label: shimmer;</li>
+<li>list: finite skeleton;</li>
+<li>known amount: determinate bar, moved by translateX;</li>
+<li>boot: braille plus one status line.</li>
+<li>Glass belongs on small floating surfaces: composer, ⌘K, menus, board toolbar and toasts, at most three on screen. Large panes keep their fill and lose the blur; there are 68 backdrop-filter uses today, and panes blur at 24-28 px over a static ground, which looks the same without it. Glass is never stacked on glass. Dialogs dim instead of blurring.</li>
+<li>The button recipe comes from the usebastion.io audit Jaden likes. Starting dark recipe until then: fill <code>rgba(255,255,255,.08-.13)</code>, rim <code>.14-.20</code>, <code>inset 0 1px 0 rgba(255,255,255,.18)</code>, <code>blur(16-20px) saturate(1.6)</code>.</li>
+<li>Type and icons: weights 400/500, sentence case, tabular numbers. Lucide-style icons with round caps, stroke 1.5 at 14 px or below and 1.6-1.75 at 16-24 px.</li>
+<li>ASCII appears only on first run, boot and empty states, at 12 fps or less, and stops on the first action. Never on the board.</li>
+<li>Streaming adds one fading span per flush and a <code>steps(1)</code> caret. No per-word blur.</li>
+<li>Toasts: 3 visible, a 14 px peek, 5 s, errors ×1.6, paused on hover or when hidden. Tooltips: 250 ms delay, 300 ms skip window.</li>
+<li>Approvals: Enter approves, Esc rejects. No hold-to-confirm, because Jaden asked for no friction.</li>
+<li><code>prefers-reduced-motion</code> and <code>prefers-reduced-transparency</code> are honored.</li>
+</ol>
+<h2>Still open, needs Jaden</h2>
+<ul>
+<li>Claude Code is signed out on his PC. One <code>claude auth login</code> would let Claude be tested for real; until then it is tested from recordings.</li>
+</ul></section>
+<section id="parity"><h1>Part 5: Sequence vs Claude Code / Codex: harness parity checklist</h1>
+<p>Checked 2026-10-06. Sources:
+- <strong>Sequence</strong>: the public mirror v0.1.3 plus the overhaul list in the brief. Paths are relative to <code>packages/</code>.
+- <strong>Claude Code</strong>: code.claude.com/docs (desktop, interactive-mode, checkpointing, remote-control).
+- <strong>Codex</strong>: developers.openai.com/codex (CLI slash commands, app review, worktrees, remote connections) and <code>openai/codex</code> <code>app-server-protocol/src/protocol/common.rs</code> for exact method names.
+- <strong>ACP adapter</strong>: <code>agentclientprotocol/claude-agent-acp</code> README and <code>src/acp-agent.ts</code>.</p>
+<p><strong>Key finding.</strong> Sequence does not have to build most of these gaps. The two backends already send the data:
+- <strong>The Claude ACP adapter</strong> advertises <code>image</code>, <code>embeddedContext</code>, <code>loadSession</code>, <code>resume</code>, <code>fork</code> and <code>list</code>. It emits <code>plan</code> (todos), <code>available_commands_update</code>, <code>usage_update</code> and <code>configOptions</code> (model and effort), and it accepts client <code>mcpServers</code>.
+- <strong>Codex app-server</strong> has <code>turn/steer</code>, <code>turn/diff/updated</code>, <code>turn/plan/updated</code>, <code>thread/tokenUsage/updated</code>, <code>account/rateLimits/updated</code>, <code>thread/resume|fork|search|revert</code>, <code>thread/backgroundTerminals/*</code>, <code>skills/list</code>, <code>model/list</code> and <code>externalAgentConfig/import</code>.</p>
+<p>The mirror's <code>acp/src/client.ts</code> throws almost all of this away. It sends <code>clientCapabilities: {}</code> and <code>mcpServers: []</code>, sends the prompt as text only (<code>[{type:'text'}]</code>), never calls <code>session/load</code>, and reads nothing from updates except <code>agent_message_chunk</code>. Most rows below come down to "consume what the backend already sends".</p>
+<p>Legend: <strong>Yes</strong> / <strong>Partial</strong> / <strong>No</strong>. "(ovh)" marks a claim taken from the overhaul list, which I could not read. Value to the user: H, M or L.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Capability</th>
+<th>Claude Code</th>
+<th>Codex</th>
+<th>Sequence today</th>
+<th>Gap → smallest close</th>
+<th>Val</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Plan mode + plan review</td>
+<td>Plan permission mode (Shift+Tab, desktop selector); plan approved before edits</td>
+<td><code>/plan</code>, <code>collaborationMode/list</code>, <code>item/plan/delta</code></td>
+<td><strong>Partial.</strong> Own loop: <code>analyzer/src/server/planTurn.ts</code>, <code>web2/src/v3/PlanApprovalCard.tsx</code>, <code>acp/src/planMode.ts</code>. Plan/Build chip (ovh). The CLI's own plan never reaches the card</td>
+<td>Map Plan → ACP <code>session/set_mode('plan')</code> / Codex plan mode. Put the CLI's plan (ExitPlanMode call, Codex plan item) into PlanApprovalCard; Build = switch mode and continue</td>
+<td>H</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Todo / task list</td>
+<td>TodoWrite checklist, Ctrl+T</td>
+<td><code>update_plan</code> checklist, <code>turn/plan/updated</code></td>
+<td><strong>Partial.</strong> <code>analyzer/src/server/todoList.ts</code>, <code>web2/src/chat/TodoList.tsx</code> for own loop only</td>
+<td>Convert ACP <code>plan</code> entries and <code>turn/plan/updated</code> to <code>TodoItem[]</code> (<code>web2/src/state/types.ts:594</code>)</td>
+<td>H</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Checkpoints / rewind</td>
+<td>Auto checkpoint per prompt; <code>/rewind</code>, Esc Esc: code, conversation, both, summarize</td>
+<td>Esc Esc backtrack, <code>thread/revert</code>; file undo via review revert</td>
+<td><strong>Partial.</strong> <code>analyzer/src/server/checkpointStore.ts</code>, <code>web2/src/rewind/RewindPanel.tsx</code>. Tracks only writes through <code>PUT /api/file</code> (<code>web2/src/review/writeSession.ts</code>). Edits made by claude/codex are invisible to it</td>
+<td>At turn start, call <code>trackSessionWrite</code> for paths from PreToolUse hooks (Claude) and <code>item/fileChange</code> (Codex), plus a <code>git stash create</code> tree. Rewind conversation via ACP fork / <code>thread/revert</code></td>
+<td>H</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Per-turn diff, accept/reject</td>
+<td>Desktop diff view, line comments, "Review code"; Manual mode accept/reject</td>
+<td>Review pane Unstaged/Staged/Commit/Branch/Last turn; stage/revert per file and hunk; inline comments</td>
+<td><strong>Partial.</strong> <code>web2/src/review/ReviewPane.tsx</code>, <code>reviewScopes.ts</code> (5 scopes, per-file discard, line comments → composer). "Last turn" = own <code>edit:proposal</code> only; no hunk actions. Diff view in progress (ovh)</td>
+<td>Feed Last turn from the row 3 snapshot and Codex <code>turn/diff/updated</code>. Add hunk revert (<code>git apply -R</code>) in <code>analyzer/src/server/gitWorkspace.ts</code></td>
+<td>H</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Slash + custom commands</td>
+<td>Built-ins, <code>.claude/commands</code>, skills, plugins</td>
+<td>~45 built-ins, <code>/skills</code>, <code>skills/list</code></td>
+<td><strong>Partial.</strong> <code>web2/src/chat/composerModel.ts</code> <code>slashCommands()</code>: modes, /goal, /draw, /plan, skills from <code>.sequence/skills</code> only. ACP <code>available_commands_update</code> ignored</td>
+<td>Merge CLI commands and skills into the menu as a "Claude / Codex" section; send <code>/cmd args</code> verbatim</td>
+<td>H</td>
+</tr>
+<tr>
+<td>6</td>
+<td>@-mentions (files, symbols, nodes)</td>
+<td>@files with autocomplete, MCP resources, agents</td>
+<td><code>/mention</code>, <code>fuzzyFileSearch/*</code></td>
+<td><strong>Yes, ahead.</strong> Graph nodes, files and functions (<code>web2/src/chat/mentionModel.ts</code>), but flattened to prose</td>
+<td>Send as ACP <code>resource_link</code> / embedded context so the CLI opens exact files; attach a node summary (paths, edges)</td>
+<td>M</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Image paste</td>
+<td>Ctrl+V; desktop attaches images and PDFs</td>
+<td><code>-i</code>, paste, <code>localImage</code></td>
+<td><strong>No.</strong> <code>web2/src/chat/attachmentModel.ts</code> refuses images ("cannot send images yet"); client is text-only</td>
+<td>Accept paste/drop → <code>analyzer/src/server/attachmentStore.ts</code> → ACP image block / Codex <code>localImage</code></td>
+<td>H</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Background tasks</td>
+<td>Ctrl+B, <code>run_in_background</code>, desktop tasks pane</td>
+<td>Background terminals, <code>/ps</code>, <code>/stop</code>, <code>thread/backgroundTerminals/*</code></td>
+<td><strong>Partial.</strong> User PTY (<code>web2/src/terminal/TerminalPane.tsx</code>, <code>analyzer/src/server/ptyShell.ts</code>), goal runs (<code>goalRunner.ts</code>). Agent shells not shown</td>
+<td>Tasks strip in the Agents panel from background tool calls / <code>backgroundTerminals/list</code>, with Stop</td>
+<td>M</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Interrupt + queue while running</td>
+<td>Esc; queued text joins the running turn; Ctrl+Enter sends now</td>
+<td>Esc; Enter steers (<code>turn/steer</code>), Tab queues (<code>thread/queue/*</code>)</td>
+<td><strong>Partial.</strong> Stop works (<code>web2/src/v3/V3Chat.tsx</code>, <code>V3Stop.test.tsx</code>). One queued message only; no steering</td>
+<td>Codex: Enter mid-turn → <code>turn/steer</code>. Turn the queue into an editable list</td>
+<td>M</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Session resume / history / search</td>
+<td><code>--continue</code>, <code>--resume</code> picker with search, <code>/branch</code></td>
+<td><code>codex resume</code>, <code>thread/resume|fork|search</code></td>
+<td><strong>Partial.</strong> Sequence chats persist and fork (<code>analyzer/src/server/sessionsStore.ts</code>); rail filters titles only (<code>web2/src/v3/V3SessionsRail.tsx</code>). Agent context dies: <code>acpSessionCache.ts</code> is in-memory with a 10-minute TTL; <code>acp/src/index.ts</code> says <code>session/load</code> is "deliberately not built"</td>
+<td>Store the ACP sessionId / Codex threadId on <code>SessionIndexEntry</code>; reopen with <code>session/resume</code> / <code>thread/resume</code>; search via <code>thread/search</code> plus a chat-memory grep</td>
+<td>H</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Compaction + context meter</td>
+<td>Auto-compact, <code>/compact</code>, <code>/context</code>, usage ring</td>
+<td><code>/compact</code>, <code>thread/compact/start</code>, <code>thread/tokenUsage/updated</code></td>
+<td><strong>Partial.</strong> <code>web2/src/chat/ContextRing.tsx</code> covers own provider only; <code>analyzer/src/llm/compaction.ts</code> is off the ask path</td>
+<td>Drive the ring from ACP <code>usage_update</code> / <code>tokenUsage/updated</code>; Compact button sends <code>/compact</code> or <code>thread/compact/start</code></td>
+<td>M</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Model + effort switch</td>
+<td><code>/model</code>, Opt+P, effort menu</td>
+<td><code>/model</code> with effort, <code>model/list</code>, per-turn overrides</td>
+<td><strong>Partial.</strong> <code>web2/src/chat/modelPicker.ts</code> (API profiles plus <code>reasoningEffort</code>); CLI models not listed</td>
+<td>Fill the picker from ACP <code>configOptions</code> → <code>session/set_config_option</code>, and from Codex <code>model/list</code> → <code>turn/start</code> overrides</td>
+<td>H</td>
+</tr>
+<tr>
+<td>13</td>
+<td>MCP management</td>
+<td><code>claude mcp</code>, <code>.mcp.json</code>, <code>/mcp</code>, connectors UI</td>
+<td><code>config.toml</code>, <code>/mcp</code>, <code>mcpServerStatus/list</code></td>
+<td><strong>Partial.</strong> <code>.sequence/mcp.json</code> for own loop (<code>analyzer/src/server/mcpClient.ts</code>, <code>web2/src/settings/mcpConfigDraft.ts</code>). <code>newSession({mcpServers: []})</code>, so the board MCP (<code>packages/mcp</code>, 15 tools) never reaches the agent</td>
+<td>Inject <code>@sequence/mcp</code> into ACP <code>session/new</code> and Codex config (<code>mcp_servers.sequence</code>); add a read-only status list</td>
+<td>H</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Hooks</td>
+<td>~29 events; exit code 2 blocks</td>
+<td><code>hooks/list</code>, <code>hook/started|completed</code></td>
+<td><strong>Yes.</strong> Own 6 events with consent (<code>analyzer/src/server/hooks.ts</code>); Claude hooks drive the board (ovh)</td>
+<td>Show the CLI's hooks read-only; build no editor</td>
+<td>L</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Subagents, parallel worktrees</td>
+<td>Task subagents, <code>.claude/agents</code>, <code>--worktree</code>, desktop worktree per session</td>
+<td>Subagents, <code>/agent</code>, app worktrees + handoff</td>
+<td><strong>Partial.</strong> Agents tree/timeline (ovh). <code>gitHandoffWorktree</code> (<code>analyzer/src/server/gitWorkspace.ts</code>) makes a worktree but launches nothing; cache caps at 8</td>
+<td>"New chat in worktree": handoff, then start the agent with <code>cwd</code> = worktree; show child sessions/threads in the tree; merge-back action</td>
+<td>H</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Git: branch, commit, PR</td>
+<td>Commit/PR via <code>gh</code>; desktop CI bar with auto-fix and auto-merge</td>
+<td>App: commit, push, PR</td>
+<td><strong>Partial.</strong> <code>/api/git/status|diff|discard|commit|branch|worktree</code> (<code>analyzer/src/server/repoServer.ts:543-552</code>). No push, PR or CI</td>
+<td><code>/api/git/push</code> + <code>gh pr create --fill</code>; poll <code>gh pr checks</code></td>
+<td>M</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Notifications</td>
+<td>OS notification when a session finishes off-screen; Notification hook</td>
+<td>Done/approval notifications</td>
+<td><strong>Partial.</strong> Program runs only (<code>web2/src/activity/ConnectedActivity.tsx:147</code>, opt-in <code>settings/notifyModel.ts</code>)</td>
+<td>Notify on turn end and on a pending approval while hidden; dock badge / <code>flashFrame</code> via <code>desktop/src/preload.ts</code></td>
+<td>H</td>
+</tr>
+<tr>
+<td>18</td>
+<td>Keyboard-first</td>
+<td>Shift+Tab modes, Esc Esc, Ctrl+R, Cmd+N, Ctrl+Tab, Cmd+/, keybindings.json, vim</td>
+<td>TUI keys, <code>/keymap</code>, <code>/vim</code></td>
+<td><strong>Partial.</strong> <code>web2/src/shell/shortcuts.ts</code> has 4 keys (Cmd+K, Enter, Shift+Enter, Esc)</td>
+<td>Add Cmd+N, Ctrl+Tab, Shift+Tab mode cycle, Cmd+Shift+I/E, Y/N/A on approval cards, Up = last prompt, Cmd+/ help</td>
+<td>M</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Remote / mobile</td>
+<td>Remote Control (claude.ai/code, mobile), Dispatch push</td>
+<td>QR pairing (<code>remoteControl/pairing/start</code>), SSH</td>
+<td><strong>Partial.</strong> Web build via <code>sequence app</code>; <code>SEQUENCE_BIND_HOST</code> (<code>analyzer/src/serve.ts:48</code>); env-gated OAuth (<code>analyzer/src/server/auth.ts</code>). No pairing</td>
+<td>"Open on phone": LAN/Tailscale bind with a one-time token in a QR; chat + approvals only on narrow screens</td>
+<td>M</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Cost / usage</td>
+<td><code>/cost</code>, <code>/usage</code>, statusline, usage ring</td>
+<td><code>/status</code>, <code>/usage</code>, <code>account/rateLimits/*</code></td>
+<td><strong>Partial.</strong> API/gateway meters (<code>analyzer/src/server/meter.ts</code>, <code>spendLedger.ts</code>), <code>web2/src/chat/askMetricsLine.ts</code>. Subscription limits not shown</td>
+<td>Show rate-limit windows and Claude usage in the ContextRing popover</td>
+<td>M</td>
+</tr>
+<tr>
+<td>21</td>
+<td>Settings import</td>
+<td>Reads <code>~/.claude</code>; <code>mcp add-from-claude-desktop</code></td>
+<td><code>/import</code>, <code>externalAgentConfig/detect|import</code></td>
+<td><strong>No.</strong> Nothing reads <code>~/.claude/settings.json</code> or <code>~/.codex/config.toml</code></td>
+<td>CLIs already honor their own config. Show it read-only and seed the access chip from <code>defaultMode</code> / <code>approval_policy</code></td>
+<td>L</td>
+</tr>
+<tr>
+<td>22</td>
+<td>Sandbox / permission modes</td>
+<td>default, acceptEdits, plan, auto, bypass, dontAsk; sandboxed Bash; rules</td>
+<td>read-only / workspace-write / danger-full-access, approval policy, auto-review</td>
+<td><strong>Yes.</strong> Ask/Auto-edit/Full plus Codex cards (ovh); rule algebra <code>analyzer/src/server/permissionRules.ts</code>. <code>pickOption</code> prefers <code>allow_once</code>, so there is no "always"</td>
+<td>Add "Allow for session / always" (ACP <code>allow_always</code>, Codex session accept); offer Claude <code>auto</code> where available</td>
+<td>M</td>
+</tr>
+<tr>
+<td>23</td>
+<td>Error recovery (crash, signed out)</td>
+<td>Auto-reconnect, <code>/login</code>, auto-continue after usage reset</td>
+<td><code>modelProvider/authRecovery*</code>, resume</td>
+<td><strong>Partial.</strong> Dead agent is recreated next turn with context lost (<code>acpSessionCache.ts</code>); server crash shows "Please restart the app" (<code>desktop/src/main.ts</code> ~L100); first-run sign-in (ovh)</td>
+<td>Classify auth / rate-limit / ENOENT into a card: "Sign in again" (embedded login) or "Retry" (resume, row 10); auto-respawn the server once</td>
+<td>H</td>
+</tr>
+</tbody>
+</table>
+<h2>Top 12 gaps, ranked by value and effort</h2>
+<ol>
+<li>
+<p><strong>Agent context survives restarts (row 10).</strong> Add <code>loadSession</code> / <code>resume</code> to <code>AcpAgentClient</code> in <code>acp/src/client.ts</code> and persist <code>agentSessionId</code> on <code>SessionIndexEntry</code> in <code>analyzer/src/server/sessionsStore.ts</code>. On a cache miss, <code>analyzer/src/server/acpSessionCache.ts</code> then resumes instead of calling <code>newSession</code>; the Codex bridge does the same with <code>thread/resume</code>. Without this, every idle period over 10 minutes or any app restart silently drops the agent's memory, which runs against the owner's "sessions end late" goal.</p>
+</li>
+<li>
+<p><strong>Image paste and board snapshots to the agent (row 7).</strong> Remove the image refusal in <code>web2/src/chat/attachmentModel.ts</code>, store blobs through <code>analyzer/src/server/attachmentStore.ts</code>, and let <code>prompt()</code> in <code>acp/src/client.ts</code> take content blocks (<code>image</code>, <code>resource_link</code>). The Codex bridge sends <code>localImage</code>. As a bonus, the existing PNG board export can go to the agent as context.</p>
+</li>
+<li>
+<p><strong>Board MCP inside claude/codex (row 13).</strong> Pass the <code>packages/mcp</code> stdio server in <code>mcpServers</code> from <code>newSession</code> in <code>acp/src/client.ts</code>, and as a <code>mcp_servers.sequence</code> config override for <code>codex app-server</code>. Then the agent can query the architecture graph directly, which is Sequence's moat. The <code>acp/src/index.ts</code> note that rules this out should be revised.</p>
+</li>
+<li>
+<p><strong>Code checkpoints for CLI edits (row 3).</strong> In the hook receiver (ovh) and the Codex <code>item/fileChange</code> handler, call <code>trackSessionWrite</code> (<code>analyzer/src/server/checkpointStore.ts</code>) before the write lands, and checkpoint at each turn start. <code>web2/src/rewind/RewindPanel.tsx</code> then works unchanged; restoring conversation uses ACP fork or <code>thread/revert</code>.</p>
+</li>
+<li>
+<p><strong>Per-turn diff with hunk revert (row 4).</strong> Serve the <code>last-turn</code> scope (<code>web2/src/review/reviewScopes.ts</code>) from the row 3 snapshot and Codex <code>turn/diff/updated</code>, not from <code>edit:proposal</code>. Add <code>revertHunk</code> to <code>analyzer/src/server/gitWorkspace.ts</code> and a hunk button in <code>web2/src/review/DiffView.tsx</code>. This should fold into the Diff view being built.</p>
+</li>
+<li>
+<p><strong>Done / needs-you notifications (row 17).</strong> Reuse the <code>runFinishedNotice</code> logic from <code>web2/src/settings/notifyModel.ts</code> for turn end and for pending approval cards, fired from the chat store in <code>web2/src/state/store.ts</code> when the document is hidden. Add <code>setBadge</code> / <code>flashFrame</code> IPC in <code>desktop/src/main.ts</code> and <code>preload.ts</code>. This is a tiny change that matters a lot during long runs.</p>
+</li>
+<li>
+<p><strong>CLI plans into the approval card (row 1).</strong> Map the Plan/Build chip to ACP <code>session/set_mode</code>, and to Codex's plan collaboration mode. Render ExitPlanMode or plan items through <code>web2/src/v3/PlanApprovalCard.tsx</code>; "Build" switches mode and sends "proceed".</p>
+</li>
+<li>
+<p><strong>CLI todos into TodoList (row 2).</strong> Add a 30-line mapper in the stream handler. It turns ACP <code>plan</code> entries (<code>pending</code>/<code>in_progress</code>/<code>completed</code>) and <code>turn/plan/updated</code> into <code>TodoItem[]</code> in <code>web2/src/state/types.ts</code>, so <code>web2/src/chat/TodoList.tsx</code> renders the CLI's list as-is.</p>
+</li>
+<li>
+<p><strong>CLI model, effort and live context ring (rows 11, 12, 20).</strong> Fill <code>web2/src/chat/modelPicker.ts</code> from ACP <code>configOptions</code> and Codex <code>model/list</code>. Switch with <code>session/set_config_option</code> or the <code>turn/start</code> overrides. Feed <code>web2/src/chat/ContextRing.tsx</code> from <code>usage_update</code> / <code>thread/tokenUsage/updated</code> and <code>account/rateLimits/updated</code>, and add a Compact action.</p>
+</li>
+<li>
+<p><strong>CLI slash commands and skills (row 5).</strong> Store the latest <code>available_commands_update</code> and the Codex <code>skills/list</code> result per session, and pass them to <code>slashCommands()</code> in <code>web2/src/chat/composerModel.ts</code> as a new <code>source: {kind:'cli'}</code>. <code>web2/src/v3/V3Chat.tsx</code> sends them as raw text.</p>
+</li>
+<li>
+<p><strong>Recovery cards for signed-out, crashed and rate-limited agents (row 23).</strong> Classify failures where <code>acpSessionCache.ts</code> disposes the entry and in the Codex bridge (<code>authRecovery*</code>). Show "Sign in again", which reuses the embedded login terminal, or "Retry", which uses gap 1. In <code>desktop/src/main.ts</code> <code>onUnexpectedExit</code>, respawn the server once before showing the dialog.</p>
+</li>
+<li>
+<p><strong>Chat in its own worktree (row 15).</strong> Add a worktree toggle on New chat (<code>web2/src/v3/sessionActions.ts</code>) that calls <code>gitHandoffWorktree</code> (<code>analyzer/src/server/gitWorkspace.ts</code>) and starts the agent with that <code>cwd</code>. The Agents tree groups by worktree, and a "merge back" action reuses the commit and branch routes. Raise the cap of 8 in <code>acpSessionCache.ts</code> to a setting.</p>
+</li>
+</ol>
+<p>Next after these: steering and a multi-message queue (row 9, Codex <code>turn/steer</code>), "Allow always" (row 22), git push and PR (row 16), and phone pairing (row 19).</p></section>
+<section id="harnesses"><h1>Part 6: Harness study for Sequence: T3 Code, OpenCode, Synara</h1>
+<p>Read from shallow clones on 2026-10-06: <code>pingdotgg/t3code</code> @ fc4ecc8, <code>sst/opencode</code> main, and <code>Emanuele-web04/synara</code> main. All three are <strong>MIT</strong>, so their code can be ported if the notice is kept. The libraries involved are also permissive: <code>@pierre/diffs</code> is Apache-2.0, <code>@legendapp/list</code> is MIT and <code>remend</code> is Apache-2.0. Both UI libraries accept React 18.</p>
+<h2>1. Who is "S I / SYNARA"?</h2>
+<table>
+<thead>
+<tr>
+<th>Candidate</th>
+<th>URL</th>
+<th>Fit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Synara</strong> (formerly "DP Code"), by Emanuele Di Pietro</td>
+<td>github.com/Emanuele-web04/synara · trysynara.com</td>
+<td>Open-source desktop GUI for Claude Code, Codex, OpenCode, Cursor and others. About 2k stars, last commit 2026-10-05</td>
+</tr>
+<tr>
+<td>adityachaudhry/synara</td>
+<td>github.com/adityachaudhry/synara</td>
+<td>A 0-star copy</td>
+</tr>
+<tr>
+<td>paul-bouzian/dpcode</td>
+<td>github.com/paul-bouzian/dpcode</td>
+<td>A fork from the DP Code era</td>
+</tr>
+<tr>
+<td>Sinara (sinara-hw), SYNRA, Ai2 SERA</td>
+<td>—</td>
+<td>Unrelated</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict: Synara (Emanuele-web04/synara). Confidence: high, about 85%.</strong> The evidence:
+- The spelled-out name matches exactly.
+- It is the same kind of product.
+- Its <code>LICENSE</code> reads "Copyright T3 Tools Inc. + Emanuele Di Pietro", and the author says he started from a clone of T3 Code (x.com/emanueledpt/status/2081160604920787052).
+- openalternative.co lists T3 Code as a Synara alternative.
+- It runs OpenCode as a provider.</p>
+<h2>2. T3 Code (MIT)</h2>
+<ul>
+<li><strong>Surfaces.</strong> <code>apps/web</code> (React 19 with React Compiler), <code>apps/desktop</code> (Electron, which bundles the server), <code>apps/mobile</code> (Expo/React Native) and <code>apps/server</code> (Node, WebSocket).</li>
+<li>Shared logic lives in <code>packages/client-runtime</code> (connection, state, work-log presentation) and <code>packages/contracts</code> (typed RPC).</li>
+<li>Web and mobile share <code>@legendapp/list</code> and <code>@pierre/diffs</code>. Mobile adds native markdown, diff and terminal modules (<code>apps/mobile/modules/*</code>).</li>
+<li><strong>Server.</strong> Event-sourced. <code>orchestration-v2/EventSink.ts</code> commits events, projections, the command receipt and outbox effects in one transaction, and <code>EffectWorker.ts</code> runs side effects afterwards.</li>
+<li><strong>Resume.</strong> A bounded snapshot plus <code>snapshotSequence</code>, then <code>afterSequence</code> replay capped at 128 events or 1 MiB, with a snapshot fallback (<code>ThreadStream.ts</code>).</li>
+<li>A single supervisor retries with jittered backoff capped at 5 minutes (<code>client-runtime/src/connection/supervisor.ts</code>).</li>
+<li>Transport health is tracked separately from data freshness (<code>docs/internals/connection-runtime.md</code>).</li>
+<li>The sidebar "shell" stream is separate from per-thread streams. Thread streams are reference-counted with a 5-minute cache, and desktop keeps running threads alive (<code>apps/web/src/state/threads.ts</code>).</li>
+<li><strong>Wire budget.</strong> Tool output and file bodies are dropped from the stream and strings are truncated at 32 KB (<code>WireProjection.ts</code>). A cold open sends 75 rows or about 1 MiB, and older history pages over HTTP. <code>vp run test:perf:v2-wire</code> enforces these budgets (<code>docs/internals/performance-regressions.md</code>).</li>
+<li><strong>Streaming.</strong> <code>ThreadLiveEventCoalescer.ts</code> keeps the latest in-flight update per tool-call id within 50 ms. <code>LiveStreamBudget.ts</code> caps each subscriber at 1,000 items or 8 MB. <code>apps/web/src/markdown-incremental.ts</code> caches the parsed prefix that ends at a closed code fence.</li>
+<li><strong>UI performance.</strong></li>
+<li><code>components/chat/MessagesTimeline.tsx</code>: <code>LegendList</code> with <code>maintainScrollAtEnd</code> and <code>recycleItems</code>.</li>
+<li><code>DiffWorkerPoolProvider.tsx</code>: diffs highlighted in a worker pool with an LRU cache.</li>
+<li><code>lib/visibleAnimation.ts</code>: animations pause off screen and in hidden tabs.</li>
+<li>Route <code>autoCodeSplitting</code> and <code>lib/chunkReloadGuard.ts</code> for bundles.</li>
+<li><strong>How agent work is shown.</strong></li>
+<li><code>ComposerPendingApprovalPanel.tsx</code>: docked approvals with a "1/N" counter and a "provider gone" state.</li>
+<li><code>ComposerTasksBadge.tsx</code>: todo segments.</li>
+<li><code>ProposedPlanCard.tsx</code>: plan cards.</li>
+<li><code>ProviderSubagentBar.tsx</code>: subagents.</li>
+<li><code>QueuedRunsControl.tsx</code>: queue or steer messages during a run.</li>
+<li><code>client-runtime/src/work-log/commandLabel.ts</code>: unwraps <code>zsh -lc</code> into a readable program name.</li>
+<li>Checkpoints are hidden refs under <code>refs/t3/checkpoints</code> (<code>apps/server/src/checkpointing/</code>). Turn end and settling are separate milestones (<code>RunFinalizationService.ts</code>).</li>
+<li><strong>Testing.</strong> Provider-neutral replay transcripts replace only the provider process (<code>packages/effect-codex-app-server/src/replay.ts</code>, <code>docs/orchestration-v2/testing-strategy.md</code>). Tests drain workers instead of sleeping (<code>packages/shared/src/DrainableWorker.ts</code>). <code>AGENTS.md</code> says "Do not run repo-wide checks."</li>
+</ul>
+<h2>3. OpenCode (MIT)</h2>
+<ul>
+<li><strong>Client/server.</strong> An Effect HTTP API with an SSE event stream (<code>packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts</code>): listeners register eagerly, <code>server.connected</code> comes first, and a heartbeat follows every 10 s.</li>
+<li>The TUI, the SolidJS app (<code>packages/app</code>) and the Electron desktop (<code>packages/desktop</code>) are all clients of a generated SDK (<code>packages/sdk</code>).</li>
+<li><code>app/src/context/server-sdk.tsx</code> merges part updates and concatenates deltas, then flushes once per frame inside <code>batch()</code>.</li>
+<li><strong>Sessions.</strong></li>
+<li><code>session/overflow.ts</code>: auto-compaction at the usable context minus 20k tokens.</li>
+<li><code>session/compaction.ts</code>: prunes old tool output.</li>
+<li><code>tool/truncate.ts</code>: output capped at 2,000 lines / 50 KB, with the full output spilled to a file.</li>
+<li><strong>Undo and redo.</strong> <code>snapshot/index.ts</code> keeps a shadow <code>--git-dir</code> outside the repo and runs <code>write-tree</code> with no commits. In <code>session/revert.ts</code>, revert sets a pointer and restores files, <code>unrevert</code> restores the earlier state, and messages are deleted only on the next prompt.</li>
+<li><strong>Share links.</strong> <code>share/share-next.ts</code> syncs events to <code>/api/share/&lt;id&gt;/sync</code>. The share page reuses the <code>packages/session-ui</code> renderer.</li>
+<li><strong>Agents.</strong> <code>agent/agent.ts</code> defines <code>build</code> and <code>plan</code> (plan denies edits) plus the subagents <code>general</code> and <code>explore</code>. The <code>task</code> tool can resume a subagent by <code>task_id</code>. <code>agent/subagent-permissions.ts</code> passes the parent's denies down to subagents.</li>
+<li><strong>Permissions.</strong> <code>permission/index.ts</code>: the last matching rule wins and the default is <code>ask</code>.</li>
+<li>A reject with a message becomes feedback to the model, and a reject cancels the session's other pending requests.</li>
+<li>"Always" automatically resolves other matching requests.</li>
+<li><code>permission/arity.ts</code> makes "always" grant <code>git checkout</code>, not all of <code>git</code>.</li>
+<li><strong>LSP.</strong> After an edit, <code>tool/edit.ts</code> appends <code>&lt;diagnostics&gt;</code>, with at most 20 errors per file (<code>lsp/diagnostic.ts</code>).</li>
+<li><strong>Rendering.</strong> <code>session-ui/src/components/markdown-stream.ts</code> splits markdown into full, live and code blocks, uses <code>remend</code> for incomplete markdown, and parses in a worker.</li>
+<li><strong>Extensibility.</strong></li>
+<li>Commands are markdown templates with <code>$ARGUMENTS</code> and <code>!`shell`</code> (<code>command/index.ts</code>).</li>
+<li>Plugin hooks include <code>tool.execute.before/after</code>, <code>permission.ask</code>, <code>chat.params</code> and <code>event</code> (<code>packages/plugin/src/index.ts</code>).</li>
+<li>The model can be chosen per message.</li>
+<li><code>packages/http-recorder</code> provides replay cassettes for tests.</li>
+</ul>
+<h2>4. Synara (MIT, T3 Code lineage)</h2>
+<ul>
+<li><strong>Providers.</strong> The Claude Agent SDK (<code>apps/server/src/provider/claudeAgentSdk.ts</code>) and <code>codex app-server</code> (<code>codexAppServerManager.ts</code>). ACP providers use <code>@agentclientprotocol/sdk</code>, which replaced effect-acp with 34% lower peak RSS (<code>audit/EFFECT_ACP_DELETION_PLAN.md</code>, <code>benchmarks/acp-wire/</code>).</li>
+<li><strong>ACP hardening</strong> (<code>apps/server/src/provider/acp/</code>):</li>
+<li><code>AcpTurnIdleWatchdog.ts</code> is a backstop for hangs, not a wall-clock cap. It pauses during approvals, and heartbeats do not count as progress. It came from a turn stuck in "Working" for 15 hours.</li>
+<li><code>AcpLoadReplayGate.ts</code> holds back the history that <code>session/load</code> replays.</li>
+<li><code>SessionTeardownGate.ts</code> means a new runtime waits for the old one to exit.</li>
+<li><code>provider/boundedCallbackIngress.ts</code> admits callbacks within a count and byte budget, with capacity reserved for terminal events.</li>
+<li><strong>UI.</strong></li>
+<li><code>components/chat/toolCallGroup.logic.ts</code> shows "Ran 2 commands, Edited 3 files".</li>
+<li><code>ComposerSubagentStrip.logic.ts</code> and <code>ActiveTaskListCard.tsx</code> show subagents and tasks.</li>
+<li><code>ChatMarkdown.tsx</code> stopped code-block remounts (60 → 0).</li>
+<li><strong>Measured performance work</strong> (<code>docs/performance/*/report.md</code>, A/B fixtures in <code>apps/web/perf/</code>):</li>
+<li>The spinner and shimmer now share a 50 ms stepped cadence. GPU-process CPU fell 45% under vibrancy and blur (<code>2026-09-07-status-animations</code>).</li>
+<li>Ten concurrent streams: renderer CPU fell 21–32% and frames over 20 ms went from 53 to 0 (<code>2026-09-05-concurrent-threads</code>).</li>
+<li>React Compiler is off in dev only (<code>2026-09-15-dev-startup</code>).</li>
+<li><strong>Offline Claude prompt-cache report</strong> built from session JSONL (<code>docs/claude-cache-diagnostics.md</code>).</li>
+</ul>
+<h2>5. Principles to port, ranked by user-visible value</h2>
+<p>Effort is S, M or L. "Verify" says how to check the change without a live model call.</p>
+<ol>
+<li><strong>Coalesce stream events and apply them once per frame.</strong></li>
+<li>Source: OpenCode <code>app/src/context/server-sdk.tsx</code>; T3 <code>ThreadLiveEventCoalescer.ts</code>; Synara <code>apps/web/src/orchestrationEventCoalescing.ts</code>. MIT.</li>
+<li>Change: Sequence's server merges deltas and keeps the latest tool update per id within 50 ms, never dropping terminal events. The renderer applies one batch per frame.</li>
+<li>Effort: M.</li>
+<li>
+<p>Verify: the reducer state with coalescing equals the state without it, on recorded event logs.</p>
+</li>
+<li>
+<p><strong>Streaming markdown that re-renders only the live tail.</strong></p>
+</li>
+<li>Source: T3 <code>markdown-incremental.ts</code>; OpenCode <code>session-ui/.../markdown-stream.ts</code> plus <code>remend</code>; Synara <code>ChatMarkdown.tsx</code>. MIT / Apache.</li>
+<li>Change: cache completed blocks, and stop code blocks remounting.</li>
+<li>Effort: M.</li>
+<li>
+<p>Verify: a token-by-token replay test with a remount counter that must equal 0.</p>
+</li>
+<li>
+<p><strong>Separate "turn ended", "settled" and "hung", with no wall-clock cap.</strong></p>
+</li>
+<li>Source: Synara <code>acp/AcpTurnIdleWatchdog.ts</code>; T3 <code>RunFinalizationService.ts</code>. MIT.</li>
+<li>Change: Sequence stops guessing when a session has ended. A turn is done only when the provider says so. The watchdog fires only after no real progress and pauses during approvals. This addresses the owner's "end of session" concern.</li>
+<li>Effort: M.</li>
+<li>
+<p>Verify: replay transcripts for a long silent tool, an approval wait and a hung child, under a fake clock.</p>
+</li>
+<li>
+<p><strong>Virtualize the transcript and stick to the bottom.</strong></p>
+</li>
+<li>Source: T3 <code>MessagesTimeline.tsx</code> (<code>@legendapp/list</code>). MIT.</li>
+<li>Change: <code>LegendList</code> with <code>maintainScrollAtEnd</code>, <code>recycleItems</code> and remembered scroll position per thread.</li>
+<li>Effort: M.</li>
+<li>
+<p>Verify: a Playwright fixture with 2,000 rows that checks DOM node count and frame intervals.</p>
+</li>
+<li>
+<p><strong>Fold tool calls into one row and give commands readable labels.</strong></p>
+</li>
+<li>Source: Synara <code>toolCallGroup.logic.ts</code>; T3 <code>work-log/commandLabel.ts</code>. MIT.</li>
+<li>Change: Sequence shows "Ran 3 commands, Edited 2 files", which expands on click, and shell wrappers are unwrapped. This matches Claude Code and Codex density.</li>
+<li>Effort: S.</li>
+<li>
+<p>Verify: table-driven unit tests.</p>
+</li>
+<li>
+<p><strong>Dock approvals in the composer and make permission rules smart.</strong></p>
+</li>
+<li>Source: T3 <code>ComposerPendingApprovalPanel.tsx</code>; OpenCode <code>permission/index.ts</code>, <code>permission/arity.ts</code>. MIT.</li>
+<li>Change: a "1/N" queue that works from the keyboard and a "provider gone" state. "Always" grants at prefix arity and automatically resolves matching requests. A reject can carry feedback.</li>
+<li>Effort: M.</li>
+<li>
+<p>Verify: reducer tests over recorded <code>requestPermission</code> frames.</p>
+</li>
+<li>
+<p><strong>A todo, plan and subagent strip above the composer.</strong></p>
+</li>
+<li>Source: T3 <code>ComposerTasksBadge.tsx</code>, <code>ProviderSubagentBar.tsx</code>; Synara <code>ComposerSubagentStrip.logic.ts</code>. MIT.</li>
+<li>Change: map Claude's TodoWrite and Task tools and Codex plan items to a pinned strip. The architecture board reuses the same data.</li>
+<li>Effort: M.</li>
+<li>
+<p>Verify: recorded ACP and app-server frames run through the derivation logic.</p>
+</li>
+<li>
+<p><strong>Keep animation cheap: pause it off screen, step it, and give it one shared clock.</strong></p>
+</li>
+<li>Source: T3 <code>lib/visibleAnimation.ts</code>; Synara <code>docs/performance/2026-09-07-status-animations/report.md</code>. MIT.</li>
+<li>Change: loaders use <code>steps()</code> and a shared timeline origin, and pause through an IntersectionObserver and <code>visibilitychange</code>. Nothing animates under <code>backdrop-filter</code>. Reduced motion is honored.</li>
+<li>Effort: S.</li>
+<li>
+<p>Verify: Electron CPU A/B with <code>app.getAppMetrics()</code> on a static fixture.</p>
+</li>
+<li>
+<p><strong>Bound what goes on the wire and fetch bodies on demand.</strong></p>
+</li>
+<li>Source: T3 <code>WireProjection.ts</code>, <code>threadHistoryPaging.ts</code>. MIT.</li>
+<li>Change: the stream drops tool output and file bodies. A cold open sends about 75 rows, older history pages over HTTP, and bodies load when a row is expanded.</li>
+<li>Effort: M.</li>
+<li>
+<p>Verify: byte-budget tests on a synthetic thread.</p>
+</li>
+<li>
+<p><strong>Snapshot-plus-cursor resume with a bounded replay.</strong></p>
+<ul>
+<li>Source: T3 <code>ThreadStream.ts</code>, contracts <code>afterSequence</code>. MIT.</li>
+<li>Change: give events monotonic sequence numbers. On reconnect the client sends its last sequence, and the server replays up to 128 events or sends a snapshot.</li>
+<li>Effort: M.</li>
+<li>Verify: a deterministic test that drops the socket mid-replay.</li>
+</ul>
+</li>
+<li>
+<p><strong>Turn checkpoints with undo and redo, in a shadow git directory.</strong></p>
+<ul>
+<li>Source: OpenCode <code>snapshot/index.ts</code>, <code>session/revert.ts</code>; T3 <code>checkpointing/CheckpointStore.ts</code>. MIT.</li>
+<li>Change: run <code>write-tree</code> before and after each turn, and show "Revert to here" and "Undo revert". Hide the action where the provider cannot roll back.</li>
+<li>Effort: M.</li>
+<li>Verify: a temporary-repo integration test.</li>
+</ul>
+</li>
+<li>
+<p><strong>Render diffs in a worker pool.</strong></p>
+<ul>
+<li>Source: T3 <code>DiffWorkerPoolProvider.tsx</code> (<code>@pierre/diffs</code>, Apache-2.0).</li>
+<li>Change: review-panel and board diffs highlight off the main thread.</li>
+<li>Effort: S.</li>
+<li>Verify: a long-task count on a 5k-line diff fixture.</li>
+</ul>
+</li>
+<li>
+<p><strong>Gates for ACP <code>session/load</code> replay and teardown.</strong></p>
+<ul>
+<li>Source: Synara <code>acp/AcpLoadReplayGate.ts</code>, <code>acp/SessionTeardownGate.ts</code>. MIT.</li>
+<li>Change: no duplicated history on resume, and never two runtimes for one thread.</li>
+<li>Effort: S.</li>
+<li>Verify: recorded <code>session/load</code> frames under a fake clock.</li>
+</ul>
+</li>
+<li>
+<p><strong>Split the sidebar stream from per-thread streams, and keep running threads warm.</strong></p>
+<ul>
+<li>Source: T3 <code>client-runtime/src/state/threads.ts</code>. MIT.</li>
+<li>Change: the sidebar subscribes to navigation rows only. Thread streams are reference-counted with a 5-minute cache, and desktop keeps running threads mounted.</li>
+<li>Effort: M.</li>
+<li>Verify: a subscription-count test.</li>
+</ul>
+</li>
+<li>
+<p><strong>One reconnect owner, with health shown separately from freshness.</strong></p>
+<ul>
+<li>Source: T3 <code>connection/supervisor.ts</code>. MIT.</li>
+<li>Change: a single jittered backoff. The banner appears only on transport failure, and cached data is shown while offline.</li>
+<li>Effort: S.</li>
+<li>Verify: fake-clock unit tests.</li>
+</ul>
+</li>
+<li>
+<p><strong>Replay transcripts as the default integration test.</strong></p>
+<ul>
+<li>Source: T3 <code>effect-codex-app-server/src/replay.ts</code>, <code>docs/orchestration-v2/testing-strategy.md</code>; OpenCode <code>packages/http-recorder</code>. MIT.</li>
+<li>Change: record each Claude ACP and Codex session once. Tests then run the real adapter, reducer and UI state from the recording, which replaces repeated live model and visual runs.</li>
+<li>Effort: M.</li>
+<li>Verify: this principle is the verification method for the others.</li>
+</ul>
+</li>
+<li>
+<p><strong>Wait on drains in tests, never on sleeps.</strong></p>
+<ul>
+<li>Source: T3 <code>shared/src/DrainableWorker.ts</code>, <code>AGENTS.md</code>. MIT.</li>
+<li>Change: queues expose <code>drain()</code>. Agent rules ban repo-wide checks and visual passes by subagents, and allow one real-client pass at the end.</li>
+<li>Effort: S.</li>
+<li>Verify: grep for sleeps in tests.</li>
+</ul>
+</li>
+<li>
+<p><strong>Performance budgets in CI, backed by paired A/B fixtures.</strong></p>
+<ul>
+<li>Source: T3 <code>test:perf:v2-wire</code>; Synara <code>apps/web/perf/concurrent.tsx</code>. MIT.</li>
+<li>Change: payload and frame budgets fail locally, and performance claims need a saved baseline build.</li>
+<li>Effort: M.</li>
+<li>Verify: deterministic by design.</li>
+</ul>
+</li>
+<li>
+<p><strong>Bounded ingress for SDK callbacks.</strong></p>
+<ul>
+<li>Source: Synara <code>boundedCallbackIngress.ts</code>. MIT.</li>
+<li>Change: notifications go through a queue with count and byte caps, and capacity is reserved for completion and error events.</li>
+<li>Effort: S.</li>
+<li>Verify: a slow-consumer unit test.</li>
+</ul>
+</li>
+<li>
+<p><strong>Per-adapter capability flags.</strong></p>
+<ul>
+<li>Source: T3 <code>docs/orchestration-v2/provider-capability-system.md</code>. MIT.</li>
+<li>Change: the Claude and Codex adapters declare rollback, plan and subagent support, and the UI hides what an adapter lacks.</li>
+<li>Effort: S.</li>
+<li>Verify: a snapshot test per adapter.</li>
+</ul>
+</li>
+<li>
+<p><strong>Code splitting, a stale-chunk guard, and React Compiler off in dev.</strong></p>
+<ul>
+<li>Source: T3 <code>vite.config.ts</code>, <code>lib/chunkReloadGuard.ts</code>; Synara <code>2026-09-15-dev-startup</code>. MIT.</li>
+<li>Change: lazy settings and board routes, and faster HMR.</li>
+<li>Effort: S.</li>
+<li>Verify: bundle-size diff and build timing.</li>
+</ul>
+</li>
+<li>
+<p><strong>Diagnostics after edits.</strong></p>
+<ul>
+<li>Source: OpenCode <code>lsp/diagnostic.ts</code>, <code>tool/edit.ts</code>. MIT.</li>
+<li>Change: run <code>tsc</code> or ESLint on the changed files after a turn. Show the errors on the board, and offer "send to agent".</li>
+<li>Effort: M.</li>
+<li>Verify: a fixture repo with a known type error.</li>
+</ul>
+</li>
+</ol></section>
+<section id="uipass"><h1>Part 7: Sequence UI pass: Arc UI + Bastion Ramp Kit (researched 2026-10-06)</h1>
+<p>Sources:
+- uiarc.dev: <code>llms.txt</code>, registry JSON for free (MIT) items, and public pages only for Pro items.
+- usebastion.io/design: <code>llms.txt</code> and <code>kit.json</code> (generated 2026-09-19, MIT).</p>
+<p>Every free Arc component imports <code>motion</code>, which costs 34 KB, or 4.6 KB + 15 KB lazy (motion.dev/docs/react-reduce-bundle-size). Sequence has no Motion today, so every recipe here is CSS-only. Electron 33 runs Chromium 130, which supports <code>@starting-style</code>, <code>allow-discrete</code>, <code>linear()</code> and <code>interpolate-size</code>.</p>
+<h2>1. Components</h2>
+<p>U = <code>https://uiarc.dev/components/</code>. Recipes R1–R13 are in section 4.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Surface</th>
+<th>Tier</th>
+<th>Arc build and motion</th>
+<th>Cost</th>
+<th>Sequence recipe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Text shimmer U<code>text-shimmer</code></td>
+<td>thinking, live tool row, active agent step</td>
+<td>Free</td>
+<td>Motion sweeps a <code>background-clip:text</code> gradient: 1.8 s linear, then 0.58 s rest. Runs only when active, in view (64 px margin) and on a visible page.</td>
+<td>Repaint on a small area</td>
+<td>R1. One per surface.</td>
+</tr>
+<tr>
+<td>Skeleton U<code>skeleton</code> (Pro U<code>skeleton-morph</code>)</td>
+<td>sessions, settings, file tree</td>
+<td>Free (Pro)</td>
+<td>CSS opacity 1 → .52, 1.8 s, 90 ms stagger, <strong>11 cycles (~20 s), then rests</strong>. The Pro morph stretches each block to its content and un-blurs it.</td>
+<td>Compositor (morph: layout + blur)</td>
+<td>R2. Reserve height; skip the morph.</td>
+</tr>
+<tr>
+<td>Progress U<code>progress</code></td>
+<td>indexing, downloads, first run</td>
+<td>Free</td>
+<td>7 px pill. The fill moves by <strong>translateX</strong>, not width, and turns success-colour 200 ms after 100%.</td>
+<td>Compositor</td>
+<td>R3. The kit's width transition causes layout.</td>
+</tr>
+<tr>
+<td>Spinner U<code>button</code> (Pro U<code>morph-loader</code>)</td>
+<td>send/stop, tool row, boot</td>
+<td>Free (Pro)</td>
+<td>15 px ring, rotate .7–.8 s linear. The Pro loader morphs four SVG strokes into a check or cross using one rAF loop.</td>
+<td>Compositor (morph: JS every frame)</td>
+<td>R4 ring or braille, then a check drawn in 320 ms (R5).</td>
+</tr>
+<tr>
+<td>Chat thread U<code>chat-thread</code></td>
+<td>transcript</td>
+<td>Free</td>
+<td>New bubbles rise from their own side with a small scale (smooth spring, .4 s, bounce 0). <code>role=log aria-live=polite</code>. The scroll pin uses a ResizeObserver, with a "new messages" pill. No virtualization.</td>
+<td>layoutId receipts</td>
+<td>R6, newest message only.</td>
+</tr>
+<tr>
+<td>AI chat U<code>blocks/ai-chat</code></td>
+<td>chat, reasoning</td>
+<td>Pro</td>
+<td>Words fade in and un-blur. Reasoning stays folded until the first output. Tool chips.</td>
+<td>Span + blur per word: the worst item here</td>
+<td>R7</td>
+</tr>
+<tr>
+<td>AI composer U<code>blocks/ai-composer</code></td>
+<td>composer</td>
+<td>Pro</td>
+<td>The sent message lifts into the thread. Enter / Shift+Enter, <strong>Esc stops</strong>.</td>
+<td>FLIP</td>
+<td>Keep the keys, drop the lift.</td>
+</tr>
+<tr>
+<td>Agent run U<code>blocks/agent-run</code></td>
+<td>agents panel, approval card</td>
+<td>Pro</td>
+<td>Steps stream into a timeline, the active title shimmers, tool calls expand in place, and a diff waits for approval.</td>
+<td>Height springs</td>
+<td>R1 on the active step, R8 to expand.</td>
+</tr>
+<tr>
+<td>Command palette U<code>blocks/command-palette</code>, Morph select U<code>morph-select</code></td>
+<td>⌘K, model picker</td>
+<td>Free</td>
+<td>Solid panel, results capped at 342 px. Opens from y 6 / scale .98 in about 150 ms; the highlight slides 70 ms. Morph select grows the trigger into the list.</td>
+<td>Low; morph needs a measuring copy</td>
+<td>R9. Highlight is the background on <code>[aria-selected]</code>; no morph.</td>
+</tr>
+<tr>
+<td>Toast stack U<code>toast-stack</code></td>
+<td>toasts</td>
+<td>Free</td>
+<td>14 px peek, −5% scale per layer, 3 visible. Hover expands with 12 px gaps. 5 s default, ×1.6 for warn/error. <strong>Pauses on hover and hidden page.</strong> Enter y16 scale .96 over 240 ms.</td>
+<td>Low</td>
+<td>R10</td>
+</tr>
+<tr>
+<td>Tabs, Segmented U<code>tabs</code>, U<code>segmented-control</code></td>
+<td>tab strip, modes</td>
+<td>Free</td>
+<td><code>layoutId</code> indicator on the morph spring (.42 s, bounce .16). Panels move ±8 px.</td>
+<td>Needs Motion</td>
+<td>R11</td>
+</tr>
+<tr>
+<td>Confirm morph U<code>confirm-morph</code></td>
+<td>Reject/Discard</td>
+<td>Free</td>
+<td>Pill springs wider to fit the prompt and buttons. <strong>Auto-reverts after 6 s</strong>, paused on hover.</td>
+<td>Local layout</td>
+<td>Faces fade in 160 ms, width snaps.</td>
+</tr>
+<tr>
+<td>Hold to confirm U<code>hold-to-confirm</code></td>
+<td>dangerous approvals</td>
+<td>Free</td>
+<td>1200 ms linear <code>clip-path</code> fill. Release springs back. Check drawn in 320 ms.</td>
+<td>Low</td>
+<td>R12</td>
+</tr>
+<tr>
+<td>Dialog U<code>dialog</code></td>
+<td>confirms, settings</td>
+<td>Free</td>
+<td>Overlay <code>oklch(10% 0 0/.46)</code> with a <strong>full-screen <code>blur(7px)</code></strong>. Content enters from y8 scale .96 and exits to y4 scale .98.</td>
+<td>The blur re-runs whenever the board or stream changes underneath</td>
+<td>Dim only (R9).</td>
+</tr>
+<tr>
+<td>Tooltip U<code>tooltip</code></td>
+<td>icon buttons</td>
+<td>Free</td>
+<td><strong>250 ms delay, 300 ms skip window.</strong> <code>@starting-style</code> y + scale .97 over 160 ms.</td>
+<td>None</td>
+<td>Copy as is.</td>
+</tr>
+<tr>
+<td>Floating button group U<code>floating-button-group</code></td>
+<td>board toolbar</td>
+<td>Free</td>
+<td>Tray at 4.5% foreground, edge at 3%. 36 px items, press .965. <strong>No blur.</strong></td>
+<td>Low</td>
+<td>Same, without highlight travel.</td>
+</tr>
+<tr>
+<td>Dock, Glass card, Glass tab bar U<code>dock</code>, U<code>glass-card</code>, U<code>glass-tabbar</code></td>
+<td>none</td>
+<td>Pro</td>
+<td><strong>SVG displacement inside backdrop-filter</strong> for refraction, ≤6° pointer tilt. Both turn solid under <code>prefers-reduced-transparency</code>.</td>
+<td>High while moving</td>
+<td>Avoid. Take the reduced-transparency rule.</td>
+</tr>
+<tr>
+<td>Empty state U<code>empty-state</code></td>
+<td>empty states</td>
+<td>Free</td>
+<td>48 px bordered icon tile, Lucide 24 at 1.5. The tile scales .92 → 1 over 480 ms with the enter ease. Title 16/500; body 14, max 18rem, balanced.</td>
+<td>One-shot</td>
+<td>Same. ASCII may replace the tile.</td>
+</tr>
+<tr>
+<td>Counter, Usage meter U<code>animated-counter</code>, U<code>usage-meter</code></td>
+<td>context and cost meter</td>
+<td>Free</td>
+<td>Digit columns move by translateY under a feathered mask. Meter segments use scaleX and warn at 90%.</td>
+<td>Compositor</td>
+<td>R11b</td>
+</tr>
+<tr>
+<td>Sidebar rail U<code>blocks/sidebar-rail</code></td>
+<td>sidebar</td>
+<td>Pro</td>
+<td>Width springs between 272 and 64 px; <code>[</code> toggles it.</td>
+<td>Reflows the shell <strong>and xyflow</strong> every frame</td>
+<td>Snap the width, fade labels in 120 ms.</td>
+</tr>
+<tr>
+<td>Sparkline U<code>sparkline</code>; Typewriter terminal U<code>typewriter-terminal</code></td>
+<td>agents panel; first run</td>
+<td>Free; Pro</td>
+<td>The sparkline draws in <strong>once</strong> on first view. The terminal <strong>rests when off screen or hidden</strong>.</td>
+<td>One-shot / per frame</td>
+<td>Draw in 600 ms; fade lines in with a 60 ms stagger.</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Tokens</h2>
+<p><strong>Arc</strong> (from <code>uiarc.dev/r/arc-foundation.json</code>, <code>r/skills/arc/design.md</code>, <code>motion.md</code>)
+- Durations: 120 / 160 / 240 / 480 / 580 ms.
+- Easing: enter <code>(.16,1,.3,1)</code>, standard <code>(.22,1,.36,1)</code>, exit <code>(.7,0,.84,0)</code>, in-out <code>(.65,0,.35,1)</code>.
+- Springs: snappy .26 s / bounce .12, smooth .4 s / 0, morph .42 s / .16. Stagger 35 ms. Exits are faster than entrances; presses scale to .97.
+- Type: Inter body and Geist display, <strong>weights 400/500 only, no uppercase</strong>, tracking −.01em / −.03em.
+- Layout: 4 px grid; controls 36 / 44 / 50 px; radii 18 / 26 / 34; nested radius = outer − padding.
+- Shadows only on floating layers; cards get borders.
+- Dark: bg <code>oklch(19% 0 0)</code>, surface 21.5%, border 29%, muted 64%.
+- Icons: Lucide 16 / 20 / 24 px, stroke 1.75.</p>
+<p><strong>Bastion Ramp Kit</strong> (<code>usebastion.io/design/kit.json</code>)
+- <strong>Graphite</strong>: <code>#F6F6F7/#FFF/#131315</code>, muted <code>#6C6D75</code>, line <code>rgba(19,19,21,.12)</code>, accent <code>#4F45C9</code>. Instrument Sans + JetBrains Mono, radius 10. <strong>Shadow and blur: none.</strong> Lucide at weight 1.6, round caps. Motion "fade", loader "braille", thinking "fold", status "strip".
+- <strong>Lovable</strong>: <code>#F5F5F5/#FFF/#030303</code>, accent <code>#1F55F1</code>. Inter + Roboto Mono, radius 8, shadow <code>0 1px 2px rgba(0,0,0,.06)</code>, blur none. <strong>Phosphor regular icons.</strong> Loader "pulse"; gradient ring on the composer.
+- <strong>Glass</strong>:
+  - Liquid Glass: fill <code>rgba(255,255,255,.55)</code>, border <code>.75</code>, <code>inset 0 1px 0 rgba(255,255,255,.9)</code>, <code>blur(22px) saturate(1.6)</code>, radius 24.
+  - Frosted: <code>.62</code> fill, no stroke, <code>blur(30px)</code>.
+  - Bakers (dark): <code>rgba(38,36,46,.72)</code>, border <code>rgba(255,255,255,.12)</code>, <code>blur(16px)</code>, radius 16.
+- <strong>Loaders</strong>: braille <code>⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏</code> at 80 ms; ring 1 s; dots <code>bob</code> 1.2 s (−5 px, delays .15 / .3 s); hairline 2 s; shimmer 1.6 s; word fade .35 s.
+- <strong>ASCII</strong>: a torus after Andy Sloane's donut; dot-grid and halftone grounds; ASCII flow diagrams and trees; an "ASCII orb… breathes while thinking". Glyphs from one font; never colour emoji.
+- <strong>Empty-state anatomy</strong>: optional illustration, title, one sentence, one input, three suggestions.
+- <strong>Not reachable</strong>: the homepage CSS (fonts, its glass-button values). Curl gets 403 from the proxy, and WebFetch strips stylesheets. <code>graphite.css</code> §5c quotes dark Lovable values (<code>#1D1D1C/#272726/#353533</code>), but today's <code>kit.json</code> has no dark variants and those strings were not found. Treat them as <strong>unconfirmed</strong>.</p>
+<p><strong>Sequence today</strong> (<code>packages/web2</code>)
+- 24 <code>infinite</code> animations, none paused when hidden.
+- <code>chatshimmer</code> and <code>chatpot</code> animate <code>background-position</code>, so they repaint every frame; <code>chatpot</code> repaints a whole row.
+- <code>board-run-edge</code> animates <code>stroke-dashoffset</code> on xyflow edges.
+- 68 <code>backdrop-filter</code> uses, with panes blurred at 24–28 px.</p>
+<h2>3. Rules</h2>
+<ol>
+<li><strong>CSS-only.</strong> Port Arc's numbers, not its code; add no Motion.</li>
+<li><strong>Loops animate only <code>transform</code> and <code>opacity</code>.</strong> Loops that must repaint use <code>steps()</code>: for example, <code>board-run-edge .9s steps(9)</code> cuts about 60 paints a second to about 10. Replace <code>chatpot</code> with R1b.</li>
+<li><strong>Every loop stops.</strong> Pause it when the window is hidden (R13). Use <code>content-visibility:auto</code> on messages. Ambient loops are finite. At most one shimmer and one spinner per surface.</li>
+<li><strong>Loader tiers.</strong> Show nothing under 250 ms. Then:</li>
+<li>inline wait: ring or braille;</li>
+<li>live label: shimmer;</li>
+<li>lists: finite skeleton;</li>
+<li>known amount: determinate bar; unknown amount: hairline;</li>
+<li>boot: braille plus one status line.</li>
+<li><strong>Durations.</strong> Hover 120 ms; exit and tooltip 160; enter, popover and toast 240; showpieces 480. Add <code>--dur-3/--dur-4</code> and the Arc easings next to <code>--dur-1/2</code>.</li>
+<li><strong>Glass only on small floating surfaces</strong>: composer, ⌘K, menus, board toolbar, toasts. At most three on screen. Never on panes, rows or overlays, and never glass on glass. Dark recipe: fill <code>rgba(255,255,255,.08–.13)</code>, rim <code>.14–.20</code>, <code>inset 0 1px 0 rgba(255,255,255,.18)</code>, <code>blur(16–20px) saturate(1.6–1.8)</code>.</li>
+<li><strong>Blur only over moving or detailed content.</strong> Panes over a static ground keep the alpha fill and drop the blur; it looks the same and is free.</li>
+<li><strong>Accessibility.</strong> Reduced transparency makes glass solid; reduced motion shows a static glyph.</li>
+<li><strong>Icons.</strong> One 24-unit set, round caps. Stroke 1.5 at ≤14 px, 1.6–1.75 at 16–24 px. Sizes 14 / 16 / 20, and 24 in empty states.</li>
+<li><strong>Type.</strong> Weights 400/500, sentence case, tabular numbers.</li>
+<li><strong>ASCII only on first run, boot and empty states.</strong> ≤12 fps, one mono font. It stops on the first action and is static under reduced motion. Never on the board.</li>
+<li><strong>Shell widths snap.</strong> A width spring makes xyflow re-measure every frame.</li>
+<li><strong>Streaming.</strong> One fading span per flush and a <code>steps(1)</code> caret. No per-word spans, no blur.</li>
+<li><strong>Overlays.</strong> Enter 150–240 ms, close 120–160 ms. Tooltips 250 / 300 ms. Dialogs dim, never blur.</li>
+<li><strong>Approvals.</strong> Hold-to-confirm 1.2 s; confirm-morph reverts after 6 s. Enter approves, Esc rejects.</li>
+</ol>
+<h2>4. Recipes (paste-ready, graphite.css names)</h2>
+<pre><code class="language-css">:root{--ease-enter:cubic-bezier(.16,1,.3,1);--ease-exit:cubic-bezier(.7,0,.84,0);--ease-std:cubic-bezier(.22,1,.36,1);--ease-io:cubic-bezier(.65,0,.35,1);
+ /* computed spring, bounce≈.16 (not copied) */
+ --ease-spring:linear(0,.12,.349,.57,.743,.862,.936,.977,.998,1.006,1.008,1.007,1.005,1.003,1);interpolate-size:allow-keywords}
+/* R1 shimmer: 1.8s sweep + .6s rest */
+.shimmer{background:linear-gradient(90deg,var(--ink-3) 40%,var(--ink-1) 50%,var(--ink-3) 60%) 100% 0/250% 100% no-repeat;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shim 2.4s linear infinite}
+@keyframes shim{75%,100%{background-position:0 0}}
+/* R1b row wash, compositor-only (replaces chatpot) */
+.toolrow.live{position:relative;overflow:hidden;isolation:isolate}
+.toolrow.live::before{content:&quot;&quot;;position:absolute;inset:0 auto 0 0;width:40%;z-index:-1;background:linear-gradient(90deg,transparent,var(--accent-wash),transparent);transform:translateX(-100%);animation:wash 2.6s var(--ease-io) infinite}
+@keyframes wash{to{transform:translateX(250%)}}
+/* R2 finite skeleton */
+.sk{background:color-mix(in srgb,var(--edge-strong) 38%,var(--surface-1));border-radius:var(--r-8);animation:sk 1.8s var(--ease-io) calc(var(--i,0)*90ms) 11 both}
+@keyframes sk{50%{opacity:.52}}
+/* R3 progress */
+.bar{height:6px;border-radius:99px;overflow:hidden;background:var(--edge-faint)}
+.bar&gt;i{display:block;height:100%;background:var(--accent);transform:translateX(calc(var(--p,0)*1% - 100%));transition:transform 240ms var(--ease-std)}
+.bar[data-indeterminate]&gt;i{width:30%;animation:ride 1.6s var(--ease-io) infinite}
+@keyframes ride{from{transform:translateX(-100%)}to{transform:translateX(340%)}}
+/* R4 ring + braille sprite (80ms/frame) */
+.ring{width:12px;height:12px;border:1.5px solid var(--edge-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.braille{display:inline-block;height:16px;overflow:hidden;font:12px/16px var(--font-mono)}
+.braille::before{content:&quot;⠋\A⠙\A⠹\A⠸\A⠼\A⠴\A⠦\A⠧\A⠇\A⠏&quot;;display:block;white-space:pre;animation:br .8s steps(10) infinite}
+@keyframes br{to{transform:translateY(-100%)}}
+/* R5 check draw (path pathLength=&quot;24&quot;) */
+.done path{stroke-dasharray:24;stroke-dashoffset:24;animation:draw .32s var(--ease-enter) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+/* R6 newest message */
+.msg[data-new]{animation:msg-in 240ms var(--ease-enter) both}
+@keyframes msg-in{from{opacity:0;transform:translateY(6px) scale(.985)}}
+.msg{content-visibility:auto;contain-intrinsic-size:auto 96px}
+/* R7 stream chunk + caret */
+.chunk{animation:fade .18s linear both}@keyframes fade{from{opacity:0}}
+.caret{display:inline-block;width:.5ch;height:1em;background:currentColor;vertical-align:-.12em;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+/* R8 fold */
+.fold{height:0;overflow:clip;transition:height 240ms var(--ease-std)}.fold[data-open]{height:auto}
+/* R9 popover / dialog / ⌘K */
+.pop{transition:opacity 200ms var(--ease-enter),transform 200ms var(--ease-enter),display 200ms allow-discrete,overlay 200ms allow-discrete}
+.pop:not([open],:popover-open){opacity:0;transform:translateY(4px) scale(.98);transition-duration:120ms}
+@starting-style{.pop:is([open],:popover-open){opacity:0;transform:translateY(6px) scale(.98)}}
+dialog::backdrop{background:rgba(0,0,0,.46)}
+/* R10 toast stack (--k = index from newest) */
+.toasts&gt;li{transition:transform 240ms var(--ease-spring),opacity 160ms}
+.toasts&gt;li:nth-last-child(2){transform:translateY(-14px) scale(.95)}
+.toasts&gt;li:nth-last-child(3){transform:translateY(-28px) scale(.9)}
+.toasts&gt;li:nth-last-child(n+4){opacity:0}
+.toasts:hover&gt;li{transform:translateY(calc(var(--k)*-1*(100% + 12px)))}
+@starting-style{.toasts&gt;li{opacity:0;transform:translateY(16px) scale(.96)}}
+/* R11 indicator (JS writes --x/--w on change) + R11b digit roll */
+.seg{position:relative;contain:layout paint}
+.seg&gt;.ind{position:absolute;inset-block:3px;left:0;width:var(--w);transform:translateX(var(--x));border-radius:inherit;background:var(--glass-sel);transition:transform 420ms var(--ease-spring),width 420ms var(--ease-spring)}
+.digit{display:inline-block;height:1lh;overflow:hidden;font-variant-numeric:tabular-nums}
+.digit&gt;span{display:block;white-space:pre;transform:translateY(calc(var(--d)*-10%));transition:transform .4s var(--ease-std)}
+/* R12 hold-to-confirm (JS confirms on transitionend while [data-holding]) */
+.hold{position:relative;overflow:hidden}
+.hold::after{content:&quot;&quot;;position:absolute;inset:0;background:var(--wont);opacity:.22;transform:scaleX(0);transform-origin:left;transition:transform .2s var(--ease-std)}
+.hold[data-holding]::after{transform:scaleX(1);transition:transform 1.2s linear}
+/* R13 quiet when hidden: document.onvisibilitychange=()=&gt;root.toggleAttribute('data-hidden',document.hidden) */
+:root[data-hidden] *,:root[data-hidden] *::before{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+@media (prefers-reduced-transparency:reduce){.glass{backdrop-filter:none;background:var(--surface-2)}}
+</code></pre></section>

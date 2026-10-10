@@ -1,0 +1,42 @@
+[
+  {"id": "ml-harness-d1", "repo": "ml-harness", "questions": [
+    "hi, i just got dropped into this project and honestly i have no clue what it is. what does this thing actually do and who would use it?",
+    "sorry, still not getting it. like if i'm a regular person, what is this for? what's the point of it existing?",
+    "ok im still lost tbh. can you explain like im five what this product is and why somebody would want it"
+  ]},
+  {"id": "ml-harness-d2", "repo": "ml-harness", "questions": [
+    "What problem is this tool trying to solve, and how is it different from just fine-tuning a model with an existing trainer library?",
+    "Walk me through what a user goes through from start to finish, step by step.",
+    "Can you draw that whole flow as a diagram? Boxes and arrows is fine."
+  ]},
+  {"id": "shopfront-d1", "repo": "shopfront", "questions": [
+    "what is this",
+    "no i mean what is it FOR. who uses it",
+    "still dont get it. what does a customer get out of this whole thing"
+  ]},
+  {"id": "shopfront-d2", "repo": "shopfront", "questions": [
+    "Hello, I am new in the team and my English is not so good. Please can you tell me what is this product and what is the journey of a customer when he buy something?",
+    "Thank you. I want to understand only the part when the customer is paying. What happens in this step exactly, for the customer?",
+    "And after the payment, what the customer receive? Is there some message or document?"
+  ]},
+  {"id": "makemore-d1", "repo": "makemore", "questions": [
+    "eli5 what this project is",
+    "hmm ok but like... what is it actually for? why would anyone make this",
+    "yeah i still dont really get the point. what do you get at the end if you use it, in super simple words"
+  ]},
+  {"id": "makemore-d2", "repo": "makemore", "questions": [
+    "So I've been poking around and it looks like it has something to do with names? Is it a real product, or more of a learning thing, and who's the audience supposed to be?",
+    "How does this compare to just, you know, grabbing a random name generator website or asking a chatbot for baby names?",
+    "Could you sketch the steps from the list of names going in to new names coming out, as a picture?"
+  ]},
+  {"id": "sequence-d1", "repo": "sequence", "questions": [
+    "Hey! So my manager told me to look at this and I'm kind of overwhelmed, there's a lot going on. Could you tell me what this product is and who it's meant for? Like the big picture, not the technical stuff.",
+    "Okay, I read that but I think I'm still missing it. Why would a team actually want this? What does it do for them that they can't already do?",
+    "Sorry to keep asking, I just want to be sure I can explain it to someone else. In one or two plain sentences, what is this and why does it exist?"
+  ]},
+  {"id": "sequence-d2", "repo": "sequence", "questions": [
+    "whats the difference between this and just drawing an architecture diagram by hand or asking chatgpt about my repo",
+    "ok but i still dont see why id pick this over those. whats the actual advantage",
+    "yeah still not clicking. if i already have a diagram why do i need this"
+  ]}
+]

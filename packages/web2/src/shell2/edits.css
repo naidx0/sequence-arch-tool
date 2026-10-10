@@ -1,0 +1,524 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE EDITS FLOW AND THE DIALOGS (Decision 49)
+   packages/web2/src/shell2/edits.css
+
+   B's dialog (.scrim, .dlg, .dic, .files, .fl, .da) for confirmations and the
+   composer takeover; Mix's .cf line and .panel / .fold / .code / .cl for the
+   changed files and the review dock. Diffs are mono, folded until asked for.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── B's dialog ─────────────────────────────────────────────────────────── */
+.s2-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--scrim, rgba(10, 10, 10, 0.45));
+  animation: s2-fade var(--dur-2) var(--ease);
+}
+@keyframes s2-fade {
+  from {
+    opacity: 0;
+  }
+}
+.s2-dlg {
+  width: 400px;
+  max-width: 100%;
+  border-radius: 24px;
+  background: var(--b-s2);
+  border: 1px solid var(--b-edge2);
+  box-shadow: var(--b-dlg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: s2-pop var(--dur-2) var(--ease-enter);
+}
+.s2-dlg h3,
+.s2-take h3 {
+  margin: 0;
+  font-size: var(--t-16);
+  font-weight: var(--fw-head);
+  line-height: 22px;
+  color: var(--b-ink1);
+}
+.s2-dlg p {
+  margin: 0;
+  color: var(--b-ink2);
+  line-height: 20px;
+}
+.s2-dlg .s2-dlg-err {
+  color: var(--b-del);
+  font-size: var(--t-12);
+}
+.s2-dic {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--b-accw);
+  color: var(--b-acc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s2-dic.is-danger {
+  background: color-mix(in srgb, var(--b-del) 14%, transparent);
+  color: var(--b-del);
+}
+.s2-dic.s2-dic-sm {
+  width: 30px;
+  height: var(--icon-btn-lg);
+  border-radius: 10px;
+}
+.s2-files {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.s2-fl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge);
+  font-size: var(--t-12);
+  color: var(--b-ink1);
+}
+.s2-fl .s2-mono {
+  font-size: var(--t-12);
+}
+.s2-da {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.s2-da .s2-btn {
+  height: 32px;
+  padding: 0 12px;
+}
+.s2-btn.s2-danger {
+  background: var(--b-del);
+  color: var(--accent-on-solid);
+  border-color: transparent;
+}
+.s2-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.s2-kbd.s2-kbd-on {
+  color: color-mix(in srgb, var(--accent-on-solid) 85%, transparent);
+  border-color: color-mix(in srgb, var(--accent-on-solid) 40%, transparent);
+}
+.s2-cmd {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: 18px;
+  color: var(--b-ink1);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 140px;
+  overflow: auto;
+}
+
+/* ── the takeover: the dialog card in the composer's place ─────────────── */
+.s2-take {
+  border-radius: 22px;
+  background: var(--b-s2);
+  border: 1px solid color-mix(in srgb, var(--b-acc) 45%, transparent);
+  box-shadow: var(--b-shadow);
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: s2-pop var(--dur-2) var(--ease-enter);
+  transform-origin: bottom center;
+}
+.s2-take-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.s2-take h3 {
+  font-size: var(--t-14);
+  line-height: 20px;
+}
+.s2-take-p {
+  margin: 0;
+  color: var(--b-ink2);
+  font-size: var(--t-12-5);
+  line-height: 19px;
+}
+.s2-take-plan {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge);
+  white-space: pre-wrap;
+  font-size: var(--t-12-5);
+  line-height: 19px;
+  color: var(--b-ink1);
+}
+
+/* ── the changed-files line: Mix's .cf ─────────────────────────────────── */
+.s2-cf-wrap {
+  border-radius: 14px;
+  border: 1px solid var(--b-edge);
+  background: var(--b-s2);
+  box-shadow: var(--b-shadow);
+  overflow: hidden;
+}
+.s2-cf {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--b-ink1);
+  text-align: left;
+  cursor: pointer;
+}
+.s2-cf .s2-mono {
+  font-size: var(--t-12);
+}
+.s2-cf:hover {
+  background: var(--b-glass);
+}
+.s2-cf-chev {
+  color: var(--b-ink3);
+}
+.s2-cf-body {
+  border-top: 1px solid var(--b-edge);
+}
+.s2-cf-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12-5);
+  color: var(--b-ink2);
+  text-align: left;
+  cursor: pointer;
+}
+.s2-cf-row:hover {
+  background: var(--b-glass);
+  color: var(--b-ink1);
+}
+.s2-review-foot .s2-pill + .s2-pill {
+  margin-left: 0;
+}
+.s2-cf-acts,
+.s2-review-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--b-edge);
+}
+.s2-cf-acts .s2-pill,
+.s2-review-foot .s2-pill {
+  height: var(--control-h);
+}
+.s2-cf-note {
+  margin: 0;
+  padding: 0 12px 10px;
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}
+
+/* ── the review dock: Mix's .panel, .fold, .code, .cl ─────────────────── */
+.s2-pane-review {
+  flex: 0 1 420px;
+  min-width: 320px;
+}
+.s2-pane-review:only-child {
+  flex: 1 1 0;
+}
+.s2-review {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--b-s1);
+}
+.s2-seg.s2-seg-sm {
+  padding: 2px;
+}
+.s2-seg.s2-seg-sm button {
+  height: 22px;
+  padding: 0 9px;
+  font-size: var(--t-11);
+}
+.s2-review-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.s2-rv-file + .s2-rv-file {
+  border-top: 1px solid var(--b-edge);
+}
+.s2-fold {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12-5);
+  color: var(--b-ink1);
+  text-align: left;
+  cursor: pointer;
+}
+.s2-fold:hover {
+  background: var(--b-glass);
+}
+.s2-fold-chev {
+  color: var(--b-ink3);
+}
+.s2-code {
+  font-size: var(--t-11-5);
+  line-height: 19px;
+  padding: 6px 0;
+  border-top: 1px solid var(--b-edge);
+  overflow-x: auto;
+}
+.s2-cl {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px;
+  white-space: pre;
+  color: var(--b-ink2);
+  min-width: max-content;
+}
+.s2-cl i {
+  font-style: normal;
+  color: var(--b-ink3);
+  width: 28px;
+  text-align: right;
+  flex: none;
+}
+.s2-cl.a {
+  background: var(--diff-add-bg, rgba(76, 195, 138, 0.12));
+  color: var(--b-ink1);
+}
+.s2-cl.d {
+  background: var(--diff-del-bg, rgba(255, 122, 110, 0.12));
+  color: var(--b-ink1);
+}
+.s2-cl.e {
+  opacity: 0.4;
+}
+.s2-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.s2-split-col {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.s2-split-col + .s2-split-col {
+  border-left: 1px solid var(--b-edge);
+}
+.s2-code[data-view='unified'] {
+  overflow-x: auto;
+}
+/* Wrap on: lines wrap, nothing scrolls sideways. */
+.s2-code[data-wrap='on'] .s2-cl {
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-width: 0;
+}
+.s2-code[data-wrap='on'] .s2-split-col {
+  overflow-x: hidden;
+}
+.s2-chipbtn.s2-wrap.is-on {
+  background: var(--b-accw);
+  color: var(--b-acc);
+  border-color: transparent;
+}
+.s2-hunk + .s2-hunk {
+  margin-top: 6px;
+  border-top: 1px dashed var(--b-edge);
+  padding-top: 6px;
+}
+.s2-hunk-acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 2px;
+  font-family: var(--font-sans);
+}
+.s2-chipbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--r-full);
+  font: inherit;
+  font-size: var(--t-11-5);
+  font-weight: var(--fw-label);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink1);
+  cursor: pointer;
+}
+.s2-chipbtn:hover {
+  background: var(--b-glass-hover);
+}
+.s2-chipbtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s2-scrim,
+  .s2-dlg,
+  .s2-take {
+    animation: none;
+  }
+}
+
+/* The takeover is the one place an approval or question is answered while it
+   shows; the page's toasts for it would be a second (DeepSeek: one place). */
+body.s2-taking .agtoast {
+  display: none;
+}
+.s2-take {
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+}
+.s2-review-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--b-edge);
+}
+.s2-review-tools .s2-chipbtn {
+  margin-left: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 8: ONE POPOVER (item 6, the consistency pass)
+   Every pop-up the shell draws shares one frame and one inside: the menus
+   (.s2-menu: the chat's More, a chat row's actions, the composer's + and
+   mode and model menus, the @-mention list), the toast (.agtoast), the
+   confirm dialog (.s2-dlg), the takeover (.s2-take), the popovers (the
+   context ring's breakdown, the command palette) and any tooltip. The frame:
+   one radius, one hairline, one fill, one shadow, one padding. The inside:
+   32 px rows, 13 px type with an 11.5 px second line, one key-hint chip.
+   A dialog's words sit one more step in, so the frame stays the same while
+   its text has room. e2e/popovers-share.mjs opens each and compares.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2 {
+  --pop-r: 16px;
+  --pop-edge: var(--glass-ctl-edge);
+  --pop-fill: var(--float-fill);
+  --pop-shadow: var(--b-lift);
+  --pop-pad: var(--sp-6);
+  --pop-row-h: var(--control-h-lg);
+  --pop-fs: var(--t-13);
+  --pop-fs-2: var(--t-11-5);
+}
+.s2-menu,
+.s2-dlg,
+.s2-take,
+.s2 .agtoast,
+.s2 .s2-ctx .ctxring-panel,
+.s2 .shell-cmd,
+.s2 [role='tooltip'] {
+  border-radius: var(--pop-r);
+  border: 1px solid var(--pop-edge);
+  background: var(--pop-fill);
+  box-shadow: var(--pop-shadow);
+  padding: var(--pop-pad);
+  font-size: var(--pop-fs);
+  line-height: 18px;
+  color: var(--ink-1);
+}
+/* The rows inside: menu items and palette rows, one height. */
+.s2-mi,
+.s2 .shell-cmd-item {
+  min-height: var(--pop-row-h);
+  height: auto;
+  font-size: var(--pop-fs);
+  border-radius: var(--r-10);
+}
+.s2-mi-d span,
+.s2 .shell-cmd-why,
+.s2 .agtoast-text {
+  font-size: var(--pop-fs-2);
+}
+.s2 .shell-cmd-why {
+  font-family: inherit;
+  color: var(--ink-3);
+}
+.s2 .shell-cmd-item[aria-selected='true'] {
+  background: var(--b-accw);
+  box-shadow: none;
+}
+/* One key hint, wherever it sits. */
+.s2-kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--b-edge2);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: var(--t-10-5);
+  line-height: 16px;
+  color: var(--b-ink3);
+  background: transparent;
+}
+/* A dialog's words, one step in from the shared frame (doubled class: over `.s2-dlg h3 { margin: 0 }`). */
+.s2-dlg,
+.s2-take {
+  gap: var(--sp-10);
+}
+.s2-dlg.s2-dlg > *,
+.s2-take.s2-take > * {
+  margin-left: var(--sp-8);
+  margin-right: var(--sp-8);
+}
+.s2-dlg.s2-dlg > :first-child,
+.s2-take.s2-take > :first-child {
+  margin-top: var(--sp-8);
+}
+.s2-dlg.s2-dlg > :last-child,
+.s2-take.s2-take > :last-child {
+  margin-bottom: var(--sp-6);
+}
+.s2 .agtoast {
+  gap: var(--sp-4);
+}
+.s2 .agtoast > * {
+  margin-left: var(--sp-6);
+  margin-right: var(--sp-6);
+}
