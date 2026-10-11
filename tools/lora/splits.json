@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "note": "The train / held-out split for Phase 0, DECLARED UP FRONT rather than derived at run time. docs/lora-operator-guide.md §5: 'Eval set — held out, never trained on. A slice of repos reserved from the start, including the four hand-ground-truthed ones, so the pass-rate number means something.' Reserving the split in a committed file is what makes that checkable: lib/corpus.mjs refuses to build a dataset unless every manifest row appears exactly once across the two lists AND every row carrying a `groundTruth` path is on the held-out side. Move a row between lists deliberately, in a commit, or not at all — a split that drifts silently makes every pass-rate number downstream incomparable to the last one.",
+  "heldOut": [
+    "robot-shop",
+    "online-boutique",
+    "spring-petclinic",
+    "microrealestate",
+    "example-voting-app",
+    "sock-shop",
+    "vite",
+    "django"
+  ],
+  "heldOutWhy": {
+    "robot-shop": "Ground-truthed (docs/ground-truth/robot-shop.json). Required held out by §5.",
+    "online-boutique": "Ground-truthed. Required held out by §5.",
+    "spring-petclinic": "Ground-truthed. Required held out by §5.",
+    "microrealestate": "Ground-truthed. Required held out by §5.",
+    "example-voting-app": "Small compose stack — keeps a cheap, fast row in the eval set so the harness can be exercised without waiting on a large scan.",
+    "sock-shop": "A microservice shape NOT represented by any ground-truthed row's topology, so the eval set is not four variations of one thing.",
+    "vite": "A library/tooling repo rather than a service mesh — the eval must include a repo where 'add a cache in front of X' is an awkward ask, because users will ask it there anyway.",
+    "django": "Large framework monolith. The hardest digest shape we have; if the tuned model only holds format on tidy microservice repos we need that to show up in the number, not hide."
+  },
+  "train": [
+    "spring-petclinic-monolith",
+    "express",
+    "gin",
+    "flask",
+    "node-express-realworld",
+    "fastapi",
+    "opentelemetry-demo",
+    "gorm",
+    "terraform",
+    "prometheus",
+    "nest",
+    "excalidraw",
+    "strapi",
+    "n8n",
+    "sqlfluff",
+    "spring-boot",
+    "eugenp-tutorials",
+    "skaffold",
+    "rails"
+  ]
+}

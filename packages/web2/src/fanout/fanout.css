@@ -1,0 +1,60 @@
+/* Best of N. The picker is the notice's card (shell2/chat2.css) with the app's .s2-btn / .s2-ibtn; the comparison
+   sits in the worktree panel and uses its rows and .wt-btn. Layout only here. */
+.s2-notice.fo-menu {
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  gap: var(--sp-8);
+  padding: 12px 14px;
+  font-size: var(--t-13);
+  color: var(--b-ink1);
+}
+.fo-menu .s2-notice-acts {
+  padding-left: 0;
+}
+.fo-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.fo-line {
+  margin: 0;
+  color: var(--ink-2);
+}
+.fo-error {
+  color: var(--wont);
+}
+.fo-warn {
+  color: var(--ink-1);
+}
+.fo-list,
+.fo-sibs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.fo-list label {
+  display: flex;
+  gap: var(--sp-6);
+  align-items: center;
+}
+.fo-sib-hd {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: center;
+}
+.fo-here {
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+.fo-sib-line {
+  color: var(--ink-2);
+}
+.fo-compare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}

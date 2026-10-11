@@ -1,0 +1,44 @@
+{
+  "$comment": "S4 ceilings for static style counts over packages/web2/src. Checked by tools/ci/style-ratchet.mjs (tools/ci/style-ratchet.test.mjs in test:ci). A count may only go down: lower its ceiling in the commit that lowers it. fontBytes may rise only in the commit that adds a font, with the reason in the log.",
+  "infiniteAnimations": {
+    "ceiling": 8,
+    "$lowered": {
+      "date": "2026-10-08",
+      "from": 9,
+      "to": 8,
+      "reason": "round 11 merge: one AsciiSpinner (a timer while mounted) replaced the CSS-looped .s2-spin."
+    },
+    "what": "CSS animation declarations with infinite iterations",
+    "$raised": {
+      "date": "2026-10-08",
+      "from": 8,
+      "to": 9,
+      "reason": "round 11: the shared .shimmer-text class (tokens/graphite.css), owner-asked text shimmer on words of something running; it loops only while the class is on a running label and is static under reduced motion."
+    }
+  },
+  "backdropFilters": {
+    "ceiling": 7,
+    "what": "backdrop-filter declarations that are not none (the -webkit- twin is not counted)",
+    "$raised": {
+      "from": 4,
+      "to": 7,
+      "reason": "round 10: owner asked for translucent, blurred menus and panels this round (the glass menus and panels in the round-10 look)."
+    }
+  },
+  "fontBytes": {
+    "ceiling": 26752,
+    "what": "bytes of bundled font files under packages/web2/src/**/fonts"
+  },
+  "heavyWeights": {
+    "ceiling": 4,
+    "what": "CSS weight requests of 500 or more (font-weight, font shorthand, --fw-* tokens, bold/bolder). 0 under Archivo (Decisions 41 and 44); 4 under Decision 49: the --fw-label/head/solid/verdict tokens on Inter static cuts 500/600/700.",
+    "$raised": {
+      "date": "2026-10-06",
+      "at": "2026-10-06T15:40:15Z",
+      "from": 0,
+      "to": 4,
+      "bytes": 4,
+      "reason": "Decision 49 (reskin milestone 1): Inter is the face again with the pre-Bastion ladder, labels 500, headings and solid 600, verdicts 700, on real static cuts. The four are the four --fw-* tokens in graphite.css; no component sheet adds a weight. bytes is the count of declarations here."
+    }
+  }
+}

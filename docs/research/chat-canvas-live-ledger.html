@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat → Canvas live visualization ledger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root[data-theme="dark"]{
+  --bg-base:#0c0c0e;--surface-1:#121214;--surface-2:#18181b;--surface-3:#222226;
+  --edge:#2a2a30;--edge-faint:#222226;--ink-1:#ececef;--ink-2:#a8a8b3;--ink-3:#6b6b76;
+  --accent-solid:#6366f1;--accent-wash:rgba(99,102,241,.14);--accent-edge:rgba(99,102,241,.4);
+  --fits:#86efac;--wont:#f87171;--ai-dash:#6366f1;
+  --w-hair:1px;--w-rule:2px;--r-8:8px;--r-10:10px;--r-14:14px;
+  --sp-4:4px;--sp-6:6px;--sp-8:8px;--sp-10:10px;--sp-12:12px;--sp-16:16px;--sp-20:20px;
+  --t-10:10px;--t-11:11px;--t-12:12px;--t-14:14px;--lh-12:16px;--lh-14:18px;
+  --font-sans:"Instrument Sans",system-ui,sans-serif;--font-mono:"JetBrains Mono",monospace;
+  --fw-label:550;--row-h:26px;--ease:cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-base);color:var(--ink-1);font:var(--t-12)/var(--lh-12) var(--font-sans)}
+.ledger{max-width:1560px;margin:0 auto;padding:var(--sp-20)}
+h1{font-size:18px;font-weight:600;margin:0 0 var(--sp-8)}
+.lede{color:var(--ink-2);max-width:92ch;line-height:1.55;margin:0 0 var(--sp-16)}
+.dim{margin:var(--sp-20) 0 var(--sp-8);font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.mono{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-2)}
+.do{color:#86efac;font-size:var(--t-10)}.dont{color:#f87171;font-size:var(--t-10)}.warn{color:#fbbf24;font-size:var(--t-10)}
+
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-16);margin-bottom:var(--sp-20)}
+.panel{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden;background:var(--surface-1)}
+.panel-hd{padding:var(--sp-10) var(--sp-14);border-bottom:var(--w-hair) solid var(--edge);display:flex;justify-content:space-between;align-items:center}
+.panel-hd h2{margin:0;font-size:var(--t-12);font-weight:var(--fw-label)}
+.tag{font-family:var(--font-mono);font-size:9px;color:var(--ink-3);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);padding:2px var(--sp-6)}
+.tag.now{color:#fbbf24;border-color:color-mix(in srgb,#fbbf24 40%,var(--edge))}
+.tag.goal{color:#86efac;border-color:color-mix(in srgb,#86efac 40%,var(--edge))}
+.note{padding:var(--sp-10) var(--sp-14);color:var(--ink-2);font-size:var(--t-10);line-height:1.45;border-top:var(--w-hair) solid var(--edge)}
+
+/* mock split workspace */
+.split{display:grid;grid-template-columns:1fr 1fr;min-height:420px;border-top:var(--w-hair) solid var(--edge)}
+.split-pane{border-right:var(--w-hair) solid var(--edge);display:flex;flex-direction:column;min-width:0}
+.split-pane:last-child{border-right:0}
+.pane-hd{height:32px;display:flex;align-items:center;gap:var(--sp-8);padding:0 var(--sp-10);border-bottom:var(--w-hair) solid var(--edge);color:var(--ink-3);font-size:var(--t-10)}
+.chat-body{flex:1;padding:var(--sp-12);overflow:auto}
+.userbubble{margin-left:auto;max-width:88%;background:var(--surface-2);border-radius:var(--r-14);padding:var(--sp-8) var(--sp-10);font-size:var(--t-12);margin-bottom:var(--sp-10)}
+.elapsed{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);margin-bottom:var(--sp-8)}
+.toolstack{display:flex;flex-direction:column;gap:var(--sp-2);margin-left:var(--sp-12);padding-left:var(--sp-10);border-left:var(--w-rule) solid var(--edge)}
+.toolrow{display:flex;align-items:center;gap:var(--sp-6);height:var(--row-h);font-size:var(--t-12);color:var(--ink-3)}
+.toolrow .n{color:var(--ink-2)}
+.toolrow.live .n{
+  background-image:linear-gradient(90deg,var(--ink-2),var(--ink-1),var(--ink-2));
+  background-size:220% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:shim 2.4s linear infinite;
+}
+@keyframes shim{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.78}}
+.toolrow.live .i{animation:pulse 1.8s var(--ease) infinite}
+.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0}
+
+.phase-card{margin:var(--sp-8) 0;padding:var(--sp-8) var(--sp-10);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);background:var(--surface-2)}
+.phase-card .crumb{font-size:var(--t-10);color:var(--ink-3);margin-bottom:var(--sp-4)}
+.phase-card .live-line{display:flex;align-items:center;gap:var(--sp-6);font-size:var(--t-11);color:var(--ink-2)}
+.phase-card .live-line .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-solid);animation:pulse 1.2s infinite}
+.phase-card .timer{margin-left:auto;font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3)}
+
+.edits{margin-top:var(--sp-10);padding:var(--sp-8) var(--sp-10);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);background:var(--surface-1)}
+.edits-hd{display:flex;justify-content:space-between;font-size:var(--t-10);color:var(--ink-2);margin-bottom:var(--sp-6)}
+.edits-hd .stats{font-family:var(--font-mono)}
+.edits-hd .add{color:var(--fits)}.edits-hd .del{color:var(--wont)}
+.edits ul{margin:0;padding:0;list-style:none;font-family:var(--font-mono);font-size:9px;color:var(--ink-3)}
+.edits li{padding:var(--sp-2) 0;display:flex;justify-content:space-between;gap:var(--sp-8)}
+
+.canvas-body{flex:1;padding:var(--sp-12);overflow:auto;background:var(--bg-base)}
+.block{border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);background:var(--surface-1);margin-bottom:var(--sp-10);overflow:hidden;transition:box-shadow .3s var(--ease)}
+.block.live{box-shadow:0 0 0 1px var(--accent-edge),0 0 24px var(--accent-wash);animation:blockin .4s var(--ease)}
+@keyframes blockin{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+.block-hd{padding:var(--sp-6) var(--sp-10);border-bottom:var(--w-hair) solid var(--edge);font-size:var(--t-10);color:var(--ink-3);display:flex;justify-content:space-between}
+.block-bd{padding:var(--sp-10);font-size:var(--t-11);color:var(--ink-2);line-height:1.45}
+.mermaid-box{margin-top:var(--sp-8);padding:var(--sp-8);border:var(--w-hair) dashed var(--edge);border-radius:var(--r-8);font-family:var(--font-mono);font-size:9px;color:var(--ink-3);text-align:center}
+.bar-row{display:flex;align-items:flex-end;gap:3px;height:48px;margin-top:var(--sp-8)}
+.bar{flex:1;background:var(--accent-wash);border-radius:2px 2px 0 0;animation:barup 1.2s var(--ease) infinite alternate}
+.bar:nth-child(2){animation-delay:.15s;height:55%}.bar:nth-child(3){animation-delay:.3s;height:72%}
+.bar:nth-child(4){animation-delay:.45s;height:48%}.bar:nth-child(5){animation-delay:.6s;height:90%}
+@keyframes barup{from{opacity:.5}to{opacity:1}}
+
+.empty-canvas{height:100%;display:grid;place-items:center;color:var(--ink-3);font-size:var(--t-11);text-align:center;padding:var(--sp-20)}
+
+.timeline{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-14) var(--sp-16);margin-bottom:var(--sp-20)}
+.timeline ol{margin:0;padding-left:1.2em;color:var(--ink-2);font-size:var(--t-11);line-height:1.6}
+.timeline li{margin-bottom:var(--sp-6)}
+.timeline .mono{display:inline}
+
+@media(max-width:1000px){.compare-row,.split{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.toolrow.live .n,.toolrow.live .i,.block.live,.bar,.phase-card .dot{animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ic-file" viewBox="0 0 24 24"><path d="M8.2 4h5.2l4.6 4.6V18a2.2 2.2 0 0 1-2.2 2.2H8.2A2.2 2.2 0 0 1 6 18V6.2A2.2 2.2 0 0 1 8.2 4z"/><path d="M13.4 4v4.8H18"/></symbol>
+<symbol id="ic-spark" viewBox="0 0 24 24"><path d="M12 2.8 13.8 9l6.2 1.8-6.2 1.8L12 19.4l-1.8-6.8L4 10.8l6.2-1.8z"/></symbol>
+<symbol id="ic-board" viewBox="0 0 24 24"><rect x="3.2" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="13.8" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="8.5" y="14.4" width="7" height="5.4" rx="1.6"/></symbol>
+<symbol id="ic-folder" viewBox="0 0 24 24"><path d="M4.2 7.4A2.2 2.2 0 0 1 6.4 5.2h5.2l2.2 2.2h8.2A2.2 2.2 0 0 1 24 9.6v9.2a2.2 2.2 0 0 1-2.2 2.2H6.4A2.2 2.2 0 0 1 4.2 18.8V7.4z"/></symbol>
+</defs></svg>
+
+<div class="ledger">
+  <h1>Chat → Canvas live visualization</h1>
+  <p class="lede">Owner target (2026-08-27): react like <b>“Codex’s visualization got really good”</b> — real tool calls, fast feedback, side-by-side chat and canvas so users see blocks land while the model works. This ledger shows <b>today vs target</b> and the wire contract that connects them. Pair with <span class="mono">thinking-loading-ledger.html</span> for row animation picks.</p>
+
+  <p class="dim">1 · Today vs target (same turn)</p>
+  <div class="compare-row">
+    <div class="panel">
+      <div class="panel-hd"><h2>Today · shipped</h2><span class="tag now">stub</span></div>
+      <div class="split">
+        <div class="split-pane">
+          <div class="pane-hd">Chat</div>
+          <div class="chat-body">
+            <div class="userbubble">Map the auth blast radius and draw it.</div>
+            <div class="elapsed">Worked for 12s ›</div>
+            <div class="toolstack">
+              <div class="toolrow live"><svg class="i"><use href="#ic-spark"/></svg><span class="n">Thinking with deepseek…</span></div>
+              <div class="toolrow"><svg class="i"><use href="#ic-file"/></svg><span class="n">Read session.ts</span></div>
+            </div>
+            <p style="margin:var(--sp-10) 0 0;color:var(--ink-2);font-size:var(--t-11)">Two callers on gateway…</p>
+          </div>
+        </div>
+        <div class="split-pane">
+          <div class="pane-hd">AI Canvas</div>
+          <div class="canvas-body">
+            <div class="empty-canvas">
+              <p>AI Canvas renders typed blocks…<br><span class="mono">Ask in chat to populate.</span></p>
+              <p class="dont" style="margin-top:var(--sp-10)">Not wired — blocks never arrive</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note"><span class="dont">Gap</span> Split shell exists; canvas tools exist in analyzer schema only. Chat shows work rows (overloaded) but canvas stays empty until a future manual refresh.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><h2>Target · live side-by-side</h2><span class="tag goal">Codex-class</span></div>
+      <div class="split">
+        <div class="split-pane">
+          <div class="pane-hd">Chat · live trace</div>
+          <div class="chat-body">
+            <div class="userbubble">Map the auth blast radius and draw it.</div>
+            <div class="elapsed">Worked for 12s ›</div>
+            <div class="phase-card">
+              <div class="crumb"><svg class="i" style="vertical-align:-2px;margin-right:4px"><use href="#ic-folder"/></svg>sequence / AI Canvas</div>
+              <div class="live-line">
+                <span class="dot"></span>
+                <span>Writing mermaid diagram…</span>
+                <span class="timer">4s</span>
+              </div>
+            </div>
+            <div class="toolstack">
+              <div class="toolrow live"><svg class="i"><use href="#ic-spark"/></svg><span class="n">Planning layout…</span></div>
+              <div class="toolrow"><svg class="i"><use href="#ic-file"/></svg><span class="n">Read gateway/auth.ts</span></div>
+              <div class="toolrow live"><svg class="i"><use href="#ic-board"/></svg><span class="n">Drawing on canvas…</span></div>
+            </div>
+            <div class="edits">
+              <div class="edits-hd"><span>Edited 2 files</span><span class="stats"><span class="add">+24</span> <span class="del">−3</span></span></div>
+              <ul>
+                <li><span>packages/gateway/src/auth.ts</span><span class="add">+18</span></li>
+                <li><span>docs/plan.md</span><span class="add">+6</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="split-pane">
+          <div class="pane-hd">AI Canvas · updating now</div>
+          <div class="canvas-body">
+            <article class="block">
+              <div class="block-hd"><span>Markdown · plan</span><span class="mono">landed 8s</span></div>
+              <div class="block-bd"><strong>Auth blast radius</strong><br>gateway → session store → checkout</div>
+            </article>
+            <article class="block live">
+              <div class="block-hd"><span>Mermaid · flow</span><span class="mono">live</span></div>
+              <div class="block-bd">
+                Dependency fan-out from auth middleware
+                <div class="mermaid-box">graph LR · gateway --> auth --> db</div>
+              </div>
+            </article>
+            <article class="block" style="opacity:.45">
+              <div class="block-hd"><span>React · chart</span><span class="mono">queued</span></div>
+              <div class="block-bd">
+                <div class="bar-row"><div class="bar" style="height:35%"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note"><span class="do">Done when</span> Every <span class="mono">canvas.write_*</span> tool emits a block on the right within one frame of <span class="mono">tool:done</span>. Chat names the phase; canvas is the receipt users reason with.</p>
+    </div>
+  </div>
+
+  <p class="dim">2 · What Codex does that we should steal (Sequence-shaped)</p>
+  <div class="timeline">
+    <ol>
+      <li><b>Elapsed honesty</b> — “Worked for 34m 13s” at turn top; we already have row elapsed on land, need turn-level timer in chat header.</li>
+      <li><b>Named phase card</b> — one compact card for the <em>current</em> tool, not a second agent bar + duplicate rows. Maps to active <span class="mono">canvas.write_*</span> or file read.</li>
+      <li><b>Live timer on the active step</b> — “Provisioning… 31s” → our “Writing mermaid… 4s”.</li>
+      <li><b>File edit ledger</b> — +130 −116 with expandable list; we have <span class="mono">edit:proposal</span> events — surface as collapsed strip under work rows.</li>
+      <li><b>Visual surface updates in real time</b> — their environment card; our <b>AI Canvas block</b> with live highlight on the block being written.</li>
+      <li><b>Side-by-side</b> — chat drives, canvas shows; split view when Chat + AI Canvas tabs both open (already in <span class="mono">WorkspacePane</span>).</li>
+    </ol>
+  </div>
+
+  <p class="dim">3 · Wire contract (missing today)</p>
+  <div class="timeline">
+    <ol>
+      <li>SSE <span class="mono">canvas:block</span> — <span class="mono">{ id, type, title?, payload, status: 'live'|'landed' }</span> on each <span class="mono">canvas.write_*</span> tool result.</li>
+      <li>Store slice <span class="mono">session.canvasDoc</span> — ordered blocks for the active turn; append on event; persist to <span class="mono">.sequence/sessions/&lt;id&gt;/canvas.json</span>.</li>
+      <li><span class="mono">ConnectedAiCanvas</span> — reads slice; passes to <span class="mono">AiCanvas</span>; highlights <span class="mono">status==='live'</span>.</li>
+      <li>Auto-open split — when first <span class="mono">canvas:block</span> arrives, ensure Chat + AI Canvas split visible (host command, not user hunt).</li>
+      <li>Tool loop — register five writers in ask pipeline when AI Canvas tab open or user asks to “draw/map/chart”.</li>
+    </ol>
+  </div>
+
+  <p class="dim">4 · Build order (executable)</p>
+  <div class="timeline">
+    <ol>
+      <li><b>Wave L1 — wire</b> — <span class="mono">canvas:block</span> event + store slice + ConnectedAiCanvas (markdown + mermaid viewers first).</li>
+      <li><b>Wave L2 — motion</b> — apply animation pick from thinking-loading ledger (recommend B shimmer + optional phase card).</li>
+      <li><b>Wave L3 — viewers</b> — HTML / SVG / React sandbox previews per <span class="mono">ai-canvas-tool-contract.md</span>.</li>
+      <li><b>Wave L4 — polish</b> — edit ledger strip, turn elapsed, auto-split, point-to-ask on canvas blocks.</li>
+    </ol>
+    <p style="margin:var(--sp-12) 0 0;color:var(--ink-3);font-size:var(--t-10)">Full gap list: <span class="mono">docs/research/chat-canvas-live-gap.md</span></p>
+  </div>
+</div>
+</body>
+</html>

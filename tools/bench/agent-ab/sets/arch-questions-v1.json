@@ -1,0 +1,614 @@
+{
+  "written_at": "2026-10-01T00:21:41+00:00",
+  "author": "independent worker, no Sequence output read",
+  "questions": [
+    {
+      "id": "sf-wc-1",
+      "repo": "shopfront",
+      "type": "who_calls",
+      "question": "Which files make HTTP requests to the payments service (any endpoint)?",
+      "answer": [
+        "gateway/src/routes/payments.ts",
+        "orders/app/payments_client.py",
+        "invoices/src/main/java/shop/invoices/PaymentClient.java"
+      ],
+      "evidence": [
+        "gateway/src/routes/payments.ts:6 — fetch(`${process.env.PAYMENTS_URL}/payments/${req.params.id}`)",
+        "orders/app/payments_client.py:10 — client.post(f\"{PAYMENTS_URL}/charge\", ...)",
+        "invoices/src/main/java/shop/invoices/PaymentClient.java:18 — restTemplate.postForObject(paymentsUrl + \"/charge\", ...)",
+        "docker-compose.yml:8,22,60 — PAYMENTS_URL: http://payments:4000 for gateway, orders, invoices",
+        "payments/src/stripe.js:3 — calls api.stripe.com (external, NOT the payments service)"
+      ]
+    },
+    {
+      "id": "sf-wc-2",
+      "repo": "shopfront",
+      "type": "who_calls",
+      "question": "Which files import and call the gateway's shared HTTP helpers getJson/postJson from gateway/src/lib/http.ts?",
+      "answer": [
+        "gateway/src/routes/invoices.ts",
+        "gateway/src/routes/orders.ts",
+        "gateway/src/routes/shipments.ts"
+      ],
+      "evidence": [
+        "gateway/src/routes/invoices.ts:2 — import { getJson } from '../lib/http'",
+        "gateway/src/routes/orders.ts:2 — import { getJson, postJson } from '../lib/http'",
+        "gateway/src/routes/shipments.ts:2 — import { getJson } from '../lib/http'",
+        "gateway/src/routes/payments.ts:6 — uses raw fetch, does NOT use the helpers"
+      ]
+    },
+    {
+      "id": "sf-wc-3",
+      "repo": "shopfront",
+      "type": "who_calls",
+      "question": "Which files consume (subscribe to) the order.created message topic?",
+      "answer": [
+        "notifications/worker.py",
+        "shipping/subscriber.go"
+      ],
+      "evidence": [
+        "notifications/worker.py:11 — pubsub.subscribe(\"order.created\")",
+        "shipping/subscriber.go:23 — rdb.Subscribe(ctx, \"order.created\")",
+        "orders/app/events.py:10 — r.publish(\"order.created\", ...) is the publisher, not a consumer"
+      ]
+    },
+    {
+      "id": "sf-wc-4",
+      "repo": "shopfront",
+      "type": "who_calls",
+      "question": "Which source files execute SQL queries against the shared postgres database?",
+      "answer": [
+        "orders/app/db.py",
+        "payments/src/db.js",
+        "shipping/main.go",
+        "invoices/src/main/java/shop/invoices/InvoiceController.java"
+      ],
+      "evidence": [
+        "orders/app/db.py:10-11,19-21 — conn.execute(text(\"SELECT ... FROM orders\" / \"INSERT INTO orders\"))",
+        "payments/src/db.js:6,14,20 — pool.query('INSERT INTO payments' / 'SELECT * FROM payments' / 'SELECT total FROM orders')",
+        "shipping/main.go:24,35 — db.QueryRow(\"SELECT ... FROM shipments\"), db.Exec(\"INSERT INTO shipments\")",
+        "invoices/src/main/java/shop/invoices/InvoiceController.java:24,30 — jdbcTemplate.queryForMap / jdbcTemplate.update on invoices",
+        "orders/app/models.py defines an ORM model but runs no query; application.properties is config, not a query"
+      ]
+    },
+    {
+      "id": "sf-im-1",
+      "repo": "shopfront",
+      "type": "impact",
+      "question": "If the request body contract of the payments service's POST /charge endpoint (payments/src/index.js) changes, which files in other services would need to change?",
+      "answer": [
+        "orders/app/payments_client.py",
+        "invoices/src/main/java/shop/invoices/PaymentClient.java"
+      ],
+      "evidence": [
+        "payments/src/index.js:8-9 — app.post('/charge', ...) reads { order_id, amount } from req.body",
+        "orders/app/payments_client.py:10 — client.post(f\"{PAYMENTS_URL}/charge\", json={\"order_id\": ..., \"amount\": ...})",
+        "invoices/src/main/java/shop/invoices/PaymentClient.java:18 — restTemplate.postForObject(paymentsUrl + \"/charge\", req, Map.class)",
+        "gateway/src/routes/payments.ts:6 — only calls GET /payments/:id, not /charge"
+      ]
+    },
+    {
+      "id": "sf-im-2",
+      "repo": "shopfront",
+      "type": "impact",
+      "question": "If the topic name 'order.created' published in orders/app/events.py is renamed, which other files must change to keep receiving the event?",
+      "answer": [
+        "notifications/worker.py",
+        "shipping/subscriber.go"
+      ],
+      "evidence": [
+        "orders/app/events.py:10 — r.publish(\"order.created\", json.dumps(order))",
+        "notifications/worker.py:11 — pubsub.subscribe(\"order.created\")",
+        "shipping/subscriber.go:23 — rdb.Subscribe(ctx, \"order.created\")"
+      ]
+    },
+    {
+      "id": "sf-im-3",
+      "repo": "shopfront",
+      "type": "impact",
+      "question": "If orders/app/routes.py (the orders service's router and its /orders endpoints) is changed or removed, which files directly depend on it?",
+      "answer": [
+        "orders/app/main.py",
+        "gateway/src/routes/orders.ts"
+      ],
+      "evidence": [
+        "orders/app/main.py:3,6 — from app.routes import router; app.include_router(router)",
+        "orders/app/routes.py:11,19 — @router.get(\"/orders/{order_id}\"), @router.post(\"/orders\")",
+        "gateway/src/routes/orders.ts:9,14 — getJson(`${ORDERS_URL}/orders/${id}`), postJson(`${ORDERS_URL}/orders`, ...)"
+      ]
+    },
+    {
+      "id": "sf-im-4",
+      "repo": "shopfront",
+      "type": "impact",
+      "question": "If the gRPC contract in inventory/proto/inventory.proto (service Inventory, Reserve RPC, ReserveRequest/ReserveReply) changes, which source files that use the generated stubs could break?",
+      "answer": [
+        "orders/app/inventory_client.py",
+        "inventory/server.py"
+      ],
+      "evidence": [
+        "inventory/proto/inventory.proto:5-6 — service Inventory { rpc Reserve (ReserveRequest) returns (ReserveReply); }",
+        "orders/app/inventory_client.py:8,12 — inventory_pb2_grpc.InventoryStub(channel); stub.Reserve(inventory_pb2.ReserveRequest(...))",
+        "inventory/server.py:11,17,22 — InventoryServicer subclass, ReserveReply, add_InventoryServicer_to_server"
+      ]
+    },
+    {
+      "id": "sf-pa-1",
+      "repo": "shopfront",
+      "type": "path",
+      "question": "How does a gateway request for GET /api/shipments/:id reach the shipping service's handler? List the files from the gateway route file to the Go handler.",
+      "answer": [
+        "gateway/src/routes/shipments.ts",
+        "gateway/src/lib/http.ts",
+        "shipping/main.go"
+      ],
+      "evidence": [
+        "gateway/src/routes/shipments.ts:9 — getJson(`${SHIPPING_URL}/shipments/${req.params.id}`)",
+        "gateway/src/lib/http.ts:4-5 — getJson -> fetch(url)",
+        "docker-compose.yml:9 — SHIPPING_URL: http://shipping:8100",
+        "shipping/main.go:53,22 — mux.HandleFunc(\"/shipments/\", getShipment)"
+      ]
+    },
+    {
+      "id": "sf-pa-2",
+      "repo": "shopfront",
+      "type": "path",
+      "question": "How does creating an order in the orders service end up inserting a shipment row in the shipping service? List the files in order, starting at the orders route handler.",
+      "answer": [
+        "orders/app/routes.py",
+        "orders/app/events.py",
+        "shipping/subscriber.go",
+        "shipping/main.go"
+      ],
+      "evidence": [
+        "orders/app/routes.py:24 — publish_order_created(order) in create_order",
+        "orders/app/events.py:10 — r.publish(\"order.created\", ...)",
+        "shipping/subscriber.go:23,32 — rdb.Subscribe(ctx, \"order.created\"); insertShipment(evt.OrderID, \"pending\")",
+        "shipping/main.go:34-35 — func insertShipment -> db.Exec(\"INSERT INTO shipments ...\")"
+      ]
+    },
+    {
+      "id": "sf-pa-3",
+      "repo": "shopfront",
+      "type": "path",
+      "question": "How does the invoices service's charge call end up hitting the Stripe API? List the files in order.",
+      "answer": [
+        "invoices/src/main/java/shop/invoices/PaymentClient.java",
+        "payments/src/index.js",
+        "payments/src/stripe.js"
+      ],
+      "evidence": [
+        "invoices/src/main/java/shop/invoices/PaymentClient.java:18 — postForObject(paymentsUrl + \"/charge\", ...)",
+        "payments/src/index.js:8,14 — app.post('/charge') -> createStripeCharge(amount)",
+        "payments/src/stripe.js:2-3 — fetch('https://api.stripe.com/v1/charges')"
+      ]
+    },
+    {
+      "id": "sf-pa-4",
+      "repo": "shopfront",
+      "type": "path",
+      "question": "How does an inbound request on the nginx edge's /api/ location reach the gateway's orders router? List the files in order.",
+      "answer": [
+        "edge/default.conf",
+        "gateway/src/index.ts",
+        "gateway/src/routes/orders.ts"
+      ],
+      "evidence": [
+        "edge/default.conf:4-5 — location /api/ { proxy_pass http://gateway:3000/api/; }",
+        "gateway/src/index.ts:3,10 — import { ordersRouter }; app.use('/api/orders', ordersRouter)",
+        "gateway/src/routes/orders.ts:6 — export const ordersRouter = Router()"
+      ]
+    },
+    {
+      "id": "mh-wc-1",
+      "repo": "ml-harness",
+      "type": "who_calls",
+      "question": "Which files call journey.compile_plan (defined in app/journey.py)?",
+      "answer": [
+        "app/longrun.py",
+        "app/tools/planning.py",
+        "tests/test_the_journey_compiles_the_plan.py"
+      ],
+      "evidence": [
+        "app/journey.py:1291 — def compile_plan(",
+        "app/longrun.py:377 — out = journey.compile_plan(int(thread_id))",
+        "app/tools/planning.py:329 — out = _journey.compile_plan(int(thread_id))",
+        "tests/test_the_journey_compiles_the_plan.py:71 — out = journey.compile_plan(self.thread)"
+      ]
+    },
+    {
+      "id": "mh-wc-2",
+      "repo": "ml-harness",
+      "type": "who_calls",
+      "question": "Which files import app/tools/edge_direction_core.py?",
+      "answer": [
+        "app/tools/edge_direction_metric.py",
+        "app/tools/pair_edge_direction.py",
+        "evals/architecture-json/edge_direction.py"
+      ],
+      "evidence": [
+        "app/tools/edge_direction_metric.py:108 — from app.tools import edge_direction_core as core",
+        "app/tools/pair_edge_direction.py:70 — from app.tools.edge_direction_core import (",
+        "evals/architecture-json/edge_direction.py:80 — from app.tools.edge_direction_core import score as _score"
+      ]
+    },
+    {
+      "id": "mh-wc-3",
+      "repo": "ml-harness",
+      "type": "who_calls",
+      "question": "Which files import the frontend journey client module frontend/src/lib/engine/journey.ts (the GET /api/threads/{id}/journey client)?",
+      "answer": [
+        "frontend/src/components/Journey.test.tsx",
+        "frontend/src/components/Journey.tsx",
+        "frontend/src/components/JourneyPane.tsx",
+        "frontend/src/components/PaneWindow.tsx",
+        "frontend/src/lib/useJourney.ts"
+      ],
+      "evidence": [
+        "frontend/src/components/Journey.test.tsx:18 — import type { JourneyPayload, JourneyStep } from '../lib/engine/journey'",
+        "frontend/src/components/Journey.tsx:33 — } from '../lib/engine/journey'",
+        "frontend/src/components/JourneyPane.tsx:12 — import { chooseJourney, type Prefilled } from '../lib/engine/journey'",
+        "frontend/src/components/PaneWindow.tsx:35 — import type { Prefilled } from '../lib/engine/journey'",
+        "frontend/src/lib/useJourney.ts:13 — import { getJourney, type JourneyPayload } from './engine/journey'"
+      ]
+    },
+    {
+      "id": "mh-wc-4",
+      "repo": "ml-harness",
+      "type": "who_calls",
+      "question": "Which TypeScript/TSX files send the HTTP request POST /api/threads/{id}/effects/{effects_id}/revert (served by app/main.py)?",
+      "answer": [
+        "frontend/src/lib/engine/client.ts",
+        "web/src/harness/cards/turn-cards.tsx"
+      ],
+      "evidence": [
+        "app/main.py:2015 — @app.post(\"/api/threads/{thread_id}/effects/{effects_id}/revert\")",
+        "frontend/src/lib/engine/client.ts:669 — postJson(`/api/threads/${threadId}/effects/${effectsId}/revert`, {})",
+        "web/src/harness/cards/turn-cards.tsx:180 — harness(`/api/threads/${props.threadId}/effects/${props.effectsId}/revert`, { body: {} })"
+      ]
+    },
+    {
+      "id": "mh-im-1",
+      "repo": "ml-harness",
+      "type": "impact",
+      "question": "If app/facade/vcs.py is changed or removed, which files import it directly?",
+      "answer": [
+        "app/facade/router.py",
+        "app/facade/sessions.py"
+      ],
+      "evidence": [
+        "app/facade/router.py:39 — from app.facade import answered, catalog, files, ..., vcs",
+        "app/facade/sessions.py:330 — from app.facade import vcs"
+      ]
+    },
+    {
+      "id": "mh-im-2",
+      "repo": "ml-harness",
+      "type": "impact",
+      "question": "If app/plandiff.py (rows_between) is changed or removed, which files directly depend on it?",
+      "answer": [
+        "app/journey.py",
+        "app/tools/planning.py",
+        "tests/test_the_plan_says_what_changed.py"
+      ],
+      "evidence": [
+        "app/journey.py:1361,1378 — from app import plandiff; plandiff.rows_between(before, text)",
+        "app/tools/planning.py:49,230 — from app import events, plandiff; plandiff.rows_between(before, text)",
+        "tests/test_the_plan_says_what_changed.py:33 — from app import events, plandiff"
+      ]
+    },
+    {
+      "id": "mh-im-3",
+      "repo": "ml-harness",
+      "type": "impact",
+      "question": "If the Python module app/activity.py is changed or removed, which files import it directly? (Note: frontend/src/lib/engine/activity.ts is a different file.)",
+      "answer": [
+        "app/facade/router.py",
+        "app/facade/spend.py",
+        "app/main.py",
+        "tests/test_the_rail_can_see_what_is_working.py"
+      ],
+      "evidence": [
+        "app/facade/router.py:37,370 — from app import activity, ...; activity.read()",
+        "app/facade/spend.py:68,70 — from app import activity; activity.ensure_index()",
+        "app/main.py:17,1905 — from app import activity, ...; return activity.read()",
+        "tests/test_the_rail_can_see_what_is_working.py:25 — from app import activity, events, longrun"
+      ]
+    },
+    {
+      "id": "mh-im-4",
+      "repo": "ml-harness",
+      "type": "impact",
+      "question": "If app/theme.py is changed or removed, which files import it directly?",
+      "answer": [
+        "app/main.py",
+        "app/remote.py",
+        "tests/test_theme.py",
+        "tests/test_theme_ground.py"
+      ],
+      "evidence": [
+        "app/main.py:37 — from app import theme",
+        "app/remote.py:14 — from app import db, events, longrun, theme",
+        "tests/test_theme.py:7 — from app.theme import GLASS_CSS, page",
+        "tests/test_theme_ground.py:16 — from app.theme import GLASS_CSS",
+        "web/src/brand/apply-theme.tsx imports ./theme.json, unrelated"
+      ]
+    },
+    {
+      "id": "mh-pa-1",
+      "repo": "ml-harness",
+      "type": "path",
+      "question": "How does the frontend rail's 'which conversations are working' poll get from the useActivity hook to the Python code that computes the answer? List the files in order.",
+      "answer": [
+        "frontend/src/lib/useActivity.ts",
+        "frontend/src/lib/engine/activity.ts",
+        "frontend/src/lib/engine/client.ts",
+        "app/main.py",
+        "app/activity.py"
+      ],
+      "evidence": [
+        "frontend/src/lib/useActivity.ts:22 — import { readActivity } from './engine/activity'",
+        "frontend/src/lib/engine/activity.ts:9,29 — import { engineJson } from './client'; engineJson('/api/activity')",
+        "frontend/src/lib/engine/client.ts:257-261 — export async function engineJson -> engineFetch(path, init)",
+        "app/main.py:1896,1905 — @app.get(\"/api/activity\") ... return activity.read()",
+        "app/activity.py:87 — def read()"
+      ]
+    },
+    {
+      "id": "mh-pa-2",
+      "repo": "ml-harness",
+      "type": "path",
+      "question": "How does clicking revert on a turn card in the web UI (web/src/harness/cards/turn-cards.tsx) reach the Python code that restores the plan? List the files in order.",
+      "answer": [
+        "web/src/harness/cards/turn-cards.tsx",
+        "web/src/harness/engine.ts",
+        "app/main.py",
+        "app/effects.py"
+      ],
+      "evidence": [
+        "web/src/harness/cards/turn-cards.tsx:3,180 — import { harness } from \"../engine\"; harness(`/api/threads/.../effects/.../revert`)",
+        "web/src/harness/engine.ts:48-50 — export async function harness(...) -> current.fetch(`${current.base}${path}`)",
+        "app/main.py:2015,2020 — @app.post(\".../effects/{effects_id}/revert\") -> effects.revert(thread_id, effects_id)",
+        "app/effects.py:111 — def revert(thread_id, effects_id)"
+      ]
+    },
+    {
+      "id": "mh-pa-3",
+      "repo": "ml-harness",
+      "type": "path",
+      "question": "Starting at the facade route handler for GET /api/vcs/status, through which files does the call go to reach the function that actually runs the git subprocess? List the files in order.",
+      "answer": [
+        "app/facade/router.py",
+        "app/facade/vcs.py",
+        "app/facade/files.py"
+      ],
+      "evidence": [
+        "app/facade/router.py:1027-1030 — @router.get(\"/api/vcs/status\") -> vcs.status(_repo_folder(request))",
+        "app/facade/vcs.py:39,62-63 — from app.facade import files; _run -> files._git(cwd, ...)",
+        "app/facade/files.py:154,164-165 — def _git -> subprocess.run([\"git\", *args], ...)"
+      ]
+    },
+    {
+      "id": "mh-pa-4",
+      "repo": "ml-harness",
+      "type": "path",
+      "question": "How does a long run that compiles a plan first (longrun.compile_the_plan_first) reach the code that computes the plan's line diff? List the files in order.",
+      "answer": [
+        "app/longrun.py",
+        "app/journey.py",
+        "app/plandiff.py"
+      ],
+      "evidence": [
+        "app/longrun.py:356,377 — def compile_the_plan_first ... journey.compile_plan(int(thread_id))",
+        "app/journey.py:1291,1361,1378 — def compile_plan ... from app import plandiff; plandiff.rows_between(before, text)",
+        "app/plandiff.py:58 — def rows_between(before, after)"
+      ]
+    },
+    {
+      "id": "pm-wc-1",
+      "repo": "premai",
+      "type": "who_calls",
+      "question": "Which files import lib/nav.ts?",
+      "answer": [
+        "app/page.tsx",
+        "app/sovereignty/page.tsx",
+        "components/mobile-nav.tsx",
+        "components/nav-dropdown.tsx",
+        "components/site-header.tsx"
+      ],
+      "evidence": [
+        "app/page.tsx:28 — import { BASTION_CTA } from \"@/lib/nav\"",
+        "app/sovereignty/page.tsx:13 — import { BASTION_CTA } from \"@/lib/nav\"",
+        "components/mobile-nav.tsx:20 — } from \"@/lib/nav\"",
+        "components/nav-dropdown.tsx:7 — import type { NavGroup } from \"@/lib/nav\"",
+        "components/site-header.tsx:12 — import { BASTION_CTA, COMPANY_NAV, PRODUCT_NAV, TOP_LINKS } from \"@/lib/nav\""
+      ]
+    },
+    {
+      "id": "pm-wc-2",
+      "repo": "premai",
+      "type": "who_calls",
+      "question": "Which files import lib/capabilities.ts?",
+      "answer": [
+        "app/products/[slug]/page.tsx",
+        "components/brand/geo-plates.tsx",
+        "components/capabilities/capability-glyph.tsx",
+        "components/capabilities/capability-grid.tsx"
+      ],
+      "evidence": [
+        "app/products/[slug]/page.tsx:9 — import type { Capability } from \"@/lib/capabilities\"",
+        "components/brand/geo-plates.tsx:1 — import type { Capability } from \"@/lib/capabilities\"",
+        "components/capabilities/capability-glyph.tsx:1 — import type { Capability } from \"@/lib/capabilities\"",
+        "components/capabilities/capability-grid.tsx:1 — import { CAPABILITIES } from \"@/lib/capabilities\""
+      ]
+    },
+    {
+      "id": "pm-wc-3",
+      "repo": "premai",
+      "type": "who_calls",
+      "question": "Which files import from components/brand/bastion-mark.tsx (BastionMark or BastionWordmark)?",
+      "answer": [
+        "app/page.tsx",
+        "components/fx/lab-orbit.tsx",
+        "components/mobile-nav.tsx",
+        "components/site-footer.tsx",
+        "components/site-header.tsx"
+      ],
+      "evidence": [
+        "app/page.tsx:11 — import { BastionMark } from \"@/components/brand/bastion-mark\"",
+        "components/fx/lab-orbit.tsx:2 — import { BastionMark } from \"@/components/brand/bastion-mark\"",
+        "components/mobile-nav.tsx:14 — import { BastionWordmark } from \"@/components/brand/bastion-mark\"",
+        "components/site-footer.tsx:2 — import { BastionWordmark } from \"@/components/brand/bastion-mark\"",
+        "components/site-header.tsx:10 — import { BastionWordmark } from \"@/components/brand/bastion-mark\""
+      ]
+    },
+    {
+      "id": "pm-wc-4",
+      "repo": "premai",
+      "type": "who_calls",
+      "question": "Which files import the BorderBeam effect from components/fx/border-beam.tsx?",
+      "answer": [
+        "components/brand/cut-frame.tsx",
+        "components/brand/tech-card.tsx",
+        "components/partner-nebius.tsx"
+      ],
+      "evidence": [
+        "components/brand/cut-frame.tsx:2 — import { BorderBeam } from \"@/components/fx/border-beam\"",
+        "components/brand/tech-card.tsx:11 — import { BorderBeam } from \"@/components/fx/border-beam\"",
+        "components/partner-nebius.tsx:2 — import { BorderBeam } from \"@/components/fx/border-beam\""
+      ]
+    },
+    {
+      "id": "pm-im-1",
+      "repo": "premai",
+      "type": "impact",
+      "question": "If lib/products.ts (PRODUCTS / getProduct) is changed, which files directly depend on it?",
+      "answer": [
+        "app/page.tsx",
+        "app/products/[slug]/opengraph-image.tsx",
+        "app/products/[slug]/page.tsx",
+        "app/products/page.tsx"
+      ],
+      "evidence": [
+        "app/page.tsx:26 — import { PRODUCTS } from \"@/lib/products\"",
+        "app/products/[slug]/opengraph-image.tsx:2 — import { getProduct } from \"@/lib/products\"",
+        "app/products/[slug]/page.tsx:8 — import { getProduct } from \"@/lib/products\"",
+        "app/products/page.tsx:4 — import { PRODUCTS } from \"@/lib/products\""
+      ]
+    },
+    {
+      "id": "pm-im-2",
+      "repo": "premai",
+      "type": "impact",
+      "question": "If lib/sovereignty.ts is changed, which files directly depend on it?",
+      "answer": [
+        "app/about/page.tsx",
+        "app/page.tsx",
+        "app/sovereignty/page.tsx",
+        "components/sovereignty/sovereignty-loop.tsx"
+      ],
+      "evidence": [
+        "app/about/page.tsx:11 — import { SOVEREIGNTY } from \"@/lib/sovereignty\"",
+        "app/page.tsx:25 — import { SOVEREIGNTY } from \"@/lib/sovereignty\"",
+        "app/sovereignty/page.tsx:17 — } from \"@/lib/sovereignty\"",
+        "components/sovereignty/sovereignty-loop.tsx:4 — import { SOVEREIGNTY_LOOP } from \"@/lib/sovereignty\""
+      ]
+    },
+    {
+      "id": "pm-im-3",
+      "repo": "premai",
+      "type": "impact",
+      "question": "If components/stack/plane-art.ts (PlaneKind, PLANE_ORIGIN_CY) is changed, which files directly depend on it?",
+      "answer": [
+        "components/stack/layer-stack.tsx",
+        "components/stack/plane-art-jsx.tsx"
+      ],
+      "evidence": [
+        "components/stack/layer-stack.tsx:6 — import { PLANE_ORIGIN_CY, type PlaneKind } from \"@/components/stack/plane-art\"",
+        "components/stack/plane-art-jsx.tsx:2 — import type { PlaneKind } from \"./plane-art\""
+      ]
+    },
+    {
+      "id": "pm-im-4",
+      "repo": "premai",
+      "type": "impact",
+      "question": "If lib/lab-stack.ts (BASTION_LAB_STACK / LabLayer) is changed, which files directly depend on it?",
+      "answer": [
+        "app/page.tsx",
+        "app/sovereignty/page.tsx",
+        "components/stack/layer-scenes.tsx"
+      ],
+      "evidence": [
+        "app/page.tsx:27 — import { BASTION_LAB_STACK } from \"@/lib/lab-stack\"",
+        "app/sovereignty/page.tsx:12 — import { BASTION_LAB_STACK } from \"@/lib/lab-stack\"",
+        "components/stack/layer-scenes.tsx:3 — import type { LabLayer } from \"@/lib/lab-stack\""
+      ]
+    },
+    {
+      "id": "pm-pa-1",
+      "repo": "premai",
+      "type": "path",
+      "question": "How does a submission on the /contact page reach the server code that forwards the lead to Notion? List the files in order.",
+      "answer": [
+        "app/contact/page.tsx",
+        "components/lead-form.tsx",
+        "app/api/lead/route.ts"
+      ],
+      "evidence": [
+        "app/contact/page.tsx:4,50 — import { LeadForm } from \"@/components/lead-form\"; <LeadForm />",
+        "components/lead-form.tsx:69 — fetch(\"/api/lead\", { ... })",
+        "app/api/lead/route.ts:136,107 — export async function POST ... fetch(\"https://api.notion.com/v1/pages\")"
+      ]
+    },
+    {
+      "id": "pm-pa-2",
+      "repo": "premai",
+      "type": "path",
+      "question": "How does the /design page's HTML get from its generator to the HTTP response? List the files in order, generator first.",
+      "answer": [
+        "scripts/design-embed.mjs",
+        "app/design/html.ts",
+        "app/design/route.ts"
+      ],
+      "evidence": [
+        "scripts/design-embed.mjs:7 — fs.writeFileSync('app/design/html.ts', ... export const DESIGN_HTML ...)",
+        "app/design/html.ts:3 — export const DESIGN_HTML: string = ...",
+        "app/design/route.ts:1,8-9 — import { DESIGN_HTML } from \"./html\"; GET() returns new Response(DESIGN_HTML)"
+      ]
+    },
+    {
+      "id": "pm-pa-3",
+      "repo": "premai",
+      "type": "path",
+      "question": "How does the root layout end up rendering the mobile navigation's Sheet drawer primitive? List the files in order, from the layout to the UI primitive.",
+      "answer": [
+        "app/layout.tsx",
+        "components/site-header.tsx",
+        "components/mobile-nav.tsx",
+        "components/ui/sheet.tsx"
+      ],
+      "evidence": [
+        "app/layout.tsx:5,75 — import { SiteHeader }; <SiteHeader />",
+        "components/site-header.tsx:7,70 — import { MobileNav }; <MobileNav />",
+        "components/mobile-nav.tsx:13,28 — } from \"@/components/ui/sheet\"; <Sheet open={open} ...>"
+      ]
+    },
+    {
+      "id": "pm-pa-4",
+      "repo": "premai",
+      "type": "path",
+      "question": "In the Remotion video project, how does the entry point reach the contact-form mock used in the contact scene? List the files in order.",
+      "answer": [
+        "video/src/index.ts",
+        "video/src/Root.tsx",
+        "video/src/scenes/s5-contact.tsx",
+        "video/src/site/contact-form.tsx"
+      ],
+      "evidence": [
+        "video/src/index.ts:2,4 — import { RemotionRoot } from \"./Root\"; registerRoot(RemotionRoot)",
+        "video/src/Root.tsx:29 — import S5Contact from \"./scenes/s5-contact\"",
+        "video/src/scenes/s5-contact.tsx:11-17,136 — import { ContactForm, ... } from \"../site/contact-form\"; <ContactForm state={state} />"
+      ]
+    }
+  ]
+}

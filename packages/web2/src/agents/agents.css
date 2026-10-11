@@ -1,0 +1,729 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   AGENTS — the board overlay and the agent views
+   packages/web2/src/agents/agents.css
+
+   The accent is LIVE STATE only (Graphite): an agent is touching this right
+   now. Run states use the --st-* aliases, as activity.css does (sheet 12's
+   agentic surfaces): neutral queued, active running, done, failed. Every
+   state is a word or a title before it is a dot. Panel selectors are scoped
+   under .ag-scope; overlay marks under .board-scope.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── overlay: marks set by canvas/AgentOverlay.tsx ─────────────────────── */
+
+.board-scope [data-agent-here] {
+  box-shadow: 0 0 0 var(--w-rule) var(--accent), 0 0 0 var(--sp-6) var(--accent-wash), var(--e2);
+  transition: box-shadow 1.8s ease-out;
+}
+.board-scope [data-agent-here='fading'] {
+  box-shadow: 0 0 0 var(--w-rule) transparent, 0 0 0 var(--sp-6) transparent, var(--e2);
+}
+/* The words, on a card (a mark at far zoom has no room and keeps the ring). */
+.board-scope .node[data-agent-here='live']::after {
+  content: 'agent is here';
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--sp-4));
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-4);
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font-family: var(--font-ui);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.board-scope .react-flow__edge[data-agent-edge] .edgeline {
+  stroke: var(--accent);
+  stroke-width: calc(var(--w-edge) + 1px);
+  transition: stroke-opacity 1.8s ease-out;
+}
+.board-scope .react-flow__edge[data-agent-edge='fading'] .edgeline {
+  stroke-opacity: 0.25;
+}
+
+/* ── the agents panel: roster, tree, timeline ──────────────────────────── */
+
+.ag-scope {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-body);
+}
+.ag-scope .ag-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+.ag-scope .ag-title {
+  margin: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-head);
+}
+.ag-scope .ag-conn {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.ag-scope .ag-seg {
+  display: inline-flex;
+  gap: var(--sp-2);
+}
+.ag-scope .ag-seg-btn {
+  height: var(--icon-btn);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+.ag-scope .ag-seg-btn[aria-selected='true'] {
+  border-color: var(--edge);
+  background: var(--surface-2);
+  color: var(--ink-1);
+}
+.ag-scope .ag-empty {
+  margin: 0;
+  padding: var(--sp-16) var(--sp-12);
+  color: var(--ink-3);
+}
+.ag-scope .ag-empty code {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  overflow-wrap: anywhere;
+}
+.ag-scope .ag-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-8);
+}
+.ag-scope .ag-empty-text {
+  margin: 0;
+}
+.ag-scope .ag-empty-act {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font: inherit;
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.ag-scope .ag-empty-act:hover {
+  background: var(--state-hover);
+}
+.ag-scope .ag-empty-act:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.ag-scope .ag-empty-act:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* roster */
+.ag-scope .ag-roster {
+  margin: 0;
+  padding: var(--sp-4) 0;
+  list-style: none;
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+.ag-scope .ag-row {
+  display: grid;
+  grid-template-columns: var(--sp-12) minmax(0, 1fr) minmax(0, auto) auto;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--row-h-thread);
+  padding: 0 var(--sp-12);
+}
+.ag-scope .ag-row.is-sub {
+  padding-left: var(--sp-24);
+}
+.ag-scope .ag-dot {
+  width: var(--sp-6);
+  height: var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--st-neutral);
+}
+.ag-scope [data-status='running'] > .ag-dot {
+  background: var(--st-active);
+}
+.ag-scope [data-status='completed'] > .ag-dot {
+  background: var(--st-done);
+}
+.ag-scope [data-status='failed'] > .ag-dot {
+  background: var(--st-failed);
+}
+.ag-scope .ag-name,
+.ag-scope .ag-tool {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ag-scope .ag-name {
+  font-weight: var(--fw-label);
+}
+.ag-scope .ag-tool {
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+}
+.ag-scope .ag-elapsed {
+  color: var(--ink-3);
+  font-variant-numeric: var(--num);
+}
+
+/* body */
+.ag-scope .ag-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* tree */
+.ag-scope .ag-tree,
+.ag-scope .ag-tree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ag-scope .ag-tree ul {
+  padding-left: var(--sp-16);
+}
+.ag-scope .ag-node {
+  display: grid;
+  grid-template-columns: var(--sp-16) var(--sp-12) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  min-height: var(--row-h-tool);
+  padding: 0 var(--sp-12) 0 var(--sp-4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ag-scope .ag-node:hover {
+  background: var(--surface-2);
+}
+.ag-scope .ag-node[aria-current='true'] {
+  background: var(--accent-wash);
+}
+.ag-scope .ag-caret {
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* Round 9 (asks 28 and 29): a step is a sentence, its time, and under it why it
+   failed, that it stalled, or what it printed. Stalled and failed read from the
+   dot AND the words; the colour is never the only signal. */
+.ag-scope .ag-node {
+  padding-top: var(--sp-2);
+  padding-bottom: var(--sp-2);
+}
+.ag-scope .ag-node .ag-name {
+  font-weight: var(--fw-body);
+}
+.ag-scope .ag-node[data-kind='turn'] .ag-name,
+.ag-scope li[data-kind='turn'] > .ag-node .ag-name,
+.ag-scope li[data-kind='subagent'] > .ag-node .ag-name {
+  font-weight: var(--fw-label);
+}
+.ag-scope li[data-kind='subagent'] > .ag-node .ag-name {
+  color: var(--ink-2);
+}
+.ag-scope .ag-node[data-flag='stalled'] > .ag-dot {
+  background: var(--st-stalled);
+}
+.ag-scope .ag-node[data-flag='failed'] > .ag-dot {
+  background: var(--st-failed);
+}
+.ag-scope .ag-tokens {
+  grid-column: 3 / -1;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-variant-numeric: var(--num);
+}
+.ag-scope .ag-why {
+  grid-column: 3 / -1;
+  min-width: 0;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1; /* round 13 (A5): a definition is one line */
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.ag-scope .ag-why[data-why='error'] {
+  color: var(--st-failed);
+}
+.ag-scope .ag-why[data-why='stalled'] {
+  color: var(--st-stalled);
+}
+.ag-scope .ag-why[data-why='result'] {
+  font-family: var(--font-mono);
+}
+.ag-scope .ag-row[data-flag='stalled'] > .ag-dot {
+  background: var(--st-stalled);
+}
+.ag-scope .ag-subnote {
+  padding: var(--sp-2) var(--sp-12) var(--sp-4) calc(var(--sp-12) + var(--sp-12) + var(--sp-8));
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+
+/* tokens: the session total, then each turn */
+.ag-scope .ag-usage {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+.ag-scope .ag-usage-total,
+.ag-scope .ag-usage-turns li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  margin: 0;
+}
+.ag-scope .ag-usage-total {
+  font-weight: var(--fw-label);
+}
+.ag-scope .ag-usage-turns {
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 7.5rem;
+  overflow: auto;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.ag-scope .ag-usage-label {
+  color: var(--ink-2);
+}
+.ag-scope .ag-usage-num {
+  font-variant-numeric: var(--num);
+  text-align: right;
+}
+.ag-scope .ag-usage-turns .ag-usage-label {
+  color: var(--ink-3);
+}
+
+/* timeline */
+.ag-scope .ag-lanes {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+  row-gap: var(--sp-2);
+  padding: var(--sp-8) var(--sp-12);
+}
+.ag-scope .ag-lane-name {
+  align-self: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-2);
+}
+.ag-scope .ag-lane {
+  position: relative;
+  min-height: var(--row-h-tool);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.ag-scope .ag-bar {
+  position: absolute;
+  top: var(--sp-6);
+  bottom: var(--sp-6);
+  min-width: var(--sp-2);
+  padding: 0;
+  border: var(--w-hair) solid var(--ink-3);
+  border-radius: var(--r-4);
+  background: var(--ink-4);
+  cursor: pointer;
+}
+.ag-scope .ag-bar[data-step='edit'] {
+  background: var(--ink-1);
+  border-color: var(--ink-1);
+}
+.ag-scope .ag-bar[data-step='read'],
+.ag-scope .ag-bar[data-step='search'] {
+  background: transparent;
+}
+.ag-scope .ag-bar[data-step='execute'] {
+  background: var(--ink-3);
+}
+.ag-scope .ag-bar[data-status='running'] {
+  border-color: var(--st-active);
+}
+.ag-scope .ag-bar[data-status='failed'] {
+  border-color: var(--st-failed);
+}
+.ag-scope .ag-bar[aria-current='true'] {
+  box-shadow: 0 0 0 var(--w-rule) var(--accent);
+}
+.ag-scope .ag-detail {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-12);
+  border-top: var(--w-hair) solid var(--edge);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.ag-scope .ag-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-12);
+  padding: 0 var(--sp-12) var(--sp-8);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.ag-scope .ag-legend .ag-bar {
+  position: static;
+  display: inline-block;
+  width: var(--sp-12);
+  height: var(--sp-6);
+  margin-right: var(--sp-4);
+  vertical-align: middle;
+}
+
+/* ── the timeline's time axis, and a bar's label on hover ──────────────
+   One tick row above the lanes, labelled from the first event (0s); a faint
+   gridline under each tick runs through every lane, so a bar's start reads
+   against the same marks. The label is a real element (not a `title`), shown
+   while the bar is hovered or focused, flipped left in the right 40% so it
+   never leaves the lane. */
+.ag-scope .ag-axis-name {
+  min-height: var(--sp-16);
+}
+.ag-scope .ag-axis {
+  position: relative;
+  min-height: var(--sp-16);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+.ag-scope .ag-tick {
+  position: absolute;
+  bottom: var(--sp-2);
+  transform: translateX(-50%);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ag-scope .ag-tick:first-child {
+  transform: none;
+}
+.ag-scope .ag-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: var(--w-hair) solid var(--edge-faint);
+  pointer-events: none;
+}
+.ag-scope .ag-tip {
+  position: absolute;
+  bottom: calc(100% - var(--sp-4));
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  max-width: 16rem;
+  padding: var(--sp-4) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-4);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ag-scope .ag-tip-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-3);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+}
+
+/* Round 7 (A5): the panel's own terminal for Start Claude Code with hooks. */
+.ag-scope .ag-hooks-term {
+  height: 240px;
+  border: 1px solid var(--b-edge, var(--edge));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── round 7 (A7): the dock, in mockup B's language ───────────────────────
+   A rounded card on the room (B .n / .steps: 18 to 22px radius, s1 fill,
+   edge2 border, the lift), B's segmented control (.seg), its rows (.it, 32px,
+   10px radius) and buttons. Tokens fall back to Graphite's outside .s2. */
+.ag-dock {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 20px;
+  border: 1px solid var(--b-edge2, var(--edge-strong));
+  background: var(--b-s1, var(--surface-1));
+  box-shadow: var(--b-shadow, var(--e2));
+  overflow: hidden;
+}
+.ag-dock .ag-scope {
+  background: transparent;
+  font-size: var(--t-12-5);
+  line-height: 18px;
+}
+.ag-dock .ag-scope .ag-head {
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 10px 0 16px;
+  border-bottom: 1px solid var(--b-edge, var(--edge));
+}
+.ag-dock .ag-scope .ag-title {
+  font-size: var(--t-14);
+  line-height: 20px;
+  font-weight: var(--fw-head);
+  color: var(--b-ink1, var(--ink-1));
+}
+.ag-scope .ag-grow {
+  flex: 1;
+}
+.ag-scope .ag-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 0;
+  color: var(--ink-3);
+  font-size: var(--t-11);
+}
+.ag-dock .ag-scope .ag-conn {
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--b-s2, var(--surface-2));
+  color: var(--b-ink3, var(--ink-3));
+  font-size: var(--t-11);
+}
+.ag-scope .ag-conn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.ag-scope .ag-conn[data-live='true'] .ag-conn-dot {
+  background: var(--fits);
+}
+.ag-dock .ag-scope .ag-seg {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--b-s2, var(--surface-2));
+  border: 1px solid var(--b-edge, var(--edge));
+}
+.ag-dock .ag-scope .ag-seg-btn {
+  height: var(--icon-btn);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--b-ink3, var(--ink-3));
+  font-weight: var(--fw-label);
+}
+.ag-dock .ag-scope .ag-seg-btn[aria-selected='true'] {
+  background: var(--b-s3, var(--surface-3));
+  color: var(--b-ink1, var(--ink-1));
+  box-shadow: var(--b-shadow, var(--e2));
+}
+.ag-scope .ag-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--row-h);
+  height: var(--row-h);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.ag-scope .ag-close:hover {
+  background: var(--state-hover);
+  color: var(--ink-1);
+}
+.ag-scope .ag-close:focus-visible,
+.ag-dock .ag-scope .ag-seg-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.ag-dock .ag-scope .ag-roster {
+  margin: 8px;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--b-edge, var(--edge));
+  background: var(--b-s2, var(--surface-2));
+}
+.ag-dock .ag-scope .ag-row {
+  height: 32px;
+  padding: 0 9px;
+  border-radius: 10px;
+}
+.ag-dock .ag-scope .ag-node {
+  min-height: var(--row-h);
+  border-radius: 10px;
+}
+.ag-dock .ag-scope .ag-node[aria-current='true'] {
+  background: var(--b-accw, var(--accent-wash));
+  color: var(--b-ink1, var(--ink-1));
+}
+.ag-dock .ag-scope .ag-body {
+  padding: 4px 8px 8px;
+}
+.ag-dock .ag-scope .ag-detail {
+  margin: 0 8px 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--b-edge, var(--edge));
+  background: var(--b-s2, var(--surface-2));
+}
+.ag-dock .ag-scope .ag-empty {
+  padding: 18px 16px;
+  gap: 10px;
+  color: var(--b-ink2, var(--ink-2));
+}
+.ag-dock .ag-scope .ag-hooks-term {
+  width: 100%;
+  border-color: var(--b-edge2, var(--edge-strong));
+  border-radius: 14px;
+}
+
+.ag-scope .ag-trace-session { min-width: 0; padding: 10px; border: 1px solid var(--b-edge, var(--edge)); border-radius: var(--r-14); margin-bottom: 10px; }
+.ag-scope .ag-trace-session h3 { margin: 0 0 8px; font-size: var(--t-13); font-weight: var(--fw-head); overflow-wrap: anywhere; }
+.ag-scope .ag-trace-tokens, .ag-scope .ag-trace-slowest { margin: 6px 0; font-size: var(--t-12); color: var(--b-ink2, var(--ink-2)); overflow-wrap: anywhere; }
+.ag-scope .ag-trace-tokens span { display: block; }
+.ag-scope .ag-trace-turn { margin-top: 8px; border-top: 1px solid var(--b-edge, var(--edge)); }
+.ag-scope .ag-trace-turn summary { display: flex; gap: 8px; padding: 10px 0; cursor: pointer; font-size: var(--t-12); }
+.ag-scope .ag-trace-turn summary:before { content: '+'; font-family: var(--font-mono); }
+.ag-scope .ag-trace-turn[open] summary:before { content: '-'; }
+.ag-scope .ag-trace-turn summary:focus-visible { outline: 2px solid var(--b-acc, var(--accent)); }
+.ag-scope .ag-trace-title { flex: 1; min-width: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.ag-scope .ag-run-trace { min-width: 0; }
+.ag-scope .ag-trace-steps { margin: 0; padding: 0; list-style: none; }
+.ag-scope .ag-trace-steps li { display: flex; align-items: baseline; gap: 8px; min-height: var(--row-h); font-size: var(--t-12); }
+.ag-scope .ag-trace-time { font-family: var(--font-mono); white-space: nowrap; }
+.ag-scope .ag-trace-reason { overflow-wrap: anywhere; color: var(--b-ink2, var(--ink-2)); }
+
+/* ── Round 10: runs grouped by chat, a sticky header per chat ──────────── */
+.ag-scope .ag-chats { padding-bottom: var(--sp-8); }
+.ag-scope .ag-chat + .ag-chat { margin-top: var(--sp-4); }
+.ag-scope .ag-chat-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  min-height: var(--row-h);
+  padding: var(--sp-4) var(--sp-8);
+  border: 0;
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  text-align: left;
+  cursor: pointer;
+}
+.ag-scope .ag-chat-head:hover { background: var(--surface-2); }
+.ag-scope .ag-chat-head:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: -2px; }
+.ag-scope .ag-chat[data-active='true'] > .ag-chat-head {
+  box-shadow: inset 2px 0 0 var(--ink-2);
+}
+.ag-scope .ag-chat-ic { flex: none; display: inline-grid; place-items: center; width: 16px; height: 16px; }
+.ag-scope .ag-chat-ic svg { width: 14px; height: 14px; }
+.ag-scope .ag-chat-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-scope .ag-chat-open,
+.ag-scope .ag-chat-branch {
+  flex: none;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-11);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+}
+.ag-scope .ag-chat-open { color: var(--ink-2); }
+.ag-scope .ag-chat-meta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font-size: var(--t-11);
+  font-weight: var(--fw-body);
+  color: var(--ink-3);
+  font-variant-numeric: var(--num);
+}
+.ag-scope .ag-chat-dot { width: 6px; height: 6px; border-radius: var(--r-full); background: currentColor; }
+.ag-scope .ag-chat-meta[data-tone='running'] { color: var(--st-active); }
+.ag-scope .ag-chat-meta[data-tone='failed'] { color: var(--st-failed); }
+.ag-scope .ag-chat-meta[data-tone='done'] .ag-chat-dot { opacity: 0.5; }
+.ag-scope .ag-chat > ul { padding-left: var(--sp-8); }
+
+/* WIDE (round 16): the panel is a column of max(560px, 40vw) once its own width passes that. The panel is the container (not the window), so
+   this holds in the dock beside the chat, in a split, full screen and in the narrow single view. --ag-gut is the margin each
+   side of that column (0 under the cap, so a 25-35% pane is untouched); the header, the usage strip, the roster, the tree or
+   timeline and the detail all take it, so nothing (the Tree/Timeline tabs included) stretches across the whole surface. The body
+   keeps its scrollbar at the panel edge and takes the gutter as padding. */
+.ag-scope {
+  container-type: inline-size;
+  container-name: agscope;
+}
+.ag-scope > .ag-head,
+.ag-scope > .ag-usage,
+.ag-scope > .ag-detail,
+.ag-scope > .ag-empty {
+  margin-inline: var(--ag-gut);
+}
+.ag-scope > .ag-roster {
+  margin-inline: var(--ag-gut);
+}
+.ag-dock .ag-scope > .ag-roster,
+.ag-dock .ag-scope > .ag-detail {
+  margin-inline: calc(var(--ag-gut) + 8px);
+}
+.ag-scope > .ag-body {
+  padding-inline: var(--ag-gut);
+}
+.ag-dock .ag-scope > .ag-body {
+  padding-inline: calc(var(--ag-gut) + 8px);
+}

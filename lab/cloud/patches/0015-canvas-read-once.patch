@@ -1,0 +1,42 @@
+diff --git a/packages/web2/src/state/canvasRestore.test.tsx b/packages/web2/src/state/canvasRestore.test.tsx
+index 9ee4670..c7ffa3a 100644
+--- a/packages/web2/src/state/canvasRestore.test.tsx
++++ b/packages/web2/src/state/canvasRestore.test.tsx
+@@ -114,6 +114,18 @@ describe('the AI Canvas is restored from disk', () => {
+     await waitFor(() => expect(calls.some((u) => u.startsWith('/api/canvas-doc'))).toBe(true));
+   });
+ 
++  it('asks ONCE, after the index has named the thread', async () => {
++    /* A read before the index names a thread has nowhere to land, and the
++       latch reopens when the id arrives, so a cold load used to ask twice and
++       drop the first answer. */
++    const { store, calls } = mount(SAVED_CANVAS);
++    await waitFor(() => expect(store.getState().session.canvasDoc.blocks.length).toBe(2));
++    await new Promise((r) => setTimeout(r, 50));
++    const canvasReads = calls.filter((u) => u.startsWith('/api/canvas-doc'));
++    expect(canvasReads).toHaveLength(1);
++    expect(calls.indexOf('/api/sessions')).toBeLessThan(calls.indexOf(canvasReads[0]!));
++  });
++
+   it('PUTS THE SAVED BLOCKS BACK IN THE STORE, with their content intact', async () => {
+     const { store } = mount(SAVED_CANVAS);
+ 
+diff --git a/packages/web2/src/state/connect.tsx b/packages/web2/src/state/connect.tsx
+index 480379f..c4a90bd 100644
+--- a/packages/web2/src/state/connect.tsx
++++ b/packages/web2/src/state/connect.tsx
+@@ -1344,6 +1344,14 @@ export function ConnectedChatColumn() {
+ 
+   useEffect(() => {
+     if (canvasHydrated.current || !canvasEmpty || state.session.inFlight !== null) return undefined;
++    /*
++     * NO THREAD, NO READ. Before the session index names a thread the answer
++     * has nowhere to land (`forSession` below is null and it is dropped), and
++     * the latch reopens when the id arrives, so a fetch here was a wasted GET
++     * on every cold load: measured in Chromium, `/api/canvas-doc` twice at
++     * boot, the first one always discarded. The latch stays open until then.
++     */
++    if (!activeSessionId) return undefined;
+     canvasHydrated.current = true;
+     const controller = new AbortController();
+     void fetch('/api/canvas-doc', { signal: controller.signal })

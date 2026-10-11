@@ -1,0 +1,41 @@
+{
+  "capturedAt": "2026-09-06T03:29:57.786Z",
+  "commit": "c7f12aa4",
+  "build": {
+    "startedAt": "2026-09-06T03:15:12.181Z",
+    "builtAt": "2026-09-06T03:15:07.931Z"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 820
+  },
+  "port": 4173,
+  "session": "Teach me how brief.ts",
+  "modelCallsMade": 0,
+  "shots": [
+    {
+      "step": "1-lesson",
+      "file": "docs/journeys/img/1-lesson.png",
+      "bytes": 163008,
+      "note": "the reply, its edge count, and the closing check-in"
+    },
+    {
+      "step": "2-mode-menu",
+      "file": "docs/journeys/img/2-mode-menu.png",
+      "bytes": 170879,
+      "note": "one menu, Teach as its first row"
+    },
+    {
+      "step": "3-chart-pointer",
+      "file": "docs/journeys/img/3-chart-pointer.png",
+      "bytes": 163656,
+      "note": "the one line in the chat that names the picture"
+    },
+    {
+      "step": "4-ai-canvas",
+      "file": "docs/journeys/img/4-ai-canvas.png",
+      "bytes": 159630,
+      "note": "the derived chart on the AI Canvas"
+    }
+  ]
+}

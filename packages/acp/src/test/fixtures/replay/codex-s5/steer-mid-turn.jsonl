@@ -1,0 +1,15 @@
+{"kind":"header","provider":"codex-app-server","scenario":"steer-mid-turn","covers":"a running turn is steered with turn/steer (expectedTurnId = the active turn) and goes on to answer both asks in the same turn (codex, not run live)","live":false,"notRunLive":"Recording a new live session needs the owner's yes. Built from the binary's own generated protocol types around the opening the live sessions recorded.","source":"codex app-server generate-ts (codex-cli 0.153.4): TurnSteerParams, TurnSteerResponse, UserInput","accessMode":"autoEdit","prompt":"Fix the failing parser test.","answers":[],"placeholders":{"<CWD>":"the working directory the session runs in","<HOME>":"the home directory"}}
+{"t":0,"dir":"c2s","msg":{"id":1,"method":"initialize","params":{"clientInfo":{"name":"sequence","title":"Sequence","version":"0.1.0"},"capabilities":null}}}
+{"t":40,"dir":"s2c","msg":{"id":1,"result":{"userAgent":"codex_cli_rs/0.153.4","codexHome":"<HOME>/.codex","platformFamily":"windows","platformOs":"windows"}}}
+{"t":41,"dir":"c2s","msg":{"method":"initialized"}}
+{"t":41,"dir":"c2s","msg":{"id":2,"method":"thread/start","params":{"cwd":"<CWD>","approvalPolicy":"on-request","sandbox":"workspace-write"}}}
+{"t":291,"dir":"s2c","msg":{"id":2,"result":{"thread":{"id":"thread-steer-1","turns":[]},"model":"gpt-5-codex","modelProvider":"openai","cwd":"<CWD>","approvalPolicy":"on-request","sandbox":{"type":"workspaceWrite"}}}}
+{"t":301,"dir":"c2s","msg":{"id":3,"method":"turn/start","params":{"threadId":"thread-steer-1"}}}
+{"t":320,"dir":"s2c","msg":{"id":3,"result":{"turn":{"id":"turn-steer-1","items":[],"status":"inProgress","error":null}}}}
+{"t":321,"dir":"s2c","msg":{"method":"turn/started","params":{"threadId":"thread-steer-1","turn":{"id":"turn-steer-1","items":[],"status":"inProgress","error":null}}}}
+{"t":1800,"dir":"s2c","msg":{"method":"item/agentMessage/delta","params":{"threadId":"thread-steer-1","turnId":"turn-steer-1","itemId":"msg-1","delta":"Fixed the parser test. "}}}
+{"t":2400,"dir":"c2s","msg":{"id":4,"method":"turn/steer","params":{"threadId":"thread-steer-1","input":[{"type":"text","text":"Also update the README when you are done.","text_elements":[]}],"expectedTurnId":"turn-steer-1"}}}
+{"t":2430,"dir":"s2c","msg":{"id":4,"result":{"turnId":"turn-steer-1"}}}
+{"t":2431,"dir":"s2c","msg":{"method":"item/started","params":{"threadId":"thread-steer-1","turnId":"turn-steer-1","item":{"type":"userMessage","id":"user-steer-1","content":[{"type":"text","text":"Also update the README when you are done.","text_elements":[]}]}}}}
+{"t":4100,"dir":"s2c","msg":{"method":"item/agentMessage/delta","params":{"threadId":"thread-steer-1","turnId":"turn-steer-1","itemId":"msg-2","delta":"README updated too."}}}
+{"t":4200,"dir":"s2c","msg":{"method":"turn/completed","params":{"threadId":"thread-steer-1","turn":{"id":"turn-steer-1","items":[],"status":"completed","error":null}}}}

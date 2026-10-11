@@ -1,0 +1,750 @@
+{
+ "off-440": {
+  "shot": "C:/Users/<user>/AppData/Local/Temp/claude/C--Users-<user>-OneDrive-Documents/a7dc206f-b636-402b-9918-26b1899ad9ff/scratchpad/render/off-440.png",
+  "geo": {
+   "invoices.ts": {
+    "frame": {
+     "w": 440,
+     "h": 400
+    },
+    "svg": {
+     "w": 432,
+     "h": 142,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "client": 440,
+     "scrollW": 440,
+     "overflowX": "visible"
+    },
+    "contentBottom": 168,
+    "boxes": [
+     {
+      "id": "default.conf",
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "index.ts",
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "invoices.ts",
+      "x0": 156,
+      "x1": 276,
+      "y0": 74,
+      "y1": 120,
+      "inside": true
+     },
+     {
+      "id": "InvoiceController.java",
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [],
+    "overlaps": [],
+    "stepper": false,
+    "stepList": []
+   },
+   "http.ts": {
+    "frame": {
+     "w": 440,
+     "h": 400
+    },
+    "svg": {
+     "w": 400,
+     "h": 206,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "client": 440,
+     "scrollW": 440,
+     "overflowX": "visible"
+    },
+    "contentBottom": 232,
+    "boxes": [
+     {
+      "id": "invoices.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "orders.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "shipments.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [],
+    "overlaps": [],
+    "stepper": false,
+    "stepList": []
+   }
+  },
+  "play": {},
+  "console": [
+   "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ },
+ "on-440": {
+  "shot": "C:/Users/<user>/AppData/Local/Temp/claude/C--Users-<user>-OneDrive-Documents/a7dc206f-b636-402b-9918-26b1899ad9ff/scratchpad/render/on-440.png",
+  "geo": {
+   "invoices.ts": {
+    "frame": {
+     "w": 440,
+     "h": 400
+    },
+    "svg": {
+     "w": 432,
+     "h": 142,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "client": 440,
+     "scrollW": 440,
+     "overflowX": "visible"
+    },
+    "contentBottom": 322,
+    "boxes": [
+     {
+      "id": "default.conf",
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "index.ts",
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "invoices.ts",
+      "x0": 156,
+      "x1": 276,
+      "y0": 74,
+      "y1": 120,
+      "inside": true
+     },
+     {
+      "id": "InvoiceController.java",
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [
+     {
+      "text": "http",
+      "x0": 277,
+      "x1": 295,
+      "y0": 69,
+      "y1": 81
+     },
+     {
+      "text": "http",
+      "x0": 137,
+      "x1": 155,
+      "y0": 69,
+      "y1": 81
+     },
+     {
+      "text": "import",
+      "x0": 131,
+      "x1": 162,
+      "y0": 101,
+      "y1": 113
+     },
+     {
+      "text": "import",
+      "x0": 271,
+      "x1": 302,
+      "y0": 101,
+      "y1": 113
+     }
+    ],
+    "overlaps": [
+     "label \"http\" x node invoices.ts",
+     "label \"http\" x node InvoiceController.java",
+     "label \"http\" x node default.conf",
+     "label \"http\" x node invoices.ts",
+     "label \"import\" x node index.ts",
+     "label \"import\" x node invoices.ts",
+     "label \"import\" x node invoices.ts",
+     "label \"import\" x node http.ts"
+    ],
+    "stepper": true,
+    "stepList": [
+     "1http: /api/",
+     "2import",
+     "3http: GET /invoices/*",
+     "4import"
+    ]
+   },
+   "http.ts": {
+    "frame": {
+     "w": 440,
+     "h": 400
+    },
+    "svg": {
+     "w": 400,
+     "h": 206,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "client": 440,
+     "scrollW": 440,
+     "overflowX": "visible"
+    },
+    "contentBottom": 363,
+    "boxes": [
+     {
+      "id": "invoices.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "orders.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "shipments.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [
+     {
+      "text": "import",
+      "x0": 185,
+      "x1": 216,
+      "y0": 85,
+      "y1": 97
+     },
+     {
+      "text": "import",
+      "x0": 185,
+      "x1": 216,
+      "y0": 117,
+      "y1": 129
+     },
+     {
+      "text": "import",
+      "x0": 185,
+      "x1": 216,
+      "y0": 149,
+      "y1": 161
+     }
+    ],
+    "overlaps": [],
+    "stepper": true,
+    "stepList": [
+     "1import",
+     "2import",
+     "3import"
+    ]
+   }
+  },
+  "play": {
+   "invoices.ts": [
+    {
+     "step": 1,
+     "count": "1 of 4",
+     "lit": [
+      "default.conf->invoices.ts @(146,83)"
+     ]
+    },
+    {
+     "step": 2,
+     "count": "2 of 4",
+     "lit": [
+      "index.ts->invoices.ts @(146,112)"
+     ]
+    },
+    {
+     "step": 3,
+     "count": "3 of 4",
+     "lit": [
+      "invoices.ts->InvoiceController.java @(286,80)"
+     ]
+    },
+    {
+     "step": 4,
+     "count": "4 of 4",
+     "lit": [
+      "invoices.ts->http.ts @(286,115)"
+     ]
+    }
+   ],
+   "http.ts": [
+    {
+     "step": 1,
+     "count": "1 of 3",
+     "lit": [
+      "invoices.ts->http.ts @(200,99)"
+     ]
+    },
+    {
+     "step": 2,
+     "count": "2 of 3",
+     "lit": [
+      "orders.ts->http.ts @(200,124)"
+     ]
+    },
+    {
+     "step": 3,
+     "count": "3 of 3",
+     "lit": [
+      "shipments.ts->http.ts @(200,160)"
+     ]
+    }
+   ]
+  },
+  "console": []
+ },
+ "off-900": {
+  "shot": "C:/Users/<user>/AppData/Local/Temp/claude/C--Users-<user>-OneDrive-Documents/a7dc206f-b636-402b-9918-26b1899ad9ff/scratchpad/render/off-900.png",
+  "geo": {
+   "invoices.ts": {
+    "frame": {
+     "w": 900,
+     "h": 500
+    },
+    "svg": {
+     "w": 432,
+     "h": 142,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "client": 900,
+     "scrollW": 900,
+     "overflowX": "visible"
+    },
+    "contentBottom": 168,
+    "boxes": [
+     {
+      "id": "default.conf",
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "index.ts",
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "invoices.ts",
+      "x0": 156,
+      "x1": 276,
+      "y0": 74,
+      "y1": 120,
+      "inside": true
+     },
+     {
+      "id": "InvoiceController.java",
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [],
+    "overlaps": [],
+    "stepper": false,
+    "stepList": []
+   },
+   "http.ts": {
+    "frame": {
+     "w": 900,
+     "h": 500
+    },
+    "svg": {
+     "w": 400,
+     "h": 206,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "client": 900,
+     "scrollW": 900,
+     "overflowX": "visible"
+    },
+    "contentBottom": 232,
+    "boxes": [
+     {
+      "id": "invoices.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "orders.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "shipments.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [],
+    "overlaps": [],
+    "stepper": false,
+    "stepList": []
+   }
+  },
+  "play": {},
+  "console": []
+ },
+ "on-900": {
+  "shot": "C:/Users/<user>/AppData/Local/Temp/claude/C--Users-<user>-OneDrive-Documents/a7dc206f-b636-402b-9918-26b1899ad9ff/scratchpad/render/on-900.png",
+  "geo": {
+   "invoices.ts": {
+    "frame": {
+     "w": 900,
+     "h": 500
+    },
+    "svg": {
+     "w": 432,
+     "h": 142,
+     "viewBox": "0 0 432 142"
+    },
+    "scroll": {
+     "client": 900,
+     "scrollW": 900,
+     "overflowX": "visible"
+    },
+    "contentBottom": 322,
+    "boxes": [
+     {
+      "id": "default.conf",
+      "x0": 16,
+      "x1": 136,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "index.ts",
+      "x0": 16,
+      "x1": 136,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "invoices.ts",
+      "x0": 156,
+      "x1": 276,
+      "y0": 74,
+      "y1": 120,
+      "inside": true
+     },
+     {
+      "id": "InvoiceController.java",
+      "x0": 296,
+      "x1": 416,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 296,
+      "x1": 416,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [
+     {
+      "text": "http",
+      "x0": 277,
+      "x1": 295,
+      "y0": 69,
+      "y1": 81
+     },
+     {
+      "text": "http",
+      "x0": 137,
+      "x1": 155,
+      "y0": 69,
+      "y1": 81
+     },
+     {
+      "text": "import",
+      "x0": 131,
+      "x1": 162,
+      "y0": 101,
+      "y1": 113
+     },
+     {
+      "text": "import",
+      "x0": 271,
+      "x1": 302,
+      "y0": 101,
+      "y1": 113
+     }
+    ],
+    "overlaps": [
+     "label \"http\" x node invoices.ts",
+     "label \"http\" x node InvoiceController.java",
+     "label \"http\" x node default.conf",
+     "label \"http\" x node invoices.ts",
+     "label \"import\" x node index.ts",
+     "label \"import\" x node invoices.ts",
+     "label \"import\" x node invoices.ts",
+     "label \"import\" x node http.ts"
+    ],
+    "stepper": true,
+    "stepList": [
+     "1http: /api/",
+     "2import",
+     "3http: GET /invoices/*",
+     "4import"
+    ]
+   },
+   "http.ts": {
+    "frame": {
+     "w": 900,
+     "h": 500
+    },
+    "svg": {
+     "w": 400,
+     "h": 206,
+     "viewBox": "0 0 400 206"
+    },
+    "scroll": {
+     "client": 900,
+     "scrollW": 900,
+     "overflowX": "visible"
+    },
+    "contentBottom": 363,
+    "boxes": [
+     {
+      "id": "invoices.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 42,
+      "y1": 88,
+      "inside": true
+     },
+     {
+      "id": "orders.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     },
+     {
+      "id": "shipments.ts",
+      "x0": 16,
+      "x1": 168,
+      "y0": 170,
+      "y1": 216,
+      "inside": true
+     },
+     {
+      "id": "http.ts",
+      "x0": 232,
+      "x1": 384,
+      "y0": 106,
+      "y1": 152,
+      "inside": true
+     }
+    ],
+    "labels": [
+     {
+      "text": "import",
+      "x0": 185,
+      "x1": 216,
+      "y0": 85,
+      "y1": 97
+     },
+     {
+      "text": "import",
+      "x0": 185,
+      "x1": 216,
+      "y0": 117,
+      "y1": 129
+     },
+     {
+      "text": "import",
+      "x0": 185,
+      "x1": 216,
+      "y0": 149,
+      "y1": 161
+     }
+    ],
+    "overlaps": [],
+    "stepper": true,
+    "stepList": [
+     "1import",
+     "2import",
+     "3import"
+    ]
+   }
+  },
+  "play": {
+   "invoices.ts": [
+    {
+     "step": 1,
+     "count": "1 of 4",
+     "lit": [
+      "default.conf->invoices.ts @(146,83)"
+     ]
+    },
+    {
+     "step": 2,
+     "count": "2 of 4",
+     "lit": [
+      "index.ts->invoices.ts @(146,112)"
+     ]
+    },
+    {
+     "step": 3,
+     "count": "3 of 4",
+     "lit": [
+      "invoices.ts->InvoiceController.java @(286,80)"
+     ]
+    },
+    {
+     "step": 4,
+     "count": "4 of 4",
+     "lit": [
+      "invoices.ts->http.ts @(286,115)"
+     ]
+    }
+   ],
+   "http.ts": [
+    {
+     "step": 1,
+     "count": "1 of 3",
+     "lit": [
+      "invoices.ts->http.ts @(200,99)"
+     ]
+    },
+    {
+     "step": 2,
+     "count": "2 of 3",
+     "lit": [
+      "orders.ts->http.ts @(200,124)"
+     ]
+    },
+    {
+     "step": 3,
+     "count": "3 of 3",
+     "lit": [
+      "shipments.ts->http.ts @(200,160)"
+     ]
+    }
+   ]
+  },
+  "console": []
+ }
+}

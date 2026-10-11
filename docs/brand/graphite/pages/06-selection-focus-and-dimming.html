@@ -1,0 +1,579 @@
+<section class="page" data-page-num="06" data-page-title="Selection, focus, and dimming the rest">
+
+  <div class="pagehead">
+    <span class="num">Sheet 06 &middot; The board</span>
+    <h1>Selection, focus, and dimming the rest</h1>
+    <p class="lede">Selection is the one thing on the board the reader chose, so it is the one
+    thing that must win the eye. It ADDS &mdash; a fill, a ring at full strength, a bounding rect
+    &mdash; and it never swaps a border for a quieter one. Everything else on this sheet exists to
+    keep that promise: handles only where a drag changes a stored value, a marquee that reads as a
+    drag and not as a verdict, and a dimming floor that recedes the board without pushing a single
+    title below legibility.</p>
+    <p class="lede">Selection and focus are both the product's own voice, so both are
+    <span class="inline-code">--accent</span> and neither can be mistaken for a verdict. Dimming is
+    not a selection effect at all. It belongs to playback, to explicit path-focus, and &mdash; by
+    Decision 6 &mdash; to explicit selection, which recedes everything not on the selected node's
+    path.</p>
+    <p class="lede">Decision 6 also gives every card a <b>status dot</b>: small, left of the title,
+    carrying path and selection state in light hues. It amends Decision 2 in one direction only
+    &mdash; kind is still never carried by hue alone, but <em>state</em> may now spend a light hue.</p>
+  </div>
+
+  <!-- ══ 06.1 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">06.1</span><h2>The five states, side by side</h2>
+      <span class="tail">rest &middot; hover &middot; selected &middot; multi &middot; dimmed</span></div>
+
+    <p class="note">Read this row left to right and each state is louder than the one before it,
+    except the last, which is quieter on purpose. That monotonic order is the whole rule. A state
+    that is supposed to mean <em>you picked this</em> and renders fainter than the resting card has
+    inverted the signal, and the reader will scan past the very thing they asked for.</p>
+
+    <div class="scrollx">
+      <div class="boardfield" style="padding:var(--sp-16);min-width:1090px">
+        <div style="display:flex;flex-wrap:nowrap;gap:var(--sp-12);align-items:flex-start">
+
+          <div class="specimen"><div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-ft"><span class="prov p-measured">Measured</span></div></div><span class="lbl">rest</span></div>
+
+          <div class="specimen"><div class="node n-service hover"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-ft"><span class="prov p-measured">Measured</span></div></div><span class="lbl">.hover</span></div>
+
+          <div class="specimen"><div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-ft"><span class="prov p-measured">Measured</span></div></div><span class="lbl">.sel</span></div>
+
+          <div class="specimen">
+            <div style="position:relative;display:flex;gap:var(--sp-12);padding:var(--sp-4);border:var(--w-hair) dashed var(--accent);border-radius:var(--r-18)">
+              <div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div>
+              <div class="node n-store sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+              <span style="position:absolute;top:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+              <span style="position:absolute;top:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+              <span style="position:absolute;bottom:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+              <span style="position:absolute;bottom:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+            </div>
+            <span class="lbl">multi &middot; bounding rect</span></div>
+
+          <div class="specimen"><div class="node n-topic dim"><div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div><div class="nd-t">order.placed</div></div><span class="lbl">.dim</span></div>
+
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">Every card here is the same chassis. Kind is still carried by icon,
+    silhouette, border treatment and tone; state is carried by fill, ring and opacity. The two
+    channels do not touch, which is why a selected datastore is still obviously a datastore.</p>
+
+    <div class="grid g3" style="margin-top:var(--sp-16)">
+      <div class="panel">
+        <h3>Rest</h3>
+        <p class="sub">The card has tone and elevation of its own, so its border can stay quiet.</p>
+        <dl class="specs">
+          <dt>Fill</dt><dd>--arch-tone-*</dd>
+          <dt>Border</dt><dd>--edge</dd>
+          <dt>Elevation</dt><dd>--e1</dd>
+          <dt>Ring</dt><dd>none</dd>
+        </dl>
+      </div>
+      <div class="panel">
+        <h3>Hover</h3>
+        <p class="sub">The border strengthens and nothing else moves. Hover is a pointer report,
+        not a claim.</p>
+        <dl class="specs">
+          <dt>Fill</dt><dd>--arch-tone-*</dd>
+          <dt>Border</dt><dd>--edge-strong</dd>
+          <dt>Elevation</dt><dd>--e1</dd>
+          <dt>Ring</dt><dd>none</dd>
+        </dl>
+      </div>
+      <div class="panel">
+        <h3>Selected</h3>
+        <p class="sub">Fill, border and ring all move at once, and the elevation steps up. Three
+        carriers, so removing any one still leaves the state readable.</p>
+        <dl class="specs">
+          <dt>Fill</dt><dd>--board-select-fill</dd>
+          <dt>Border</dt><dd>--board-select-edge</dd>
+          <dt>Elevation</dt><dd>--e2</dd>
+          <dt>Ring</dt><dd>--w-rule --board-select-edge</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-16)">
+      <h3>The status dot &mdash; state, never kind (Decision 6)</h3>
+      <p class="sub">A small dot left of the title carries where the node stands in the path being
+      read. It is the one place a card spends a light hue on <em>state</em>, and it amends Decision
+      2 no further than that: kind keeps its four non-chromatic channels, and the dot may not carry
+      a kind.</p>
+      <div class="grid g2">
+        <dl class="specs">
+          <dt>Position</dt><dd>left of the node title, in the title row</dd>
+          <dt>Size</dt><dd>6px circle</dd>
+          <dt>On-path</dt><dd>--board-dot-onpath &rarr; --info, filled</dd>
+          <dt>Selected</dt><dd>--board-dot-selected &rarr; --accent, filled</dd>
+          <dt>Off-path</dt><dd>--board-dot-offpath &rarr; --st-neutral, hollow</dd>
+        </dl>
+        <p class="caption">Three states and two actual hues; the third is grey on purpose. The dot
+      never appears without its other carriers &mdash; a selected node still takes fill, border,
+      ring and elevation (&sect;06.2), and an on-path node's edges are still promoted before any
+      card is dimmed (&sect;06.6). Greyscale loses both hues and no claim: the word beside the dot,
+      the ring and the promoted path say the same things. A kind has no dot, ever &mdash; that way
+      lies Decision 2's defect wearing a smaller shape.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      <b>The agent is the one kind these three tables describe by effect rather than by
+      declaration, and the difference is recorded here rather than discovered later.</b> Its
+      silhouette is a <span class="inline-code">clip-path</span> chamfer, and neither a
+      <span class="inline-code">box-shadow</span> nor a <span class="inline-code">box-shadow</span>
+      ring can follow a clip &mdash; both are painted on the border box, so both would draw a square
+      corner where the card has a cut one. So the agent gets <em>the same three carriers by other
+      means</em>: elevation as <span class="inline-code">--e1-drop</span> and
+      <span class="inline-code">--e2-drop</span> on its outer plate, which are
+      <span class="inline-code">drop-shadow()</span> at the offsets and blurs of
+      <span class="inline-code">--e1</span> and <span class="inline-code">--e2</span>; and the ring
+      as a thickening of its own drawn outline to <span class="inline-code">--w-rule</span>, in
+      <span class="inline-code">--board-select-edge</span>, which is the identical 2px accent claim
+      made on the real shape instead of on a rectangle around it. <b>Selection still adds, and it
+      is still louder.</b> Nothing about the rule changes; one card draws it with a different
+      instrument, and a book that did not say so would be a book its own substrate contradicts.
+    </p>
+  </div>
+
+  <!-- ══ 06.2 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">06.2</span><h2>Selection adds. It never swaps.</h2>
+      <span class="tail">the ring is --w-rule at full strength</span></div>
+
+    <p class="note">The defect this rule exists to kill is a border-colour swap: the selected card
+    took a new border and the new border was fainter than the resting one, so picking a node made
+    it recede. A swap is a trade &mdash; you lose one carrier to gain another. Selection cannot
+    afford a trade, because it is the loudest claim the reader can make on the board. It gets the
+    accent at full strength, not a wash of it, and it keeps everything the resting card already had.</p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-s">Takes an order and charges it.</div></div>
+        </div>
+        <p class="why">Fill moves to <span class="inline-code">--board-select-fill</span>, the
+        border becomes <span class="inline-code">--accent</span>, and a
+        <span class="inline-code">--w-rule</span> ring is laid outside it. The card gains
+        <span class="inline-code">--e2</span>. Nothing was taken away. <b>The agent takes the same
+        three steps on a different chassis</b> &mdash; see the note that closes &sect;06.1.</p>
+      </div>
+
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm">
+          <div class="node n-service" style="border-color:var(--edge-faint);box-shadow:var(--e0)"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-s">Takes an order and charges it.</div></div>
+        </div>
+        <p class="why">The border was swapped for a quieter one and the elevation was dropped to
+        <span class="inline-code">--e0</span>. This is the selected state. It is fainter than the
+        card beside it that nobody picked.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>The four things selection puts on the board</h3>
+      <p class="sub">In this order. Each one survives the loss of the others, which is what makes
+      the state robust at any zoom.</p>
+      <div class="specimens">
+        <div class="specimen"><div class="node n-service sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div><span class="lbl">1 &middot; fill + 2 &middot; ring</span></div>
+        <div class="specimen">
+          <div style="position:relative;padding:var(--sp-4);border:var(--w-hair) dashed var(--accent);border-radius:var(--r-18)">
+            <div class="node n-service sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <span style="position:absolute;top:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+            <span style="position:absolute;top:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+            <span style="position:absolute;bottom:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+            <span style="position:absolute;bottom:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+          </div>
+          <span class="lbl">3 &middot; bounding rect</span></div>
+        <div class="specimen">
+          <div class="zoomcluster">
+            <span class="pct"><span class="ph">&#8249;n&#8250;</span> selected</span>
+            <button class="iconbtn" aria-label="Focus this path"><svg class="i i-14"><use href="#ic-flow"/></svg></button>
+            <button class="iconbtn" aria-label="Group into module"><svg class="i i-14"><use href="#ic-module"/></svg></button>
+            <button class="iconbtn" aria-label="More"><svg class="i i-14"><use href="#ic-more"/></svg></button>
+          </div>
+          <span class="lbl">4 &middot; contextual toolbar</span></div>
+      </div>
+      <p class="caption">The bounding rect is <span class="inline-code">--w-hair</span> dashed
+      <span class="inline-code">--accent</span> at <span class="inline-code">--r-18</span>, inset by
+      <span class="inline-code">--sp-4</span> from the <span class="inline-code">--r-14</span> node
+      it encloses &mdash; <b>18 &minus; 4 = 14</b>, which is the module wall's arithmetic to the
+      pixel, not merely a rung above it. Radii nest correctly because the inset is derived from the
+      two radii, never chosen by eye; a rect drawn at the same radius with a wider inset would look
+      close and be wrong, and this sheet used to draw exactly that. It is dashed because it is a boundary drawn around
+      things rather than a thing that stands there, exactly as
+      <span class="inline-code">--arch-style-module</span> is dashed.</p>
+    </div>
+  </div>
+
+  <!-- ══ 06.3 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">06.3</span><h2>Handles, and where they are allowed</h2>
+      <span class="tail">a handle that does nothing is a lie</span></div>
+
+    <p class="note">Resize handles appear where a drag changes a value the graph actually stores.
+    A module wall has an area the reader lays out, so it has eight. A node card does not: its width
+    is <span class="inline-code">--arch-card-w</span> and its height is content-driven with
+    <span class="inline-code">--arch-card-min-h</span> as a floor, so there is nothing a drag could
+    write. Drawing handles on it would offer a gesture the product cannot honour, and the reader
+    finds that out only by trying.</p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>A selected module wall &mdash; eight handles</h3>
+        <p class="sub">Four corners and four edge midpoints, each
+        <span class="inline-code">--sp-8</span> square on
+        <span class="inline-code">--surface-2</span> with a
+        <span class="inline-code">--w-hair</span> <span class="inline-code">--accent</span> border,
+        centred on the boundary.</p>
+        <div class="stage" style="padding:var(--sp-20)">
+          <div class="nest" style="position:relative;border-color:var(--accent);box-shadow:var(--e2), 0 0 0 var(--w-rule) var(--accent)">
+            <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span></span></div>
+            <div class="nest-bd">
+              <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+              <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+            </div>
+            <span style="position:absolute;top:calc(-1 * var(--sp-4));left:calc(-1 * var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+            <span style="position:absolute;top:calc(-1 * var(--sp-4));left:calc(50% - var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+            <span style="position:absolute;top:calc(-1 * var(--sp-4));right:calc(-1 * var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+            <span style="position:absolute;top:calc(50% - var(--sp-4));left:calc(-1 * var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+            <span style="position:absolute;top:calc(50% - var(--sp-4));right:calc(-1 * var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+            <span style="position:absolute;bottom:calc(-1 * var(--sp-4));left:calc(-1 * var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+            <span style="position:absolute;bottom:calc(-1 * var(--sp-4));left:calc(50% - var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+            <span style="position:absolute;bottom:calc(-1 * var(--sp-4));right:calc(-1 * var(--sp-4));width:var(--sp-8);height:var(--sp-8);background:var(--surface-2);border:var(--w-hair) solid var(--accent);border-radius:var(--r-4)"></span>
+          </div>
+        </div>
+        <p class="caption">The wall keeps its dashed <span class="inline-code">--w-struct</span>
+        boundary underneath; selection recolours it and lays the ring outside. The members inside
+        are not selected and are not dimmed &mdash; selecting a container does not make a claim
+        about what it contains.</p>
+      </div>
+
+      <div class="panel">
+        <h3>A selected node card &mdash; no handles</h3>
+        <p class="sub">The same fill, the same ring, the same bounding rect. No grips, because
+        there is no stored width or height for a grip to write.</p>
+        <div class="stage" style="padding:var(--sp-20)">
+          <div style="position:relative;padding:var(--sp-4);border:var(--w-hair) dashed var(--accent);border-radius:var(--r-18)">
+            <div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-s">Takes an order and charges it.</div></div>
+            <span style="position:absolute;top:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+            <span style="position:absolute;top:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+            <span style="position:absolute;bottom:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+            <span style="position:absolute;bottom:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+          </div>
+        </div>
+        <p class="caption">The corner marks are the bounding rect's own, and they are drawn so they
+        cannot be read as the wall's grips on the left. A grip is a filled <span class="inline-code">--sp-8</span>
+        square on <span class="inline-code">--surface-2</span>, sitting astride the boundary with
+        half its body on each side, and a pointer can take it. A mark is two
+        <span class="inline-code">--w-hair</span> strokes meeting at a right angle &mdash; an open L
+        with no fill and no fourth side &mdash; set clear of the rect outside its corner, touching
+        nothing. It states where the selection ends and offers no gesture at all.</p>
+      </div>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-12)"><b>Connection nubs are not selection.</b>
+    The shipped board painted eight <span class="inline-code">Handle</span> nubs per node while
+    connections were disabled &mdash; sixty-four dots on an eight-node graph, none of them
+    draggable. Nubs belong to draw mode and appear only when a connection can actually be made.
+    They are not the resize grips above and they never share their shape.</div>
+  </div>
+
+  <!-- ══ 06.4 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">06.4</span><h2>Multi-select: marquee, count, toolbar</h2>
+      <span class="tail">drag empty ground &middot; --board-marquee-*</span></div>
+
+    <p class="note">A drag that starts on empty ground draws a marquee. It is
+    <span class="inline-code">--accent-wash</span> filled with an
+    <span class="inline-code">--accent-edge</span> hairline and
+    <span class="inline-code">--r-4</span> corners: soft, because it is a gesture in progress and
+    not yet a claim. The instant the pointer lifts the wash disappears and the result is stated
+    twice &mdash; once per card as a ring, once for the set as a count.</p>
+
+    <div class="scrollx">
+      <div class="boardfield" style="padding:var(--sp-20);min-width:800px">
+        <div style="display:flex;align-items:flex-start;gap:var(--sp-20)">
+
+          <div class="specimen">
+            <div class="marquee" style="display:inline-flex;align-items:flex-start;gap:var(--sp-12);padding:var(--sp-12)">
+              <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div>
+              <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+            </div>
+            <span class="lbl">during the drag &middot; .marquee</span></div>
+
+          <div class="specimen">
+            <div style="position:relative;display:flex;gap:var(--sp-12);padding:var(--sp-4);border:var(--w-hair) dashed var(--accent);border-radius:var(--r-18)">
+              <div class="node n-service sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div>
+              <div class="node n-store sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+              <span style="position:absolute;top:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+              <span style="position:absolute;top:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-top:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+              <span style="position:absolute;bottom:calc(-1 * var(--sp-6));left:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-left:var(--w-hair) solid var(--accent)"></span>
+              <span style="position:absolute;bottom:calc(-1 * var(--sp-6));right:calc(-1 * var(--sp-6));width:var(--sp-8);height:var(--sp-8);border-bottom:var(--w-hair) solid var(--accent);border-right:var(--w-hair) solid var(--accent)"></span>
+            </div>
+            <span class="lbl">after the lift &middot; .sel &times; 2</span></div>
+
+        </div>
+
+        <div style="display:flex;justify-content:center;margin-top:var(--sp-20);width:100%">
+          <div class="zoomcluster">
+            <span class="pct"><span class="ph">&#8249;n&#8250;</span> selected</span>
+            <button class="iconbtn" aria-label="Focus this path"><svg class="i i-14"><use href="#ic-flow"/></svg></button>
+            <button class="iconbtn" aria-label="Group into module"><svg class="i i-14"><use href="#ic-module"/></svg></button>
+            <button class="btn ghost sm">Open in the index</button>
+            <button class="iconbtn" aria-label="More"><svg class="i i-14"><use href="#ic-more"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">The count is a placeholder because the engine computes it. It sits in the
+    same floating cluster chassis as the zoom control, so the canvas has ONE kind of floating
+    object rather than two that merely look alike. Every action in it operates on the whole set;
+    an action that only makes sense for one node does not appear here.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="panel">
+        <h3>The marquee</h3>
+        <dl class="specs">
+          <dt>Fill</dt><dd>--board-marquee-fill</dd>
+          <dt>Border</dt><dd>--w-hair --board-marquee-edge</dd>
+          <dt>Radius</dt><dd>--r-4</dd>
+          <dt>Starts on</dt><dd>empty ground only</dd>
+          <dt>Lifetime</dt><dd>the drag, and not one frame longer</dd>
+        </dl>
+        <p class="caption">A marquee that lingers after the lift reads as a second selection. It is
+        removed, and its job is handed to the rings and the count.</p>
+      </div>
+      <div class="panel">
+        <h3>The contextual toolbar</h3>
+        <dl class="specs">
+          <dt>Chassis</dt><dd>.zoomcluster</dd>
+          <dt>Surface</dt><dd>--surface-1 / --e1</dd>
+          <dt>Radius</dt><dd>--r-10</dd>
+          <dt>Controls</dt><dd>--icon-btn, 26px</dd>
+          <dt>Count</dt><dd>--font-mono / --t-10 / --ink-3</dd>
+          <dt>Appears</dt><dd>at two or more, and on one only for actions that need it</dd>
+        </dl>
+        <p class="caption">Icon-only controls carry an <span class="inline-code">aria-label</span>.
+        No two of them render the same glyph.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 06.5 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">06.5</span><h2>Focus is not selection</h2>
+      <span class="tail">a gapped double ring, never a fill</span></div>
+
+    <p class="note">Keyboard focus says <em>this is where the next keystroke lands</em>. Selection
+    says <em>this is what I chose</em>. They coexist constantly &mdash; arrowing across a board
+    moves focus through cards that are not selected &mdash; so they must be told apart at a glance.
+    Both are <span class="inline-code">--accent</span>, because both are the product's voice and
+    neither may be mistaken for a verdict. The difference is geometry: selection is FLUSH and
+    FILLED, focus is a double ring with a visible gap and no fill at all.</p>
+
+    <div class="scrollx">
+      <div class="boardfield" style="padding:var(--sp-20);min-width:620px">
+        <div style="display:flex;gap:var(--sp-24);align-items:flex-start">
+          <div class="specimen"><span class="forcefocus" style="display:inline-block;border-radius:var(--r-14)"><div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div></span><span class="lbl">focused, not selected</span></div>
+          <div class="specimen"><div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div><span class="lbl">selected, not focused</span></div>
+          <div class="specimen"><span class="forcefocus" style="display:inline-block;border-radius:var(--r-14)"><div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div></span><span class="lbl">both</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">Focus is never removed and never restyled away. When both states land on one
+    card the fill reads first and the gapped ring reads second, which is the correct order: what
+    you chose, then where the keyboard is.</p>
+
+    <div class="dev" style="margin-top:var(--sp-12)"><b>Two handbacks live in this one specimen.</b>
+    First, the focus ring's inner band must be the ground it sits on:
+    <span class="inline-code">.forcefocus</span> and
+    <span class="inline-code">:focus-visible</span> both write
+    <span class="inline-code">0 0 0 2px var(--bg-base)</span> for the gap, which is right
+    everywhere in the app except the board, whose ground is
+    <span class="inline-code">--nest-0</span>. Second, a ring delivered as
+    <span class="inline-code">box-shadow</span> cannot be layered onto a card that already owns its
+    <span class="inline-code">box-shadow</span>: <span class="inline-code">.node</span> declares
+    <span class="inline-code">--e1</span> later in the sheet and simply replaces the ring, and
+    <span class="inline-code">.node.sel</span> outranks it outright. The three cards above are
+    therefore drawn with the ring on a wrapper. The fix is for the node's shadow to be a composed
+    list &mdash; elevation, then selection ring, then focus ring &mdash; rather than three rules
+    competing for one property.</div>
+  </div>
+
+  <!-- ══ 06.6 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">06.6</span><h2>Dimming, and the floor it may not cross</h2>
+      <span class="tail">--board-dim-opacity = --st-archived-opacity</span></div>
+
+    <p class="note">Dimming is expensive. It touches every object the reader did not ask about, and
+    spent carelessly it stops meaning anything. <b>Dimming is for playback, for explicit
+    path-focus, and &mdash; by Decision 6 &mdash; for explicit selection.</b> Selecting a node asks
+    a question about <em>that</em> node, and the board answers by receding everything not on its
+    path, exactly as path-focus does; the dim extends today's flow-playback behaviour to the
+    selected card rather than inventing a second mechanism. Hover still dims nothing, and a marquee
+    drag never does.</p>
+
+    <p class="note">The floor is legibility, and it does not move for selection. Dimmed text must
+    still hold 4.5:1 against what is behind it, which rules out fading a title toward the ground.
+    So dimming works in this order: the PATH IS PROMOTED first &mdash; its edges take
+    <span class="inline-code">--flow-onflow</span> at <span class="inline-code">--w-flow</span>
+    while everything else stays at the thinner <span class="inline-code">--w-edge</span>, and the
+    on-path cards take their status dots (&sect;06.1) &mdash; and only then is the off-path card
+    receded to <span class="inline-code">--board-dim-opacity</span>. Contrast is won by making the
+    answer louder, not by making the rest illegible.</p>
+
+    <div class="panel">
+      <h3>Edges carry the focus before cards do</h3>
+      <div class="specimens">
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 160 12" width="160" height="12" aria-hidden="true"><path class="edgeline e-onflow" d="M2 6h156"/></svg>
+          <span class="lbl">on the path &middot; .e-onflow &middot; --w-flow</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 160 12" width="160" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6h156"/></svg>
+          <span class="lbl">off the path &middot; .e-traced &middot; --w-edge</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 160 12" width="160" height="12" aria-hidden="true"><path class="edgeline e-declared" d="M2 6h156"/></svg>
+          <span class="lbl">unconfirmed &middot; .e-declared &middot; --unknown</span></div>
+      </div>
+      <p class="caption">Decision 6 points declared and traced connectors at the <b>blue flow
+      accent</b>: both carry the accent family while a path is being read, so the graph's flow
+      reads as one continuous blue route rather than grey wiring, and weight, dash and the
+      promoted path's wider stroke still say which claim is which &mdash; the distinction survives
+      greyscale on weight alone. What stays out of connectors is every verdict hue: an unconfirmed
+      claim changes weight and dash, never colour into red or green. Focus changes what you are
+      reading, never what is true.</p>
+    </div>
+
+    <div class="scrollx" style="margin-top:var(--sp-12)">
+      <div class="boardfield" style="padding:var(--sp-20);min-width:760px">
+        <div style="display:flex;align-items:center;gap:var(--sp-8)">
+          <div class="node n-entry sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+          <svg class="edgespec" viewBox="0 0 56 12" width="56" height="12" aria-hidden="true"><path class="edgeline e-onflow" d="M2 6h52"/></svg>
+          <div class="node n-service sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+          <svg class="edgespec" viewBox="0 0 56 12" width="56" height="12" aria-hidden="true"><path class="edgeline e-onflow" d="M2 6h52"/></svg>
+          <div class="node n-store sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--sp-8);margin-top:var(--sp-16)">
+          <div class="node n-agent dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div><div class="nd-t">refund worker</div></div>
+          <svg class="edgespec" viewBox="0 0 56 12" width="56" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6h52"/></svg>
+          <div class="node n-topic dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div><div class="nd-t">order.placed</div></div>
+          <svg class="edgespec" viewBox="0 0 56 12" width="56" height="12" aria-hidden="true"><path class="edgeline e-declared" d="M2 6h52"/></svg>
+          <div class="node n-store dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">Path-focus on the top row. The dimmed row below it is still readable: the
+    titles are <span class="inline-code">--ink-1</span>, the silhouettes and icons still say which
+    kind each card is, and the connectors are still legible as traced and declared. Nothing became
+    a grey smear, which is the failure mode.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <div class="node n-topic dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div><div class="nd-t">order.placed</div></div>
+        </div>
+        <p class="why">A dimmed card keeps its title at <span class="inline-code">--ink-1</span>
+        and drops the rows that could not hold the floor. Its border recedes to the ground with it,
+        because a border at full strength around a faded card is louder than the card.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm">
+          <div class="node n-topic dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div><div class="nd-t" style="color:var(--ink-3)">order.placed</div><div class="nd-s">Fanned out to every subscriber.</div></div>
+        </div>
+        <p class="why">The title was already <span class="inline-code">--ink-3</span> before the
+        dim, and a subtitle at <span class="inline-code">--ink-3</span> went with it. Both land
+        below 4.5:1 against the receded card. The reader can see there is a node there and cannot
+        read what it is, which is worse than hiding it.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">One more rule, and it is the reason dimming is
+    rationed: <b>dimming is never how the board answers a question.</b> If a path is worth focusing,
+    the path is promoted and named. Receding forty cards to make one legible is a way of admitting
+    the one was never loud enough on its own.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="panel">
+        <h3>When dimming is allowed</h3>
+        <div class="specimens column" style="width:100%">
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-play"/></svg><span class="name">Playback</span><span class="file">a flow, stepping</span><span class="right"><svg class="i i-12"><use href="#ic-check"/></svg></span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-flow"/></svg><span class="name">Path-focus</span><span class="file">invoked, explicit</span><span class="right"><svg class="i i-12"><use href="#ic-check"/></svg></span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-cursor"/></svg><span class="name">Single click</span><span class="file">selects, dims off-path &middot; Decision 6</span><span class="right"><svg class="i i-12"><use href="#ic-check"/></svg></span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-search"/></svg><span class="name">Hover</span><span class="file">a pointer report</span><span class="right"><svg class="i i-12"><use href="#ic-x"/></svg></span></div>
+        </div>
+        <p class="caption">Three of the four. Each is something the reader asked for by name &mdash;
+        a click on a node is as explicit an ask as pressing play.</p>
+      </div>
+      <div class="panel">
+        <h3>The floor, stated</h3>
+        <dl class="specs">
+          <dt>Opacity</dt><dd>--board-dim-opacity</dd>
+          <dt>Resolves to</dt><dd>--st-archived-opacity</dd>
+          <dt>Text floor</dt><dd>4.5:1 after the dim</dd>
+          <dt>Survives</dt><dd>title --ink-1, icon, silhouette, border style</dd>
+          <dt>Does not survive</dt><dd>--ink-3 subtitles and metadata</dd>
+          <dt>Transition</dt><dd>--seq-dur-panel --ease</dd>
+        </dl>
+        <p class="caption">Graphite already decided what &ldquo;receded but still readable&rdquo; is
+        worth when it set the archived run row, and it is
+        <span class="inline-code">--st-archived-opacity</span>. The board does not get a second,
+        deeper answer to the same question.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 06.7 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">06.7</span><h2>The tokens this sheet spends</h2>
+      <span class="tail">every one an alias &middot; no new hue</span></div>
+
+    <p class="note">Selection, focus and dimming spend <span class="inline-code">--accent</span>
+    and a neutral; Decision 6 adds the state dot and the blue connector route, which bring exactly
+    one further hue, <span class="inline-code">--info</span>, already in the palette. Not one
+    verdict hue appears on this sheet outside the <span class="inline-code">.do</span> and
+    <span class="inline-code">.dont</span> marks, which is the point: a selected node and a failing
+    node must never be confusable, and they cannot be if selection has no access to the verdict
+    palette.</p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th>Token</th><th>Resolves to</th><th>Where it lands</th></tr></thead>
+          <tbody>
+            <tr><td class="k">--board-select-fill</td><td class="v">--state-selected</td><td>The selected card's ground</td></tr>
+            <tr><td class="k">--board-select-edge</td><td class="v">--accent</td><td>Its border and its --w-rule ring</td></tr>
+            <tr><td class="k">--board-marquee-fill</td><td class="v">--accent-wash</td><td>The drag rectangle, during the drag</td></tr>
+            <tr><td class="k">--board-marquee-edge</td><td class="v">--accent-edge</td><td>Its hairline</td></tr>
+            <tr><td class="k">--board-dim-opacity</td><td class="v">--st-archived-opacity</td><td>Every off-path object</td></tr>
+            <tr><td class="k">--board-dot-selected</td><td class="v">--accent</td><td>The selected node's status dot &mdash; &sect;06.1</td></tr>
+            <tr><td class="k">--board-dot-onpath</td><td class="v">--info</td><td>The dot on a node the path being read passes through</td></tr>
+            <tr><td class="k">--board-dot-offpath</td><td class="v">--st-neutral, hollow</td><td>The dot on a node the reading does not concern</td></tr>
+            <tr><td class="k">--w-rule</td><td class="v">2px</td><td>The selection ring &mdash; a claim drawn as a line</td></tr>
+            <tr><td class="k">--w-hair</td><td class="v">1px</td><td>The bounding rect and its corner strokes, the marquee, a grip's border</td></tr>
+            <tr><td class="k">--w-flow</td><td class="v">1.5px</td><td>A connector on the path being read</td></tr>
+            <tr><td class="k">--w-edge</td><td class="v">1.2px</td><td>A connector the reader is not being asked to follow</td></tr>
+            <tr><td class="k">--flow-onflow</td><td class="v">--accent</td><td>The promoted path</td></tr>
+            <tr><td class="k">--flow-traced</td><td class="v">the blue flow accent &mdash; Decision 6</td><td>A traced connector off the promoted path, at --w-edge</td></tr>
+            <tr><td class="k">--flow-declared</td><td class="v">the blue flow accent &mdash; Decision 6</td><td>A declared connector; dash and weight keep it distinct</td></tr>
+            <tr><td class="k">--seq-dur-panel</td><td class="v">180ms</td><td>The dim and the undim</td></tr>
+            <tr><td class="k">--seq-dur-cam</td><td class="v">240ms</td><td>The camera moving to fit a selection</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">Three widths appear on one board at once &mdash;
+      <span class="inline-code">--w-hair</span>, <span class="inline-code">--w-edge</span> and
+      <span class="inline-code">--w-flow</span> &mdash; and on a 1x display the last two are close
+      enough that weight alone cannot be trusted. That is why the promoted path also changes hue,
+      and why the bounding rect is also dashed. Every distinction on this sheet is carried twice.</p>
+    </div>
+  </div>
+
+</section>

@@ -1,0 +1,11 @@
+{"kind":"header","provider":"codex-app-server","scenario":"hung-after-start","covers":"a turn that starts a command, sends one token-usage heartbeat, and then never speaks again (codex, not run live)","live":false,"notRunLive":"A real hang cannot be recorded on purpose. Built from the binary's own generated protocol types around the opening the live sessions recorded.","source":"codex app-server generate-ts (codex-cli 0.153.4): TurnStartedNotification, ItemStartedNotification, ThreadTokenUsageUpdatedNotification","accessMode":"autoEdit","prompt":"Run the tests.","answers":[],"placeholders":{"<CWD>":"the working directory the session runs in","<HOME>":"the home directory"}}
+{"t":0,"dir":"c2s","msg":{"id":1,"method":"initialize","params":{"clientInfo":{"name":"sequence","title":"Sequence","version":"0.1.0"},"capabilities":null}}}
+{"t":40,"dir":"s2c","msg":{"id":1,"result":{"userAgent":"codex_cli_rs/0.153.4","codexHome":"<HOME>/.codex","platformFamily":"windows","platformOs":"windows"}}}
+{"t":41,"dir":"c2s","msg":{"method":"initialized"}}
+{"t":41,"dir":"c2s","msg":{"id":2,"method":"thread/start","params":{"cwd":"<CWD>","approvalPolicy":"on-request","sandbox":"workspace-write"}}}
+{"t":300,"dir":"s2c","msg":{"id":2,"result":{"thread":{"id":"thread-hung-1","turns":[]},"model":"gpt-5-codex","modelProvider":"openai","cwd":"<CWD>","approvalPolicy":"on-request","sandbox":{"type":"workspaceWrite"}}}}
+{"t":301,"dir":"c2s","msg":{"id":3,"method":"turn/start","params":{"threadId":"thread-hung-1"}}}
+{"t":320,"dir":"s2c","msg":{"id":3,"result":{"turn":{"id":"turn-hung-1","items":[],"status":"inProgress","error":null}}}}
+{"t":321,"dir":"s2c","msg":{"method":"turn/started","params":{"threadId":"thread-hung-1","turn":{"id":"turn-hung-1","items":[],"status":"inProgress","error":null}}}}
+{"t":1500,"dir":"s2c","msg":{"method":"item/started","params":{"threadId":"thread-hung-1","turnId":"turn-hung-1","item":{"type":"commandExecution","id":"cmd-hung-1","command":"npm test","cwd":"<CWD>","status":"inProgress"}}}}
+{"t":4000,"dir":"s2c","msg":{"method":"thread/tokenUsage/updated","params":{"threadId":"thread-hung-1","turnId":"turn-hung-1","tokenUsage":{"total":{"totalTokens":1200}}}}}

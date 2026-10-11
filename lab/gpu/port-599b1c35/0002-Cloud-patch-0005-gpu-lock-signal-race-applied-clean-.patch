@@ -1,0 +1,73 @@
+From 86050f29689c2ff30fbfda08cab9439256903758 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 14:35:11 -0400
+Subject: [PATCH 02/37] Cloud patch 0005-gpu-lock-signal-race, applied clean at
+ 599b1c35
+
+---
+ tools/ci/gpu-lock.mjs | 37 ++++++++++++++++++++++++-------------
+ 1 file changed, 24 insertions(+), 13 deletions(-)
+
+diff --git a/tools/ci/gpu-lock.mjs b/tools/ci/gpu-lock.mjs
+index a3f9bd68..7a2a60d5 100644
+--- a/tools/ci/gpu-lock.mjs
++++ b/tools/ci/gpu-lock.mjs
+@@ -458,8 +458,31 @@ if (mode === 'show') {
+    * child exits — and its own pid and start time are readable immediately. So it
+    * is the honest holder.
+    */
++  /*
++   * THE SIGNAL HANDLERS GO IN BEFORE THE LOCK IS WRITTEN, not after the spawn.
++   *
++   * They used to be installed after `write` and `spawn`, so a SIGINT/SIGTERM
++   * landing in that gap took the default action: the wrapper died without a
++   * release and the lock was stranded. Where `born` cannot be read (no
++   * PowerShell, or a failed lookup) a stranded lock is undecidable and refuses
++   * every later run until a person clears it. Caught by the planted
++   * "dies by signal" case failing about 1 run in 6 on Linux (3 !== 0).
++   */
++  let child;
++  const done = () => release();
++  for (const sig of ['SIGINT', 'SIGTERM']) {
++    process.on(sig, () => {
++      try {
++        child?.kill(sig);
++      } catch {
++        /* already gone */
++      }
++      done();
++      process.exit(1);
++    });
++  }
+   write(process.pid, flag('what') ?? cmd.join(' '));
+-  const child = spawn(cmd[0], cmd.slice(1), { stdio: 'inherit', shell: false });
++  child = spawn(cmd[0], cmd.slice(1), { stdio: 'inherit', shell: false });
+   /*
+    * Released on every exit path this process can OBSERVE — a normal exit, a
+    * crash in the child, and a SIGINT/SIGTERM that the platform delivers.
+@@ -476,22 +499,10 @@ if (mode === 'show') {
+    * run writes its own release" — it is "every hold eventually gets a release
+    * line", which is the one that can actually be held to.
+    */
+-  const done = () => release();
+   child.on('exit', (code) => {
+     done();
+     process.exit(code ?? 0);
+   });
+-  for (const sig of ['SIGINT', 'SIGTERM']) {
+-    process.on(sig, () => {
+-      try {
+-        child.kill(sig);
+-      } catch {
+-        /* already gone */
+-      }
+-      done();
+-      process.exit(1);
+-    });
+-  }
+ } else {
+   console.error(`gpu-lock: unknown mode ${mode}`);
+   process.exit(2);
+-- 
+2.51.1.windows.1
+

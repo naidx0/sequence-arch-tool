@@ -1,0 +1,331 @@
+From 869008ff53636e67f520e916ba223fc685a8ef9a Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 14:51:49 -0400
+Subject: [PATCH 07/37] Cloud patch 0013-shared-get, placed by port.mjs at
+ 599b1c35
+
+---
+ packages/web2/src/api/sharedGet.test.ts      | 79 ++++++++++++++++++++
+ packages/web2/src/api/sharedGet.ts           | 71 ++++++++++++++++++
+ packages/web2/src/canvas/docChannel.tsx      |  6 +-
+ packages/web2/src/chat/modelPicker.ts        |  6 +-
+ packages/web2/src/sessions/sessionsClient.ts | 20 ++++-
+ packages/web2/src/settings/settingsClient.ts |  5 +-
+ packages/web2/src/state/connect.tsx          |  5 +-
+ 7 files changed, 175 insertions(+), 17 deletions(-)
+ create mode 100644 packages/web2/src/api/sharedGet.test.ts
+ create mode 100644 packages/web2/src/api/sharedGet.ts
+
+diff --git a/packages/web2/src/api/sharedGet.test.ts b/packages/web2/src/api/sharedGet.test.ts
+new file mode 100644
+index 00000000..5e894eb4
+--- /dev/null
++++ b/packages/web2/src/api/sharedGet.test.ts
+@@ -0,0 +1,79 @@
++/* One GET per URL in flight (api/sharedGet.ts): the /api/ai-config ×3 and
++   /api/sessions/<id> ×2 repeats measured at boot. */
++import { describe, expect, it } from 'vitest';
++
++import { createModelPicker } from '../chat/modelPicker';
++import { createSettingsClient } from '../settings/settingsClient';
++import { sharedGet } from './sharedGet';
++
++function wire(body: unknown = { model: 'm', profiles: [] }) {
++  const calls: string[] = [];
++  let open: (() => void) | undefined;
++  let gate: Promise<void> | undefined;
++  const fetchImpl = (async (input: RequestInfo | URL) => {
++    calls.push(String(input));
++    if (gate) await gate;
++    return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
++  }) as typeof fetch;
++  return {
++    fetchImpl,
++    calls,
++    hold: () => void (gate = new Promise<void>((r) => (open = r))),
++    release: () => {
++      gate = undefined;
++      open?.();
++    },
++  };
++}
++
++describe('sharedGet', () => {
++  it('concurrent readers of one URL share one fetch and each parse their own copy', async () => {
++    const w = wire({ hello: 'world' });
++    w.hold();
++    const all = Promise.all([1, 2, 3].map(() => sharedGet('/api/ai-config', undefined, w.fetchImpl)));
++    w.release();
++    const bodies = await Promise.all((await all).map((r) => r.json()));
++    expect(w.calls).toEqual(['/api/ai-config']);
++    expect(bodies).toEqual([{ hello: 'world' }, { hello: 'world' }, { hello: 'world' }]);
++  });
++
++  it('a read after the first one settles goes to the network again', async () => {
++    const w = wire();
++    await sharedGet('/api/ai-config', undefined, w.fetchImpl);
++    await sharedGet('/api/ai-config', undefined, w.fetchImpl);
++    expect(w.calls).toHaveLength(2);
++  });
++
++  it('different URLs are not shared', async () => {
++    const w = wire();
++    await Promise.all([
++      sharedGet('/api/sessions/a', undefined, w.fetchImpl),
++      sharedGet('/api/sessions/a?repoPath=%2Fr', undefined, w.fetchImpl),
++    ]);
++    expect(w.calls).toHaveLength(2);
++  });
++
++  it("one caller's abort rejects only that caller", async () => {
++    const w = wire();
++    const gone = new AbortController();
++    w.hold();
++    const a = sharedGet('/api/ai-config', gone.signal, w.fetchImpl);
++    const b = sharedGet('/api/ai-config', undefined, w.fetchImpl);
++    gone.abort();
++    w.release();
++    await expect(a).rejects.toMatchObject({ name: 'AbortError' });
++    await expect(b.then((r) => r.ok)).resolves.toBe(true);
++    expect(w.calls).toHaveLength(1);
++  });
++
++  it('the settings read and the model picker share one /api/ai-config at boot', async () => {
++    const w = wire({ model: 'granite', profiles: [{ id: 'p1', model: 'granite' }] });
++    w.hold();
++    const both = Promise.all([createSettingsClient(w.fetchImpl).read(), createModelPicker(w.fetchImpl).list()]);
++    w.release();
++    const [settings, models] = await both;
++    expect(w.calls).toEqual(['/api/ai-config']);
++    expect(settings.outcome).toBe('ok');
++    expect(models.outcome).toBe('ok');
++  });
++});
+diff --git a/packages/web2/src/api/sharedGet.ts b/packages/web2/src/api/sharedGet.ts
+new file mode 100644
+index 00000000..1d5c3b1d
+--- /dev/null
++++ b/packages/web2/src/api/sharedGet.ts
+@@ -0,0 +1,71 @@
++/* ══════════════════════════════════════════════════════════════════════════
++   ONE GET PER URL IN FLIGHT
++   packages/web2/src/api/sharedGet.ts
++
++   Measured on 0.1.2 in Chromium (tools/measure/surface-load.mjs, with the
++   patch that fixed /api/sessions applied): at boot `/api/ai-config` was read
++   three times in the same instant -- the store's model label (connect.tsx),
++   the composer's effort hydrate (settingsClient.read) and the model picker
++   (modelPicker.list) -- and `/api/sessions/<id>` twice, by the canvas doc
++   channel and the goal-run hook. Each reader wants a different field of the
++   same answer, so each keeps its own parsing; they now share the request.
++
++   Concurrent GETs of one URL share one fetch and each caller gets its own
++   clone of the Response. A GET after that fetch settles goes to the network
++   again, so a read after a save still sees the save. A caller's abort cancels
++   only that caller's wait, never the shared request. Keyed by the fetch in
++   use, so one test's mock never answers another test's call.
++   ══════════════════════════════════════════════════════════════════════════ */
++
++const inFlight = new WeakMap<typeof fetch, Map<string, Promise<Response>>>();
++
++function abortError(): DOMException {
++  return new DOMException('The operation was aborted.', 'AbortError');
++}
++
++function untilAborted<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
++  if (!signal) return work;
++  if (signal.aborted) return Promise.reject(abortError());
++  return new Promise<T>((resolve, reject) => {
++    const onAbort = () => reject(abortError());
++    signal.addEventListener('abort', onAbort, { once: true });
++    work.then(
++      (v) => {
++        signal.removeEventListener('abort', onAbort);
++        resolve(v);
++      },
++      (e: unknown) => {
++        signal.removeEventListener('abort', onAbort);
++        reject(e);
++      },
++    );
++  });
++}
++
++export async function sharedGet(
++  url: string,
++  signal?: AbortSignal,
++  fetchImpl: typeof fetch = fetch,
++): Promise<Response> {
++  if (signal?.aborted) throw abortError();
++  let byUrl = inFlight.get(fetchImpl);
++  if (byUrl === undefined) {
++    byUrl = new Map();
++    inFlight.set(fetchImpl, byUrl);
++  }
++  let shared = byUrl.get(url);
++  if (shared === undefined) {
++    const map = byUrl;
++    const started = fetchImpl(url, { headers: { accept: 'application/json' } });
++    shared = started;
++    map.set(url, started);
++    const forget = () => {
++      if (map.get(url) === started) map.delete(url);
++    };
++    started.then(forget, forget);
++  }
++  const res = await untilAborted(shared, signal);
++  /* Never read the shared original: every caller parses its own copy. A test
++     double without clone() is handed over as it is. */
++  return typeof res.clone === 'function' ? res.clone() : res;
++}
+diff --git a/packages/web2/src/canvas/docChannel.tsx b/packages/web2/src/canvas/docChannel.tsx
+index 5347cc27..65b94eb0 100644
+--- a/packages/web2/src/canvas/docChannel.tsx
++++ b/packages/web2/src/canvas/docChannel.tsx
+@@ -26,6 +26,7 @@
+    them.
+    ══════════════════════════════════════════════════════════════════════════ */
+ 
++import { sharedGet } from '../api/sharedGet';
+ import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
+ import type { ReactNode } from 'react';
+ import type { SeqDiagramV1 } from '@sequence/schema';
+@@ -106,10 +107,7 @@ export function DocProvider({ children }: { children: ReactNode }) {
+     const url = browseRepoPath
+       ? `/api/sessions/${encodeURIComponent(activeId)}?repoPath=${encodeURIComponent(browseRepoPath)}`
+       : `/api/sessions/${encodeURIComponent(activeId)}`;
+-    void fetch(url, {
+-      signal: controller.signal,
+-      headers: { accept: 'application/json' },
+-    })
++    void sharedGet(url, controller.signal)
+       .then((res) => (res.ok ? res.json() : null))
+       .then((body) => {
+         if (controller.signal.aborted || !body) return;
+diff --git a/packages/web2/src/chat/modelPicker.ts b/packages/web2/src/chat/modelPicker.ts
+index adbe9b92..1b24fdc2 100644
+--- a/packages/web2/src/chat/modelPicker.ts
++++ b/packages/web2/src/chat/modelPicker.ts
+@@ -30,6 +30,7 @@
+    guessed entry — the fabrication `EMPTY_MODEL`'s own comment exists to prevent.
+    ══════════════════════════════════════════════════════════════════════════ */
+ 
++import { sharedGet } from '../api/sharedGet';
+ import type { AiProfileView, GetAiConfigResponse } from '@sequence/api-types';
+ 
+ import { createSettingsClient } from '../settings/settingsClient';
+@@ -179,10 +180,7 @@ export function createModelPicker(fetchImpl: typeof fetch = fetch): ModelPickerP
+   return {
+     async list(signal) {
+       try {
+-        const res = await fetchImpl(AI_CONFIG_ROUTE, {
+-          signal,
+-          headers: { accept: 'application/json' },
+-        });
++        const res = await sharedGet(AI_CONFIG_ROUTE, signal, fetchImpl);
+         const body: unknown = await res.json();
+         if (!res.ok) {
+           const message =
+diff --git a/packages/web2/src/sessions/sessionsClient.ts b/packages/web2/src/sessions/sessionsClient.ts
+index 5f6ec81c..6cdee69d 100644
+--- a/packages/web2/src/sessions/sessionsClient.ts
++++ b/packages/web2/src/sessions/sessionsClient.ts
+@@ -12,6 +12,7 @@
+    the error handling wrong.
+    ══════════════════════════════════════════════════════════════════════════ */
+ 
++import { sharedGet } from '../api/sharedGet';
+ import type { ChatMemory } from './chatMemory';
+ import type {
+   DeleteSessionResponse,
+@@ -272,6 +273,18 @@ function createSessionsClientImpl(fetchImpl: typeof fetch): SessionsClient {
+     }
+   };
+ 
++  /* A plain GET of one session: concurrent readers share it (api/sharedGet.ts). */
++  const goShared = async <T>(url: string, signal?: AbortSignal): Promise<WireResult<T>> => {
++    try {
++      return await parse<T>(await sharedGet(url, signal, fetchImpl));
++    } catch (e) {
++      if ((e as Error).name === 'AbortError') {
++        return { outcome: 'error', status: 0, message: 'cancelled' };
++      }
++      return { outcome: 'error', status: 0, message: (e as Error).message };
++    }
++  };
++
+   return {
+     list: (signal) =>
+       go<GetSessionsResponse>('/api/sessions', { signal, headers: { accept: 'application/json' } }),
+@@ -294,14 +307,13 @@ function createSessionsClientImpl(fetchImpl: typeof fetch): SessionsClient {
+         body: JSON.stringify(activateBody(id)),
+       }),
+     readSession: (id, signal, repoPath) =>
+-      go<GetSessionResponse>(
++      goShared<GetSessionResponse>(
+         repoPath
+           ? `/api/sessions/${encodeURIComponent(id)}?repoPath=${encodeURIComponent(repoPath)}`
+           : `/api/sessions/${encodeURIComponent(id)}`,
+-        { signal },
++        signal,
+       ),
+-    readChat: (id, signal) =>
+-      go<GetSessionResponse>(`/api/sessions/${encodeURIComponent(id)}`, { signal }),
++    readChat: (id, signal) => goShared<GetSessionResponse>(`/api/sessions/${encodeURIComponent(id)}`, signal),
+     writeBoardSeqd: (id, boardSeqd) =>
+       go<PutSessionResponse>(`/api/sessions/${encodeURIComponent(id)}`, {
+         method: 'PUT',
+diff --git a/packages/web2/src/settings/settingsClient.ts b/packages/web2/src/settings/settingsClient.ts
+index 192ec10c..ace994c6 100644
+--- a/packages/web2/src/settings/settingsClient.ts
++++ b/packages/web2/src/settings/settingsClient.ts
+@@ -15,6 +15,7 @@
+    error handling wrong.
+    ══════════════════════════════════════════════════════════════════════════ */
+ 
++import { sharedGet } from '../api/sharedGet';
+ import type {
+   AiParams,
+   AiProfileView,
+@@ -233,9 +234,7 @@ export function createSettingsClient(fetchImpl: typeof fetch = fetch): SettingsC
+   return {
+     async read(signal) {
+       try {
+-        return await parse<GetAiConfigResponse>(
+-          await fetchImpl(AI_CONFIG_ROUTE, { signal, headers: { accept: 'application/json' } }),
+-        );
++        return await parse<GetAiConfigResponse>(await sharedGet(AI_CONFIG_ROUTE, signal, fetchImpl));
+       } catch (e) {
+         if ((e as Error).name === 'AbortError') {
+           return { outcome: 'error', status: 0, message: 'cancelled' };
+diff --git a/packages/web2/src/state/connect.tsx b/packages/web2/src/state/connect.tsx
+index 74554288..30f0c121 100644
+--- a/packages/web2/src/state/connect.tsx
++++ b/packages/web2/src/state/connect.tsx
+@@ -1,4 +1,5 @@
+ import { createStreamCoalescer } from './streamCoalescer';
++import { sharedGet } from '../api/sharedGet';
+ import { createContext, type ReactNode, useContext, useEffect, useRef, useSyncExternalStore } from 'react';
+ 
+ import { fromCanvasMemory, toCanvasMemory, worthPersistingCanvas } from '../sessions/canvasMemory';
+@@ -208,7 +209,7 @@ export function applyContextWindowFromConfig(
+ /** Re-fetch ai-config and refresh the composer's context window ceiling. */
+ export async function refreshContextWindow(store: Store, modelHint?: string): Promise<void> {
+   try {
+-    const res = await fetch('/api/ai-config');
++    const res = await sharedGet('/api/ai-config');
+     if (!res.ok) return;
+     const body = await res.json();
+     applyContextWindowFromConfig(store, body, modelHint);
+@@ -1138,7 +1139,7 @@ export function ConnectedChatColumn() {
+    */
+   useEffect(() => {
+     const controller = new AbortController();
+-    void fetch('/api/ai-config', { signal: controller.signal })
++    void sharedGet('/api/ai-config', controller.signal)
+       .then((res) => (res.ok ? res.json() : null))
+       .then((body) => {
+         if (controller.signal.aborted) return;
+-- 
+2.51.1.windows.1
+

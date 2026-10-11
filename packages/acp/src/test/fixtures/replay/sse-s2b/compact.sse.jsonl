@@ -1,0 +1,8 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:session","resumed":false,"threadId":"thread-compact-1"}
+{"type":"acp:model","model":"gpt-5-codex"}
+{"type":"acp:usage","usage":{"input":11000,"output":1000,"cacheRead":0,"cacheWrite":0,"thought":0,"total":12000}}
+{"type":"acp:update","update":{"sessionId":"thread-compact-1","update":{"sessionUpdate":"usage_update","used":12000,"size":258400,"_meta":{"codex":{"total":{"totalTokens":190000,"inputTokens":186000,"cachedInputTokens":0,"cacheWriteInputTokens":0,"outputTokens":4000,"reasoningOutputTokens":0},"last":{"totalTokens":12000,"inputTokens":11000,"cachedInputTokens":0,"cacheWriteInputTokens":0,"outputTokens":1000,"reasoningOutputTokens":0}}}}}}
+{"type":"acp:turn","state":"ended","stopReason":"end_turn"}
+{"type":"acp:result","stopReason":"end_turn","text":"","operation":"compact"}
+{"type":"acp:turn","state":"settled"}

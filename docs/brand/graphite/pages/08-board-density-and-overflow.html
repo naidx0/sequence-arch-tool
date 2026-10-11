@@ -1,0 +1,652 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SEQUENCE — GRAPHITE · SHEET 08
+     Density, overflow and the honest "+N more"
+
+     A fragment. Include _core.html once before it. No <style> block of its
+     own, no new CSS class, no raw hex, no invented number. Every literal on
+     this sheet is either a token name, a constant quoted from the shipped
+     source (INTERIOR_LIST_MAX, MAX_BOARD_FLOWS), a size derived in place from
+     tokens this sheet names, or a count a reader can derive from what is drawn.
+     Everything the engine computes is a .ph.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<section class="page wide" data-page-num="08" data-page-title="Density, overflow and the honest &#8220;+N more&#8221;">
+
+  <div class="pagehead">
+    <span class="num">Sheet 08 · The board</span>
+    <h1>Density, overflow and the honest &#8220;+N more&#8221;</h1>
+    <p class="lede">A real repository does not fit in the frame. That is the normal case on the
+    one surface whose whole job is to <em>be</em> the repository, not the exception &#8212; so the
+    board&#8217;s behaviour when it runs out of room is a design, not a fallback.</p>
+    <p class="lede">A list&#8217;s overflow is a scrollbar. A graph&#8217;s overflow is a hairball.
+    So the board makes room by dropping <b>detail</b>, never by dropping <b>nodes</b>: the only
+    place a count is capped is inside a list, and there the cap is a control you can press. A node
+    the analyzer found and the board silently declined to draw is a lie of omission.</p>
+  </div>
+
+  <!-- ═══ 08.1 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.1</span>
+      <h2>The budget is the frame, not a node count</h2>
+      <span class="tail">--arch-card-w · --arch-card-min-h · --board-field-pitch</span>
+    </div>
+
+    <p class="note">There is no maximum number of nodes. What is budgeted is detail: the frame
+    holds <span class="ph">&#8249;frame area&#8250;</span> divided by the footprint of the current
+    rung, and when that runs out the cards drop a rung &#8212; they do not disappear and their type
+    does not shrink. The count of drawn nodes is therefore never a decision the board makes; it is
+    a fact about the graph, and the census below states it rather than trimming it.</p>
+
+    <div class="boardfield" style="padding:var(--sp-16)">
+      <div style="display:flex;flex-wrap:wrap;gap:var(--sp-8);margin-bottom:var(--sp-16)">
+        <span class="silswatch n-module"></span><span class="silswatch n-agent"></span><span class="silswatch n-module"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-entry"></span><span class="silswatch n-service"></span><span class="silswatch n-store"></span><span class="silswatch n-topic"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span><span class="silswatch n-module"></span><span class="silswatch n-service"></span>
+        <span class="silswatch n-entry"></span><span class="silswatch n-service"></span><span class="silswatch n-agent"></span><span class="silswatch n-store"></span><span class="silswatch n-module"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span><span class="silswatch n-topic"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span>
+        <span class="silswatch n-module"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span><span class="silswatch n-service"></span><span class="silswatch n-store"></span><span class="silswatch n-entry"></span><span class="silswatch n-service"></span><span class="silswatch n-agent"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span><span class="silswatch n-topic"></span><span class="silswatch n-module"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-store"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span>
+        <span class="silswatch n-agent"></span><span class="silswatch n-service"></span><span class="silswatch n-topic"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-entry"></span><span class="silswatch n-module"></span><span class="silswatch n-service"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span><span class="silswatch n-module"></span><span class="silswatch n-store"></span><span class="silswatch n-service"></span>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-12)">
+        <div class="kindlegend">
+          <span class="grp">Kinds</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-service"/></svg>Service <span class="ph">&#8249;n&#8250;</span></span>
+          <span class="k"><svg class="i i-12"><use href="#ic-module"/></svg>Module <span class="ph">&#8249;n&#8250;</span></span>
+          <span class="k"><svg class="i i-12"><use href="#ic-database"/></svg>Datastore <span class="ph">&#8249;n&#8250;</span></span>
+          <span class="k"><svg class="i i-12"><use href="#ic-topic"/></svg>Topic <span class="ph">&#8249;n&#8250;</span></span>
+          <span class="k"><svg class="i i-12"><use href="#ic-agent"/></svg>Agent <span class="ph">&#8249;n&#8250;</span></span>
+          <span class="grpsep"></span>
+          <span class="grp">Position</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-entry"/></svg>Entry <span class="ph">&#8249;n&#8250;</span></span>
+        </div>
+        <span class="edgetag"><span class="ph">&#8249;traced edges&#8250;</span> traced</span>
+        <span class="edgetag"><span class="ph">&#8249;declared edges&#8250;</span> declared</span>
+        <div class="zoomcluster" style="margin-left:auto">
+          <button class="iconbtn" aria-label="Zoom out"><svg class="i i-14"><use href="#ic-minus"/></svg></button>
+          <span class="pct"><span class="ph">&#8249;zoom&#8250;</span></span>
+          <button class="iconbtn" aria-label="Zoom in"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+          <button class="btn ghost sm">Fit</button>
+        </div>
+      </div>
+    </div>
+    <p class="caption">Every mark on this field is one node, drawn at half a card &#8212; 80&#160;&#215;&#160;48,
+    which is <span class="inline-code">--arch-card-w</span> and
+    <span class="inline-code">--arch-card-min-h</span> halved, and the floor of rung&#160;5 in 08.2.
+    No label, no hue, and the six kinds still read at <em>this</em> size, which is the greyscale
+    invariant proved against what the renderer draws rather than against the token list. Zoom out
+    past it and the field stops claiming otherwise: the outline hands the kind to the icon, and
+    below the icon the marks are dots and the census beside them is the only thing still naming a
+    kind. That is a picture, not a failure.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="panel">
+        <h3>What the board never does</h3>
+        <p class="sub">Three prohibitions, and the second is the one that keeps the census honest.</p>
+        <div class="specimens column" style="width:100%">
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-x"/></svg><span class="name">Cap the node count and draw the rest as nothing</span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-x"/></svg><span class="name">Clip the far side of the graph out of the fit</span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-x"/></svg><span class="name">Shrink type below the ramp to buy room</span></div>
+        </div>
+      </div>
+      <dl class="specs">
+        <dt>Card width</dt><dd>--arch-card-w</dd>
+        <dt>Card height floor</dt><dd>--arch-card-min-h</dd>
+        <dt>Field pitch</dt><dd>--board-field-pitch</dd>
+        <dt>Field ink</dt><dd>--board-field-ink</dd>
+        <dt>Grids on the board</dt><dd>one</dd>
+        <dt>Node budget</dt><dd>none &#8212; detail is budgeted</dd>
+        <dt>Type floor</dt><dd>--t-10</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- ═══ 08.2 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.2</span>
+      <h2>Level of detail: rungs drop whole, type never shrinks</h2>
+      <span class="tail">expand row &#8594; subtitle &#8594; port &#8594; title &#8594; silhouette &#8594; icon</span>
+    </div>
+
+    <p class="note">Detail leaves in a fixed order, and each rung leaves <em>whole</em> &#8212; the
+    card never keeps a half of anything. The order is by how much of the answer the reader loses:
+    the expand row is an invitation, the subtitle is a sentence, the port is a fact, the title is
+    the name, and the kind goes last, because it is the only thing still readable at the zoom where
+    everything else has gone. But the kind does not ride one carrier all the way down. It is handed
+    over: the silhouette carries it to half a card and no further, the icon carries it below that,
+    and below the icon nothing does. A ladder that ended at &#8220;silhouette&#8221; would be
+    claiming a separation the renderer stops giving.</p>
+
+    <div class="boardfield" style="padding:var(--sp-16)">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--sp-12)">
+        <div class="specimen">
+          <div class="node n-service">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+            <div class="nd-s">Takes an order and charges it.</div>
+            <div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)">:<span class="ph">&#8249;port&#8250;</span></span><span class="right" style="display:flex;align-items:center;gap:var(--sp-4)"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;parts&#8250;</span> inside</span><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-chevright"/></svg></span></div>
+          </div>
+          <span class="lbl">rung 1 · full</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+            <div class="nd-s">Takes an order and charges it.</div>
+            <div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)">:<span class="ph">&#8249;port&#8250;</span></span></div>
+          </div>
+          <span class="lbl">rung 2 · &#8722; expand row</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+            <div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)">:<span class="ph">&#8249;port&#8250;</span></span></div>
+          </div>
+          <span class="lbl">rung 3 · &#8722; subtitle</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+          </div>
+          <span class="lbl">rung 4 · &#8722; port</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg></div>
+          </div>
+          <span class="lbl">rung 5 · &#8722; title</span>
+        </div>
+        <div class="specimen" style="padding-top:var(--sp-12)">
+          <div class="node n-service" style="width:var(--sp-24);min-height:var(--sp-24);padding:var(--sp-2);align-items:center;justify-content:center;gap:0">
+            <svg class="i i-14"><use href="#ic-service"/></svg>
+          </div>
+          <span class="lbl">rung 6 · &#8722; silhouette</span>
+        </div>
+        <div class="specimen" style="padding-top:var(--sp-12)">
+          <span style="display:inline-block;width:var(--sp-6);height:var(--sp-6);border-radius:var(--r-full);background:var(--ink-3)"></span>
+          <span class="lbl">rung 7 · &#8722; icon</span>
+        </div>
+      </div>
+    </div>
+    <p class="caption">Rung 1 is the only rung that reserves
+    <span class="inline-code">--arch-card-min-h</span>; every rung below it is content&#8209;tall,
+    because a card that has dropped its subtitle and still holds the room for it is a block box
+    with one line at the top and dead ground under it. Each rung is a strict subset of the one
+    before it &#8212; nothing is added back. Rungs 1 to 5 are one chassis: same silhouette, same
+    border treatment, same icon, only fewer lines. Rungs 6 and 7 are where a carrier itself is
+    given up, and the sheet has to say which one rather than draw one and imply the other
+    survived.</p>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Where each carrier stops</h3>
+      <p class="sub">A ladder is only honest if it states its own floor. The sizes below are read
+      off the substrate, not estimated: a card is <span class="inline-code">--arch-card-w</span> by
+      <span class="inline-code">--arch-card-min-h</span>, and
+      <span class="inline-code">.silswatch</span> is exactly half of each.</p>
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th>Rung</th><th>Down to</th><th>What carries the kind</th><th>Why it stops there</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="k">1&#8211;5</td>
+              <td class="v">half a card &#8212; 80&#160;&#215;&#160;48</td>
+              <td>silhouette <em>and</em> icon</td>
+              <td>the smallest box at which all six outlines still separate, which is why
+                  <span class="inline-code">.silswatch</span> is drawn at exactly that size</td>
+            </tr>
+            <tr>
+              <td class="k">6</td>
+              <td class="v">below half a card</td>
+              <td>the icon alone</td>
+              <td>at rung&#160;5 the folder tab <span class="inline-code">--sp-12</span> already
+                  paints 6px, the chamfer <span class="inline-code">--sp-16</span> paints 8px and
+                  the cylinder&#8217;s arcs <span class="inline-code">--r-14</span> paint 7px
+                  &#8212; at or under <span class="inline-code">--sp-8</span> at the floor itself.
+                  Past it they go under and stop reading as features</td>
+            </tr>
+            <tr>
+              <td class="k">7</td>
+              <td class="v">below a box that holds an <span class="inline-code">.i-14</span> glyph</td>
+              <td>nothing &#8212; the node is a dot</td>
+              <td>the mark says a node is here and stops there; the kind is then read off the
+                  census, never off the card</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">The invariant every rung is specified against: <b>every node kind must
+      remain distinguishable with all colour removed, at every size the silhouette is drawn, from
+      the radii that actually paint.</b> A declared radius is not a rendered radius &#8212; CSS
+      scales it by <span class="inline-code">f = min(side / sum of that side&#8217;s radii)</span>,
+      so any radius at or above half the box height paints as a stadium. The rung at which a shape
+      stops separating is a fact about the render, and the render is the only place to read it.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+          </div>
+        </div>
+        <p class="why">Drop a rung and keep the title on <span class="inline-code">--t-12</span>.
+        Fewer facts, each one still readable.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don&#8217;t</span>
+        <div class="stage pad-sm">
+          <div class="node n-service">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+          </div>
+        </div>
+        <p class="why">Drop the rung and keep its room. The floor was written for a card with a
+        subtitle, so a card without one becomes a block box holding one line over dead ground
+        &#8212; and the emptiest kinds, which are the ones that never had a subtitle, get the most
+        of it.</p>
+      </div>
+    </div>
+    <p class="caption">Two rules follow. <b>A rung is dropped by the level of detail, never by the
+    reader</b>, and the ladder is the same on every kind &#8212; two kinds that lost rungs in a
+    different order would be two chassis. <b>A dropped rung takes its room with it</b>: the height
+    floor governs the resting card, not a card that has already given something up. Type is never
+    the thing that gives; <span class="inline-code">--t-10</span> is the floor at every zoom,
+    because below it a label is not small text, it is no text.</p>
+  </div>
+
+  <!-- ═══ 08.3 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.3</span>
+      <h2>The honest &#8220;+N more&#8221;</h2>
+      <span class="tail">a control, not a caption</span>
+    </div>
+
+    <p class="note">Overflow only ever happens in a <em>list</em> &#8212; the interior rail, the
+    flow picker, a module&#8217;s member strip &#8212; because a list is the only place on this
+    product where trimming is cheaper than drawing. Wherever it happens, the disclosure says four
+    things and no fewer.</p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>What &#8220;+N more&#8221; means</h3>
+        <p class="sub">Four clauses. Drop one and the count stops being evidence.</p>
+        <div class="specimens column" style="width:100%">
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-check"/></svg><span class="name">N is a real count of real things, computed &#8212; so it is a placeholder, never a figure</span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-check"/></svg><span class="name">The N are the same kind of thing as the rows above &#8212; never a mixed remainder</span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-check"/></svg><span class="name">It is reachable: pressing it shows them, and there is no second cap behind it</span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-check"/></svg><span class="name">It sits as the last row of the list that owns them, inside that list&#8217;s own frame</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Where it sits</h3>
+        <p class="sub">Functions, in the index rail, on a component the scan found parts inside.</p>
+        <div style="border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);background:var(--surface-2);padding:var(--sp-4)">
+          <div class="kv"><span class="k">Functions</span><span class="v"><span class="ph">&#8249;name&#8250;</span></span><span class="t"><span class="prov p-measured">Measured</span></span></div>
+          <div class="kv"><span class="k"></span><span class="v"><span class="ph">&#8249;name&#8250;</span></span><span class="t"><span class="prov p-measured">Measured</span></span></div>
+          <div class="kv"><span class="k"></span><span class="v"><span class="ph">&#8249;name&#8250;</span></span><span class="t"><span class="prov p-measured">Measured</span></span></div>
+          <div class="kv"><span class="k"></span><span class="v"><span class="ph">&#8249;name&#8250;</span></span><span class="t"><span class="prov p-declared">Declared</span></span></div>
+          <div style="padding:var(--sp-4) var(--sp-8) 0">
+            <button class="btn ghost sm"><svg class="i i-12"><use href="#ic-chevdown"/></svg>+<span class="ph">&#8249;N&#8250;</span> more</button>
+          </div>
+        </div>
+        <p class="caption">Four rows are drawn, so &#8220;four shown&#8221; is a literal a reader can
+        derive. <span class="inline-code">N</span> is not, and never will be.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>The two caps that actually ship</h3>
+      <p class="sub">These are the only literal counts on this sheet. They are quoted from the
+      source, not estimated, and they are written down here so they stop being folklore.</p>
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th>Constant</th><th>Value</th><th>Governs</th><th>Overflow reads</th><th>Declared in</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="k">INTERIOR_LIST_MAX</td><td class="v">20</td>
+              <td>Rows of a component&#8217;s interior per section, and the relation work done for them</td>
+              <td class="v">+<span class="ph">&#8249;N&#8250;</span> more</td>
+              <td class="k">graph/interiorList.ts</td>
+            </tr>
+            <tr>
+              <td class="k">MAX_BOARD_FLOWS</td><td class="v">5</td>
+              <td>End-to-end flows offered in the picker, derived from edges only</td>
+              <td class="v">+<span class="ph">&#8249;N&#8250;</span> more</td>
+              <td class="k">product/board/boardFlows.ts</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">A cap on a <em>list</em> is a rendering decision and may be a literal. A
+      count taken from a repository is a measurement and is always a
+      <span class="inline-code">.ph</span>. The two are never written the same way.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <button class="btn ghost sm"><svg class="i i-12"><use href="#ic-chevdown"/></svg>+<span class="ph">&#8249;N&#8250;</span> more</button>
+        </div>
+        <p class="why">A control. It has a hover, a focus ring and a result.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don&#8217;t</span>
+        <div class="stage pad-sm">
+          <span style="font-size:var(--t-11);color:var(--ink-3)">and <span class="ph">&#8249;N&#8250;</span> more inside&#8230;</span>
+        </div>
+        <p class="why">A caption. It names things the reader has no way to reach, which is worse
+        than not counting them &#8212; it is a measurement offered and then withheld.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 08.4 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.4</span>
+      <h2>A container states what it is holding</h2>
+      <span class="tail">census by icon and count &#8212; never by hue, never by bar</span>
+    </div>
+
+    <p class="note">Containment is the board&#8217;s main answer to density: a module folds its
+    members away and takes their room. That is only allowed because the fold is <em>declared</em>.
+    A module carries its full member count in its header whether it is open or shut, and it
+    summarises what it holds as a kind census &#8212; one icon per kind and a number. A bar or a
+    tint would spend hue on a category, which is the defect this whole rebuild exists to remove.</p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>Open &#8212; the members that fit, and a control for the rest</h3>
+        <p class="sub">The wall is <span class="inline-code">--r-18</span> with a
+        <span class="inline-code">--nest-inset</span>, so members land on
+        <span class="inline-code">--r-14</span> by arithmetic.</p>
+        <div class="nest">
+          <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span> members</span></div>
+          <div class="nest-bd">
+            <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+            <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+            <div class="node n-agent" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div><div class="nd-t">dunning</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--sp-8);padding:var(--sp-4) var(--sp-6) 0">
+            <button class="btn ghost sm"><svg class="i i-12"><use href="#ic-chevdown"/></svg>+<span class="ph">&#8249;N&#8250;</span> more</button>
+            <span class="edgetag" style="margin-left:auto"><span class="ph">&#8249;traced edges&#8250;</span> inside</span>
+          </div>
+        </div>
+        <p class="caption">Three members are drawn, so &#8220;three shown&#8221; is derivable. The
+        header count and the <span class="inline-code">+N</span> are both measurements.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Shut &#8212; one card, and it still says what is in there</h3>
+        <p class="sub">A collapsed module is a node of kind Module. It does not become a different
+        object, and it does not go quiet.</p>
+        <div class="stage pad-sm" style="align-items:flex-start">
+          <div class="node n-module">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-module"/></svg><span class="nd-k">Module</span><span class="right"><svg class="i i-12"><use href="#ic-chevright"/></svg></span></div>
+            <div class="nd-t">billing</div>
+            <div class="nd-ft">
+              <span class="mono" style="display:flex;align-items:center;gap:var(--sp-6);font-size:var(--t-10);color:var(--ink-3)">
+                <span style="display:flex;align-items:center;gap:var(--sp-2)"><svg class="i i-12"><use href="#ic-service"/></svg><span class="ph">&#8249;n&#8250;</span></span>
+                <span style="display:flex;align-items:center;gap:var(--sp-2)"><svg class="i i-12"><use href="#ic-database"/></svg><span class="ph">&#8249;n&#8250;</span></span>
+                <span style="display:flex;align-items:center;gap:var(--sp-2)"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="ph">&#8249;n&#8250;</span></span>
+              </span>
+            </div>
+          </div>
+          <div class="kindlegend" style="align-self:flex-start">
+            <span class="k"><svg class="i i-12"><use href="#ic-service"/></svg>Service <span class="ph">&#8249;n&#8250;</span></span>
+            <span class="k"><svg class="i i-12"><use href="#ic-database"/></svg>Datastore <span class="ph">&#8249;n&#8250;</span></span>
+            <span class="k"><svg class="i i-12"><use href="#ic-agent"/></svg>Agent <span class="ph">&#8249;n&#8250;</span></span>
+          </div>
+        </div>
+        <p class="caption">The census in the card foot and the census in the popover are the same
+        grammar at two sizes: <span class="inline-code">.node .nd-ft</span> and
+        <span class="inline-code">.kindlegend</span>. One reading, one vocabulary.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">Three rules travel with containment. <b>A module
+    never hides a member silently</b> &#8212; if the count in the header and the count of cards in
+    the body disagree, the difference is on screen as a control. <b>Opening one is a camera move,
+    not a new surface</b>: the board fits to the module over
+    <span class="inline-code">--seq-dur-cam</span> and nothing else changes. <b>Edges that crossed
+    the wall survive the fold</b>, re-anchored to the module card, because an edge into a member is
+    still an edge into the module &#8212; folding a container may never delete evidence.</p>
+  </div>
+
+  <!-- ═══ 08.5 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.5</span>
+      <h2>Empty is three parts, and &#8220;you emptied it&#8221; is a different sentence</h2>
+      <span class="tail">.empty · dashed --edge-strong · --r-14</span>
+    </div>
+
+    <p class="note">Every empty state carries the same three parts: what is not here, why it is not
+    here, and one thing to do about it. The second part is the one that gets dropped, and dropping
+    it turns an empty board into a bug report the reader has to file themselves. An empty board and
+    a board the reader emptied are not the same claim &#8212; the second names the control that did
+    it and offers to undo it.</p>
+
+    <div class="grid g3">
+      <div class="empty">
+        <svg class="i i-20" style="color:var(--ink-3)"><use href="#ic-board"/></svg>
+        <div style="font-size:var(--t-13);color:var(--ink-1);font-weight:550">No graph yet</div>
+        <div style="font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3)">Nothing has been read.
+        Point at a folder and the board draws what is actually there.</div>
+        <button class="btn sm">Open a repository</button>
+      </div>
+
+      <div class="empty">
+        <svg class="i i-20" style="color:var(--ink-3)"><use href="#ic-filter"/></svg>
+        <div style="font-size:var(--t-13);color:var(--ink-1);font-weight:550">Nothing matches this filter</div>
+        <div style="font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3)">No node in this view is a
+        Datastore. The graph still holds <span class="ph">&#8249;total nodes&#8250;</span> nodes &#8212;
+        the filter is still on.</div>
+        <button class="btn sm"><svg class="i i-12"><use href="#ic-x"/></svg>Clear the filter</button>
+      </div>
+
+      <div class="empty">
+        <svg class="i i-20" style="color:var(--ink-3)"><use href="#ic-flow"/></svg>
+        <div style="font-size:var(--t-13);color:var(--ink-1);font-weight:550">No traced edge at this level</div>
+        <div style="font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3)"><span class="ph">&#8249;n&#8250;</span>
+        nodes survive at <span class="ph">&#8249;level&#8250;</span> and the analyzer traced no call
+        between them here. That is a fact about the level, not about the repository.</div>
+        <button class="btn sm"><svg class="i i-12"><use href="#ic-chevup"/></svg>Step up a level</button>
+      </div>
+    </div>
+    <p class="caption">Three parts in each, in the same order, and the icon is the kind of absence:
+    <span class="inline-code">ic-board</span> nothing read,
+    <span class="inline-code">ic-filter</span> you narrowed it,
+    <span class="inline-code">ic-flow</span> the connections are the thing missing. Not one of the
+    three is coloured; an empty state is not a verdict.</p>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>The state this replaces.</b> The board&#8217;s
+    scoped-empty is an opaque sheet pinned over the whole canvas carrying one paragraph &#8212; no
+    icon, no frame, no radius, and no statement of why. It reads as a crash. An empty state is a
+    <span class="inline-code">.empty</span> box sitting <em>on</em> the board, at the size of what it
+    is talking about, never a lid over it.</div>
+  </div>
+
+  <!-- ═══ 08.6 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.6</span>
+      <h2>A filter is a focus. A level is a removal.</h2>
+      <span class="tail">--board-dim-opacity · one sanctioned deletion</span>
+    </div>
+
+    <p class="note">Two controls on this board both look like filtering and are not the same act,
+    and conflating them is what produced the defect below. <b>The kind legend is a focus:</b>
+    matching nodes stay at full strength, the rest recede to
+    <span class="inline-code">--board-dim-opacity</span>, and <em>every edge stays drawn</em>.
+    Nothing is removed, nothing moves, and there is nothing to refit. <b>The depth level is a
+    removal:</b> it genuinely hides nodes, and it pays for that in 08.7.</p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="padding:var(--sp-12)">
+          <div style="display:flex;align-items:center;gap:0">
+            <div class="node n-entry dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+            <svg class="edgespec" viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M0 6h40"/></svg>
+            <div class="node n-service dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <svg class="edgespec" viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M0 6h40"/></svg>
+            <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+          </div>
+        </div>
+        <p class="why">Focused on Datastore. The store is at full strength, the rest recede, and both
+        traced edges are still drawn &#8212; so the reader can still see <em>what reaches it</em>,
+        which is the question a kind filter is usually asked in order to answer.</p>
+      </div>
+
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don&#8217;t</span>
+        <div class="boardfield" style="padding:var(--sp-12)">
+          <div style="display:flex;align-items:center;gap:0">
+            <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+          </div>
+        </div>
+        <p class="why">Filtered by deletion. No edge in a scanned graph runs datastore&#8594;datastore,
+        so keeping only one kind drops <em>every</em> edge and leaves a dust field that claims this
+        store is connected to nothing. The picture is not sparse; it is wrong.</p>
+      </div>
+    </div>
+
+    <p class="caption">The mechanism, so it is not rediscovered: an edge is drawn only when both of
+    its endpoints are visible. Any control that removes a whole kind therefore removes every edge
+    incident to it &#8212; and a kind filter removes <em>all but</em> one kind, which is every edge
+    on the board. A focus has no endpoints to lose.</p>
+
+    <div class="panel" style="margin-top:var(--sp-16)">
+      <h3>When a removal really does leave no edge</h3>
+      <p class="sub">The depth level is allowed to remove, so it is allowed to reach zero edges. It
+      is not allowed to be quiet about it.</p>
+      <div class="boardfield" style="padding:var(--sp-12);display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-12)">
+        <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+        <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div>
+        <div class="node n-agent" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div><div class="nd-t">refund worker</div></div>
+        <div style="display:flex;align-items:center;gap:var(--sp-8);margin-left:auto">
+          <span class="edgetag"><span class="ph">&#8249;hidden&#8250;</span> hidden by level</span>
+          <button class="btn sm"><svg class="i i-12"><use href="#ic-chevup"/></svg>Step up a level</button>
+        </div>
+      </div>
+      <p class="caption">Three cards are drawn and no line between them, so &#8220;no edge here&#8221;
+      is derivable from the picture. The count of what the level removed is not, and it rides in a
+      plaque on the board rather than in a corner of the chrome &#8212; the removal happened to the
+      graph, so it is reported on the graph.</p>
+    </div>
+  </div>
+
+  <!-- ═══ 08.7 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.7</span>
+      <h2>The binding rule: refit the camera</h2>
+      <span class="tail">survivors may never hold full&#8209;graph coordinates</span>
+    </div>
+
+    <p class="note"><b>Any control that changes the set of nodes on the board is an input to the
+    layout and an input to the camera.</b> If it is not in the layout&#8217;s dependencies, the
+    survivors keep positions computed for a graph they are no longer part of, and the camera then
+    fits the bounding box of a graph that is no longer there. The result is a handful of cards
+    stranded at the corners of a field of nothing, at a zoom chosen for the nodes that were
+    removed. Re-run the layout on the surviving set, then fit to it.</p>
+
+    <div class="grid g2">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don&#8217;t</span>
+        <div class="boardfield" style="height:var(--arch-card-min-h);padding:var(--sp-10);display:flex;align-items:center;justify-content:space-between">
+          <span class="silswatch n-service"></span>
+          <span class="silswatch n-store"></span>
+        </div>
+        <p class="why">The survivors kept their full&#8209;graph coordinates and the camera fitted
+        the old bounds. Two cards, two screens apart, at the zoom the whole repository needed.</p>
+      </div>
+
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="height:var(--arch-card-min-h);padding:var(--sp-10);display:flex;align-items:center;justify-content:center;gap:var(--sp-12)">
+          <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+          <svg class="edgespec" viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M0 6h40"/></svg>
+          <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+        </div>
+        <p class="why">Re-laid on the surviving set and refitted over
+        <span class="inline-code">--seq-dur-cam</span>. Same two nodes, same evidence, a picture
+        that answers the question that was asked.</p>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <dl class="specs">
+        <dt>Layout inputs</dt><dd>graph · level · kind focus · layout</dd>
+        <dt>On a set change</dt><dd>re-layout, then fit the survivors</dd>
+        <dt>Camera duration</dt><dd>--seq-dur-cam</dd>
+        <dt>Panel duration</dt><dd>--seq-dur-panel</dd>
+        <dt>Playback hop</dt><dd>--seq-dur-hop</dd>
+        <dt>Dimming</dt><dd>--board-dim-opacity</dd>
+        <dt>A focus moves</dt><dd>nothing</dd>
+        <dt>A removal moves</dt><dd>the camera, once</dd>
+      </dl>
+      <div class="panel">
+        <h3>The three failures this rule closes</h3>
+        <p class="sub">All three were measured on the shipped board, and all three are the same
+        omission wearing different clothes.</p>
+        <div class="specimens column" style="width:100%">
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-alert"/></svg><span class="name">The filter is not in the layout&#8217;s dependencies</span><span class="right"><span class="file">stale coordinates</span></span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-alert"/></svg><span class="name">The camera is not re-run on the surviving set</span><span class="right"><span class="file">stale zoom</span></span></div>
+          <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-alert"/></svg><span class="name">The removed count is computed and then discarded</span><span class="right"><span class="file">silent loss</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 08.8 ══════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">08.8</span>
+      <h2>Specify against hundreds, not against five</h2>
+      <span class="tail">fixture scale proves logic; a repository proves the result</span>
+    </div>
+
+    <p class="note">Every rule on this sheet passes trivially on a fixture of eleven nodes, and
+    passes without being <em>exercised</em> &#8212; which is the same as not passing. A graph that
+    fits in the frame never reaches a rung, never fills a module, never reaches a cap, never
+    strands a survivor and never leaves an edge behind. The specimens above are drawn small so they
+    can be read; the specification is written for the field in 08.1.</p>
+
+    <div class="panel">
+      <h3>What only appears at scale</h3>
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th>Behaviour</th><th>Invisible below</th><th>Read it on</th></tr></thead>
+          <tbody>
+            <tr><td class="k">The rung ladder</td><td>the zoom where the whole graph fits at rung 1</td><td>a repository, at fit</td></tr>
+            <tr><td class="k">Culling</td><td>a graph with no node outside the frame</td><td>a repository, panned</td></tr>
+            <tr><td class="k">The container census</td><td>a module with fewer members than fit</td><td>a repository&#8217;s largest module</td></tr>
+            <tr><td class="k">+<span class="ph">&#8249;N&#8250;</span> more</td><td class="v">INTERIOR_LIST_MAX rows in a section</td><td>a component with parts</td></tr>
+            <tr><td class="k">The refit</td><td>a filter whose survivors were already adjacent</td><td>a filter that keeps one kind</td></tr>
+            <tr><td class="k">Edge routing cost</td><td>a graph small enough that O(E&#215;N) is free</td><td>a repository, during a drag</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">The last row is not a visual rule and is on this sheet anyway: a board that
+      re-routes every edge against every node on every frame stops being a picture and becomes a
+      wait, and a wait is a density defect the reader experiences as the design being slow.</p>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>Handback.</b> This sheet added no class and
+    no token. It does put <span class="inline-code">.kindlegend</span> to a second use &#8212; as a
+    <em>census</em>, where each <span class="inline-code">.k</span> carries a count after the name
+    rather than only a name. The shape is identical and the meaning is adjacent (a legend says
+    which kinds exist; a census says how many), so it is recorded here rather than forked into a
+    second class. If a future sheet needs a legend and a census in the same frame, that is the
+    point at which one of them earns its own name.</div>
+  </div>
+
+</section>

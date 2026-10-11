@@ -1,0 +1,297 @@
+From 9f667ee24774f4ffebfb2f586e2ff0aaa8964507 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 14:59:25 -0400
+Subject: [PATCH 12/37] Cloud patch 0021-contrast: port.mjs placed 3 of 4
+ hunks; the ambiguous v3.css hunk hand-placed on .v3-session-more (the row's
+ actions button)
+
+quietInkContrast 26/26.
+---
+ packages/web2/src/canvas/board.css            |   6 +-
+ packages/web2/src/v3/V3Chat.tsx               |   2 +-
+ .../web2/src/v3/quietInkContrast.test.tsx     | 177 ++++++++++++++++++
+ packages/web2/src/v3/v3.css                   |  19 +-
+ 4 files changed, 197 insertions(+), 7 deletions(-)
+ create mode 100644 packages/web2/src/v3/quietInkContrast.test.tsx
+
+diff --git a/packages/web2/src/canvas/board.css b/packages/web2/src/canvas/board.css
+index 41165be3..fc1416bc 100644
+--- a/packages/web2/src/canvas/board.css
++++ b/packages/web2/src/canvas/board.css
+@@ -957,7 +957,11 @@
+    already uses, so no colour is spent and nothing new appears in greyscale. */
+ .board-scope .kindlegend .grp {
+   font-family: var(--font-mono); font-size: var(--t-10); letter-spacing: .07em;
+-  text-transform: uppercase; color: var(--ink-4); white-space: nowrap; align-self: center;
++  text-transform: uppercase; white-space: nowrap; align-self: center;
++  /* --ink-3 like the kinds beside it, not --ink-4: 10px text, and --ink-4
++     reads 3.6:1 on --surface-2 (axe color-contrast, 0021). The hairline
++     separator still sets the group label apart. */
++  color: var(--ink-3);
+ }
+ .board-scope .kindlegend .grpsep {
+   align-self: stretch; width: var(--w-hair); min-height: var(--sp-16);
+diff --git a/packages/web2/src/v3/V3Chat.tsx b/packages/web2/src/v3/V3Chat.tsx
+index 855c735b..e1d3725c 100644
+--- a/packages/web2/src/v3/V3Chat.tsx
++++ b/packages/web2/src/v3/V3Chat.tsx
+@@ -1869,7 +1869,7 @@ export function V3Chat({ goalRunClient }: V3ChatProps = {}) {
+ 
+   return (
+     <>
+-      <div className="v3-transcript chat-scope" aria-label="Chat transcript">
++      <div className="v3-transcript chat-scope" role="region" aria-label="Chat transcript">
+         {turns.map((turn) => (
+           <MessageBlock
+             key={turn.id}
+diff --git a/packages/web2/src/v3/quietInkContrast.test.tsx b/packages/web2/src/v3/quietInkContrast.test.tsx
+new file mode 100644
+index 00000000..69e19c48
+--- /dev/null
++++ b/packages/web2/src/v3/quietInkContrast.test.tsx
+@@ -0,0 +1,177 @@
++/* ══════════════════════════════════════════════════════════════════════════
++   0021 — THE QUIET LABELS CAN BE READ, AND THE TRANSCRIPT'S NAME IS ALLOWED
++   packages/web2/src/v3/quietInkContrast.test.tsx
++
++   The accessibility audit (axe, color-contrast, serious) measured six labels
++   below the 4.5:1 text floor in the shipped dark room, every one of them
++   `--ink-4` at 10-13px:
++     rail      .v3-rail-section-label, .v3-rail-pick-toggle   4.03:1 on --bg-base
++               .v3-session-more on the loaded row              2.8:1 on --state-selected
++     terminal  .terminal-pane-meta                             4.03:1 on --bg-base
++     browser   .browser-pane-meta                              4.16:1 on --bg-ground
++     board     .kindlegend .grp                                3.57:1 on --surface-2
++   The fix is one token per rule, as in boot/contrast.test.tsx: the resting
++   ink moves up one rung to --ink-3, and the "Chat actions" glyph on the
++   loaded row takes --ink-2, as the row's own time does.
++
++   HOW IT MEASURES. jsdom has no compositor, so this reads each rule's colour
++   token out of the stylesheet text (the last rule naming the selector wins,
++   as it would in the cascade for these single-class rules), resolves both
++   tokens through the real token sheet in each dark palette the app ships
++   (gold, white, blue), composites any translucent ground over the room, and
++   does the WCAG arithmetic. Dark only: light is deferred by owner ruling
++   (GRAPHITE-DECISIONS.md Decision 1), as boot/contrast.test.tsx explains.
++   Chromium evidence is the audit probe (axe on the real page).
++   ══════════════════════════════════════════════════════════════════════════ */
++
++import { readFileSync } from 'node:fs';
++import { resolve as resolvePath } from 'node:path';
++
++import { render } from '@testing-library/react';
++import { afterEach, describe, expect, it } from 'vitest';
++
++import { substituteVars } from '../../test/support/css';
++import { createStore, StoreProvider } from '../state';
++import { V3Chat } from './V3Chat';
++
++import '../tokens/graphite.css';
++
++const strip = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, '');
++const V3 = strip(readFileSync(resolvePath(__dirname, 'v3.css'), 'utf8'));
++const BOARD = strip(readFileSync(resolvePath(__dirname, '..', 'canvas', 'board.css'), 'utf8'));
++
++/** The colour token of the last flat rule whose selector list names `selector`. */
++function inkOf(css: string, selector: string): string {
++  let found: string | null = null;
++  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
++    const selectors = m[1].split(',').map((s) => s.trim().replace(/\s+/g, ' '));
++    if (!selectors.includes(selector)) continue;
++    const color = /(?:^|;|\s)color:\s*(var\(--[\w-]+\))/.exec(m[2]);
++    if (color) found = color[1];
++  }
++  expect(found, `${selector} declares a colour token`).not.toBeNull();
++  return found as string;
++}
++
++const root = document.documentElement;
++const PALETTES = ['gold', 'white', 'blue'] as const;
++type Palette = (typeof PALETTES)[number];
++
++function inPalette<T>(palette: Palette, fn: () => T): T {
++  root.setAttribute('data-theme', 'dark');
++  if (palette !== 'gold') root.setAttribute('data-accent', palette);
++  try {
++    return fn();
++  } finally {
++    root.removeAttribute('data-theme');
++    root.removeAttribute('data-accent');
++  }
++}
++
++const token = (value: string): string =>
++  substituteVars(value.startsWith('var(') ? value : `var(${value})`, root).trim();
++
++type Rgba = [number, number, number, number];
++function parse(value: string): Rgba {
++  const text = value.trim();
++  if (text.startsWith(String.fromCharCode(35)) && text.length === 7) {
++    return [1, 3, 5].map((i) => parseInt(text.slice(i, i + 2), 16)).concat(1) as Rgba;
++  }
++  const m = /^rgba?\(([^)]+)\)$/i.exec(text);
++  expect(m, `${value} is a colour`).not.toBeNull();
++  const parts = (m as RegExpExecArray)[1].split(',').map((p) => Number(p.trim()));
++  return [parts[0], parts[1], parts[2], parts.length > 3 ? parts[3] : 1];
++}
++
++/** Paint each layer over the one before it, starting from an opaque ground. */
++function composite(...layers: string[]): Rgba {
++  let [r, g, b] = parse(layers[0]);
++  for (const layer of layers.slice(1)) {
++    const [lr, lg, lb, a] = parse(layer);
++    r = lr * a + r * (1 - a);
++    g = lg * a + g * (1 - a);
++    b = lb * a + b * (1 - a);
++  }
++  return [r, g, b, 1];
++}
++
++function luminance([r, g, b]: Rgba): number {
++  const lin = (c: number): number => {
++    const s = c / 255;
++    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
++  };
++  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
++}
++function contrast(a: Rgba, b: Rgba): number {
++  const [x, y] = [luminance(a), luminance(b)];
++  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
++}
++
++/** Each audited label: its sheet, its selector, and the ground(s) it is read on,
++ *  bottom layer first. */
++const CASES: Array<{ what: string; css: string; selector: string; ground: string[] }> = [
++  { what: 'rail section label', css: V3, selector: '.v3-rail-section-label', ground: ['--bg-base'] },
++  { what: 'rail Select toggle', css: V3, selector: '.v3-rail-pick-toggle', ground: ['--bg-base'] },
++  { what: 'Chat actions, resting row', css: V3, selector: '.v3-session-more', ground: ['--bg-base'] },
++  { what: 'Chat actions, hovered row', css: V3, selector: '.v3-session-more', ground: ['--bg-base', '--glass-hover'] },
++  {
++    what: 'Chat actions, loaded row',
++    css: V3,
++    selector: '.v3-session.is-loaded .v3-session-more',
++    ground: ['--bg-base', '--state-selected'],
++  },
++  { what: 'terminal header meta', css: V3, selector: '.terminal-pane-meta', ground: ['--bg-base'] },
++  { what: 'browser header meta', css: V3, selector: '.browser-pane-meta', ground: ['--bg-ground'] },
++  { what: 'board legend group label', css: BOARD, selector: '.board-scope .kindlegend .grp', ground: ['--surface-2'] },
++];
++
++describe('the quiet labels clear the 4.5:1 text floor in every dark palette', () => {
++  for (const palette of PALETTES) {
++    for (const c of CASES) {
++      it(`${palette}: ${c.what}`, () => {
++        const ink = inkOf(c.css, c.selector);
++        inPalette(palette, () => {
++          const fg = parse(token(ink));
++          const bg = composite(...c.ground.map(token));
++          const ratio = contrast(fg, bg);
++          expect(ratio, `${c.selector} ${ink} on ${c.ground.join(' + ')} = ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
++        });
++      });
++    }
++  }
++
++  it('keeps the hover a step brighter than the resting label (the look is unchanged)', () => {
++    for (const [rest, hover] of [
++      ['.v3-rail-section-label', '.v3-rail-section-label:hover'],
++      ['.v3-rail-pick-toggle', '.v3-rail-pick-toggle:hover'],
++      ['.v3-session-more', '.v3-session-more:hover'],
++    ]) {
++      expect(inkOf(V3, rest), rest).not.toBe(inkOf(V3, hover));
++      inPalette('blue', () => {
++        const bg = parse(token('--bg-base'));
++        expect(contrast(parse(token(inkOf(V3, hover))), bg), hover).toBeGreaterThan(
++          contrast(parse(token(inkOf(V3, rest))), bg),
++        );
++      });
++    }
++  });
++});
++
++describe('the chat transcript names itself with a role that allows a name', () => {
++  afterEach(() => localStorage.clear());
++
++  it('is a named region, so its aria-label is not a prohibited attribute', () => {
++    const { container } = render(
++      <StoreProvider store={createStore({})}>
++        <div className="v3-chat-col">
++          <V3Chat />
++        </div>
++      </StoreProvider>,
++    );
++    const transcript = container.querySelector('.v3-transcript');
++    expect(transcript).not.toBeNull();
++    expect(transcript!.getAttribute('aria-label')).toBe('Chat transcript');
++    /* axe aria-prohibited-attr: a div with no role may not carry aria-label. */
++    expect(transcript!.getAttribute('role')).toBe('region');
++  });
++});
+diff --git a/packages/web2/src/v3/v3.css b/packages/web2/src/v3/v3.css
+index 5fab33d7..f88fce43 100644
+--- a/packages/web2/src/v3/v3.css
++++ b/packages/web2/src/v3/v3.css
+@@ -739,7 +739,9 @@
+   font-weight: var(--fw-head);
+   text-transform: uppercase;
+   letter-spacing: 0.06em;
+-  color: var(--ink-4);
++  /* --ink-3, not --ink-4: 11px text, and --ink-4 reads 4.0:1 on the rail
++     (axe color-contrast, 0021). Hover still steps up to --ink-2. */
++  color: var(--ink-3);
+   cursor: pointer;
+   text-align: left;
+ }
+@@ -973,7 +975,7 @@
+   font: inherit;
+   font-size: var(--t-11);
+   font-weight: var(--fw-label);
+-  color: var(--ink-4);
++  color: var(--ink-3); /* 11px text: --ink-4 is 4.0:1 here (0021) */
+   cursor: pointer;
+   transition: background 150ms ease, color 150ms ease;
+ }
+@@ -2700,7 +2702,7 @@
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   font-size: var(--t-11);
+-  color: var(--ink-4);
++  color: var(--ink-3); /* 11px text: --ink-4 is 4.0:1 on --bg-base (0021) */
+ }
+ 
+ .v3-focus-form {
+@@ -4057,7 +4059,7 @@
+   border: none;
+   border-radius: var(--r-4);
+   background: transparent;
+-  color: var(--ink-4);
++  color: var(--ink-3); /* --ink-4 is 3.6:1 on a hovered row (0021) */
+   cursor: pointer;
+ }
+ 
+@@ -4066,6 +4068,13 @@
+   color: var(--ink-2);
+ }
+ 
++/* On the loaded row the ground is --state-selected, where --ink-3 still falls
++   short (2.8:1 for --ink-4 under axe). It takes --ink-2, as the row's own time
++   does (.v3-session.is-loaded .v3-time). */
++.v3-session.is-loaded .v3-session-more {
++  color: var(--ink-2);
++}
++
+ .v3-session-menu-pop {
+   position: absolute;
+   right: 0;
+@@ -4501,7 +4510,7 @@
+ .browser-pane-status,
+ .v3-browser-status {
+   font-size: var(--t-11);
+-  color: var(--ink-4);
++  color: var(--ink-3); /* 11px text: --ink-4 is 4.2:1 on --bg-ground (0021) */
+   font-family: var(--font-mono);
+ }
+ 
+-- 
+2.51.1.windows.1
+

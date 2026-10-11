@@ -1,0 +1,286 @@
+/* THE WORKFLOW EDITOR (WorkflowEditor.tsx): a pop-up over the app. Graphite tokens only. */
+.wfe-scrim { z-index: 210; }
+/* Two sizes (0.1.6 C5). The start choice is a small pop-up that hangs from a fixed top edge (a whole pixel at any viewport height);
+   once a workflow is open the editor is the large working size, centred, and the change between them animates with the app's switch
+   duration and easing. */
+.wfe-scrim {
+  --wfe-h: min(86vh, calc(100vh - 48px));
+  align-items: flex-start;
+  padding-top: 12vh;
+  padding-top: round(down, 12vh, 1px);
+}
+.wfe-scrim[data-grow='true'] { transition: padding-top var(--s2-switch-dur) var(--s2-switch-ease); }
+.wfe-scrim[data-size='large'] {
+  padding-top: round(down, calc((100vh - var(--wfe-h)) / 2), 1px);
+}
+.wfe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  interpolate-size: allow-keywords;
+  /* small: a pop-up of 480px, as tall as its content up to 80% of the viewport */
+  width: min(480px, 100%);
+  height: auto;
+  max-height: min(80vh, 100%);
+  padding: var(--sp-16);
+  overflow: hidden;
+  border: var(--w-hair) solid var(--b-edge2);
+  border-radius: var(--r-18);
+  background: var(--b-s2);
+  box-shadow: var(--b-dlg);
+  color: var(--b-ink2);
+  font-size: var(--t-12-5);
+}
+/* only a workflow opened from the start choice grows; opening an existing one is large at once */
+.wfe[data-grow='true'] { transition: width var(--s2-switch-dur) var(--s2-switch-ease), height var(--s2-switch-dur) var(--s2-switch-ease), max-height var(--s2-switch-dur) var(--s2-switch-ease); }
+/* large: the 0.1.5 width (1280px), never wider than the scrim's content box (the viewport less its 24px gutters), 86% of the
+   viewport tall; the two columns scroll inside it and the header stays put */
+.wfe[data-size='large'] { width: min(1280px, 100%); height: var(--wfe-h); max-height: var(--wfe-h); }
+@media (prefers-reduced-motion: reduce) { .wfe[data-grow='true'], .wfe-scrim[data-grow='true'] { transition: none; } }
+.wfe-head { display: flex; align-items: center; gap: var(--sp-8); flex-wrap: wrap; }
+.wfe-title { margin: 0; font-size: var(--t-14); color: var(--b-ink1); }
+.wfe-spacer { flex: 1 1 auto; }
+.wfe-name,
+.wfe-f input,
+.wfe-f textarea {
+  min-width: 0;
+  padding: var(--sp-6) var(--sp-10);
+  border: var(--w-hair) solid var(--b-edge);
+  border-radius: var(--r-8);
+  background: var(--b-s1);
+  color: var(--b-ink1);
+  font: inherit;
+}
+.wfe-f textarea { resize: vertical; line-height: var(--lh-12); }
+.wfe-sel:focus-visible,
+.wfe-name:focus-visible,
+.wfe-f input:focus-visible,
+.wfe-f textarea:focus-visible,
+.wfe-btn:focus-visible,
+.wfe-chip:focus-visible,
+.wfe-mini:focus-visible,
+.wfe-pick:focus-visible,
+.wfe-x:focus-visible { outline: var(--w-rule) solid var(--b-acc); outline-offset: 2px; }
+/* The editor's drop-down: a trigger drawn like its text fields, and the app's own menu (.s2-menu / .s2-mi) under it. */
+.wfe-sel {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  width: 100%;
+  min-width: 0;
+  height: var(--control-h-lg);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--b-edge);
+  border-radius: var(--r-8);
+  background: var(--b-s1);
+  color: var(--b-ink1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.wfe-sel:hover { background: var(--b-glass); }
+.wfe-sel[aria-expanded='true'] { border-color: var(--b-edge2); background: var(--b-glass); }
+.wfe-sel > svg { flex: none; color: var(--b-ink3); }
+.wfe-sel-v { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfe-select { width: auto; max-width: 220px; }
+.wfe-menu.s2-menu {
+  position: fixed;
+  z-index: 230;
+  width: auto;
+  max-width: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform-origin: top left;
+  animation: wfe-menu-in var(--s2-switch-dur) var(--s2-switch-ease);
+}
+.wfe-menu.s2-menu[data-side='up'] { transform-origin: bottom left; --wfe-dy: 4px; }
+.wfe-menu.s2-menu[data-state='closing'] { animation: wfe-menu-out var(--s2-switch-dur) var(--s2-switch-ease) forwards; pointer-events: none; }
+.wfe-menu .wfe-mi { justify-content: space-between; gap: var(--sp-8); }
+.wfe-menu .wfe-mi-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfe-menu .wfe-mi > svg { flex: none; }
+.wfe-menu .wfe-mi:focus-visible { outline: var(--w-rule) solid var(--b-acc); outline-offset: -2px; }
+@keyframes wfe-menu-in { from { opacity: 0; transform: translateY(var(--wfe-dy, -4px)) scale(0.97); } }
+@keyframes wfe-menu-out { to { opacity: 0; transform: translateY(var(--wfe-dy, -4px)) scale(0.97); } }
+@media (prefers-reduced-motion: reduce) {
+  .wfe-menu.s2-menu, .wfe-menu.s2-menu[data-state='closing'] { animation: none; }
+  .wfe-sel { transition: none; }
+}
+
+.wfe-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--b-edge2);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--b-ink1);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wfe-btn:hover:not(:disabled) { background: var(--b-glass); }
+.wfe-btn:disabled { color: var(--b-ink3); cursor: default; }
+.wfe-btn-solid { border-color: transparent; background: var(--b-ink1); color: var(--b-s1); }
+.wfe-btn-solid:hover:not(:disabled) { background: var(--b-ink1); opacity: 0.9; }
+.wfe-x {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--row-h);
+  height: var(--row-h);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--b-ink3);
+  cursor: pointer;
+}
+.wfe-x:hover { background: var(--b-glass); color: var(--b-ink1); }
+.wfe-banner {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-10);
+  border-radius: var(--r-8);
+  background: var(--b-glass);
+  color: var(--b-ink1);
+}
+.wfe-banner-fail { color: var(--b-del); }
+.wfe-empty,
+.wfe-hint,
+.wfe-note { margin: 0; color: var(--b-ink3); }
+.wfe-start { display: flex; flex-direction: column; gap: var(--sp-8); padding: var(--sp-16) 0; }
+.wfe-start h4 { margin: 0; font-size: var(--t-14); color: var(--b-ink1); }
+.wfe-start p { margin: 0; max-width: 60ch; color: var(--b-ink2); }
+.wfe-start-row { display: flex; align-items: center; gap: var(--sp-8); flex-wrap: wrap; }
+.wfe-start-lead { color: var(--b-ink1); }
+.wfe-legacy .wfe-cap { flex: 1 0 100%; width: auto; }
+.wfe-legacy { display: flex; align-items: center; gap: var(--sp-8); flex-wrap: wrap; padding-top: var(--sp-8); }
+/* Where the first block goes in a workflow that has only Finish. */
+.wfe-first {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--row-h);
+  margin: var(--sp-2) 0;
+  padding: var(--sp-8) var(--sp-12);
+  border: var(--w-hair) dashed var(--b-edge2);
+  border-radius: var(--r-8);
+  color: var(--b-ink2);
+}
+.wfe-first[data-over='true'] { border-color: var(--b-acc); color: var(--b-ink1); }
+
+.wfe-body { display: flex; flex-direction: column; gap: var(--sp-12); flex: 1 1 auto; min-height: 0; }
+.wfe-pal { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; }
+/* fixed whole-pixel widths, every chip the same size; the glyph and its label are centred as one group in it (equal gap each side) */
+.wfe-cap { flex: none; width: 80px; color: var(--b-ink3); }
+.wfe-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  justify-content: center;
+  flex: none;
+  width: 120px;
+  height: var(--row-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--b-edge2);
+  border-radius: var(--r-full);
+  background: var(--b-s1);
+  color: var(--b-ink1);
+  font: inherit;
+  cursor: grab;
+}
+.wfe-chip:hover:not(:disabled) { background: var(--b-glass); }
+.wfe-chip:disabled { color: var(--b-ink3); cursor: default; }
+.wfe-chip svg, .wfe-ico svg { display: block; flex: none; }
+.wfe-chip-l { flex: none; text-align: center; white-space: nowrap; }
+/* the glyph and its label are centred as one group in the chip, so the gap is the same on both sides of it */
+
+.wfe-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-columns: round(down, calc((100% - var(--sp-16)) / 2), 1px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--sp-16); align-items: stretch; flex: 1 1 auto; min-height: 0; }
+/* the column scrolls; what is in it keeps its own height (the graph does not shrink into a second scrollbar) */
+.wfe-list > *, .wfe-side > * { flex-shrink: 0; }
+.wfe-list, .wfe-side { overflow-y: auto; overscroll-behavior: contain; padding: 3px; margin: -3px; }
+/* one column below 680px: the pair stacks and the body scrolls as one */
+@media (max-width: 679px) { .wfe-cols { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; overflow-y: auto; } .wfe-list, .wfe-side { overflow-y: visible; padding: 0; margin: 0; } .wfe-cols { overflow-x: hidden; padding: 3px; margin: -3px; } }
+.wfe-list { display: flex; flex-direction: column; gap: var(--sp-8); min-width: 0; }
+.wfe-name { font-size: var(--t-13); color: var(--b-ink1); }
+.wfe-blocks { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.wfe-row { position: relative; padding: var(--sp-2) 0; }
+.wfe-row[data-inside='true'] { margin-left: var(--sp-16); border-left: var(--w-hair) solid var(--b-edge2); padding-left: var(--sp-8); }
+.wfe-row[data-over='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--sp-2) * -1);
+  height: var(--w-rule);
+  border-radius: var(--r-full);
+  background: var(--b-acc);
+}
+.wfe-block {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--sp-40);
+  padding: var(--sp-4) var(--sp-8);
+  border: var(--w-hair) solid var(--b-edge);
+  border-radius: var(--r-10);
+  background: var(--b-s1);
+}
+.wfe-block[draggable='true'] { cursor: grab; }
+.wfe-block[data-selected='true'] { border-color: var(--b-ink3); background: var(--b-glass); }
+.wfe-grip { display: inline-grid; place-items: center; width: var(--sp-12); color: var(--b-ink3); flex: none; }
+.wfe-ico { display: inline-grid; place-items: center; width: var(--sp-24); height: var(--sp-24); border-radius: var(--r-8); background: var(--b-glass); color: var(--b-ink1); flex: none; }
+.wfe-row[data-kind='checker'] .wfe-ico { color: var(--b-ok); }
+.wfe-pick {
+  appearance: none;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--sp-8);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: inherit;
+}
+.wfe-bt { flex: 0 0 auto; min-width: 0; max-width: 100%; color: var(--b-ink1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfe-bs { flex: 0 100 auto; min-width: 0; color: var(--b-ink3); font-size: var(--t-11-5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfe-acts { display: inline-flex; gap: var(--sp-2); flex: none; }
+.wfe-mini {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-24);
+  height: var(--sp-24);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--b-ink3);
+  cursor: pointer;
+}
+.wfe-mini:hover:not(:disabled) { background: var(--b-glass); color: var(--b-ink1); }
+.wfe-mini:disabled { opacity: 0.35; cursor: default; }
+.wfe-note { padding-top: var(--sp-4); }
+
+.wfe-side { display: flex; flex-direction: column; gap: var(--sp-12); min-width: 0; }
+.wfe-insp { display: flex; flex-direction: column; gap: var(--sp-8); padding: var(--sp-12); border: var(--w-hair) solid var(--b-edge); border-radius: var(--r-10); }
+.wfe-f { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; flex: 1 1 auto; }
+.wfe-f > span { color: var(--b-ink3); font-size: var(--t-11-5); }
+/* paired fields: the first half is a whole number of pixels (the second takes the rest), so each trigger and its chevron sit on whole pixels whatever the text measures */
+.wfe-f2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-columns: round(down, calc((100% - var(--sp-8)) / 2), 1px) minmax(0, 1fr); gap: var(--sp-8); }
+.wfe-chk { display: inline-flex; align-items: center; gap: var(--sp-6); color: var(--b-ink2); }
+.wfe-graph.ac-scope { width: 100%; max-width: 100%; border: var(--w-hair) solid var(--b-edge); border-radius: var(--r-10); padding: var(--sp-8); background: transparent; overflow: visible; max-height: none; }
+@media (prefers-reduced-motion: reduce) { .wfe-scrim { animation: none; } }
+
+.wfe-why { flex: 0 1 auto; min-width: 0; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--b-ink3); font-size: var(--t-11-5); }

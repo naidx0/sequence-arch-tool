@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequence Code Map</title>
+<style>
+:root {
+  --bg: #0b0f14;
+  --panel: #121820;
+  --border: #1e2936;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #2dd4bf;
+  --signal: #fbbf24;
+  --steel: #38bdf8;
+  --dim: #334155;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+header { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+header h1 { font-size: 16px; font-weight: 600; }
+header .meta { font-size: 12px; color: var(--muted); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; }
+.toolbar input, .toolbar select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+.toolbar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+main { flex: 1; display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
+#canvas-wrap { position: relative; overflow: hidden; background: radial-gradient(circle at 30% 20%, #111827 0%, var(--bg) 60%); cursor: grab; }
+#canvas-wrap.dragging { cursor: grabbing; }
+#graph-svg { width: 100%; height: 100%; }
+aside { border-left: 1px solid var(--border); background: var(--panel); overflow-y: auto; padding: 14px; font-size: 13px; }
+aside h2 { font-size: 14px; margin-bottom: 8px; }
+aside h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 6px; }
+aside p, aside li { line-height: 1.5; color: var(--muted); }
+aside ul { padding-left: 18px; }
+aside .flows button { display: block; width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; cursor: pointer; font-size: 12px; }
+aside .flows button.active { border-color: var(--accent); background: #0f2927; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; border-top: 1px solid var(--border); background: var(--panel); font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.node circle { stroke-width: 2; cursor: pointer; transition: opacity .15s; }
+.node text { font-size: 11px; fill: var(--text); pointer-events: none; text-anchor: middle; }
+.node.dim { opacity: .25; }
+.node.highlight-up circle { stroke: var(--signal) !important; stroke-width: 3; }
+.node.highlight-down circle { stroke: var(--steel) !important; stroke-width: 3; }
+.node.selected circle { stroke: var(--accent) !important; stroke-width: 3; }
+.edge line { stroke: #475569; stroke-width: 1.5; transition: opacity .15s; }
+.edge.dim { opacity: .12; }
+.edge.flow line { stroke: var(--accent); stroke-width: 2.5; }
+.edge.unknown line { stroke-dasharray: 4 3; stroke: #64748b; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); margin-right: 4px; }
+code { font-size: 11px; background: var(--bg); padding: 1px 4px; border-radius: 3px; }
+.empty { color: var(--muted); font-style: italic; }
+.node-tooltip { position: fixed; z-index: 1000; max-width: 280px; padding: 10px 12px; background: #1a2332; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.45); pointer-events: none; font-size: 12px; line-height: 1.45; opacity: 0; transition: opacity .12s; }
+.node-tooltip.visible { opacity: 1; }
+.node-tooltip strong { display: block; color: var(--text); font-size: 13px; margin-bottom: 4px; }
+.node-tooltip .tip-meta { color: var(--muted); font-size: 11px; margin-top: 6px; }
+.node-tooltip .tip-meta code { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Sequence — Code Map</h1>
+    <div class="meta">Generated 2026-08-05T13:34:09Z · commit <code>d91c34d</code></div>
+  </div>
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Search modules…" aria-label="Search modules">
+    <select id="role-filter" aria-label="Filter by role">
+      <option value="">All roles</option>
+      <option value="cli">cli</option><option value="domain">domain</option><option value="export">export</option><option value="external">external</option><option value="external-service">external-service</option><option value="library">library</option><option value="protocol">protocol</option><option value="server">server</option><option value="state">state</option><option value="ui">ui</option>
+    </select>
+    <button id="reset-view" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;">Reset view</button>
+  </div>
+</header>
+<main>
+  <div id="canvas-wrap"><svg id="graph-svg"></svg></div>
+  <aside id="detail">
+    <h2>Select a module</h2>
+    <p class="empty">Click a node to see upstream/downstream links, tests, constraints, and evidence. Pick a flow below to highlight an end-to-end path.</p>
+    <h3>End-to-end flows</h3>
+    <div class="flows" id="flows"></div>
+  </aside>
+</main>
+<div class="legend" id="legend"></div>
+<script type="application/json" id="codemap-data">{"generated_at":"2026-08-05T13:40:19Z","generated_from_commit":"bb6deb96d50ddee65fcaf4e77d2077853a80fded","scope":{"repo":"Sequence","description":"pnpm monorepo primary modules (packages/*) and evidenced cross-package relationships","primary_node_limit":18,"excluded":["node_modules","dist","build","cache",".git","tmp-shots","coverage",".sequence","release","server-bundle"]},"nodes":[{"id":"schema-domain","label":"Shared Domain Model","path":"packages/schema","role":"domain","entrypoints":[{"path":"packages/schema/src/index.ts","symbol":"validateGraph"},{"path":"packages/schema/src/seqdiagram.ts","symbol":"validateSeqDiagram"},{"path":"packages/schema/src/index.ts","symbol":"ArchGraph"}],"tests":["packages/schema/dist/*.test.js"],"constraints":["Browser-safe types consumed by web and export; no Node-only imports in schema package"],"evidence":[{"path":"packages/schema/package.json","symbol":"name","note":"@sequence/schema"}],"summary":"Shared types and validators for architecture graphs and sequence diagrams used across the monorepo."},{"id":"export-projections","label":"Graph Export & Rendering","path":"packages/export","role":"export","entrypoints":[{"path":"packages/export/src/index.ts","symbol":"archGraphToSeqDiagram"},{"path":"packages/export/src/index.ts","symbol":"renderSeqDiagramSvg"},{"path":"packages/export/src/index.ts","symbol":"mermaidFlow"}],"tests":["packages/export/dist/*.test.js"],"constraints":["Depends only on @sequence/schema; zero Node imports (browser-safe)"],"evidence":[{"path":"packages/export/src/index.ts","symbol":"archGraphToSeqDiagram"}],"summary":"Converts ArchGraph to SeqDiagram, Mermaid, SVG, and other export formats in the browser."},{"id":"analyzer-scan","label":"Manifest & Code Scanner","path":"packages/analyzer/src/scan.ts","role":"server","entrypoints":[{"path":"packages/analyzer/src/scan.ts","symbol":"scanRepo"}],"tests":["packages/analyzer/dist/test/*.test.js"],"constraints":["Grouped under analyzer package; discovers Compose/K8s/Helm manifests and emits ArchGraph"],"evidence":[{"path":"packages/analyzer/src/scan.ts","symbol":"scanRepo"}],"summary":"Scans repos for Compose, Kubernetes, and Helm manifests to build an ArchGraph."},{"id":"analyzer-server","label":"Local Repo API Server","path":"packages/analyzer/src/server/repoServer.ts","role":"server","entrypoints":[{"path":"packages/analyzer/src/server/repoServer.ts","symbol":"createRepoServer"},{"path":"packages/analyzer/src/serve.ts","symbol":"serveApp"}],"tests":["packages/analyzer/dist/test/ask.test.js","packages/analyzer/dist/test/browse-root.test.js","packages/analyzer/dist/test/board-api.test.js"],"constraints":["Serves built web bundle and /api/* JSON from one origin; browse-root jailed to $HOME unless --repo"],"evidence":[{"path":"packages/analyzer/src/server/repoServer.ts","symbol":"/api/attach"},{"path":"packages/analyzer/src/server/repoServer.ts","symbol":"/api/ask"},{"path":"packages/analyzer/src/server/repoServer.ts","symbol":"/api/scan"}],"summary":"Local HTTP server exposing /api attach, scan, and ask endpoints alongside the web UI."},{"id":"analyzer-cli","label":"Sequence CLI","path":"packages/analyzer/src/cli.ts","role":"cli","entrypoints":[{"path":"packages/analyzer/src/cli.ts","symbol":"usage"},{"path":"packages/analyzer/package.json","symbol":"\"sequence\": \"dist/cli.js\""}],"tests":["packages/analyzer/dist/test/doctor.test.js","packages/analyzer/dist/test/diagram-cli.test.js"],"constraints":["Entry binary `sequence`; subcommands scan, serve, app, export, diagram, doctor"],"evidence":[{"path":"packages/analyzer/src/cli.ts","symbol":"scanRepo"},{"path":"packages/analyzer/src/cli.ts","symbol":"serveApp"}],"summary":"Command-line entry point with scan, serve, app, export, and doctor subcommands."},{"id":"acp-protocol","label":"Agent Client Protocol","path":"packages/acp","role":"protocol","entrypoints":[{"path":"packages/acp/src/index.ts","symbol":"AcpClient"}],"tests":["packages/acp/dist/test/*.test.js"],"constraints":["Wraps @agentclientprotocol/sdk for program/agent runs inside analyzer server"],"evidence":[{"path":"packages/analyzer/src/server/repoServer.ts","symbol":"AcpClient"}],"summary":"Agent Client Protocol wrapper for running agent programs inside the analyzer server."},{"id":"product-app","label":"Product Application Root","path":"packages/web/src/product/ProductApp.tsx","role":"ui","entrypoints":[{"path":"packages/web/src/product/ProductApp.tsx","symbol":"ProductApp"}],"tests":["packages/web/src/product/productShell.test.ts","packages/web/src/product/productLegacy.test.ts"],"constraints":["Default shell when legacy flag off; probes platform via fetchStatus on mount"],"evidence":[{"path":"packages/web/src/product/ProductApp.tsx","symbol":"fetchStatus"},{"path":"packages/web/src/product/ProductApp.tsx","symbol":"ProductShell"}],"summary":"Top-level React shell that probes the platform and wires chat plus the architecture board."},{"id":"product-shell","label":"Product Layout Shell","path":"packages/web/src/product/ProductShell.tsx","role":"ui","entrypoints":[{"path":"packages/web/src/product/ProductShell.tsx","symbol":"ProductShell"}],"tests":["packages/web/src/product/productShell.test.ts"],"constraints":["Chat left, architecture board right, topbar attach controls"],"evidence":[{"path":"packages/web/src/product/ProductShell.tsx","symbol":"ProductChat"},{"path":"packages/web/src/product/ProductShell.tsx","symbol":"ProductBoard"}],"summary":"Main layout with chat on the left, board on the right, and attach controls in the top bar."},{"id":"product-chat","label":"Chat & Ask Pipeline","path":"packages/web/src/product","role":"ui","entrypoints":[{"path":"packages/web/src/product/ProductChat.tsx","symbol":"ProductChat"},{"path":"packages/web/src/product/sendAsk.ts","symbol":"sendAsk"}],"tests":["packages/web/src/product/sendAsk.test.ts","packages/web/src/product/chatThreadModel.test.ts"],"constraints":["Fenced seqd in assistant replies commits to board; honest no-key path"],"evidence":[{"path":"packages/web/src/product/ProductChat.tsx","symbol":"sendAsk"},{"path":"packages/web/src/product/sendAsk.ts","symbol":"validateSeqDiagram"}],"summary":"Chat UI and ask pipeline; commits fenced seqd blocks from AI replies to the board."},{"id":"product-board","label":"Architecture Board Surface","path":"packages/web/src/product/board","role":"ui","entrypoints":[{"path":"packages/web/src/product/ProductBoard.tsx","symbol":"ProductBoard"},{"path":"packages/web/src/product/board/SeqDiagramBoard.tsx","symbol":"SeqDiagramBoard"},{"path":"packages/web/src/product/board/draw/DrawLayer.tsx","symbol":"DrawLayer"},{"path":"packages/web/src/product/board/draw/drawSync.ts","symbol":"recognizeDrawStroke"}],"tests":["packages/web/src/product/productBoard.test.ts","packages/web/src/product/board/boardViewModel.test.ts","packages/web/src/product/board/seqdDoc.test.ts"],"constraints":["Renders validated SeqDiagramV1 via SVG export; draw mode overlays ink strokes with accept/discard proposals"],"evidence":[{"path":"packages/web/src/product/board/SeqDiagramBoard.tsx","symbol":"renderSeqDiagramSvg"},{"path":"packages/web/src/product/board/SeqDiagramBoard.tsx","symbol":"DrawLayer"}],"summary":"Architecture board surface rendering SeqDiagram SVG with draw-mode ink overlays."},{"id":"product-store","label":"Product State Store","path":"packages/web/src/product/state/productStore.ts","role":"state","entrypoints":[{"path":"packages/web/src/product/state/productStore.ts","symbol":"useProductStore"}],"tests":["packages/web/src/product/attachFlow.test.ts"],"constraints":["Zustand store owns seqdDoc, attach state, board source metadata"],"evidence":[{"path":"packages/web/src/product/state/productStore.ts","symbol":"commitChatDiagram"},{"path":"packages/web/src/product/state/productStore.ts","symbol":"attachPath"}],"summary":"Zustand store holding attach state, board document, and draw proposals."},{"id":"attach-flow","label":"Repo Attach Pipeline","path":"packages/web/src/product/attachFlow.ts","role":"ui","entrypoints":[{"path":"packages/web/src/product/attachFlow.ts","symbol":"runAttachFlow"}],"tests":["packages/web/src/product/attachFlow.test.ts"],"constraints":["Maps server errors to calm copy; converts ArchGraph to SeqDiagram for board"],"evidence":[{"path":"packages/web/src/product/attachFlow.ts","symbol":"attachRepo"},{"path":"packages/web/src/product/attachFlow.ts","symbol":"seqdFromGraph"}],"summary":"Attaches a local repo, fetches the scanned graph, and converts it for the board."},{"id":"seqd-pipeline","label":"SeqDiagram Transform Layer","path":"packages/web/src/product/board","role":"ui","entrypoints":[{"path":"packages/web/src/product/board/seqdFromGraph.ts","symbol":"seqdFromGraph"},{"path":"packages/web/src/product/board/seqdDoc.ts","symbol":"openSeqDiagramFromRepo"},{"path":"packages/web/src/product/board/boardViewModel.ts","symbol":"hitTestNode"}],"tests":["packages/web/src/product/board/seqdFromGraph.test.ts","packages/web/src/product/board/seqdFromPlan.test.ts"],"constraints":["Grouped board helpers: graph→seqd, file I/O, viewport/hit-test view model"],"evidence":[{"path":"packages/web/src/product/board/seqdFromGraph.ts","symbol":"archGraphToSeqDiagram"}],"summary":"Transforms ArchGraph to SeqDiagram and handles board viewport, hit-testing, and file I/O."},{"id":"ink-recognition","label":"Freehand Stroke Recognition","path":"packages/ink","role":"library","entrypoints":[{"path":"packages/ink/src/index.ts","symbol":"recognizeStroke"}],"tests":["packages/ink/dist/*.test.js"],"constraints":["Stroke recognition library; wired into product board draw layer (DrawLayer, drawSync)","Legacy canvas InkOverlay still uses the same package"],"evidence":[{"path":"packages/web/src/product/board/draw/drawSync.ts","symbol":"recognizeStroke"},{"path":"packages/web/src/product/board/draw/DrawLayer.tsx","symbol":"strokePath"},{"path":"packages/web/src/canvas/InkOverlay.tsx","symbol":"recognizeStroke"}],"summary":"Recognizes freehand strokes into boxes and arrows for product board draw mode."},{"id":"gateway-service","label":"Optional Model Gateway","path":"packages/gateway","role":"external-service","entrypoints":[{"path":"packages/gateway/package.json","symbol":"\"sequence-gateway\": \"dist/server.js\""}],"tests":["packages/gateway/dist-test/test/*.test.js"],"constraints":["Standalone OpenRouter-backed gateway for free tier; optional, not required for local-first core"],"evidence":[{"path":"packages/gateway/package.json","symbol":"description"}],"summary":"Optional standalone OpenRouter gateway for free-tier model access."},{"id":"mcp-server","label":"MCP Tool Server","path":"packages/mcp","role":"server","entrypoints":[{"path":"packages/mcp/package.json","symbol":"\"sequence-mcp\": \"dist/server.js\""}],"tests":["packages/mcp/dist/test/*.test.js"],"constraints":["Exposes scan/export/diagram tools to external MCP clients"],"evidence":[{"path":"packages/mcp/src/diagramTools.ts","symbol":"scanRepo"},{"path":"packages/mcp/src/diagramTools.ts","symbol":"archGraphToSeqDiagram"}],"summary":"MCP server exposing scan, export, and diagram tools to external AI clients."},{"id":"desktop-shell","label":"Electron Desktop Wrapper","path":"packages/desktop","role":"cli","entrypoints":[{"path":"packages/desktop/package.json","symbol":"main"}],"tests":["packages/desktop/dist/test/*.test.js"],"constraints":["Optional Electron window around local app; requires Electron binary to build"],"evidence":[{"path":"packages/desktop/package.json","symbol":"description"}],"summary":"Optional Electron wrapper bundling the local analyzer app in a desktop window."},{"id":"react-ui-stack","label":"React UI Runtime Stack","path":"packages/web/package.json","role":"external","entrypoints":[],"tests":[],"constraints":["External deps: react, react-dom, zustand, @xyflow/react, mermaid, elkjs"],"evidence":[{"path":"packages/web/package.json","symbol":"\"react\": \"^18.3.1\""},{"path":"packages/web/package.json","symbol":"\"zustand\": \"^5.0.0\""}],"summary":"External React, Zustand, XYFlow, Mermaid, and ELK dependencies for the web UI."}],"edges":[{"from":"export-projections","to":"schema-domain","type":"imports","evidence":[{"path":"packages/export/package.json","symbol":"\"@sequence/schema\": \"workspace:*\""},{"path":"packages/export/src/seqdiagram.ts","symbol":"SeqDiagramV1"}]},{"from":"analyzer-scan","to":"schema-domain","type":"imports","evidence":[{"path":"packages/analyzer/src/scan.ts","symbol":"validateGraph"},{"path":"packages/analyzer/src/scan.ts","symbol":"ArchGraph"}]},{"from":"analyzer-server","to":"schema-domain","type":"imports","evidence":[{"path":"packages/analyzer/src/server/repoServer.ts","symbol":"validateGraph"}]},{"from":"analyzer-server","to":"acp-protocol","type":"imports","evidence":[{"path":"packages/analyzer/src/server/repoServer.ts","symbol":"AcpClient"}]},{"from":"analyzer-cli","to":"analyzer-scan","type":"calls","evidence":[{"path":"packages/analyzer/src/cli.ts","symbol":"scanRepo"}]},{"from":"analyzer-cli","to":"export-projections","type":"imports","evidence":[{"path":"packages/analyzer/src/cli.ts","symbol":"mermaidSequence"},{"path":"packages/analyzer/src/cli.ts","symbol":"dependencyMatrix"}]},{"from":"analyzer-cli","to":"analyzer-server","type":"calls","evidence":[{"path":"packages/analyzer/src/cli.ts","symbol":"serveApp"}]},{"from":"product-app","to":"product-shell","type":"imports","evidence":[{"path":"packages/web/src/product/ProductApp.tsx","symbol":"ProductShell"}]},{"from":"product-app","to":"product-store","type":"imports","evidence":[{"path":"packages/web/src/product/ProductApp.tsx","symbol":"hydrateFromAttachedRepo"}]},{"from":"product-app","to":"schema-domain","type":"imports","evidence":[{"path":"packages/web/src/product/ProductApp.tsx","symbol":"ArchGraph"}]},{"from":"product-shell","to":"product-chat","type":"imports","evidence":[{"path":"packages/web/src/product/ProductShell.tsx","symbol":"ProductChat"}]},{"from":"product-shell","to":"product-board","type":"imports","evidence":[{"path":"packages/web/src/product/ProductShell.tsx","symbol":"ProductBoard"}]},{"from":"product-chat","to":"product-store","type":"calls","evidence":[{"path":"packages/web/src/product/sendAsk.ts","symbol":"commitChatDiagram"}]},{"from":"product-chat","to":"schema-domain","type":"imports","evidence":[{"path":"packages/web/src/product/sendAsk.ts","symbol":"validateSeqDiagram"}]},{"from":"product-chat","to":"analyzer-server","type":"calls","evidence":[{"path":"packages/web/src/ai/aiClient.ts","symbol":"fetch('/api/ask'"}]},{"from":"product-board","to":"product-store","type":"reads","evidence":[{"path":"packages/web/src/product/ProductBoard.tsx","symbol":"useProductStore"}]},{"from":"product-board","to":"seqd-pipeline","type":"imports","evidence":[{"path":"packages/web/src/product/ProductBoard.tsx","symbol":"SeqDiagramBoard"}]},{"from":"seqd-pipeline","to":"export-projections","type":"imports","evidence":[{"path":"packages/web/src/product/board/seqdFromGraph.ts","symbol":"archGraphToSeqDiagram"},{"path":"packages/web/src/product/board/SeqDiagramBoard.tsx","symbol":"renderSeqDiagramSvg"}]},{"from":"seqd-pipeline","to":"schema-domain","type":"imports","evidence":[{"path":"packages/web/src/product/board/seqdDoc.ts","symbol":"validateSeqDiagram"}]},{"from":"product-store","to":"attach-flow","type":"imports","evidence":[{"path":"packages/web/src/product/state/productStore.ts","symbol":"runAttachFlow"}]},{"from":"product-store","to":"seqd-pipeline","type":"imports","evidence":[{"path":"packages/web/src/product/state/productStore.ts","symbol":"seqdFromGraph"}]},{"from":"attach-flow","to":"analyzer-server","type":"calls","evidence":[{"path":"packages/web/src/ai/aiClient.ts","symbol":"fetch('/api/attach'"},{"path":"packages/web/src/product/attachFlow.ts","symbol":"fetchGraph"}]},{"from":"attach-flow","to":"seqd-pipeline","type":"calls","evidence":[{"path":"packages/web/src/product/attachFlow.ts","symbol":"seqdFromGraph"}]},{"from":"attach-flow","to":"schema-domain","type":"imports","evidence":[{"path":"packages/web/src/product/attachFlow.ts","symbol":"ArchGraph"}]},{"from":"mcp-server","to":"analyzer-scan","type":"calls","evidence":[{"path":"packages/mcp/src/diagramTools.ts","symbol":"scanRepo"}]},{"from":"mcp-server","to":"export-projections","type":"imports","evidence":[{"path":"packages/mcp/src/diagramTools.ts","symbol":"archGraphToSeqDiagram"}]},{"from":"mcp-server","to":"schema-domain","type":"imports","evidence":[{"path":"packages/mcp/src/diagramTools.ts","symbol":"validateSeqDiagram"}]},{"from":"product-app","to":"analyzer-server","type":"calls","evidence":[{"path":"packages/web/src/ai/aiClient.ts","symbol":"fetchStatus"}]},{"from":"product-app","to":"react-ui-stack","type":"imports","evidence":[{"path":"packages/web/src/product/ProductApp.tsx","symbol":"useEffect"}]},{"from":"product-store","to":"react-ui-stack","type":"imports","evidence":[{"path":"packages/web/src/product/state/productStore.ts","symbol":"create"}]},{"from":"analyzer-server","to":"export-projections","type":"unknown","note":"No direct import found in repoServer.ts; export used via diagramCli and static routes — relationship unverified","evidence":[]},{"from":"gateway-service","to":"analyzer-server","type":"unknown","note":"Gateway is optional standalone service; runtime wiring to analyzer not verified in scanned paths","evidence":[]},{"from":"desktop-shell","to":"analyzer-server","type":"unknown","note":"Desktop bundles analyzer server at build time; exact launch wiring not verified in this scan scope","evidence":[]},{"from":"ink-recognition","to":"product-board","type":"imports","evidence":[{"path":"packages/web/src/product/board/draw/drawSync.ts","symbol":"recognizeStroke"},{"path":"packages/web/src/product/board/draw/DrawLayer.tsx","symbol":"@sequence/ink"},{"path":"packages/web/src/product/board/SeqDiagramBoard.tsx","symbol":"DrawLayer"}]}],"flows":[{"id":"cold-start","label":"Cold start → platform probe → shell","trigger":"User opens ProductApp (default shell)","steps":["product-app","analyzer-server","product-store","product-shell"],"outcome":"Platform detected or static archgraph.json loaded; chat + empty board render"},{"id":"attach-scan-board","label":"Attach repo → scan → board","trigger":"User picks a folder in Attach menu","steps":["attach-flow","analyzer-server","analyzer-scan","seqd-pipeline","product-store","product-board"],"outcome":"ArchGraph scanned, converted to SeqDiagramV1, rendered on board"},{"id":"chat-diagram-commit","label":"Chat ask → fenced seqd → board commit","trigger":"User sends a chat message with AI key configured","steps":["product-chat","analyzer-server","product-store","seqd-pipeline","product-board"],"outcome":"Valid seqd fence in assistant reply replaces board doc; invalid fence shows notice"},{"id":"cli-scan-export","label":"CLI scan → export projection","trigger":"Developer runs `sequence scan` then `sequence export`","steps":["analyzer-cli","analyzer-scan","schema-domain","export-projections"],"outcome":"ArchGraph written to disk and exported as mermaid/matrix/markdown/seqd"},{"id":"mcp-diagram-tool","label":"MCP client → scan → diagram SVG","trigger":"External MCP client invokes diagram tool","steps":["mcp-server","analyzer-scan","export-projections","schema-domain"],"outcome":"Repo scanned and SeqDiagram SVG returned to MCP client"}]}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('codemap-data').textContent);
+const ROLE_COLORS = {"domain":"#a78bfa","export":"#34d399","server":"#38bdf8","ui":"#f472b6","state":"#fbbf24","cli":"#94a3b8","protocol":"#fb923c","library":"#c084fc","external-service":"#64748b","external":"#475569"};
+const POSITIONS = {"schema-domain":{"x":120,"y":280},"export-projections":{"x":120,"y":420},"analyzer-scan":{"x":380,"y":200},"analyzer-server":{"x":380,"y":340},"analyzer-cli":{"x":380,"y":480},"acp-protocol":{"x":380,"y":620},"product-app":{"x":720,"y":120},"product-shell":{"x":720,"y":240},"product-chat":{"x":580,"y":380},"product-board":{"x":860,"y":380},"product-store":{"x":720,"y":500},"attach-flow":{"x":580,"y":620},"seqd-pipeline":{"x":860,"y":620},"ink-recognition":{"x":1020,"y":620},"gateway-service":{"x":120,"y":80},"mcp-server":{"x":120,"y":560},"desktop-shell":{"x":380,"y":80},"react-ui-stack":{"x":1020,"y":120}};
+
+const svg = document.getElementById('graph-svg');
+const wrap = document.getElementById('canvas-wrap');
+const detail = document.getElementById('detail');
+const flowsEl = document.getElementById('flows');
+const legendEl = document.getElementById('legend');
+
+let selectedId = null;
+let activeFlow = null;
+let transform = { x: 40, y: 20, scale: 1 };
+let dragging = false;
+let dragStart = null;
+
+const nodeById = Object.fromEntries(DATA.nodes.map(n => [n.id, n]));
+const tooltipEl = document.getElementById('node-tooltip');
+
+function showTooltip(n, ev) {
+  tooltipEl.innerHTML = '<strong>' + n.label + '</strong>' + (n.summary || '') + '<div class="tip-meta"><span class="badge">' + n.role + '</span> <code>' + n.path + '</code></div>';
+  tooltipEl.classList.add('visible');
+  tooltipEl.setAttribute('aria-hidden', 'false');
+  positionTooltip(ev);
+}
+
+function positionTooltip(ev) {
+  const pad = 12;
+  let left = ev.clientX + pad;
+  let top = ev.clientY + pad;
+  const rect = tooltipEl.getBoundingClientRect();
+  if (left + rect.width > window.innerWidth - 8) left = ev.clientX - rect.width - pad;
+  if (top + rect.height > window.innerHeight - 8) top = ev.clientY - rect.height - pad;
+  tooltipEl.style.left = left + 'px';
+  tooltipEl.style.top = top + 'px';
+}
+
+function hideTooltip() {
+  tooltipEl.classList.remove('visible');
+  tooltipEl.setAttribute('aria-hidden', 'true');
+}
+
+const edges = DATA.edges.filter(e => nodeById[e.from] && nodeById[e.to]);
+
+function upstream(id) { return edges.filter(e => e.to === id && e.type !== 'unknown').map(e => e.from); }
+function downstream(id) { return edges.filter(e => e.from === id && e.type !== 'unknown').map(e => e.to); }
+
+Object.entries(ROLE_COLORS).forEach(([role, color]) => {
+  const s = document.createElement('span');
+  s.innerHTML = '<i style="background:' + color + '"></i> ' + role;
+  legendEl.appendChild(s);
+});
+
+DATA.flows.forEach(flow => {
+  const btn = document.createElement('button');
+  btn.textContent = flow.label;
+  btn.title = flow.trigger;
+  btn.onclick = () => {
+    activeFlow = activeFlow === flow.id ? null : flow.id;
+    document.querySelectorAll('.flows button').forEach(b => b.classList.remove('active'));
+    if (activeFlow) { btn.classList.add('active'); selectedId = null; }
+    render();
+  };
+  flowsEl.appendChild(btn);
+});
+
+function renderDetail(id) {
+  const n = nodeById[id];
+  if (!n) return;
+  const up = upstream(id);
+  const down = downstream(id);
+  const relatedFlows = DATA.flows.filter(f => f.steps.includes(id));
+  detail.innerHTML = '<h2>' + n.label + '</h2>'
+    + '<p><span class="badge">' + n.role + '</span><code>' + n.path + '</code></p>'
+    + '<h3>Upstream</h3><ul>' + (up.length ? up.map(i => '<li>' + nodeById[i].label + '</li>').join('') : '<li class="empty">none evidenced</li>') + '</ul>'
+    + '<h3>Downstream</h3><ul>' + (down.length ? down.map(i => '<li>' + nodeById[i].label + '</li>').join('') : '<li class="empty">none evidenced</li>') + '</ul>'
+    + '<h3>Entrypoints</h3><ul>' + (n.entrypoints.length ? n.entrypoints.map(e => '<li><code>' + e.symbol + '</code> — ' + e.path + '</li>').join('') : '<li class="empty">none listed</li>') + '</ul>'
+    + '<h3>Tests</h3><ul>' + (n.tests.length ? n.tests.map(t => '<li><code>' + t + '</code></li>').join('') : '<li class="empty">none listed</li>') + '</ul>'
+    + '<h3>Constraints</h3><ul>' + n.constraints.map(c => '<li>' + c + '</li>').join('') + '</ul>'
+    + '<h3>Evidence</h3><ul>' + n.evidence.map(e => '<li><code>' + e.symbol + '</code> @ ' + e.path + '</li>').join('') + '</ul>'
+    + '<h3>Related flows</h3><ul>' + (relatedFlows.length ? relatedFlows.map(f => '<li>' + f.label + '</li>').join('') : '<li class="empty">none</li>') + '</ul>'
+    + '<h3>End-to-end flows</h3><div class="flows" id="flows-inner"></div>';
+  const inner = detail.querySelector('#flows-inner');
+  DATA.flows.forEach(flow => {
+    const btn = document.createElement('button');
+    btn.textContent = flow.label;
+    if (activeFlow === flow.id) btn.classList.add('active');
+    btn.onclick = () => { activeFlow = activeFlow === flow.id ? null : flow.id; render(); renderDetail(id); };
+    inner.appendChild(btn);
+  });
+}
+
+function getFilter() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const role = document.getElementById('role-filter').value;
+  return { q, role };
+}
+
+function nodeVisible(n, f) {
+  if (f.role && n.role !== f.role) return false;
+  if (!f.q) return true;
+  return n.label.toLowerCase().includes(f.q) || n.id.includes(f.q) || n.path.toLowerCase().includes(f.q);
+}
+
+function render() {
+  const f = getFilter();
+  const flowSteps = activeFlow ? new Set(DATA.flows.find(x => x.id === activeFlow).steps) : null;
+  const upSet = selectedId ? new Set(upstream(selectedId)) : new Set();
+  const downSet = selectedId ? new Set(downstream(selectedId)) : new Set();
+  const hasFocus = selectedId || activeFlow;
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('transform', 'translate(' + transform.x + ',' + transform.y + ') scale(' + transform.scale + ')');
+  svg.appendChild(g);
+
+  const edgeG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  edgeG.setAttribute('class', 'edges');
+  g.appendChild(edgeG);
+
+  edges.forEach(e => {
+    const a = POSITIONS[e.from], b = POSITIONS[e.to];
+    if (!a || !b) return;
+    const visA = nodeVisible(nodeById[e.from], f);
+    const visB = nodeVisible(nodeById[e.to], f);
+    if (!visA || !visB) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+    const cls = ['edge'];
+    if (e.type === 'unknown') cls.push('unknown');
+    if (flowSteps && flowSteps.has(e.from) && flowSteps.has(e.to)) {
+      const steps = DATA.flows.find(x => x.id === activeFlow).steps;
+      const fi = steps.indexOf(e.from), ti = steps.indexOf(e.to);
+      if (fi >= 0 && ti >= 0 && ti === fi + 1) cls.push('flow');
+    }
+    if (hasFocus && selectedId) {
+      const rel = e.from === selectedId || e.to === selectedId || upSet.has(e.from) || downSet.has(e.to);
+      if (!rel && e.type !== 'unknown') cls.push('dim');
+    }
+    if (hasFocus && activeFlow && !cls.includes('flow')) cls.push('dim');
+    line.setAttribute('class', cls.join(' '));
+    edgeG.appendChild(line);
+  });
+
+  DATA.nodes.forEach(n => {
+    if (!nodeVisible(n, f)) return;
+    const pos = POSITIONS[n.id];
+    if (!pos) return;
+    const ng = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    ng.setAttribute('class', 'node');
+    ng.setAttribute('data-id', n.id);
+    if (hasFocus) {
+      if (selectedId === n.id) ng.classList.add('selected');
+      else if (upSet.has(n.id)) ng.classList.add('highlight-up');
+      else if (downSet.has(n.id)) ng.classList.add('highlight-down');
+      else if (flowSteps && flowSteps.has(n.id)) ng.classList.add('selected');
+      else ng.classList.add('dim');
+    }
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', pos.x); circle.setAttribute('cy', pos.y); circle.setAttribute('r', 28);
+    circle.setAttribute('fill', ROLE_COLORS[n.role] || '#64748b');
+    circle.setAttribute('stroke', '#1e2936');
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', pos.x); label.setAttribute('y', pos.y + 44);
+    label.textContent = n.label.length > 22 ? n.label.slice(0, 20) + '…' : n.label;
+    ng.appendChild(circle);
+    ng.appendChild(label);
+    ng.onmouseenter = (ev) => showTooltip(n, ev);
+    ng.onmousemove = (ev) => { if (tooltipEl.classList.contains('visible')) positionTooltip(ev); };
+    ng.onmouseleave = () => hideTooltip();
+    ng.onclick = (ev) => { ev.stopPropagation(); selectedId = n.id; activeFlow = null; document.querySelectorAll('.flows button').forEach(b => b.classList.remove('active')); render(); renderDetail(n.id); };
+    let dragNode = false, ndStart = null;
+    circle.onmousedown = (ev) => { ev.stopPropagation(); dragNode = true; ndStart = { x: ev.clientX, y: ev.clientY, px: pos.x, py: pos.y }; };
+    window.addEventListener('mousemove', (ev) => {
+      if (!dragNode) return;
+      pos.x = ndStart.px + (ev.clientX - ndStart.x) / transform.scale;
+      pos.y = ndStart.py + (ev.clientY - ndStart.y) / transform.scale;
+      render();
+    });
+    window.addEventListener('mouseup', () => { dragNode = false; });
+    g.appendChild(ng);
+  });
+}
+
+wrap.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const s = ev.deltaY > 0 ? 0.9 : 1.1;
+  transform.scale = Math.min(2.5, Math.max(0.4, transform.scale * s));
+  render();
+}, { passive: false });
+
+wrap.onmousedown = (ev) => {
+  if (ev.target.closest('.node')) return;
+  dragging = true; dragStart = { x: ev.clientX - transform.x, y: ev.clientY - transform.y };
+  wrap.classList.add('dragging');
+};
+window.onmousemove = (ev) => {
+  if (!dragging) return;
+  transform.x = ev.clientX - dragStart.x;
+  transform.y = ev.clientY - dragStart.y;
+  render();
+};
+window.onmouseup = () => { dragging = false; wrap.classList.remove('dragging'); };
+
+document.getElementById('search').oninput = render;
+document.getElementById('role-filter').onchange = render;
+document.getElementById('reset-view').onclick = () => { transform = { x: 40, y: 20, scale: 1 }; selectedId = null; activeFlow = null; render(); detail.innerHTML = '<h2>Select a module</h2><p class="empty">Click a node…</p><h3>End-to-end flows</h3><div class="flows" id="flows2"></div>'; const f2 = detail.querySelector('#flows2'); DATA.flows.forEach(flow => { const btn = document.createElement('button'); btn.textContent = flow.label; btn.onclick = () => { activeFlow = flow.id; render(); }; f2.appendChild(btn); }); };
+
+function resize() { svg.setAttribute('viewBox', '0 0 ' + wrap.clientWidth + ' ' + wrap.clientHeight); render(); }
+window.onresize = resize;
+resize();
+</script>
+<div id="node-tooltip" class="node-tooltip" role="tooltip" aria-hidden="true"></div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+[
+  {"id": "ml-harness-b1", "repo": "ml-harness", "questions": [
+    "hey so what actually is this thing? like who would use it",
+    "ok but i still dont get it... if it doesnt train the model itself then what am i getting out of it",
+    "can you draw me the path someone takes from opening it to getting an answer? a simple diagram is fine"
+  ]},
+  {"id": "ml-harness-b2", "repo": "ml-harness", "questions": [
+    "Why would I use this instead of just going straight to something like Unsloth or a HF fine-tuning script?",
+    "hmm. so is it basically a chatbot that tells you not to fine tune? be honest",
+    "zoom in on the bit where it decides whether training is worth it. what happens there, step by step"
+  ]},
+  {"id": "shopfront-b1", "repo": "shopfront", "questions": [
+    "what is this project, whats the product here",
+    "sorry still fuzzy — from a customers point of view what happens when they buy something",
+    "just the payment part. what goes on between hitting pay and getting the confirmation"
+  ]},
+  {"id": "shopfront-b2", "repo": "shopfront", "questions": [
+    "Quick one: who is this shop system built for and what does it give them compared to just using Shopify?",
+    "can u sketch the whole order flow as a picture, boxes and arrows",
+    "ok and after the order is placed, how does shipping + the invoice/email side work"
+  ]},
+  {"id": "makemore-b1", "repo": "makemore", "questions": [
+    "what does this do?? someone told me to look at it to learn ML",
+    "still confused tbh. what do i actually get at the end if i run it",
+    "draw it for me pls, like names go in -> ??? -> new names come out"
+  ]},
+  {"id": "makemore-b2", "repo": "makemore", "questions": [
+    "Who's this meant for and why does it exist when there are way bigger language models out there?",
+    "so how does the counting version compare to the neural net version, which one should a beginner look at",
+    "focus on just the generating step - how does it come up with a new name letter by letter"
+  ]},
+  {"id": "sequence-b1", "repo": "sequence", "questions": [
+    "what is sequence and why would a dev want it",
+    "not following. is it a diagram tool, a chatbot, or what? explain like im new",
+    "show me as a diagram what happens from when i point it at my repo to when i see the board"
+  ]},
+  {"id": "sequence-b2", "repo": "sequence", "questions": [
+    "how is this different from just asking copilot or chatgpt about my codebase, or using some auto-generated architecture diagram tool",
+    "ok walk me thru what a user actually does with it on day one, start to finish",
+    "just the scanning part — what does it do to my code before anything shows up"
+  ]}
+]

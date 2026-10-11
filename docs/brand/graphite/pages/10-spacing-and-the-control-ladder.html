@@ -1,0 +1,784 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SHEET 10 — THE SPACE SCALE AND THE CONTROL LADDER
+     Fragment. Body content only. _core.html supplies every token used here.
+
+     Two inline literals are used deliberately and nowhere else:
+
+     1. The rung bands in 10.3 / 10.4 / 10.5 are set to the exact pixel height
+        of the rung they measure. A band that is not the height it claims is
+        not a measurement. Where the rung HAS a token the band uses the token
+        (--topbar-h, --row-h, --control-h, --icon-btn); where it does not, the
+        band uses a literal — so the reader can see at a glance which six of
+        the ten rungs are still unnamed. That contrast is the point.
+     2. A few demo widths (an input needs a width to be an input) are px.
+
+     Every colour, radius, type size and every gap and padding on this sheet is
+     a var(--token). Nothing on this sheet carries a hue except the two
+     components that legitimately bring their own — the solid button and the
+     send button — because spacing is the system most often decorated and law
+     one protects it hardest.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<section class="page" data-page-num="10" data-page-title="The space scale and the control ladder" id="p10">
+
+  <div class="pagehead">
+    <span class="num">Sheet 10 &middot; Foundations</span>
+    <h1>The space scale and the control ladder</h1>
+    <p class="lede">
+      Two closed sets. Twelve steps of space, ten rungs of height, and no thirteenth step and no
+      eleventh rung. Every gap, every padding, every control, every row and every icon in
+      Sequence lands on a value declared here &mdash; and a value that is not on the ladder is a
+      <b>defect</b>, not a preference. There is no argument from &ldquo;it looked cramped&rdquo;,
+      because the ladder is the argument.
+    </p>
+    <p class="lede">
+      Compact is the only density and it is drawn at compact, never scaled down from a
+      comfortable one. The working type sizes are 10 / 11 / 12px and <b>10px is the floor</b>
+      &mdash; 10.8 states what that forbids.
+    </p>
+  </div>
+
+  <!-- ── 10.1 THE SPACE SCALE ───────────────────────────────────────────── -->
+  <div class="sec" id="s10-scale">
+    <div class="sec-head">
+      <span class="eyebrow">10.1</span>
+      <h2>The space scale &mdash; twelve steps, closed</h2>
+      <span class="tail">4px base &middot; named for pixels &middot; inherited from Graphite unchanged</span>
+    </div>
+
+    <p class="note">
+      Each step is named for the number of pixels it is, so there is no arithmetic between reading
+      <span class="inline-code">--sp-10</span> and knowing it is ten. Eight of the twelve steps are
+      12px or under: that distribution <em>is</em> compact. The scale spends its resolution where
+      components are built and only gets coarse once it is separating whole sections of a page.
+    </p>
+
+    <div class="panel">
+      <h3>The scale, at size</h3>
+      <p class="sub">The bars are the length they name and carry no radius &mdash; a ruler with rounded ends lies about where it ends.</p>
+      <div class="scrollx">
+        <div style="display:flex;flex-direction:column;gap:var(--sp-6);min-width:420px">
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-2</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">2px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-2);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">between icon buttons in a cluster; between segments; between stacked tool rows</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-4</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">4px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-4);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">inside a node card; the module wall inset; menu padding</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-6</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">6px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-6);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">icon-to-label inside a control; button-to-button in a footer; tag inset</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-8</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">8px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-8);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">everything inside a row; rail and pane scroll padding</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-10</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">10px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-10);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">the inset of a 28px control; node card padding</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-12</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">12px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-12);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">card and composer padding; every grid gap; the pill inset</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-16</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">16px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-16);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">panel padding; dialog body; between turns in the transcript</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-20</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">20px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-20);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">transcript side padding; page side padding</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-24</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">24px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-24);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">the sheet header block; the board&rsquo;s dot-field pitch</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-32</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">32px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-32);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">page top padding; after the sheet header</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-40</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">40px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-40);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">between sections on a sheet</span></div>
+
+          <div style="display:flex;align-items:center;gap:var(--sp-12)"><span class="mono" style="width:64px;font-size:var(--t-11);color:var(--ink-1)">--sp-56</span><span class="mono" style="width:32px;text-align:right;font-size:var(--t-10);color:var(--ink-3)">56px</span><span style="width:60px;flex:0 0 auto"><span style="display:block;height:12px;width:var(--sp-56);background:var(--ink-3)"></span></span><span style="font-size:var(--t-11);color:var(--ink-3)">page bottom</span></div>
+
+        </div>
+      </div>
+      <p class="caption">There is no <span class="inline-code">--sp-5</span>, no
+      <span class="inline-code">--sp-9</span>, no <span class="inline-code">--sp-14</span> and no
+      <span class="inline-code">--sp-18</span>. Every one of those four appears somewhere in the
+      inherited CSS as a raw literal, and 10.9 retires all four.</p>
+      <p class="caption"><b>Re-checked against the substrate as it now stands.</b> Twelve steps,
+      unchanged &mdash; the repair that rebuilt the six silhouettes added geometry rather than
+      spacing, and every dimension it added landed on this scale without a new step being cut:
+      <span class="inline-code">--arch-tab-w</span> is <span class="inline-code">--sp-32</span>,
+      <span class="inline-code">--arch-tab-h</span> is <span class="inline-code">--sp-12</span>,
+      and the agent chamfer takes its bite at <span class="inline-code">--sp-16</span>.
+      <span class="inline-code">.zoomcluster</span>, which used to write a raw 2px twice, now
+      writes <span class="inline-code">--sp-2</span>. The claim holds for every gap and every
+      padding <em>between</em> things. It does <em>not</em> hold below
+      <span class="inline-code">--sp-2</span>, where three shipped surfaces need an inset the scale
+      cannot name &mdash; that is the second handback, booked in 10.10.</p>
+    </div>
+  </div>
+
+  <!-- ── 10.2 THE GAP LADDER ────────────────────────────────────────────── -->
+  <div class="sec" id="s10-gaps">
+    <div class="sec-head">
+      <span class="eyebrow">10.2</span>
+      <h2>The gap ladder</h2>
+      <span class="tail">five values inside components &middot; the rest is page furniture</span>
+    </div>
+
+    <p class="note">
+      A gap is chosen by <em>what it separates</em>, not by how the result feels. Inside a
+      component the gap is one of five values and never more than
+      <span class="inline-code">--sp-12</span>. <span class="inline-code">--sp-16</span> separates
+      whole blocks &mdash; the turns in a transcript, the legend row of a chart frame. Anything
+      above <span class="inline-code">--sp-16</span> is page furniture and may not appear inside a
+      component at all.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <table class="tk">
+          <tr><th>Gap</th><th>Separates</th><th>Rendered here as</th></tr>
+          <tr><td class="k">--sp-2</td><td>Siblings in a cluster that reads as one control</td><td>icon-button clusters, <span class="inline-code">.seg</span>, <span class="inline-code">.minitabs</span>, <span class="inline-code">.toolstack</span>, <span class="inline-code">.zoomcluster</span></td></tr>
+          <tr><td class="k">--sp-4</td><td>Lines inside one card or one wall</td><td><span class="inline-code">.node</span>, <span class="inline-code">.nest</span>, <span class="inline-code">.menu</span> padding, <span class="inline-code">.prov</span> internals</td></tr>
+          <tr><td class="k">--sp-6</td><td>An icon from its label; a button from its neighbour</td><td><span class="inline-code">.btn</span>, <span class="inline-code">.chip</span>, <span class="inline-code">.node .nd-hd</span>, <span class="inline-code">.dialog .dl-ft</span>, <span class="inline-code">.formfield</span></td></tr>
+          <tr><td class="k">--sp-8</td><td>Cells inside a row; siblings in a bar</td><td><span class="inline-code">.railitem</span>, <span class="inline-code">.thread</span>, <span class="inline-code">.toolrow</span>, <span class="inline-code">.kv</span>, <span class="inline-code">.menuitem</span>, <span class="inline-code">.appbar</span></td></tr>
+          <tr><td class="k">--sp-12</td><td>Components from each other inside one container</td><td><span class="inline-code">.grid</span>, <span class="inline-code">.specimens</span>, <span class="inline-code">.stage</span>, <span class="inline-code">.kindlegend</span></td></tr>
+          <tr><td class="k">--sp-16</td><td>Whole blocks &mdash; and this is the ceiling</td><td><span class="inline-code">.tcol</span>, <span class="inline-code">.chartframe .ch-ft</span></td></tr>
+        </table>
+      </div>
+      <p class="caption">The three progressively looser gaps &mdash; 2, 6, 12 &mdash; read as one
+      cluster, one control, one component. That is the whole grammar. If a layout wants
+      <span class="inline-code">--sp-20</span> between two things inside a card, the two things
+      belong in different cards.</p>
+    </div>
+  </div>
+
+  <!-- ── 10.3 THE CONTROL LADDER ────────────────────────────────────────── -->
+  <div class="sec" id="s10-controls">
+    <div class="sec-head">
+      <span class="eyebrow">10.3</span>
+      <h2>The control ladder &mdash; every control at every rung</h2>
+      <span class="tail">28 &middot; 26 &middot; 24 &middot; 22 &middot; 20 &middot; 16 &middot; 14</span>
+    </div>
+
+    <p class="note">
+      Seven control heights and no eighth. Each rung below is drawn as a band of exactly that
+      height, hairlined top and bottom, with every control that lives at that rung sitting inside
+      it. Two controls that should match are the same height, and the band is where you check
+      it &mdash; a button, a text input and the circular send button all tangent the same two
+      lines at 28px.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <div style="display:flex;flex-direction:column;gap:var(--sp-16);min-width:660px">
+
+          <!-- 28 -->
+          <div class="specimen" style="width:100%">
+            <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+              <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">28</span>
+              <div style="flex:1;min-width:0;height:var(--control-h);display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+                <button class="btn"><svg class="i i-14"><use href="#ic-refresh"/></svg>Re-scan</button>
+                <button class="btn solid">Apply</button>
+                <button class="btn pill">Trace</button>
+                <span style="width:148px;flex:0 0 auto"><input class="input" value="checkout" aria-label="Rename node"></span>
+                <button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+              </div>
+            </div>
+            <span class="lbl" style="padding-left:var(--sp-40)">--control-h &middot; .btn &middot; .btn.solid &middot; .btn.pill &middot; .input &middot; .sendbtn</span>
+          </div>
+
+          <!-- 26 -->
+          <div class="specimen" style="width:100%">
+            <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+              <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">26</span>
+              <div style="flex:1;min-width:0;height:var(--icon-btn);display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+                <button class="iconbtn" aria-label="Search"><svg class="i"><use href="#ic-search"/></svg></button>
+                <button class="iconbtn bordered" aria-label="Filter"><svg class="i"><use href="#ic-filter"/></svg></button>
+                <span style="display:flex;gap:var(--sp-2)">
+                  <button class="iconbtn" aria-label="Zoom out"><svg class="i"><use href="#ic-minus"/></svg></button>
+                  <button class="iconbtn" aria-label="Zoom in"><svg class="i"><use href="#ic-plus"/></svg></button>
+                </span>
+              </div>
+            </div>
+            <span class="lbl" style="padding-left:var(--sp-40)">--icon-btn &middot; .iconbtn &middot; .iconbtn.bordered</span>
+          </div>
+
+          <!-- 24 -->
+          <div class="specimen" style="width:100%">
+            <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+              <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">24</span>
+              <div style="flex:1;min-width:0;height:24px;display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+                <button class="btn sm">Show evidence</button>
+                <button class="btn ghost sm">Fit</button>
+                <span style="width:120px;flex:0 0 auto"><input class="input sm" value="src/billing" aria-label="Filter files"></span>
+                <button class="plusbtn" aria-label="Attach"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+                <button class="modelsel"><span class="mono"><span class="ph">&#8249;model&#8250;</span></span><svg class="i i-12"><use href="#ic-chevdown"/></svg></button>
+                <span class="chip"><svg class="i i-12"><use href="#ic-folder"/></svg><span class="ph">&#8249;repo&#8250;</span></span>
+              </div>
+            </div>
+            <span class="lbl" style="padding-left:var(--sp-40)">.btn.sm &middot; .btn.ghost.sm &middot; .input.sm &middot; .plusbtn &middot; .modelsel &middot; .chip &middot; .railhead &middot; .nest-hd &middot; .seg button</span>
+          </div>
+
+          <!-- 22 -->
+          <div class="specimen" style="width:100%">
+            <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+              <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">22</span>
+              <div style="flex:1;min-width:0;height:22px;display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+                <span class="verdict v-unknown">Unknown</span>
+                <span class="repochip"><svg class="i i-12"><use href="#ic-branch"/></svg><span class="ph">&#8249;branch&#8250;</span></span>
+                <span class="tooltip">Traced from the call graph</span>
+              </div>
+            </div>
+            <span class="lbl" style="padding-left:var(--sp-40)">.verdict &middot; .repochip &middot; .tooltip</span>
+          </div>
+
+          <!-- 20 -->
+          <div class="specimen" style="width:100%">
+            <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+              <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">20</span>
+              <div style="flex:1;min-width:0;height:var(--sp-20);display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+                <span class="minitabs"><button aria-selected="true">Local</button><button>Worktree</button><button>Cloud</button></span>
+                <span class="kbd">&#8984;</span><span class="kbd">K</span>
+              </div>
+            </div>
+            <span class="lbl" style="padding-left:var(--sp-40)">.minitabs button &middot; .kbd &middot; .railhead .acts button</span>
+          </div>
+
+          <!-- 16 -->
+          <div class="specimen" style="width:100%">
+            <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+              <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">16</span>
+              <div style="flex:1;min-width:0;height:var(--sp-16);display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+                <span class="prov p-measured">Measured</span>
+                <span class="prov p-declared">Declared</span>
+                <span class="edgetag">POST /charge</span>
+                <input class="switch" type="checkbox" checked aria-label="Follow the flow">
+              </div>
+            </div>
+            <span class="lbl" style="padding-left:var(--sp-40)">.prov &middot; .edgetag &middot; .switch</span>
+          </div>
+
+          <!-- 14 -->
+          <div class="specimen" style="width:100%">
+            <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+              <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">14</span>
+              <div style="flex:1;min-width:0;height:14px;display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+                <input class="checkbox" type="checkbox" checked aria-label="Show declared edges">
+                <input class="checkbox" type="checkbox" aria-label="Show test files">
+                <input class="radio" type="radio" name="lad-r" checked aria-label="Traced only">
+                <input class="radio" type="radio" name="lad-r" aria-label="Everything">
+              </div>
+            </div>
+            <span class="lbl" style="padding-left:var(--sp-40)">.checkbox &middot; .radio</span>
+          </div>
+
+        </div>
+      </div>
+      <p class="caption">Only the top two rungs have a token &mdash;
+      <span class="inline-code">--control-h</span> and <span class="inline-code">--icon-btn</span>.
+      The other five are literals in the substrate, and the bands above are drawn with literals to
+      match, so the gap is visible rather than described. 10.10 records that, and one more, as the
+      handbacks this sheet raises.</p>
+      <p class="caption"><b>Fit is not in the 26 band, and that is the correction.</b> Sheet 9
+      rules that Fit ships as a <em>word</em> &mdash; <span class="inline-code">ic-frame</span>
+      means the boundary drawn around a selection, and fitting the board to the viewport draws no
+      boundary. So Fit is a <span class="inline-code">.btn.ghost.sm</span> and it sits at 24, one
+      rung below the <span class="inline-code">.iconbtn</span> zoom pair it ships beside. A
+      <span class="inline-code">.zoomcluster</span> is therefore a cluster spanning two rungs; what
+      holds it together is its <span class="inline-code">--sp-2</span> gap and
+      <span class="inline-code">--sp-2</span> pad, not a shared height. A worded control drawn in
+      the 26 band would have missed both band lines by a pixel each, which is the kind of lie a
+      measuring band exists to catch.</p>
+    </div>
+  </div>
+
+  <!-- ── 10.4 THE ROW LADDER ────────────────────────────────────────────── -->
+  <div class="sec" id="s10-rows">
+    <div class="sec-head">
+      <span class="eyebrow">10.4</span>
+      <h2>The row ladder</h2>
+      <span class="tail">44 &middot; 38 &middot; 30 &middot; 28 &middot; 26</span>
+    </div>
+
+    <p class="note">
+      Row height is semantic, not decorative. A tool call is 26px because it is a footnote; a run
+      is 38px because it carries two lines and a delta; a bar is 44px because it is chrome and
+      chrome is the only thing on screen allowed to be that tall. Three of the five rungs are
+      shared with the control ladder &mdash; 28, 26 and 30 &mdash; which is what makes a button
+      sit flush in a rail beside a thread row without a single one-off adjustment.
+    </p>
+
+    <div class="panel">
+      <div style="display:flex;flex-direction:column;gap:var(--sp-16)">
+
+        <div class="specimen" style="width:100%">
+          <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+            <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">44</span>
+            <div style="flex:1;min-width:0;height:var(--topbar-h);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+              <div class="pane-hd" style="height:var(--topbar-h);border-bottom:0"><span class="t">Index</span><span class="right"><button class="iconbtn" aria-label="Pin"><svg class="i i-14"><use href="#ic-pin"/></svg></button><button class="iconbtn" aria-label="Close"><svg class="i i-14"><use href="#ic-x"/></svg></button></span></div>
+            </div>
+          </div>
+          <span class="lbl" style="padding-left:var(--sp-40)">--topbar-h &middot; .appbar &middot; .rail-top &middot; .pane-hd</span>
+        </div>
+
+        <div class="specimen" style="width:100%">
+          <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+            <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">38</span>
+            <div style="flex:1;min-width:0;height:38px;box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+              <div class="runrow"><span class="dot" style="color:var(--st-done)"></span><span class="mid"><span class="ttl">Extract the billing module</span><span class="meta"><span class="ph">&#8249;files touched&#8250;</span></span></span><span class="right"><span class="delta"><span class="stat-add">+<span class="ph">&#8249;n&#8250;</span></span> <span class="stat-del">&#8722;<span class="ph">&#8249;n&#8250;</span></span></span><span class="elapsed"><span class="ph">&#8249;elapsed&#8250;</span></span></span></div>
+            </div>
+          </div>
+          <span class="lbl" style="padding-left:var(--sp-40)">.runrow &middot; .chip.two &mdash; the two-line rung</span>
+        </div>
+
+        <div class="specimen" style="width:100%">
+          <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+            <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">30</span>
+            <div style="flex:1;min-width:0;height:var(--row-h);display:flex;align-items:center;box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+              <div class="railitem" style="flex:1;min-width:0"><svg class="i i-14"><use href="#ic-board"/></svg>Architecture</div>
+              <div class="menuitem" style="flex:1;min-width:0"><svg class="i i-14"><use href="#ic-pen"/></svg>Rename node<span class="right">&#8984;R</span></div>
+            </div>
+          </div>
+          <span class="lbl" style="padding-left:var(--sp-40)">--row-h &middot; .railitem &middot; .folder &middot; .menuitem &middot; .acct</span>
+        </div>
+
+        <div class="specimen" style="width:100%">
+          <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+            <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">28</span>
+            <div style="flex:1;min-width:0;height:var(--row-h-thread);display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+              <div class="thread sel" style="flex:1;min-width:0"><span class="dot" style="color:var(--st-active)"></span><span class="tt">Why does checkout call billing twice?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div>
+              <div class="filehd" style="flex:1;min-width:0;border-radius:var(--r-8)"><svg class="i i-12"><use href="#ic-file"/></svg><span class="ph">&#8249;path&#8250;</span></div>
+            </div>
+          </div>
+          <span class="lbl" style="padding-left:var(--sp-40)">--row-h-thread &middot; .thread &middot; .emptyfolder &middot; .filehd</span>
+        </div>
+
+        <div class="specimen" style="width:100%">
+          <div style="display:flex;align-items:center;gap:var(--sp-12);width:100%">
+            <span class="mono" style="width:var(--sp-24);text-align:right;font-size:var(--t-11);color:var(--ink-1)">26</span>
+            <div style="flex:1;min-width:0;height:var(--icon-btn);display:flex;align-items:center;gap:var(--sp-8);box-shadow:inset 0 var(--w-hair) 0 var(--edge-strong), inset 0 calc(-1 * var(--w-hair)) 0 var(--edge-strong)">
+              <div class="toolrow" style="flex:1;min-width:0"><svg class="i i-14"><use href="#ic-file"/></svg><span class="name">Read</span><span class="file">arch/archKinds.ts</span><span class="right"><svg class="i i-12 ok"><use href="#ic-check"/></svg></span></div>
+              <div class="kv" style="flex:1;min-width:0"><span class="k">Kind</span><span class="v">service</span></div>
+            </div>
+          </div>
+          <span class="lbl" style="padding-left:var(--sp-40)">.toolrow &middot; .kv</span>
+        </div>
+
+      </div>
+      <p class="caption">The 28px rung carries two token names &mdash;
+      <span class="inline-code">--control-h</span> and
+      <span class="inline-code">--row-h-thread</span> &mdash; and that is kept, not retired. They
+      are two <em>roles</em> at one value, and the value is deliberately shared so a button dropped
+      into a thread list lines up on the first try. If one ever moves, the other moves with it.</p>
+    </div>
+  </div>
+
+  <!-- ── 10.5 ICONS ─────────────────────────────────────────────────────── -->
+  <div class="sec" id="s10-icons">
+    <div class="sec-head">
+      <span class="eyebrow">10.5</span>
+      <h2>Icon buttons and glyph sizes</h2>
+      <span class="tail">three button sizes &middot; five glyph sizes &middot; one stroke weight</span>
+    </div>
+
+    <p class="note">
+      An icon button is a square on the control ladder, and there are exactly three of them: 26px
+      is the default, 24px is the composer&rsquo;s, 20px is the one that lives inside a header
+      strip where a 26px square would be taller than the strip. The glyph inside is picked by the
+      square, not by taste. <b>The stroke is 1.5 at every size and is never scaled</b> &mdash;
+      that is what makes a 12px icon look like the same family as a 20px one.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The three squares</h3>
+        <p class="sub">Each drawn on the ground it really sits on, with the glyph size that belongs to it.</p>
+        <div class="stage pad-sm" style="align-items:center">
+          <div class="specimen"><button class="iconbtn bordered" aria-label="Recheck"><svg class="i"><use href="#ic-refresh"/></svg></button><span class="lbl">26 &middot; .i 16</span></div>
+          <div class="specimen"><button class="plusbtn" aria-label="Attach"><svg class="i i-14"><use href="#ic-plus"/></svg></button><span class="lbl">24 &middot; .i-14</span></div>
+          <div class="specimen"><span class="railhead" style="margin-top:0">Repos<span class="acts"><button aria-label="New folder"><svg class="i i-12"><use href="#ic-folderplus"/></svg></button><button aria-label="Add"><svg class="i i-12"><use href="#ic-plus"/></svg></button></span></span><span class="lbl">20 &middot; .i-12</span></div>
+        </div>
+        <p class="caption">A fourth size does not exist. If a square feels wrong, the row it is in
+        is the wrong height &mdash; fix the row.</p>
+      </div>
+
+      <div class="panel">
+        <h3>The five glyph sizes</h3>
+        <p class="sub">One stroke weight, 1.5, at all five. The same symbol, so the weight is comparable.</p>
+        <div class="specimens" style="align-items:flex-end">
+          <div class="specimen"><svg class="i i-12" style="color:var(--ink-2)"><use href="#ic-flow"/></svg><span class="lbl">.i-12</span></div>
+          <div class="specimen"><svg class="i i-14" style="color:var(--ink-2)"><use href="#ic-flow"/></svg><span class="lbl">.i-14</span></div>
+          <div class="specimen"><svg class="i" style="color:var(--ink-2)"><use href="#ic-flow"/></svg><span class="lbl">.i (16)</span></div>
+          <div class="specimen"><svg class="i i-18" style="color:var(--ink-2)"><use href="#ic-flow"/></svg><span class="lbl">.i-18</span></div>
+          <div class="specimen"><svg class="i i-20" style="color:var(--ink-2)"><use href="#ic-flow"/></svg><span class="lbl">.i-20</span></div>
+        </div>
+        <hr>
+        <div class="scrollx">
+          <table class="tk">
+            <tr><th>Glyph</th><th>Goes with</th></tr>
+            <tr><td class="k">.i-12</td><td>a 20px square, a node card header, a chip, a 22px pill</td></tr>
+            <tr><td class="k">.i-14</td><td>a 24px square, a 26px&ndash;30px row, a 28px button</td></tr>
+            <tr><td class="k">.i (16)</td><td>a 26px icon button standing on its own</td></tr>
+            <tr><td class="k">.i-18</td><td>a 44px bar; an empty state</td></tr>
+            <tr><td class="k">.i-20</td><td>the sheet mark and the first-run hero only</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10.6 THE INSET LADDER ──────────────────────────────────────────── -->
+  <div class="sec" id="s10-inset">
+    <div class="sec-head">
+      <span class="eyebrow">10.6</span>
+      <h2>The inset ladder &mdash; horizontal padding</h2>
+      <span class="tail">three values and two named exceptions</span>
+    </div>
+
+    <p class="note">
+      Horizontal padding takes exactly three values. Nothing in Sequence is inset
+      <span class="inline-code">--sp-4</span>, nothing is inset 5px, and nothing is inset
+      <span class="inline-code">--sp-16</span>. Vertical padding on a control does not exist at
+      all: a control has a <em>height</em>, and its content is centred in it.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <table class="tk">
+          <tr><th>Inset</th><th>Applies to</th><th>Rendered here as</th></tr>
+          <tr><td class="k">--sp-10</td><td>A free-standing control at the 28px rung</td><td><span class="inline-code">.btn</span>, <span class="inline-code">.input</span>, <span class="inline-code">.node</span> padding</td></tr>
+          <tr><td class="k">--sp-8</td><td>A row, and every control at 22&ndash;26px</td><td><span class="inline-code">.railitem</span>, <span class="inline-code">.thread</span>, <span class="inline-code">.kv</span>, <span class="inline-code">.menuitem</span>, <span class="inline-code">.filehd</span>, <span class="inline-code">.btn.sm</span>, <span class="inline-code">.input.sm</span>, <span class="inline-code">.chip</span>, <span class="inline-code">.modelsel</span>, <span class="inline-code">.repochip</span>, <span class="inline-code">.tooltip</span>, <span class="inline-code">.minitabs button</span></td></tr>
+          <tr><td class="k">--sp-6</td><td>A tag &mdash; anything at 16px</td><td><span class="inline-code">.prov</span>, <span class="inline-code">.edgetag</span>, <span class="inline-code">.nest-hd</span></td></tr>
+        </table>
+      </div>
+
+      <hr>
+
+      <div class="grid g2">
+        <div class="panel tight"><h3>Exception 1 &mdash; named</h3>
+          <div class="stage pad-sm column">
+            <div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-file"/></svg><span class="name">Read</span><span class="file">arch/graph.ts</span><span class="right"><svg class="i i-12 ok"><use href="#ic-check"/></svg></span></div>
+          </div>
+          <p class="caption"><span class="inline-code">.toolrow</span> is a 26px row inset
+          <span class="inline-code">--sp-10</span>, not <span class="inline-code">--sp-8</span>,
+          because <span class="inline-code">.toolstack</span> pulls it left by exactly
+          <span class="inline-code">--sp-10</span> so the tool name lands on the transcript
+          measure. The inset is load-bearing; changing it breaks the alignment it exists for.</p>
+        </div>
+        <div class="panel tight"><h3>Exception 2 &mdash; named</h3>
+          <div class="stage pad-sm" style="align-items:center">
+            <span class="verdict v-unknown">Unknown</span>
+            <span class="tooltip">Both are 22px</span>
+          </div>
+          <p class="caption"><span class="inline-code">.verdict</span> is a 22px pill inset
+          <span class="inline-code">--sp-10</span> where <span class="inline-code">.tooltip</span>
+          at the same height takes <span class="inline-code">--sp-8</span>. A verdict is uppercase
+          mono tracked at <span class="inline-code">.08em</span>, and tracked mono needs one step
+          more or the last letter&rsquo;s sidebearing collapses into the
+          <span class="inline-code">--r-full</span> curve.</p>
+        </div>
+      </div>
+
+      <p class="caption">Two exceptions, both written down, both with a reason a reader can check
+      on the screen. A third exception without a reason is a defect &mdash; the point of naming
+      these two is that the list is now closed.</p>
+    </div>
+  </div>
+
+  <!-- ── 10.7 THE COMPACT PROOF ─────────────────────────────────────────── -->
+  <div class="sec" id="s10-compact">
+    <div class="sec-head">
+      <span class="eyebrow">10.7</span>
+      <h2>Compact is the only density</h2>
+      <span class="tail">airy is a defect, and this is what it costs</span>
+    </div>
+
+    <p class="note">
+      Sequence is a tool for reading a repository. The rail holds folders and threads, the pane
+      holds a file and its facts, and the board holds a graph. Every pixel of row height is a row
+      the reader cannot see. There is no comfortable mode and no density toggle: the design system
+      that shipped two row-size modes and defaulted to the looser one is exactly what Graphite
+      deleted.
+    </p>
+
+    <div class="grid g2">
+      <div class="do"><span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm column">
+          <div class="thread" style="width:100%"><span class="dot" style="color:var(--st-done)"></span><span class="tt">Where does the order id come from?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div>
+          <div class="thread sel" style="width:100%"><span class="dot" style="color:var(--st-active)"></span><span class="tt">Why does checkout call billing twice?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div>
+          <div class="thread" style="width:100%"><span class="dot" style="color:var(--st-neutral)"></span><span class="tt">Split the ledger writer out of billing</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div>
+          <div class="thread" style="width:100%"><span class="dot" style="color:var(--st-neutral)"></span><span class="tt">What still imports the legacy client?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div>
+        </div>
+        <p class="why">Four threads at <span class="inline-code">--row-h-thread</span>, gapped by
+        nothing at all &mdash; a list is a list, and its rows touch. Selection is a fill, not a
+        margin.</p>
+      </div>
+      <div class="dont"><span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don&rsquo;t</span>
+        <div class="stage pad-sm column" style="gap:var(--sp-12)">
+          <div class="thread" style="width:100%;height:38px"><span class="dot" style="color:var(--st-done)"></span><span class="tt">Where does the order id come from?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div>
+          <div class="thread sel" style="width:100%;height:38px"><span class="dot" style="color:var(--st-active)"></span><span class="tt">Why does checkout call billing twice?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div>
+        </div>
+        <p class="why">The same box holds two rows instead of four. 38px is a rung &mdash; it is
+        the <em>run row&rsquo;s</em> rung, and a run row earns it by carrying two lines and a
+        delta. Borrowing a taller rung because a list &ldquo;felt tight&rdquo; spends the reader&rsquo;s
+        screen on air.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10.8 THE TYPE FLOOR ────────────────────────────────────────────── -->
+  <div class="sec" id="s10-typefloor">
+    <div class="sec-head">
+      <span class="eyebrow">10.8</span>
+      <h2>The type floor</h2>
+      <span class="tail">--t-10 &middot; 10px &middot; and nothing below it, ever</span>
+    </div>
+
+    <p class="note">
+      <b>10px is the floor.</b> No label, no legend, no edge plaque, no badge, no axis tick and no
+      caption renders below <span class="inline-code">--t-10</span>. This is not a guideline: a
+      board can be zoomed out, and the answer to a label that will not fit at 10px is to
+      <em>drop the label</em>, not to shrink it. The edge plaque in this book was 9px in the
+      running app and was raised to <span class="inline-code">--t-10</span> for exactly that
+      reason.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The working band</h3>
+        <p class="sub">Three sizes carry almost the whole interface. Each pairs with a line-height token &mdash; a literal line-height is the same defect as a literal size.</p>
+        <div class="scrollx">
+          <table class="tk">
+            <tr><th>Size</th><th>Line</th><th>Where</th></tr>
+            <tr><td class="k">--t-10</td><td class="v">--lh-10</td><td>tags, verdicts, eyebrows, legends, node kind labels, edge plaques &mdash; <b>the floor</b></td></tr>
+            <tr><td class="k">--t-11</td><td class="v">--lh-11</td><td>captions, chips, kv values, spec values, node subtitles</td></tr>
+            <tr><td class="k">--t-12</td><td class="v">--lh-12</td><td>buttons, inputs, rail rows, tool rows, menu items, node titles</td></tr>
+            <tr><td class="k">--t-13</td><td class="v">--lh-13</td><td>body prose, panel headings, the app bar title</td></tr>
+            <tr><td class="k">--t-14</td><td class="v">--lh-14</td><td>the composer field, the user bubble, sheet ledes</td></tr>
+            <tr><td class="k">--t-15</td><td class="v">--lh-15</td><td>assistant prose in the transcript, and nowhere else</td></tr>
+            <tr><td class="k">--t-17</td><td class="v">--lh-17</td><td>section headings</td></tr>
+            <tr><td class="k">--t-26</td><td class="v">--lh-26</td><td>the sheet title</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>The floor in practice</h3>
+        <p class="sub">Everything below is set at <span class="inline-code">--t-10</span>. It is the smallest type the product ships, and there is a lot of it.</p>
+        <div class="stage column">
+          <div class="specimens">
+            <span class="prov p-measured">Measured</span>
+            <span class="verdict v-fits">Traced</span>
+            <span class="edgetag">POST /charge</span>
+            <span class="repochip"><svg class="i i-12"><use href="#ic-branch"/></svg><span class="ph">&#8249;branch&#8250;</span></span>
+          </div>
+          <div class="kindlegend">
+            <span class="grp">Kinds</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-service"/></svg>Service</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-module"/></svg>Module</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-database"/></svg>Datastore</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-topic"/></svg>Topic</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-agent"/></svg>Agent</span>
+            <span class="grpsep"></span>
+            <span class="grp">Position</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-entry"/></svg>Entry</span>
+          </div>
+        </div>
+        <p class="caption">Mono sets one step down from the sans beside it &mdash; and stops at the
+        floor. An <span class="inline-code">--t-11</span> label&rsquo;s mono partner is
+        <span class="inline-code">--t-10</span>; an <span class="inline-code">--t-10</span>
+        label&rsquo;s mono partner is still <span class="inline-code">--t-10</span>. The rule ends
+        where the floor begins.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>The line ramp is as closed as the size ramp &mdash; and it absorbs all three</h3>
+      <p class="sub">Nine sizes, nine line-heights, paired one to one. The pairing is the table
+      above; this is what to do when a literal turns up instead.</p>
+
+      <p class="note" style="margin:0 0 var(--sp-12)">
+        The ramp holds exactly nine distinct line values &mdash; 14, 15, 16, 18, 21, 22, 23, 26
+        and 30, one per size, with 22 sitting <em>below</em> 23 because <span class="inline-code">--t-17</span>
+        is a heading and a heading sets tighter than the prose under it. Raw line-heights turn up
+        across this book in two species, and the difference decides whether the pixels move.
+      </p>
+
+      <div class="scrollx">
+        <table class="tk">
+          <tr><th>Literal</th><th>Set at</th><th>Species</th><th>Ruling</th></tr>
+          <tr><td class="k">15px</td><td class="v">--t-11</td><td>Notation</td><td>It <em>is</em> <span class="inline-code">--lh-11</span>. The pixels are right, the name is missing. Nothing moves.</td></tr>
+          <tr><td class="k">16px</td><td class="v">--t-12</td><td>Notation</td><td>It <em>is</em> <span class="inline-code">--lh-12</span>. Nothing moves.</td></tr>
+          <tr><td class="k">18px</td><td class="v">--t-13</td><td>Notation</td><td>It <em>is</em> <span class="inline-code">--lh-13</span>. Nothing moves. This is the one of the three the auditor flagged that was never an invention.</td></tr>
+          <tr><td class="k">17px</td><td class="v">--t-12</td><td>Density</td><td>Not on the ramp at any size. One pixel above the token 12px pairs with. Collapses to <span class="inline-code">--lh-12</span>.</td></tr>
+          <tr><td class="k">19px</td><td class="v">--t-13</td><td>Density</td><td>Not on the ramp. One pixel above the token 13px pairs with. Collapses to <span class="inline-code">--lh-13</span>.</td></tr>
+          <tr><td class="k">20px</td><td class="v">--t-14</td><td>Density</td><td>Not on the ramp. One pixel <em>below</em> the token 14px pairs with. Collapses to <span class="inline-code">--lh-14</span> &mdash; the lede gets looser, not tighter, and that is the ramp&rsquo;s answer, not a preference.</td></tr>
+        </table>
+      </div>
+
+      <p class="caption"><b>The decision: no exception is named for any of the six.</b> Three are
+      notation and three are density, and 10.9 already carries the density three. A line-height is
+      a number exactly as a size is a number, so &ldquo;the line felt tight&rdquo; is the same
+      argument as &ldquo;it looked cramped&rdquo; and gets the same answer &mdash; read the pairing
+      off the table above. The ramp absorbs the whole set.</p>
+
+      <hr>
+
+      <h3>The one real exception, and it is a pairing, not a number</h3>
+      <p class="sub"><span class="inline-code">.codeblock</span> and
+      <span class="inline-code">.diffwrap</span> set <span class="inline-code">--t-11</span> on an
+      18px line, where the table above pairs 11px with 15px.</p>
+      <div class="stage column">
+        <pre class="codeblock">four lines of mono, each set at --t-11
+the line under this one sits 18px away
+at --lh-11 it would sit 15px away, and
+the eye loses the next line's left edge</pre>
+      </div>
+      <p class="caption">18px is <span class="inline-code">--lh-13</span> &mdash; on the ramp, two
+      steps up from the size&rsquo;s own partner. It is a deliberate <em>pairing</em> and the rule
+      behind it is narrow enough to close: <b>a mono block read line by line takes the line of the
+      prose it sits inside, not the line of its own size.</b> A code block and a diff are read one
+      line at a time and the eye has to find the next line&rsquo;s left edge; 15px on 11px mono,
+      which is wider per character than the sans, closes that gap to almost nothing. This applies
+      to <span class="inline-code">.codeblock</span> and
+      <span class="inline-code">.diffwrap</span> and to nothing else &mdash; an inline
+      <span class="inline-code">.mono</span> span inside a row takes the row&rsquo;s line, and a
+      mono <em>label</em> takes its own. Two blocks, one rule, and the list is closed the same way
+      10.6&rsquo;s two inset exceptions are.</p>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>The floor is a zoom rule too.</b> The board
+    scales with the camera, so a node title at <span class="inline-code">--t-12</span> is under
+    10px the moment the camera drops below 84%. Below that threshold a node sheds its subtitle,
+    then its kind label, then its title &mdash; and keeps its icon, its silhouette, its border
+    treatment and its tone, which is precisely why Decision 2 puts kind on four non-chromatic
+    channels rather than on a label. <b>Nothing is ever rendered small. It is dropped.</b></div>
+  </div>
+
+  <!-- ── 10.9 RETIRED ───────────────────────────────────────────────────── -->
+  <div class="sec" id="s10-retired">
+    <div class="sec-head">
+      <span class="eyebrow">10.9</span>
+      <h2>Retired &mdash; what collapses to what</h2>
+      <span class="tail">every off-ladder value in the substrate, and its replacement</span>
+    </div>
+
+    <p class="note">
+      These are the raw literals that survive in the inherited CSS. Each is retired here, with the
+      step it collapses to. A literal that already equals a step is a <em>notation</em> defect: the
+      pixels are right and the name is missing. A literal that is not on the scale is a
+      <em>density</em> defect and the pixels change.
+    </p>
+
+    <div class="panel">
+      <h3>Density defects &mdash; the pixels change</h3>
+      <p class="sub">Four values that are not on the scale at all.</p>
+      <div class="scrollx">
+        <table class="tk">
+          <tr><th>Retired</th><th>Found on</th><th>Collapses to</th><th>Why that step</th></tr>
+          <tr><td class="k">gap:5px</td><td><span class="inline-code">.repochip</span>, <span class="inline-code">.modelsel</span>, <span class="inline-code">.branch</span></td><td class="k">--sp-6</td><td>icon-to-label inside a control is <span class="inline-code">--sp-6</span> everywhere else, including <span class="inline-code">.chip</span> and <span class="inline-code">.node .nd-hd</span></td></tr>
+          <tr><td class="k">gap:1px</td><td><span class="inline-code">.runrow .mid</span>, <span class="inline-code">.runrow .right</span>, <span class="inline-code">.chip.two .stack</span></td><td class="k">--sp-2</td><td>the smallest step; two stacked lines are a cluster, and a cluster is gapped <span class="inline-code">--sp-2</span></td></tr>
+          <tr><td class="k">margin-top:9px</td><td><span class="inline-code">.legend</span></td><td class="k">--sp-8</td><td>the legend is a row under a bar; a row&rsquo;s separation is <span class="inline-code">--sp-8</span></td></tr>
+          <tr><td class="k">padding-bottom:18px</td><td><span class="inline-code">.winscroll</span></td><td class="k">--sp-20</td><td>it is page furniture around a composed shell, and page furniture is <span class="inline-code">--sp-20</span> and up</td></tr>
+          <tr><td class="k">padding:1px 5px<br>padding:1.5px 5px</td><td><span class="inline-code">.inline-code</span>, <span class="inline-code">.prose code</span></td><td class="k">1px var(--sp-4)</td><td>two inline-code paddings 0.5px apart is the &ldquo;6px and 8px for reasons nobody remembers&rdquo; failure in miniature; one value, both places</td></tr>
+          <tr><td class="k">padding:5px &hellip;</td><td><span class="inline-code">table.tk td</span></td><td class="k">--sp-4</td><td><span class="inline-code">.specs</span> already pads its cells <span class="inline-code">--sp-4</span>; two table shapes may not disagree by one pixel</td></tr>
+          <tr><td class="k">line-height:19px<br>line-height:20px</td><td>card bodies, <span class="inline-code">.pagehead .lede</span></td><td class="k">--lh-13 / --lh-14</td><td>the line ramp is as closed as the size ramp; a line-height off the ramp is an off-ladder value wearing a different name</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Notation defects &mdash; the pixels are already right</h3>
+      <p class="sub">The value is on the ladder and the token is missing. Nothing moves; the name arrives.</p>
+      <div class="scrollx">
+        <table class="tk">
+          <tr><th>Retired</th><th>Found on</th><th>Collapses to</th></tr>
+          <tr><td class="k">28px</td><td><span class="inline-code">.sendbtn</span>, <span class="inline-code">.filehd</span></td><td class="k">var(--control-h)</td></tr>
+          <tr><td class="k">gap:6px &middot; padding:0 6px</td><td><span class="inline-code">.btn</span>, <span class="inline-code">.chip</span>, <span class="inline-code">.prov</span>, <span class="inline-code">.toolrow .right</span>, <span class="inline-code">.do &gt; .lbl</span>, <span class="inline-code">.seg button</span></td><td class="k">var(--sp-6)</td></tr>
+          <tr><td class="k">gap:2px &middot; padding:2px</td><td><span class="inline-code">.seg</span>, <span class="inline-code">.minitabs</span>, <span class="inline-code">.pagenav</span>, <span class="inline-code">.railhead .acts</span>, <span class="inline-code">.pane-hd .right</span>, <span class="inline-code">.toolstack</span></td><td class="k">var(--sp-2)</td></tr>
+          <tr><td class="k">padding:4px 0 &middot; padding:10px</td><td><span class="inline-code">.specs</span>, <span class="inline-code">.winscroll</span></td><td class="k">var(--sp-4) &middot; var(--sp-10)</td></tr>
+          <tr><td class="k">border:1px solid</td><td>all of the inherited component block</td><td class="k">var(--w-hair)</td></tr>
+        </table>
+      </div>
+      <p class="caption">The last row belongs to a different closed set &mdash; the five stroke
+      widths, <span class="inline-code">--w-hair</span> through
+      <span class="inline-code">--w-rule</span>. It is listed here because a raw
+      <span class="inline-code">1px</span> is the same species of defect: a number that has a name
+      and is not using it.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Kept on purpose &mdash; not a duplicate</h3>
+      <div class="scrollx">
+        <table class="tk">
+          <tr><th>Looks like a duplicate</th><th>Verdict</th><th>Reason</th></tr>
+          <tr><td class="k">--control-h &middot; --row-h-thread</td><td>Kept. Both 28px.</td><td>Two roles, one value, deliberately locked together so a control sits flush in a list. If either moves, both move.</td></tr>
+          <tr><td class="k">--row-h 30 &middot; --row-h-thread 28</td><td>Kept.</td><td>A folder and the threads indented under it are 2px apart <em>and</em> <span class="inline-code">--sp-16</span> indented. The indent carries the hierarchy; the 2px keeps the parent slightly heavier without a second weight.</td></tr>
+          <tr><td class="k">--sp-24 &middot; --nest-hd-h</td><td>Kept, both 24px.</td><td>One is a space step, one is a height. A spacing token may never be used as a height, and a height token may never be used as a gap, however equal the numbers are.</td></tr>
+          <tr><td class="k">.seg button &middot; .themetoggle</td><td>Exempt.</td><td>Book-shell chrome, not product surface. The shell is not restyled and is not held to the product&rsquo;s inset ladder.</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10.10 THE LAW ──────────────────────────────────────────────────── -->
+  <div class="sec" id="s10-law">
+    <div class="sec-head">
+      <span class="eyebrow">10.10</span>
+      <h2>A value not on the ladder is a defect</h2>
+      <span class="tail">the test, and the two handbacks this sheet raises</span>
+    </div>
+
+    <div class="grid g2">
+      <div class="do"><span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm" style="align-items:center">
+          <button class="btn"><svg class="i i-14"><use href="#ic-eye"/></svg>Preview</button>
+          <button class="btn solid">Apply</button>
+          <span style="width:140px"><input class="input" value="ledger" aria-label="Node name"></span>
+        </div>
+        <p class="why">Three controls, one rung, one inset. They were not tuned against each other
+        &mdash; they were each set to <span class="inline-code">--control-h</span> and
+        <span class="inline-code">--sp-10</span> and then they matched.</p>
+      </div>
+      <div class="dont"><span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don&rsquo;t</span>
+        <div class="stage pad-sm" style="align-items:center">
+          <button class="btn" style="height:32px;padding:0 var(--sp-12)"><svg class="i i-14"><use href="#ic-eye"/></svg>Preview</button>
+          <button class="btn solid" style="height:30px">Apply</button>
+          <span style="width:140px"><input class="input" value="ledger" aria-label="Node name" style="height:26px"></span>
+        </div>
+        <p class="why">32, 30 and 26 &mdash; three heights that each felt right in isolation and
+        none of which is on the ladder for a control. There is no rule anyone can apply next time,
+        and the next screen will invent three more.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      <b>The test.</b> For any new surface: read the height off the ladder, read the inset off
+      10.6, read the gap off 10.2, read the glyph size off 10.5. If none of them fits, the shape
+      is wrong &mdash; not the ladder. Raise it as a handback and add a rung deliberately, once,
+      with a reason. Six local inventions are six contradictions.
+    </p>
+
+    <div class="dev"><b>Handback 1 to the substrate &mdash; six unnamed rungs.</b> Six of the ten rungs on the height ladder
+    &mdash; 38, 24, 22, 20, 16 and 14 &mdash; are literals in
+    <span class="inline-code">_core.html</span> with no token name, while 44, 30, 28 and 26 have
+    one. A ladder whose rungs are half-named is a ladder that will grow an eleventh rung by
+    accident, because there is nothing to write instead. This sheet specifies the closed set and
+    asks the substrate to name the remaining six. Until it does, the rungs are documented here and
+    nowhere else, which is the weakest link in this sheet.</div>
+
+    <div class="dev" style="margin-top:var(--sp-12)"><b>Handback 2 to the substrate &mdash; the
+    scale has no rung below <span class="inline-code">--sp-2</span>, and three surfaces need
+    one.</b> 10.1 says twelve steps, closed, and after the substrate repair that is still true of
+    every gap and every padding <em>between</em> two things. It is not true of the inset
+    <em>inside</em> a small control, where 1px survives and cannot be collapsed upward. The switch
+    is the case that proves it: the track is 16px tall with a
+    <span class="inline-code">--w-hair</span> border on each edge, so its padding box is 14px, and
+    the knob is 12px positioned 1px in. Move that inset to
+    <span class="inline-code">--sp-2</span> and the knob is either 10px in a 14px box &mdash; a
+    visibly different control &mdash; or 12px overflowing its own track. The same 1px is
+    load-bearing on <span class="inline-code">.ph</span>, which holds its dotted underline 1px clear
+    of its text, and on <span class="inline-code">.thread .dot</span>. And 10.9&rsquo;s own
+    replacement for <span class="inline-code">.inline-code</span> is written
+    <span class="inline-code">1px var(--sp-4)</span> &mdash; a row in the retirement table that
+    still carries a raw literal, because there is nothing to write instead.
+    <b>This is not the same defect as a 1px <em>gap</em>.</b> The three 1px gaps in 10.9 are real
+    density defects and they collapse to <span class="inline-code">--sp-2</span> correctly: two
+    stacked lines are a cluster and a cluster is gapped
+    <span class="inline-code">--sp-2</span>. A 1px inset is arithmetic, not taste. The radius ramp
+    already met this exact problem and answered it in the right place &mdash;
+    <span class="inline-code">--r-bar</span> is a named, justified, single-purpose sub-4px step,
+    declared with its reason beside it. The space scale needs the same: either one named sub-2px
+    step with the same discipline, or a written ruling that a 1px inset is a hairline of ground and
+    belongs to the stroke-width set rather than the space set. Until one of those is decided, this
+    sheet cannot honestly claim the scale is closed for insets, and it does not.</div>
+  </div>
+
+</section>

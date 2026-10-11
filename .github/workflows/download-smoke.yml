@@ -1,0 +1,46 @@
+# DOWNLOAD SMOKE: a fresh machine per platform downloads Sequence from the live
+# site and runs it. Owner, 2026-09-30: "make sure it can be downloaded and run on
+# each system we implement it on."
+#
+# Each job starts with nothing installed from this project: it reads the links
+# the download page renders, checks every file against SHASUMS256.txt, installs
+# or unpacks it the way a person would, and launches the app under
+# SEQUENCE_DESKTOP_SMOKE=1. tools/release/download-smoke.mjs does the work.
+#
+# Manual dispatch only. tools/ci/no-cron.test.mjs forbids a schedule here.
+
+name: Download smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Site to download from"
+        required: false
+        default: "https://trysequence.app"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows (installer + portable zip)
+          - os: macos-latest
+            label: macOS Apple silicon (arm64 dmg)
+          - os: macos-15-intel
+            label: macOS Intel (x64 dmg)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Download from the site and launch
+        run: node tools/release/download-smoke.mjs --site "${{ inputs.site }}"

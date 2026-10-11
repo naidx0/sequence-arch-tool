@@ -1,0 +1,275 @@
+diff --git a/packages/web2/src/sessions/sessionsClient.ts b/packages/web2/src/sessions/sessionsClient.ts
+index 2ebd277..dfb9c79 100644
+--- a/packages/web2/src/sessions/sessionsClient.ts
++++ b/packages/web2/src/sessions/sessionsClient.ts
+@@ -178,6 +178,20 @@ function goalRunUrl(id: string, repoPath?: string, suffix = ''): string {
+   return repoPath ? `${base}?repoPath=${encodeURIComponent(repoPath)}` : base;
+ }
+ 
++/*
++ * ONE LIST IN FLIGHT AT A TIME, PER FETCH.
++ *
++ * Measured on 0.1.2 in Chromium (tools/measure/surface-load.mjs): 17 GETs of
++ * /api/sessions at boot and 2 to 4 on every tab click. Three readers ask for
++ * the same index at the same moment -- the store's index hydrate in
++ * connect.tsx, the rail's `listAndHydrateSessions` and the rail's catalog --
++ * and the rail asked again on every shell render. Concurrent `list()` calls now
++ * share one request; a call made after it settles fetches fresh, so a rename
++ * or a delete still re-reads the truth. Keyed by the fetch in use, so a test's
++ * mock never shares a request with another test's.
++ */
++const listInFlight = new WeakMap<typeof fetch, Promise<WireResult<GetSessionsResponse>>>();
++
+ export function createSessionsClient(fetchImpl: typeof fetch = fetch): SessionsClient {
+   const go = async <T>(url: string, init?: RequestInit): Promise<WireResult<T>> => {
+     try {
+@@ -191,8 +205,23 @@ export function createSessionsClient(fetchImpl: typeof fetch = fetch): SessionsC
+   };
+ 
+   return {
+-    list: (signal) =>
+-      go<GetSessionsResponse>('/api/sessions', { signal, headers: { accept: 'application/json' } }),
++    list: async (signal) => {
++      const cancelled = { outcome: 'error', status: 0, message: 'cancelled' } as const;
++      if (signal?.aborted) return cancelled;
++      let shared = listInFlight.get(fetchImpl);
++      if (shared === undefined) {
++        /* No caller's signal on the shared request: one reader unmounting must
++           not cancel the answer the others are waiting for. */
++        shared = go<GetSessionsResponse>('/api/sessions', { headers: { accept: 'application/json' } });
++        listInFlight.set(fetchImpl, shared);
++        const settled = shared;
++        void settled.finally(() => {
++          if (listInFlight.get(fetchImpl) === settled) listInFlight.delete(fetchImpl);
++        });
++      }
++      const answer = await shared;
++      return signal?.aborted ? cancelled : answer;
++    },
+     create: (mode, repoPath) =>
+       go<PostSessionsResponse>('/api/sessions', {
+         method: 'POST',
+diff --git a/packages/web2/src/sessions/sessionsListOnce.test.tsx b/packages/web2/src/sessions/sessionsListOnce.test.tsx
+new file mode 100644
+index 0000000..9fbef20
+--- /dev/null
++++ b/packages/web2/src/sessions/sessionsListOnce.test.tsx
+@@ -0,0 +1,110 @@
++/* ══════════════════════════════════════════════════════════════════════════
++   ONE GET OF /api/sessions, NOT SEVENTEEN
++   packages/web2/src/sessions/sessionsListOnce.test.tsx
++
++   Measured on 0.1.2 in Chromium (tools/measure/surface-load.mjs): 17 GETs of
++   /api/sessions at boot and 2 to 4 on every workspace tab click. The causes:
++   the shell and the rail made a new sessions client on every render, which
++   re-ran the rail's list effect on every render; that effect asked twice (the
++   index and the catalog); and the store's index hydrate asked a third time.
++   ══════════════════════════════════════════════════════════════════════════ */
++
++import { render, waitFor } from '@testing-library/react';
++import { describe, expect, it } from 'vitest';
++
++import { createStore, StoreProvider } from '../state';
++import { V3SessionsRail } from '../v3/V3SessionsRail';
++import { createSessionsClient } from './sessionsClient';
++
++const INDEX = {
++  version: 1,
++  activeId: 'session-a',
++  sessions: [{ id: 'session-a', title: 'a', createdAt: '2026-09-23T09:00:00.000Z', updatedAt: '2026-09-23T09:00:00.000Z' }],
++};
++
++function countingFetch() {
++  const gets: string[] = [];
++  let release: (() => void) | undefined;
++  let gate: Promise<void> | undefined;
++  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
++    const url = String(input);
++    const method = (init?.method ?? 'GET').toUpperCase();
++    if (method === 'GET') gets.push(url);
++    if (gate) await gate;
++    if (url === '/api/sessions' && method === 'GET') {
++      return new Response(
++        JSON.stringify({ index: INDEX, scope: 'workspace', repos: [{ path: '/r', name: 'r', index: INDEX }] }),
++        { status: 200, headers: { 'content-type': 'application/json' } },
++      );
++    }
++    return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
++  }) as typeof fetch;
++  return {
++    fetchImpl,
++    gets,
++    hold() {
++      gate = new Promise<void>((r) => (release = r));
++    },
++    release() {
++      gate = undefined;
++      release?.();
++    },
++  };
++}
++
++describe('the sessions list is asked for once at a time', () => {
++  it('concurrent list() calls share one request; a later call fetches fresh', async () => {
++    const wire = countingFetch();
++    const a = createSessionsClient(wire.fetchImpl);
++    const b = createSessionsClient(wire.fetchImpl);
++    wire.hold();
++    const both = Promise.all([a.list(), b.list(), a.list()]);
++    wire.release();
++    const answers = await both;
++    expect(wire.gets.filter((u) => u === '/api/sessions')).toHaveLength(1);
++    expect(answers.every((x) => x.outcome === 'ok')).toBe(true);
++
++    await a.list();
++    expect(wire.gets.filter((u) => u === '/api/sessions')).toHaveLength(2);
++  });
++
++  it('one caller aborting gets "cancelled" and does not cancel the others', async () => {
++    const wire = countingFetch();
++    const client = createSessionsClient(wire.fetchImpl);
++    const gone = new AbortController();
++    wire.hold();
++    const first = client.list(gone.signal);
++    const second = client.list();
++    gone.abort();
++    wire.release();
++    const [x, y] = await Promise.all([first, second]);
++    expect(x).toMatchObject({ outcome: 'error', message: 'cancelled' });
++    expect(y.outcome).toBe('ok');
++    expect(wire.gets.filter((u) => u === '/api/sessions')).toHaveLength(1);
++  });
++
++  it('two separate fetches never share a request', async () => {
++    const one = countingFetch();
++    const two = countingFetch();
++    await Promise.all([createSessionsClient(one.fetchImpl).list(), createSessionsClient(two.fetchImpl).list()]);
++    expect(one.gets).toHaveLength(1);
++    expect(two.gets).toHaveLength(1);
++  });
++
++  it('the rail fills both the index and the catalog from one GET, and re-renders fetch nothing', async () => {
++    const wire = countingFetch();
++    const client = createSessionsClient(wire.fetchImpl);
++    const store = createStore();
++    const view = (
++      <StoreProvider store={store}>
++        <V3SessionsRail client={client} />
++      </StoreProvider>
++    );
++    const { rerender, container } = render(view);
++    await waitFor(() => expect(store.getState().session.activeId).toBe('session-a'));
++    await waitFor(() => expect(container.textContent).toContain('r'));
++    for (let i = 0; i < 5; i += 1) rerender(view);
++    await new Promise((r) => setTimeout(r, 20));
++    expect(wire.gets.filter((u) => u === '/api/sessions')).toHaveLength(1);
++  });
++});
+diff --git a/packages/web2/src/state/connect.tsx b/packages/web2/src/state/connect.tsx
+index 7ffa920..47d05c5 100644
+--- a/packages/web2/src/state/connect.tsx
++++ b/packages/web2/src/state/connect.tsx
+@@ -3,6 +3,7 @@ import { createContext, type ReactNode, useContext, useEffect, useRef, useSyncEx
+ import { fromCanvasMemory, toCanvasMemory, worthPersistingCanvas } from '../sessions/canvasMemory';
+ import { fromChatMemory, toChatMemory, worthPersisting } from '../sessions/chatMemory';
+ import { rememberCanvasForFlush, rememberChatForFlush, clearSessionFlush } from '../sessions/sessionPersist';
++import { createSessionsClient } from '../sessions/sessionsClient';
+ 
+ import { type ChatColumnProps, type ComposerProps, type ToolbeltId } from '../chat';
+ import { ASK_STREAM_ROUTE, createAskTransport, type AskTransport } from '../chat/askClient';
+@@ -1280,8 +1281,11 @@ export function ConnectedChatColumn() {
+     if (indexHydrated.current) return undefined;
+     indexHydrated.current = true;
+     const controller = new AbortController();
+-    void fetch('/api/sessions', { signal: controller.signal, headers: { accept: 'application/json' } })
+-      .then((res) => (res.ok ? res.json() : null))
++    /* Through the sessions client, so it shares one request with the rail's
++       list at boot instead of racing it with a second GET. */
++    void createSessionsClient()
++      .list(controller.signal)
++      .then((answer) => (answer.outcome === 'ok' ? answer.body : null))
+       .then((body) => {
+         if (controller.signal.aborted || !body) return;
+         const index = (body as { index?: { activeId?: string; sessions?: unknown[] } }).index;
+diff --git a/packages/web2/src/v3/V3SessionsRail.tsx b/packages/web2/src/v3/V3SessionsRail.tsx
+index e3fa5f1..e13a0da 100644
+--- a/packages/web2/src/v3/V3SessionsRail.tsx
++++ b/packages/web2/src/v3/V3SessionsRail.tsx
+@@ -109,13 +109,18 @@ export interface V3SessionsRailProps {
+ }
+ 
+ export function V3SessionsRail({
+-  client = createSessionsClient(),
++  client: clientProp,
+   onOpenProject,
+   onOpenSettings,
+   showTraffic = false,
+ }: V3SessionsRailProps) {
+   const store = useStore();
+   const state = useAppState();
++  /* One client for the rail's life. A default of `createSessionsClient()` made
++     a new client on every render, which re-ran the list effect below on every
++     render: two GETs of /api/sessions per tab click. */
++  const [ownClient] = useState(() => clientProp ?? createSessionsClient());
++  const client = clientProp ?? ownClient;
+   const attachedRepoPath = groundedRepoRoot(state);
+   const [repoSections, setRepoSections] = useState<readonly RepoSessionsSection[]>([]);
+   const [now, setNow] = useState(() => Date.now());
+@@ -139,13 +144,15 @@ export function V3SessionsRail({
+   useEffect(() => {
+     live.current = true;
+     const controller = new AbortController();
+-    void listAndHydrateSessions(store, client, controller.signal);
+-    void loadCatalog(controller.signal);
++    /* The index and the catalog come from the same GET: one request, not two. */
++    void listAndHydrateSessions(store, client, controller.signal).then((answer) => {
++      if (live.current && answer.outcome === 'ok') setRepoSections(answer.repos);
++    });
+     return () => {
+       live.current = false;
+       controller.abort();
+     };
+-  }, [store, client, loadCatalog, attachedRepoPath]);
++  }, [store, client, attachedRepoPath]);
+ 
+   useEffect(() => {
+     const id = window.setInterval(() => setNow(Date.now()), 60_000);
+diff --git a/packages/web2/src/v3/V3Shell.tsx b/packages/web2/src/v3/V3Shell.tsx
+index bc67c34..a6e30ac 100644
+--- a/packages/web2/src/v3/V3Shell.tsx
++++ b/packages/web2/src/v3/V3Shell.tsx
+@@ -216,7 +216,8 @@ export function V3Shell({ onOpenSettings, onOpenProject }: V3ShellProps) {
+   const [railW, setRailW] = useState(() => readStoredWidth('v3.railW', 260));
+   const [chatW, setChatW] = useState(() => defaultChatWidth());
+   const [liveW, setLiveW] = useState<Record<string, number>>(() => readLiveWidths());
+-  const sessionsClient = createSessionsClient();
++  /* Created once: a new client each render re-ran the rail's list effect on every render. */
++  const [sessionsClient] = useState(createSessionsClient);
+   const chatExpanded = chromeTabs.active === 'chat' && isVisible(chromeTabs, 'chat');
+   const openLive = LIVE_PILLS.filter((id) => isVisible(chromeTabs, id));
+   const bodyRef = useRef<HTMLDivElement>(null);
+diff --git a/packages/web2/src/v3/sessionActions.ts b/packages/web2/src/v3/sessionActions.ts
+index 0635620..4ad3667 100644
+--- a/packages/web2/src/v3/sessionActions.ts
++++ b/packages/web2/src/v3/sessionActions.ts
+@@ -1,3 +1,4 @@
++import type { RepoSessionsSection } from '@sequence/api-types';
+ import type { Store } from '../state/store';
+ import { fromCanvasMemory } from '../sessions/canvasMemory';
+ import { fromChatMemory } from '../sessions/chatMemory';
+@@ -286,7 +287,7 @@ export async function listAndHydrateSessions(
+   client: SessionsClient = defaultClient,
+   signal?: AbortSignal,
+ ): Promise<
+-  | { outcome: 'ok' }
++  | { outcome: 'ok'; repos: RepoSessionsSection[] }
+   | { outcome: 'error'; message: string }
+ > {
+   const answer = await client.list(signal);
+@@ -299,5 +300,5 @@ export async function listAndHydrateSessions(
+     sessions: index.sessions,
+     activeId: typeof index.activeId === 'string' && index.activeId ? index.activeId : null,
+   });
+-  return { outcome: 'ok' };
++  return { outcome: 'ok', repos: answer.body.repos ?? [] };
+ }
