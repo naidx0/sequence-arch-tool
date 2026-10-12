@@ -1,0 +1,846 @@
+/* Whiteboard � Graphite V3 (Decision 22 retired prior sheet; this owns .wb-* ) */
+
+.wb-scope.wb {
+  container-type: inline-size;
+  container-name: wb;
+  /* The card pair the architecture board's dock reads (canvas/board.css names
+     them on .board-scope, which this surface is not). */
+  --wb-card: var(--surface-2);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--board-ground);
+  color: var(--ink-1);
+  position: relative;
+  /* The board fills its pane edge to edge, and clips to the pane's rounded
+     rect: nothing (the dotted ground, a mark panned past the edge) spills. */
+  border-radius: var(--r-10);
+  overflow: hidden;
+}
+:root[data-theme='light'] .wb-scope.wb {
+  --wb-card: var(--bg-base);
+}
+
+/* ONE FLOATING PILL AT THE BOTTOM CENTRE, like the architecture board's dock
+   (canvas/board.css .boardfurniture + .bdock): no block above the board, no
+   border. The layer takes no clicks; only the pill does. It never wraps: below
+   520px of the board's OWN width (container query) the secondary actions fold
+   into More. */
+.wb-furniture {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  /* Centred by Whiteboard.tsx with a ROUNDED left margin (the pill sits on whole
+     pixels); this is only the first paint, before it has measured. */
+  justify-content: center;
+  padding: var(--sp-12) var(--sp-12) var(--sp-16);
+}
+.wb-tools {
+  pointer-events: auto;
+  flex: 0 1 auto;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--dock-pad);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  /* TRANSPARENT (owner 2026-10-09: "make it transparent on the whiteboard"):
+     the dotted ground and the drawing read through it, with the dock's hairline
+     edge holding its shape. No backdrop-filter: a blurred ancestor is a backdrop
+     root and the menus (which sit inside) would see nothing, and the style
+     ratchet caps blurring backdrops (the architecture dock has none either). */
+  /* The fill is the ARCHITECTURE DOCK's, one rule for both (canvas/board.css, --dock-fill). */
+  box-shadow: var(--e1);
+  /* NOT hidden: the Shapes, Text and More menus open upward out of the pill. */
+  overflow: visible;
+}
+
+/* Every control is the same quiet round button: one height, one hover. Ask is
+   the only filled one, and it is the same height. */
+.wb-tool {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  gap: var(--sp-2);
+  min-width: var(--control-h-lg);
+  height: var(--control-h-lg);
+  padding: 0;
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+.wb-tool {
+  position: relative;
+}
+.wb-tool .i {
+  display: block;
+  flex: none;
+}
+.wb-ic {
+  display: block;
+  flex: none;
+}
+/* The pill's glyphs are drawn on a 16px grid at 16px (wbIcons.tsx): nothing here
+   may give them a width, a height or a transform, or they leave the pixel grid.
+   The caret is its own 10px glyph, set on whole-pixel offsets. */
+.wb-tool .wb-caret {
+  color: var(--ink-3);
+}
+/* A menu trigger is its glyph and its 10px chevron side by side on one centre line, in a button two steps wider
+   than a plain tool (16 + 2 + 10 inside 40), so the pair sits on whole pixels. */
+.wb-tool.wb-tool-menu {
+  gap: var(--sp-2);
+  min-width: calc(var(--control-h-lg) + var(--sp-8));
+}
+
+.wb-tool:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+  border-color: var(--glass-ctl-edge);
+  color: var(--ink-1);
+}
+.wb-tool:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+
+.wb-tool[data-on='true'],
+.wb-tool[aria-pressed='true'] {
+  background: var(--accent-wash);
+  color: var(--accent);
+  border-color: transparent;
+}
+
+.wb-tool:disabled {
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+
+/* Ask: the single primary, at the end. Same height as its neighbours; the word
+   gets real side padding. */
+.wb-tool-solid {
+  /* A fixed width, so the word's own fractional width never puts the pill (and every glyph in it) on a half pixel. */
+  min-width: calc(var(--control-h-lg) * 2);
+  padding: 0 var(--sp-16);
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  border-color: transparent;
+  font-weight: var(--fw-label);
+}
+.wb-tool-solid:hover:not(:disabled) {
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  border-color: transparent;
+  opacity: 0.92;
+}
+.wb-tool-solid:disabled {
+  background: var(--glass-ctl);
+  color: var(--ink-4);
+}
+
+.wb-sep {
+  flex: none;
+  width: var(--w-hair);
+  height: var(--dock-sep-h);
+  margin: 0 var(--sp-4);
+  background: var(--edge-strong);
+}
+
+.wb-menuwrap,
+.wb-morewrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+/* More is always on the pill: Reset view and Clear board are rare and live only
+   there. Undo and Fit are inline when there is room, so their rows in More are
+   shown only when the pill folds them. */
+.wb-menuitem.wb-fold,
+.wb-menuitem.wb-fold2 {
+  display: none;
+}
+
+/* Under 520px of the BOARD'S width: undo and fit fold into More.
+   The row stays one line; nothing wraps. */
+@container wb (max-width: 520px) {
+  .wb-tools .wb-opt {
+    display: none;
+  }
+  .wb-more-menu .wb-menuitem.wb-fold {
+    display: grid;
+  }
+  .wb-furniture {
+    padding-inline: var(--sp-8);
+  }
+}
+/* A compressed board: the Shapes and Text triggers drop their chevron and are plain tools again. */
+@container wb (max-width: 380px) {
+  .wb-tool .wb-caret {
+    display: none;
+  }
+  .wb-tool.wb-tool-menu {
+    min-width: var(--control-h-lg);
+  }
+  .wb-tools {
+    gap: 0;
+  }
+  .wb-tool:not(.wb-tool-solid) {
+    min-width: var(--icon-btn-lg);
+  }
+  .wb-tool-solid {
+    padding: 0 var(--sp-12);
+  }
+}
+
+/* The dotted ground, centred on the board so the left and right margins match
+   and no dot sits on an edge (a pattern anchored at 0,0 put a half dot on the
+   left edge and a 15px gap on the right). The overflow clip is on .wb-scope. */
+.wb-canvas {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: block;
+  touch-action: none;
+  /* THE ARCHITECTURE BOARD'S FIELD, copied: the board ground, a dot of the strong
+     hairline every --sp-20, and the dots travel with the camera (Whiteboard.tsx
+     writes --board-cam-x/y/z and the thinning step/fade, as Board.tsx does). */
+  --board-field-ink: var(--edge-strong);
+  --board-field-pitch: var(--sp-20);
+  background-color: var(--board-ground);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--board-field-ink) calc(var(--board-field-fade, 1) * 100%), transparent) var(--board-field-dot),
+    transparent var(--board-field-dot)
+  );
+  background-size:
+    calc(var(--board-field-pitch) * var(--board-cam-z, 1) * var(--board-field-step, 1))
+    calc(var(--board-field-pitch) * var(--board-cam-z, 1) * var(--board-field-step, 1));
+  background-position: calc(var(--board-cam-x, 0px)) calc(var(--board-cam-y, 0px));
+}
+
+.wb-ink {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wb-ink.wb-draft {
+  stroke: var(--ink-3);
+  stroke-dasharray: 4 3;
+}
+
+.wb-text,
+.wb-noderef {
+  fill: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+}
+
+.wb-noderef {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  fill: var(--accent-ink);
+}
+
+.wb-hit {
+  cursor: pointer;
+}
+
+.wb-erasable {
+  cursor: crosshair;
+}
+
+.wb-sel-halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.wb-artifact-frame {
+  fill: var(--surface-1);
+  stroke: var(--edge-faint);
+  stroke-width: 1;
+}
+
+/* AI Canvas freeform plane � content floats on the dot grid; stroke only when selected. */
+.ai-canvas-plane .wb-artifact-frame {
+  fill: transparent;
+  stroke: none;
+}
+
+.ai-canvas-plane .wb-artifact-frame.is-selected {
+  stroke: var(--accent-edge, var(--accent));
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.wb-artifact-body {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: var(--sp-6);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  background: transparent;
+}
+
+.ai-canvas-plane .wb-artifact-body {
+  overflow: visible;
+  height: auto;
+  min-height: 0;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
+  padding: var(--sp-4);
+}
+
+.ai-canvas-plane .wb-artifact-chart .seqchart,
+.ai-canvas-plane .wb-artifact-block {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.ai-canvas-plane .seqchart-scroll {
+  overflow: visible;
+}
+
+.wb-artifact-chart .seqchart {
+  max-width: 100%;
+}
+
+.wb-artifact-missing {
+  margin: 0;
+  color: var(--ink-4);
+  font-size: var(--t-12);
+}
+
+/* One short muted line, centred on the board; gone on the first mark. */
+.wb-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  max-width: calc(100cqw - 2 * var(--sp-24));
+  margin: 0;
+  /* A small solid backdrop: the dots of the field do not run through the words. */
+  padding: var(--sp-6) var(--sp-12);
+  border-radius: var(--r-full);
+  background: var(--board-ground);
+  pointer-events: none;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  text-align: center;
+  z-index: 1;
+}
+
+/* The board is focusable (tabindex -1) so its keys work: no default outline, which
+   a rounded, clipped pane cuts into corner triangles. The keyboard gets a clean
+   ring drawn INSIDE the board's own edge. */
+.wb-scope.wb:focus,
+.wb-canvas:focus {
+  outline: none;
+}
+.wb-scope.wb:focus-visible,
+.wb-canvas:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: calc(-1 * var(--w-rule));
+}
+
+/* The More menu: wide enough for its longest row, one column. */
+.wb-more-menu {
+  min-width: 176px;
+}
+
+/* Menus open UPWARD out of the bottom pill, centred on their trigger. */
+.wb-menu {
+  position: absolute;
+  bottom: calc(100% + var(--sp-8));
+  left: 50%;
+  translate: -50% 0;
+  z-index: 30;
+  min-width: 148px;
+  /* Never wider than the board less its margins (Whiteboard.tsx also pushes it inside the edge). */
+  max-width: calc(100cqw - 2 * var(--sp-8));
+  padding: var(--sp-4);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ONE GRID FOR EVERY ROW: a 16px glyph column, the label, the key. Rows are one height, so Box, Oval, Line and Arrow
+   (and More's rows) line up glyph over glyph and word over word. */
+.wb-menuitem {
+  display: grid;
+  grid-template-columns: var(--sp-16) minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--sp-10);
+  width: 100%;
+  min-height: var(--control-h-lg);
+  padding: 0 var(--sp-10);
+  line-height: 1;
+  white-space: nowrap;
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wb-menuitem:disabled {
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+.wb-menuitem:hover:not(:disabled),
+.wb-menuitem[aria-checked='true'] {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+/* Clear is quiet until you reach for it, then it says what it does (as the pill's
+   old trash button did). */
+.wb-menuitem-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--b-del) 14%, transparent);
+  color: var(--b-del);
+}
+
+.wb-picker {
+  position: absolute;
+  left: 50%;
+  top: var(--sp-56);
+  translate: -50% 0;
+  z-index: 25;
+  min-width: 220px;
+  max-width: calc(100cqw - 2 * var(--sp-12));
+  padding: var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+.wb-picker-none {
+  margin: 0;
+  font-size: var(--t-12);
+  color: var(--ink-4);
+  line-height: var(--lh-14);
+}
+
+.wb-picker-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-picker-row {
+  display: block;
+  width: 100%;
+  padding: var(--sp-8) var(--sp-10);
+  border: none;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wb-picker-row:hover,
+.wb-picker-row[aria-selected='true'] {
+  background: var(--surface-1);
+  color: var(--ink-1);
+}
+
+.wb-input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--bg-ground);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+}
+
+.wb-textarea {
+  height: auto;
+  min-height: 64px;
+  padding: var(--sp-8);
+  resize: vertical;
+  font-family: var(--font-sans);
+}
+
+.wb-askpanel {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--control-h-lg) + var(--sp-32));
+  translate: -50% 0;
+  z-index: 25;
+  /* The BOARD's width, not the window's: a 306px board (three surfaces) must hold it whole. */
+  width: min(320px, calc(100cqw - 2 * var(--sp-12)));
+  padding: var(--sp-12);
+  border-radius: var(--r-14);
+  background: var(--bg-base);
+  box-shadow: var(--e3), 0 0 0 var(--w-hair) var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+
+.wb-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.wb-label {
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+
+.wb-askpanel .composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* The composer's control row: the X (its + button) bottom-left, Send bottom-right. */
+.wb-askpanel .wb-askactions {
+  justify-content: space-between;
+}
+.wb-askpanel.chat-scope .composer .wb-ask-field {
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  padding-bottom: var(--sp-8);
+}
+
+.v3-whiteboard .wb-scope {
+  height: 100%;
+}
+
+/* Intent ghost � agent's last placement after a human pin. */
+.wb-intent-ghost {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+
+/* ── Round 8: labels, sticky notes, the agent's tint ───────────────────── */
+.wb-ink[data-by='agent'] { stroke: var(--accent); }
+.wb-label {
+  fill: var(--ink-1);
+  stroke: none;
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  pointer-events: none;
+}
+.wb-label-line {
+  paint-order: stroke;
+  stroke: var(--bg-ground);
+  stroke-width: 4px;
+}
+.wb-sticky {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  width: 100%;
+  height: 100%;
+  padding: var(--sp-8) var(--sp-12);
+  overflow: hidden;
+  border: var(--w-hair) solid var(--hint-yellow-rim);
+  border-radius: 10px;
+  background-color: var(--surface-2);
+  background-image: linear-gradient(var(--hint-yellow-wash), var(--hint-yellow-wash));
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.wb-sticky[data-by='agent'] {
+  border-color: var(--accent-edge);
+  background-image: linear-gradient(var(--accent-wash), var(--accent-wash));
+}
+.wb-sticky[data-selected='true'] { border-color: var(--accent); }
+.wb-sticky-by {
+  font-size: var(--t-11);
+  font-weight: var(--fw-head);
+  color: var(--accent-ink);
+}
+.wb-sticky-t { min-width: 0; }
+
+/* Cursors: the architecture board's grab / grabbing (canvas/board.css). */
+.wb-canvas[data-tool='select'],
+.wb-canvas[data-tool='pan'] {
+  cursor: grab;
+}
+.wb-canvas[data-tool='select'] .wb-ink,
+.wb-canvas[data-tool='select'] .wb-hit {
+  cursor: default;
+}
+.wb-canvas[data-tool='draw'],
+.wb-canvas[data-tool='rect'],
+.wb-canvas[data-tool='ellipse'],
+.wb-canvas[data-tool='line'],
+.wb-canvas[data-tool='arrow'] {
+  cursor: crosshair;
+}
+.wb-canvas[data-space-pan],
+.wb-canvas[data-space-pan] .wb-ink,
+.wb-canvas[data-space-pan] .wb-hit {
+  cursor: grab;
+}
+.wb-canvas[data-panning='true'],
+.wb-canvas[data-panning='true'] .wb-ink,
+.wb-canvas[data-panning='true'] .wb-hit {
+  cursor: grabbing;
+}
+.wb-marquee {
+  fill: var(--accent-wash);
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+.wb-kbd {
+  justify-self: end;
+  min-width: var(--sp-16);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-4);
+}
+
+/* Boxes the board draws for its own labels (composeBoxes): a card, not an outline. */
+.wb-ink.wb-box {
+  fill: var(--surface-1);
+}
+.wb-box-label {
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+}
+.wb-box-label-ref {
+  fill: var(--accent-ink);
+}
+
+/* ── Free-form: the board tags float over the board's top-left (no block) ── */
+.wb-boards.wb-boards-free {
+  position: relative;
+}
+.wb-boards.wb-boards-free > .board-tabs {
+  position: absolute;
+  top: var(--sp-12);
+  left: var(--sp-12);
+  /* As the architecture tags: the shell's pane head owns the top-right corner. */
+  right: 80px;
+  z-index: 31;
+  padding: 0;
+  /* The strip takes no clicks (the board under it still pans); its pills do. */
+  pointer-events: none;
+}
+.wb-boards.wb-boards-free > .board-tabs > * {
+  pointer-events: auto;
+}
+.wb-boards.wb-boards-free > .wb-boards-body {
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Chat-drawn diagrams draw themselves in (live arrivals only) ───────────
+   .wb-arrive is set by Whiteboard only on marks that arrived while the agent's
+   turn was running, in this mount: never on a reload, a replay or a chat switch.
+   Boxes fade and scale in along the flow (--wb-delay is their stagger), the
+   connectors draw (the line's pathLength is 1, so the dash runs 1 to 0; fill-mode is backwards so the drag's own transform and the plain stroke return when it ends), and the
+   newest batch's boxes pulse their border once. With reduced motion none of this
+   exists and the marks are simply there. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes wb-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes wb-draw {
+    from {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes wb-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  /* No 0% or 100% frame: the pulse starts and ends at the mark's REAL stroke
+     (grey for a person's box, accent for the agent's), so nothing snaps. */
+  @keyframes wb-pulse {
+    40% {
+      stroke: var(--accent);
+      stroke-width: 3.5;
+    }
+  }
+  .wb-arrive-box {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: wb-pop 420ms var(--ease) var(--wb-delay, 0ms) backwards;
+  }
+  .wb-arrive-line .wb-ink:not(.wb-arrive-head) {
+    animation: wb-draw 520ms var(--ease) var(--wb-delay, 0ms) backwards;
+  }
+  .wb-arrive-line .wb-arrive-head,
+  .wb-arrive-line .wb-label {
+    animation: wb-fade 200ms var(--ease) calc(var(--wb-delay, 0ms) + 420ms) backwards;
+  }
+  .wb-arrive-box.wb-pulse .wb-box {
+    animation: wb-pulse 900ms var(--ease) calc(var(--wb-delay, 0ms) + 460ms) 1 backwards;
+  }
+}
+
+/* A connector's label sits on a backing of the board's own ground, clear of every box (agentLayout.ts). */
+.wb-edge-label {
+  pointer-events: none;
+}
+.wb-edge-back {
+  fill: var(--board-ground);
+  stroke: var(--edge-faint);
+  stroke-width: 1;
+}
+.wb-edge-text {
+  font-size: var(--t-12);
+}
+/* The eraser is in use but folded away under 270px: More carries its pressed look. */
+@container wb (max-width: 270px) {
+  .wb-tool[data-erase='true'] {
+    background: var(--accent-wash);
+    color: var(--accent);
+  }
+}
+/* ── TIDY-UP OFFER (snapSession.ts) ──────────────────────────────────────
+   LAYOUT ONLY. This block sets position and spacing and nothing else; the look
+   belongs to the kit. The chip is .s2-chipbtn (glass, the app's chip type), the
+   key hint is .s2-kbd, the dismiss is the transparent .s2-ibtn.s2-ibtn-sm, and
+   the dashed preview is .wb-sel-halo (the selection halo). The row itself is
+   transparent. Positioned in screen space by Whiteboard.tsx; the Tidied note
+   sits just above the tool pill. */
+.wb-snap {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-4);
+  white-space: nowrap;
+  transform: translate(-100%, calc(-100% - var(--sp-8)));
+}
+
+.wb-snap-done {
+  left: 50%;
+  top: auto;
+  bottom: calc(var(--sp-16) + var(--control-h-lg) + 2 * var(--dock-pad) + var(--sp-8));
+  transform: translateX(-50%);
+}
+
+.wb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wb-scope.wb:focus { outline: none; }
+
+/* Round 0.1.5 (G2): a pane narrowed toward its 240 px minimum keeps the whole pill inside its edge. Under 300 px the
+   separators go, the buttons tighten and Ask takes less side padding; under 230 px the pill loses its margin too. */
+@container wb (max-width: 300px) {
+  .wb-sep {
+    display: none;
+  }
+  .wb-tools {
+    gap: 0;
+  }
+  .wb-tool:not(.wb-tool-solid) {
+    min-width: var(--icon-btn-lg);
+  }
+  .wb-tool .wb-caret {
+    display: none;
+  }
+  .wb-tool-solid {
+    padding: 0 var(--sp-8);
+  }
+}
+/* Under 270px Eraser leaves the pill for More as well (its row there is .wb-fold2): the pill is then Select, Draw,
+   Shapes, Text, More, Ask and fits a 240px pane edge to edge. */
+@container wb (max-width: 270px) {
+  .wb-tools .wb-opt2 {
+    display: none;
+  }
+  .wb-more-menu .wb-menuitem.wb-fold2 {
+    display: grid;
+  }
+}
+@container wb (max-width: 230px) {
+  .wb-furniture {
+    padding-inline: var(--sp-4);
+  }
+}
+/* The tag row keeps clear of the pane's floating controls (split, full screen) at the top right. */
+.wb-boards > .board-tabs {
+  padding-right: calc(var(--target-min) * 2 + var(--sp-16));
+}
+

@@ -1,0 +1,150 @@
+{
+  "$comment": "Ceilings for deterministic boot and render counts. Checked by tools/ci/perf-ratchet.mjs on the output of tools/measure/perf-counts.mjs. A count may only go down: lower its ceiling in the commit that lowers it.",
+  "$notes": "S3 shadow snapshots (not gated), measured 2026-10-06 on a temp clone of codeforge at 14c59447 (2,809 tracked files): one snapshot cold (shadow created) 3,859 ms, warm 98 ms unchanged / 102 ms one file changed, median 103 ms over 47 turns, so whole-tree snapshots stay (under the 300 ms line). Shadow after 50 turns: 27,899 KiB (3,175 loose objects, mostly the first full tree); after the batched gc (every 10 aged-out turns, queued after the turn) 25,769 KiB; one gc 3,270 ms. Script: scratchpad proof/snap-cost.mjs in the S1 batch.",
+  "bootJsBytes": {
+    "ceiling": 2435391,
+    "what": "script bytes requested before the board's first layout is applied (first-board, cold; 3 agreeing reads). Raised 2,410,548 -> 2,435,391 (+24,843) on 2026-10-10 when the 0.1.4 UX round and next-0.1.4c merged; script bytes requested before the board's first layout is applied (first-board, cold; 3 agreeing reads). raised 2,434,744 -> 2,435,391 (+647) on 2026-10-10 by next-0.1.4c merged onto the 0.1.4 UX round; raised 2,409,900 -> 2,434,744 (+24,844) on 2026-10-10 by next-0.1.4b merged onto shipped 0.1.4, which had raised 2,409,858 -> 2,434,987 (+25,129) on 2026-10-09 with the UX round merge; 2,409,858 -> 2,434,987 (+25,129) on 2026-10-09 by the 0.1.4 UX round merge; see the $raised chain. Lowered 2,434,277 -> 2,409,838 (-24,439) on 2026-10-09 on the 0.1.4 package: the visual kit leaves the boot chunk (dynamic import of the schema kit and router), the cards add +7,618; see the $raised note. Lowered 2,312,360 -> 2,296,737 (-15,623) on 2026-10-07 by wip/gpt-perf: the Files surface (ConnectedFilesPanel with its tree, operations and preview) loads with React.lazy when first opened; it had added ~20 KB to the boot chunk since 41654a10. 3 agreeing cold reads after a full build. Lowered 2,374,877 -> 2,312,360 (-62,517) on 2026-10-07 by the round 8 integration (r8/int): see the $raised note for the merge, the cut and the +52 B after it. Lowered 2,384,671 -> 2,374,877 (-9,794) on 2026-10-07 by round 7 agents (r7/agents): the Agents dock (and the panel it carries) and the Install bridge card load when first drawn; that pays for the model menu, its active-model and caps-error lines and the run notice the agents lane put on the boot path. 3 agreeing cold reads after a web2 build. 2,469,168 -> 2,438,828 in S4 (review pane and stroke recognition load when used, not at boot; 3 agreeing cold reads after a full build on 6ca8c4e6). Earlier raises: 2,464,265 -> 2,469,172 (+4,907) on 2026-10-06 for S5 keyboard shortcuts from the first frame; 2,438,828 -> 2,443,651 (+4,823) for S2b and S5 composer wiring; 2,443,651 -> 2,443,689 (+38) at 2026-10-06T08:37:53Z for agentActivity's chunk name in the boot preload list (canvas batch), removed again by this raise's re-export. Lowered 2,450,205 -> 2,449,924 the same day: making a new chat's worktree loads with New Chat (worktree/newChatWorktree.ts), not at boot. Lowered 2,455,107 -> 2,374,161 (-80,946) at 2026-10-06T19:27:46Z on feat/reskin a3f87eb2 (the reskin, Decision 49, merged with the board): every overlay now loads when it opens (Settings with its panes and clients, Activity, Help, Search, the Open-project dialog; Review and Rewind already did), and no index re-export pulls a panel into boot. That more than pays for what the reskin adds to the boot path: the shell2 shell (Shell2, SessionPanel, StatusBar, layout prefs and menu keys), the chat and composer markup with its menus (mode, model and slider, slash), the board's cards and dock, and the brand marks (Codex, Claude, Ollama, Sequence). Sourcemap attribution of the boot chunk before the cut (scratchpad smap build at aa6c6ca0): V3Chat 50,358 B, SettingsPanel 38,243 B, Shell2 11,947 B, SessionPanel 6,815 B, brandIcons 5,892 B, icons 4,687 B. 3 agreeing cold reads after a full build.",
+    "$raised": {
+      "date": "2026-10-10",
+      "at": "2026-10-10T07:00:00Z",
+      "from": 2410548,
+      "to": 2435391,
+      "bytes": 24843,
+      "reason": "The 0.1.4 UX round and next-0.1.4c merged: measured 2,435,391 with 3 agreeing cold reads after a full build, bootModules 5, bootRequests 29, commits per keystroke and per stream chunk 1/1 unchanged. The previous committed ceiling (2,410,548) is the 0.1.4c package's own tree; the UX round boot additions land on top of it: the Workspaces tree, ActivityLoader and the askInPlace wiring, after the terminal and board-ask code were lazy-loaded. Chained under previous: the 0.1.4 tree's own notes, ending at 2,435,391.",
+      "previous": {
+        "date": "2026-10-10",
+        "at": "2026-10-10T06:00:00Z",
+        "from": 2434744,
+        "to": 2435391,
+        "bytes": 647,
+        "reason": "next-0.1.4c (sketch snapping, the local board log and its UI reuse pass) merged onto 0.1.4 with next-0.1.4b: measured 2,435,391 with 3 agreeing cold reads after a full build, bootModules 5, bootRequests 29, commits per keystroke and per stream chunk 1/1 unchanged. +647 B in the boot chunk over the previous ceiling (2,434,744), the same +648 the package measured on its own tree (2,409,900 -> 2,410,548): the pen points carry a time t (whiteboard model and ArchDraw), the arch board draws the diamond, and wb/replace exists for one-frame undo. The recognizer, the snap session and the Settings row load outside the boot chunk. The tidy chip, its key hints and the Settings choice reuse the kit (s2-chipbtn, s2-kbd, .sb-seg), so they add no boot script.",
+        "previous": {
+          "date": "2026-10-10",
+          "at": "2026-10-10T04:00:00Z",
+          "from": 2409900,
+          "to": 2434744,
+          "bytes": 24844,
+          "reason": "next-0.1.4b (refine loop and find_files; its package ceiling was 2,409,900) merged onto shipped 0.1.4 (whose ceiling was 2,434,987 after the UX round): measured 2,434,744 with 3 agreeing cold reads after a full build, bootModules 5, bootRequests 29, commits per keystroke and per stream chunk 1/1 unchanged. That is 243 B under the 0.1.4 ceiling plus the package's +42 B, so the ceiling is set to the measurement. The earlier notes follow under previous.",
+          "previous": {
+            "date": "2026-10-10",
+            "at": "2026-10-10T03:30:00Z",
+            "from": 2434987,
+            "to": 2435029,
+            "bytes": 42,
+            "reason": "next-0.1.4b (refine loop and find_files) merged onto shipped 0.1.4: the package measured +42 B in the boot chunk on its own tree (2,409,858 -> 2,409,900); the same +42 B is carried onto this tree's ceiling. The note card and the rest of refine load outside the boot chunk; find_files is MCP/analyzer only.",
+            "previous": {
+              "date": "2026-10-09",
+              "at": "2026-10-09T23:59:00Z",
+              "from": 2409858,
+              "to": 2434987,
+              "bytes": 25129,
+              "reason": "The 0.1.4 UX round merged onto the 0.1.4 package (0614f8a6): first-page script bytes 2,455,558 on the merge, 2,434,987 after the lazy loads below, against the package's 2,409,858 (+25,129 B). Per-module attribution of the entry chunks by sourcemap, package tip vs merge: the UX round's new boot modules were the askInPlace hook, popover, reference builder, crop geometry and renderer and sender (16.0 KB), the terminal pane with its screen model and prompt condenser (11.5 KB), ActivityLoader (2.3 KB), plus growth in Shell2 (+2.8 KB), BoardTabs (+2.7 KB), SessionPanel (+2.1 KB), ConnectedBoard (+1.6 KB), whiteboardModel (+1.6 KB), layoutPrefs (+1.3 KB), ViewMenu (+1.0 KB), ReasoningTrack (+0.9 KB), Board (+0.9 KB). Cut in this raise: the Terminal pane loads when the Terminal tab opens (LiveSurface; -16.4 KB), and the crop renderer and the ask sender load when a question is asked (snapshotGeometry.ts split from snapshot.ts; -4.2 KB; ConnectedBoard). What stays is on the first frame by design: the shell and its rail, the architecture board's ask hook with its popover (a lazy popover broke every sync open/Escape test and saved 2.3 KB), the activity loader and reasoning track in the transcript. bootModules 5, bootRequests 29, commits per keystroke and per stream chunk 1/1 unchanged. 3 agreeing cold reads after pnpm -r build.",
+              "previous": {
+                "date": "2026-10-09",
+                "at": "2026-10-09T23:05:00Z",
+                "from": 2409838,
+                "to": 2409858,
+                "bytes": 20,
+                "reason": "Final review of the 0.1.4 package (+20 B): withVisualHint catches a router chunk that cannot be loaded (a page left open across an update) and sends the message without the private hint, instead of failing every send with 'Failed to fetch dynamically imported module'. The try/catch sits in the boot-path hint glue because it must run when the import fails. bootModules 5, bootRequests 29, commits per keystroke and per stream chunk 1/1 unchanged. 3 agreeing cold reads after a web2 build.",
+                "previous": {
+                  "date": "2026-10-09",
+                  "at": "2026-10-09T22:50:00Z",
+                  "from": 2399931,
+                  "to": 2409838,
+                  "bytes": 9907,
+                  "reason": "Net of this package's changes after the kit was first stacked (ceiling 2,434,277): from 2,399,931 (stack without the kit) to 2,409,838, +9,907 B, and 24,439 B lower than the ceiling the kit note below set. Components review fixes, router and cards stacked on the 0.1.4 tree, then the kit taken out of the boot chunk. 3 agreeing cold reads after a full build at each step (schema dist rebuilt from scratch before web2), bootModules 5, bootRequests 29, commits per keystroke and per stream chunk 1/1 unchanged. Per part, first-page script bytes: previous tip 51eebfca 2,434,319 (the 2,434,277 of the note below plus 42 B of review fixes); components review fixes (18 commits: the kit's router and renderers are no longer re-exported from the schema root and the router is imported when a message is sent, so the 12 renderers, spec validation and router leave the entry chunk) 2,402,220, -32,099 B; router (4 commits: clause scorer, paste strip, linear patterns; all behind the same dynamic import) 2,402,220, +0 B; cards (11 commits: drag bar, snap, collapse row, state per drawing id, icon actions with tooltips, fade clip, card sheet; these are in the chat from the first frame) 2,409,838, +7,618 B; integrate (hint test, 420 px capacity layout, S6 test follow-up) 2,409,838, +0 B. Net against the kit's previous ceiling 2,434,277: -24,439 B. Against the stack without the kit (2,399,931): +9,907 B, of which 2,289 B is what the kit still keeps in boot (fence parser, VisualKitBlock, hint glue) and 7,618 B is the cards. The kit's own note below named the lazy import as the way to give the 34 KB back; this is that.",
+                  "previous": {
+                    "date": "2026-10-09",
+                    "at": "2026-10-09T21:10:00Z",
+                    "from": 2399931,
+                    "to": 2434277,
+                    "bytes": 34346,
+                    "reason": "The visual component kit (components branch, 6 commits on visual-v2-013) stacked on the 0.1.4 tree: 3 agreeing cold reads after a full build, 2,434,277 B, bootModules 5, bootRequests 29, commits per keystroke and per stream chunk 1/1 unchanged. +34,346 B over the stacked tree without the kit (2,399,931). The kit lane did not re-measure the ratchet. The twelve svg components, their spec validation and the visual-fence path (VisualKitBlock, proseBlocks, drawingRefs, visualHint) are reachable from the first chat message, so they sit in the entry chunk today. This is the clearest lazy-load candidate in the package: a dynamic import of the kit on first visual fence would give back most of the 34 KB, because nothing draws a kit component before an agent writes one.",
+                    "previous": {
+                      "date": "2026-10-09",
+                      "at": "2026-10-09T19:55:00Z",
+                      "from": 2375627,
+                      "to": 2399931,
+                      "bytes": 24304,
+                      "reason": "Stacked 0.1.4 tree (main-0.1.3 + sdk, resume, rewind, ask-ledger, speed, visual lanes; each lane's own ceiling was measured alone and none was raised, so the sum was never measured). 3 agreeing cold reads after a full build of the stacked tree: 2,399,931 B, bootModules 5, bootRequests 29 unchanged, commits per keystroke and per stream chunk 1/1. Against the speed lane's last ceiling (2,375,627, which already carries the chat-switch snapshots) the other five lanes add 24,304 B of first-page script. They are user-visible chat features drawn from the first frame or reached from a click handler on it: Edit from here, best of N and the PR flow in the transcript and composer (rewind, ~1,200 added web2 lines), the drawing frame, Reference and @drawing expansion (visual, ~900), restart Continue, history import and the saved-turns notices (resume, ~560), the Not closed line and Ask again (ask-ledger, ~270), the Claude download card (sdk, ~50). No lane was cut to pay for another: the owner's 2026-10-09 ruling is UX first, and a split of the 24,304 B per lane was not measured. Whoever next trims boot should start with the lazy candidates in this list (rewind panel, best-of-N, import dialog).",
+                      "previous": {
+                        "date": "2026-10-09",
+                        "at": "2026-10-09T18:32:52Z",
+                        "from": 2374630,
+                        "to": 2375627,
+                        "bytes": 997,
+                        "reason": "Speed lane, review fixes (+997 B): the snapshot hash and stale-prefix guard, the 404 and latest-read checks, the hover-rest timer and the warm cap in SessionPanel, and the invalid-time guard in formatTime. Same click-handler code path as the previous raise, so it is on the first page. bootModules 5 and bootRequests 29 unchanged. 3 agreeing cold reads after a full build on main-0.1.3.",
+                        "previous": {
+                          "date": "2026-10-09",
+                          "at": "2026-10-09T17:26:05Z",
+                          "from": 2370910,
+                          "to": 2374630,
+                          "bytes": 3720,
+                          "reason": "Speed lane (chat switches). +3,720 B on the boot path: v3/sessionSnapshots.ts with the snapshot switch in sessionActions.ts (a chat seen before is drawn in the click's own frame: 276 ms -> 107 ms median, 20-turn chats, 1x CPU; 459 -> 214 ms with 500 turns; tools/measure/switch-bench.mjs), agents/railRuns.ts (the sidebar and shell stop re-rendering on every streamed chunk) and the hover/idle warm in SessionPanel. All of it must be on the first page: the switch is a click handler. bootModules and bootRequests unchanged. 3 agreeing cold reads after a full build.",
+                          "previous": {
+                            "date": "2026-10-09",
+                            "at": "2026-10-09T08:18:04Z",
+                            "from": 2296737,
+                            "to": 2370910,
+                            "bytes": 74173,
+                            "reason": "Rounds 9 to 13 with the harness-study v3 fixes, landing on main as one commit, so one note for both raises (the cloud branch took them as two). Round 13 (cloud/r13), 2,296,737 -> 2,370,785 (+74,048): Round 13 (cloud/r13), raised under the owner's 2026-10-09 ruling that UX and look come first and perf is fixed only where users feel it. The felt costs were fixed in the same round: commits per keystroke and per stream chunk back to 1 (three setState-every-render bugs from rounds 9 and 11), and duplicate boot GETs for sessions, skills and agents removed (boot/bootFetchCache.ts). What remains is visible UX the owner asked for: sourcemap attribution of the boot chunk puts the growth in shell2 (~85 KB) and chat (~84 KB) from rounds 9 to 13 asks (names-always surface bar, ASCII star spinner, context hover, mode and agent icons, status bar), partly paid back by FirstRun loading lazily (-5,475 B). 3 agreeing cold reads after a full build at the round 13 merge. Then harness-study v3 on round 13 (cloud/r13-v3), 2,370,785 -> 2,370,910 (+125): Harness-study v3 on round 13 (cloud/r13-v3), under the same 2026-10-09 UX-first ruling. +125 B, all in TerminalPane (entry chunk): a one-command pane says Command ended only when the shell exited (the server's 1000 close), a dropped socket still reads Terminal disconnected, and onExit tells the caller which, so a sign-in header reads Finished or Disconnected truthfully. No user-felt cost; cutting it would bring back the wrong Terminal disconnected after a good sign-in. bootModules 5 and bootRequests 29 unchanged; commits per keystroke and per stream chunk 1/1. 3 agreeing cold reads after a full build.",
+                            "previous": {
+                              "date": "2026-10-07",
+                              "at": "2026-10-07T02:19:12Z",
+                              "from": 2312308,
+                              "to": 2312360,
+                              "bytes": 52,
+                              "reason": "Round 8 integration, one note for the whole of it. +52 B now: e2e/shell-boot.mjs was re-pointed at shell2 and Shell2 gained two test anchors (data-testid s2-chat on the chat column and s2-surfaces on the surface bar); 3 agreeing cold reads after a full build at 33858d27: 2,312,360 B, bootModules 4, bootRequests 25. Before that, the same day: Round 8 integration (r8/int off overhaul d2e3bf5b): the three branches were measured separately and their ceilings never combined. Merged, 3 agreeing cold reads after a full build at d2e3bf5b: 2,391,117 B against the agents ceiling 2,374,877 (+16,240). Parts: the round 8 board (r8/board) +13,196 B on its branch (2,384,671 -> 2,397,867: the tag strip drawn from the first frame, the boards client and model; its whiteboard was already boot code); the round 8 shell (r8/shell) +3,001 B on its branch (2,384,671 -> 2,387,672: shell, theme, Files preview; the editor lazy); the round 7 agents lowering (r7/agents) -9,794 B (2,384,671 -> 2,374,877: the Agents dock and the Install bridge card load when first drawn); +43 B from the merge itself (2,374,877 + 13,196 + 3,001 = 2,391,074). The integration cut, same day: shell2/LiveSurface loads the Whiteboard and AI Canvas surfaces with React.lazy when first opened (neither is drawn on the first frame; the architecture board and its tag strip stay static), which takes Whiteboard, its code cards, camera, AiCanvas and AiCanvasBlockBody out of the entry chunk (951,010 -> 872,291 B uncompressed entry, sourcemap attribution). Measured after the cut, 3 agreeing cold reads after a full build: 2,312,308 B (-78,809 against the merge), which is below every branch's ceiling, so the ceiling is set to it. bootModules 4 and bootRequests 25 unchanged. Previous raise (kept as history): 2381139 -> 2384671 (+3532) at 2026-10-06T23:32:07Z: Merge of round 7 shell (r7/shell, section B) onto round 7 board: the shell's own boot-path additions, measured +3,551 B on its branch against 5934a3d0 (2,374,161 -> 2,377,712): the projects sidebar (SessionPanel, projectList.ts), the surface bar that names every surface with its close button and folds to icons with the chat centred (Shell2), the workspace-folder Terminal hook (useWorkspaceRoot) and middle-shortened tree names (splitName); the Files preview loads lazily. Combined with the board: 2,384,671 B (3 agreeing cold reads after a full build at 706ca907); bootModules 4 and bootRequests 25 unchanged. Previous raise: 2374161 -> 2381139 (+6978) at 2026-10-06T23:11:59Z: Round 7 board (r7/board, Jaden's walkthrough section C): the board's new interaction runs from the first frame, so it is on the boot path. Minified, per module: edgeLabelPlace 1,841 B (edge tags placed so none overprints a tag, a card or a line; the ML harness copy had 4 overlaps), AsciiRamp 1,426 B (the empty-board ramp on the field grid; the board is empty while the first scan runs, and a lazy ramp measured as one more boot request, 25 -> 26, so it is static), boardLayoutMemory 1,068 B (dragged positions saved per repository and level), rowLabels 630 B (the Not connected label follows its cards), boardKeys ~0.9 kB (Space to pan, arrows, nudge, Esc one level), and the wiring in Board, ConnectedBoard, camera (focus fit floor), canvasReduce and routes. Taken back out the same day: the agent-workflow launch bar now loads when first drawn, and the keys hint loads with the More menu (2,383,529 -> 2,381,139). bootModules 4 and bootRequests 25 unchanged. 3 agreeing cold reads after a web2 build at cf1a1044."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "bootModules": {
+    "ceiling": 5,
+    "what": "script responses in that window",
+    "$raised": {
+      "date": "2026-10-09",
+      "from": 4,
+      "to": 5,
+      "bytes": 1,
+      "reason": "Round 13 (cloud/r13), raised under the owner's 2026-10-09 ruling that UX and look come first and perf is fixed only where users feel it. The felt costs were fixed in the same round: commits per keystroke and per stream chunk back to 1 (three setState-every-render bugs from rounds 9 and 11), and duplicate boot GETs for sessions, skills and agents removed (boot/bootFetchCache.ts). What remains is visible UX the owner asked for: the AsciiStage chunk (the empty-board ASCII stage) is one more script response in the window. 3 agreeing cold reads."
+    }
+  },
+  "bootRequests": {
+    "ceiling": 29,
+    "what": "every request in that window. 25 -> 26 on 2026-10-06 is the window, not the app: boot now ends when the first layout is applied (data-layout laying-out -> idle) instead of at the first visible node, and that window also holds the jetbrains-mono 700 font request. 10 cold reads: 26 each. 26 -> 23 in S4: one Archivo variable file for the Inter cuts and no 600/700 cuts (the jetbrains-mono 700 request is gone); fonts in the window are archivo-latin-wght and jetbrains-mono 400 and 500. 3 agreeing cold reads.",
+    "$raised": {
+      "date": "2026-10-09",
+      "from": 25,
+      "to": 29,
+      "bytes": 4,
+      "reason": "Round 13 (cloud/r13), raised under the owner's 2026-10-09 ruling that UX and look come first and perf is fixed only where users feel it. The felt costs were fixed in the same round: commits per keystroke and per stream chunk back to 1 (three setState-every-render bugs from rounds 9 and 11), and duplicate boot GETs for sessions, skills and agents removed (boot/bootFetchCache.ts). What remains is visible UX the owner asked for: the AsciiStage chunk, the night hero image behind the app (the background the owner likes), and two more asset requests from the merged lanes; none is a duplicate API call. 3 agreeing cold reads.",
+      "previous": {
+        "date": "2026-10-06",
+        "at": "2026-10-06T19:27:46Z",
+        "from": 23,
+        "to": 25,
+        "bytes": 2,
+        "reason": "The reskin (Decision 49, feat/reskin a3f87eb2): the first board's text is Inter, B's face, at its three weights (400 body, 500 labels, 600 heads), and @fontsource/inter ships static cuts, so that is three font files where the Archivo variable file was one. Fonts in the window: inter-latin-400, -500, -600, jetbrains-mono-400, -500 (the mono 700 file is gone from boot, its bold figures drawn from the 500 cut). Getting back to 23 needs one variable Inter file (@fontsource-variable/inter), a new package, which is a download that needs Jaden's yes; not taken. bootModules stays 4 and bootJsBytes went down (see its `what`). 3 agreeing cold reads. Earlier raise: 25 -> 26 on 2026-10-06: Recorded after the fact for the raise in bfdab73e (see `what`): the boot window now ends at the first applied layout, which also holds the jetbrains-mono 700 font request. `bytes` is the count's own unit here (requests)."
+      }
+    }
+  },
+  "commitsPerKeystroke": {
+    "ceiling": 1,
+    "what": "React commits per character typed in the composer (web2 perfCounts.test.tsx)"
+  },
+  "commitsPerStreamChunk": {
+    "ceiling": 1,
+    "what": "React commits per coalesced delta frame of a streaming answer"
+  }
+}

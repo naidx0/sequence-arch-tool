@@ -1,0 +1,8 @@
+{
+  "name": "payments",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.19.0",
+    "pg": "^8.12.0"
+  }
+}

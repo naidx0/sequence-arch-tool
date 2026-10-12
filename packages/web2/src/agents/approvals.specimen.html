@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>agent approvals — specimen</title>
+    <!--
+      NEVER BUILT INTO THE APP (vite.config.ts sets no rollupOptions.input).
+      Served by `vite` (dev) at /src/agents/approvals.specimen.html, with /api
+      proxied to the analyzer. ?view=real runs a REAL agent turn through
+      POST /api/acp/run-node against the attached repository and draws its
+      approvals; ?view=file|command|folded draws one scripted card for a
+      1440x900 screenshot. Same note as agents/specimen.html.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./approvalsSpecimen.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,661 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SHEET 01 — GRAPHITE IN SEQUENCE, AND THE LAWS THAT BIND
+     Fragment. Body content only. Include docs/brand/graphite/_core.html once
+     before it. No <style>, no new class, no invented token, no raw hex.
+
+     This is the sheet a new agent reads first. It has to be able to prevent a
+     wrong decision on its own, so every rule below is written as something a
+     reviewer can check against a rendered page and be right or wrong about.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<section class="page" data-page-num="01" data-page-title="Graphite in Sequence, and the laws that bind" id="p01">
+
+  <div class="pagehead">
+    <span class="num">Sheet 01 &middot; Part one, Foundations &middot; The cover</span>
+    <h1>Graphite in Sequence</h1>
+    <p class="lede">
+      <b>Every hue on screen is a claim about the world, and there are never more hues than there
+      are claims.</b> That is the whole design in one sentence, and it is the first thing on this
+      sheet because everything after it is a consequence. A red
+      <span class="verdict v-wont" style="height:16px;padding:0 var(--sp-6)">Won't fit</span> is
+      alarming here because it is the only red on the screen. An amber
+      <span class="prov p-defaulted">Defaulted</span> tag is noticeable because nothing else is
+      amber. The moment a divider, a heading, a border or a <em>node kind</em> takes a colour, the
+      claim system loses the contrast it lives on &mdash; and the chrome wins, because there is
+      more of it.
+    </p>
+    <p class="lede">
+      Graphite is not Sequence's design language. It is <em>ml-harness's</em> design language,
+      inherited here wholesale by owner decision: a neutral near-black ground with almost no
+      chroma, six greys, one low-chroma gold accent, no gradients anywhere in the chrome,
+      Apple-grade rounding applied consistently, and compact as the only density. Sequence adds
+      one thing Graphite never needed &mdash; a live architecture canvas &mdash; and adds it
+      <b>inside</b> the laws rather than beside them.
+    </p>
+    <p class="lede">
+      <b>You extend Graphite. You do not redesign it.</b> If you find yourself inventing a colour,
+      a radius, a type size or a spacing value, stop: the answer is already in
+      <span class="inline-code">_core.html</span>. If the shape you need genuinely is not there,
+      use the nearest thing that is and say so in your handback, where somebody can decide once
+      for everybody. Six local inventions are six contradictions.
+    </p>
+  </div>
+
+  <!-- ── 01.1 WHERE THIS COMES FROM ──────────────────────────────────────── -->
+  <div class="sec" id="s01-sources">
+    <div class="sec-head">
+      <span class="eyebrow">01.1</span>
+      <h2>Where this comes from, and what outranks what</h2>
+      <span class="tail">so a disagreement has an answer instead of an argument</span>
+    </div>
+
+    <p class="note">
+      Three brand directions were built for ml-harness and compared; Direction A &mdash; Graphite
+      &mdash; was chosen. The owner then directed that Sequence adopt that same book rather than
+      keep a parallel language of its own. This sheet extends that decision to a full reference
+      for a different product. <b>It does not reopen it.</b> Nothing on any Sequence sheet may
+      contradict a Graphite page, and where Sequence's own shipped code contradicts one, the code
+      is what gets corrected.
+    </p>
+
+    <div class="scrollx">
+      <table class="tk">
+        <tr><th style="width:56px">Rank</th><th style="width:320px">Source</th><th>Settles</th></tr>
+        <tr><td class="v">1</td><td class="k">GRAPHITE-DECISIONS.md</td><td><b>The owner decisions of record.</b> Two of them, in &sect;01.4 and &sect;01.5 below. They outrank the source book itself, because they were made after it and with Sequence in front of the owner.</td></tr>
+        <tr><td class="v">2</td><td class="k">ml-harness &middot; graphite/README.md</td><td>The contract and the five laws. Read completely before writing a sheet.</td></tr>
+        <tr><td class="v">3</td><td class="k">The ChatGPT Codex app</td><td>Every question of interface <em>form</em>, answered by looking at a screenshot rather than from memory.</td></tr>
+        <tr><td class="v">4</td><td class="k">ml-harness &middot; graphite/pages/*.html</td><td>Forty pages of worked precedent. If a shape exists there, copy it; do not re-derive it.</td></tr>
+        <tr><td class="v">5</td><td class="k">sequence &middot; graphite/_core.html</td><td>The substrate these sheets are written against. If it is not in here it is not a gap &mdash; it is a decision already made somewhere else in it.</td></tr>
+        <tr><td class="v">6</td><td class="k">GRAPHITE-MIGRATION-PLAN.md</td><td>The audit of what Sequence ships today. It states the <em>defects</em>; it does not state the design. Where one of its recommendations conflicts with a decision above, the decision wins &mdash; see the callout in &sect;01.5.</td></tr>
+      </table>
+    </div>
+
+    <p class="caption">Rank is not seniority of author. It is recency of decision: the further up
+    this table a source sits, the later somebody looked at a rendered Sequence screen and said
+    what it should be.</p>
+  </div>
+
+  <!-- ── 01.2 LAW ONE ────────────────────────────────────────────────────── -->
+  <div class="sec" id="s01-law-one">
+    <div class="sec-head">
+      <span class="eyebrow">01.2</span>
+      <h2>Law one, which the other four exist to protect</h2>
+      <span class="tail">hue is a budget, and it is already fully committed</span>
+    </div>
+
+    <p class="note">
+      Green means it fits, or it passed, or it was measured. Amber means it spills, or it stalled,
+      or the number was defaulted. Red means it will not run, or it failed, or it is blocked. Blue
+      means running, or inferred &mdash; a notice, not a verdict. Grey means we do not know and we
+      are refusing to guess. gold means the product is speaking. Nothing is left over for
+      decoration, and that is the point rather than the constraint: a new colour cannot be added
+      casually, because there is nowhere for it to hide.
+    </p>
+    <p class="note">
+      The consequence is written as a prohibition, because prohibitions survive handover better
+      than intentions. <b>Dividers, headings, section rules, borders, icons at rest, node borders,
+      node fills and every other piece of chrome are never coloured.</b> A coloured border and a
+      coloured verdict are the same signal to somebody scanning at speed, and the border wins by
+      volume &mdash; it is on every node on the board, while the verdict is on one.
+    </p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage base pad-sm column" style="width:100%">
+          <div style="display:flex;align-items:center;gap:var(--sp-8);flex-wrap:wrap">
+            <span class="repochip"><svg class="i i-12"><use href="#ic-branch"/></svg><span class="ph">&#8249;branch&#8250;</span></span>
+            <span class="chip"><svg class="i i-12"><use href="#ic-board"/></svg>Architecture<span class="m"><span class="ph">&#8249;node count&#8250;</span> nodes</span></span>
+            <button class="btn sm">Show the evidence</button>
+          </div>
+          <hr style="width:100%;margin:var(--sp-8) 0">
+          <div style="display:flex;align-items:center;gap:var(--sp-10);flex-wrap:wrap">
+            <svg class="i i-14" style="color:var(--ink-3)"><use href="#ic-service"/></svg>
+            <span style="font-size:var(--t-12);color:var(--ink-2)">checkout &rarr; billing</span>
+            <span class="verdict v-wont">Cycle</span>
+          </div>
+        </div>
+        <p class="why">One hue on the panel, and it is the one thing being claimed. The chip
+        border, the rule, the icon and the label are all grey, so the badge is the only place the
+        eye can land.</p>
+      </div>
+
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage base pad-sm column" style="width:100%">
+          <div style="display:flex;align-items:center;gap:var(--sp-8);flex-wrap:wrap">
+            <span class="repochip" style="color:var(--info);border-color:var(--info-edge)"><svg class="i i-12"><use href="#ic-branch"/></svg><span class="ph ph-on-dark">&#8249;branch&#8250;</span></span>
+            <span class="chip" style="border-color:var(--fits-edge)"><svg class="i i-12" style="color:var(--fits)"><use href="#ic-board"/></svg>Architecture<span class="m"><span class="ph">&#8249;node count&#8250;</span> nodes</span></span>
+            <button class="btn sm" style="color:var(--accent);border-color:var(--accent-edge)">Show the evidence</button>
+          </div>
+          <hr style="width:100%;margin:var(--sp-8) 0;border-top-color:var(--spills)">
+          <div style="display:flex;align-items:center;gap:var(--sp-10);flex-wrap:wrap">
+            <svg class="i i-14" style="color:var(--fits)"><use href="#ic-service"/></svg>
+            <span style="font-size:var(--t-12);color:var(--fits)">checkout &rarr; billing</span>
+            <span class="verdict v-wont">Cycle</span>
+          </div>
+        </div>
+        <p class="why">Five hues on the same panel and only one of them is a claim. The badge has
+        not changed &mdash; it has simply stopped being the loudest thing on screen, which was the
+        only property that made it work.</p>
+      </div>
+    </div>
+    <p class="caption">Both panels carry the identical verdict at the identical size. The whole
+    difference is in what surrounds it, which is why the hue budget is enforced on chrome rather
+    than on verdicts.</p>
+  </div>
+
+  <!-- ── 01.3 THE OTHER FOUR ─────────────────────────────────────────────── -->
+  <div class="sec" id="s01-laws">
+    <div class="sec-head">
+      <span class="eyebrow">01.3</span>
+      <h2>The other four</h2>
+      <span class="tail">each one is testable, and each one has already caught a defect here</span>
+    </div>
+
+    <p class="note">
+      These are not preferences. Every one of them is written as something a reviewer can check
+      against a rendered page and be right or wrong about, because the review loop for this design
+      is the same as the review loop for the code: look at it, screenshot it, measure it, and give
+      the job of disbelieving it to somebody who did not draw it.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>Law two &mdash; gold is the accent, and it can never be mistaken for a verdict</h3>
+        <p class="sub">It was chosen by elimination rather than by taste.</p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0 0 var(--sp-10)">
+          Green is <span class="inline-code">--fits</span>. Amber is
+          <span class="inline-code">--spills</span>. Red is <span class="inline-code">--wont</span>.
+          Blue is <span class="inline-code">--info</span> and every active run state. Grey is
+          <span class="inline-code">--unknown</span>. gold is the only region of the wheel left,
+          and taking it means the accent can never be read as good, bad, warning or information.
+          It means exactly one thing: <em>the product is speaking, or the product needs you</em>
+          &mdash; send, selection, focus.
+        </p>
+        <div style="display:flex;align-items:center;gap:var(--sp-12);padding:var(--sp-10);background:var(--bg-base);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10)">
+          <button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+          <div style="font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3)">28px,
+          <span class="mono">--r-full</span>, <span class="mono">--accent-solid</span>. The
+          signature element, and the only object on a screen wearing the accent at full
+          saturation. It is never square.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Law three &mdash; compact is the only density</h3>
+        <p class="sub">Airy is a defect, not a preference.</p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0 0 var(--sp-10)">
+          The working type sizes are 10, 11 and 12px and the rhythm they sit in is fixed. A
+          comfortable mode may exist for testing; nothing is designed for it and nothing is judged
+          in it. On the canvas the answer to crowding is <em>level of detail</em> &mdash; drop the
+          subtitle, then the tag, then the title &mdash; never a smaller type size. Text below the
+          floor is not compact, it is unreadable.
+        </p>
+        <dl class="specs">
+          <dt>Thread row</dt><dd>28px &mdash; --row-h-thread</dd>
+          <dt>Tool-call row</dt><dd>26px &mdash; .toolrow</dd>
+          <dt>Rail / menu row</dt><dd>30px &mdash; --row-h</dd>
+          <dt>Control height</dt><dd>28px &mdash; --control-h</dd>
+          <dt>Icon button</dt><dd>26px &mdash; --icon-btn</dd>
+          <dt>Type floor</dt><dd>--t-10, on the board too</dd>
+        </dl>
+      </div>
+
+      <div class="panel">
+        <h3>Law four &mdash; never invent a number</h3>
+        <p class="sub">The rule this book exists to enforce, and the one a graph product breaks first.</p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0 0 var(--sp-10)">
+          Any value the engine computes at run time is a marked placeholder. It is set in
+          <span class="inline-code">--ink-2</span> under a dotted underline so it can never be
+          mistaken for a measurement, screenshotted as evidence, or pasted into marketing. Use
+          <span class="mono">&#8249; &#8250;</span>, never the less-than and greater-than signs.
+        </p>
+        <div style="font-size:var(--t-13);line-height:var(--lh-13);color:var(--ink-2);background:var(--bg-base);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);padding:var(--sp-10)">
+          Read <span class="ph">&#8249;file count&#8250;</span> files and traced
+          <span class="ph">&#8249;edge count&#8250;</span> calls in
+          <span class="ph">&#8249;elapsed&#8250;</span>.
+        </div>
+        <p class="caption">The graph-shaped version of this law: <b>never draw an edge the
+        analyzer did not find.</b> A fabricated chain of parts is an invented number with a
+        stroke on it.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Law five &mdash; both themes ship at equal quality</h3>
+        <p class="sub">Deferred for Sequence, not waived. See owner decision 1 below.</p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0 0 var(--sp-10)">
+          In dark, elevation reads as lightness &mdash; each surface a few percent lighter than the
+          one below, plus a 1px inset top highlight. In light, three of the four raised surfaces
+          are the same white and elevation reads as shadow and a hairline ring instead. Interaction
+          overlays move <em>downward</em> in light and upward in dark, because a hovered light row
+          that gets lighter is the classic light-mode failure.
+        </p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0">
+          Practically, and this part is <b>not</b> deferred: never hard-code a hex, anywhere, for
+          any reason. Write the token. Both themes then follow for free, which is exactly what
+          makes finishing light later a fill-in job rather than a rebuild.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01.4 OWNER DECISION 1 ───────────────────────────────────────────── -->
+  <div class="sec" id="s01-decision-1">
+    <div class="sec-head">
+      <span class="eyebrow">01.4</span>
+      <h2>Owner decision 1 &mdash; light is deferred</h2>
+      <span class="tail">Max, 2026-08-19 &middot; outranks law five</span>
+    </div>
+
+    <div class="dev"><b>Verbatim.</b> &ldquo;ignore light theme for the moment&hellip; Don't tune
+    the light theme now.&rdquo;</div>
+
+    <p class="note">
+      Law five requires both themes at equal quality. That requirement is <b>deferred, not
+      waived</b>. The distinction is the whole decision: no agent spends effort tuning light
+      surfaces, choosing light values, or building light specimens &mdash; and no agent is
+      permitted to write a colour in a shape that would make finishing light later a
+      re-architecture. Every token is still declared in Graphite's three-state form, with the
+      complete light palette present on bare <span class="inline-code">:root</span> even though
+      nobody is judging it yet.
+    </p>
+
+    <div class="grid g2">
+      <pre class="codeblock">:root                              <span class="tok-c">/* the complete light palette */</span>
+
+@media (prefers-color-scheme: dark)
+  :root:not([data-theme="light"])  <span class="tok-c">/* system default resolves dark */</span>
+
+:root[data-theme="dark"]           <span class="tok-c">/* an explicit choice wins */</span></pre>
+      <div class="panel tight">
+        <h3>There are three viewer states, not two</h3>
+        <p class="sub" style="margin-bottom:var(--sp-10)">Light, dark, and <em>no choice at all</em>
+        &mdash; which follows the system and is what an untouched page shows.</p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0">
+          All three resolve because the palette is declared for all three. Judging a sheet in dark
+          only is correct under this decision; declaring a token in dark only is not, and is the
+          one way a deferral turns into a rebuild.
+        </p>
+      </div>
+    </div>
+
+    <p class="caption">Practical test for a reviewer: strip every
+    <span class="inline-code">[data-theme]</span> and media block from the token layer and count
+    the colours left on <span class="inline-code">:root</span>. If any is missing, this decision
+    has been broken rather than followed.</p>
+  </div>
+
+  <!-- ── 01.5 OWNER DECISION 2 ───────────────────────────────────────────── -->
+  <div class="sec" id="s01-decision-2">
+    <div class="sec-head">
+      <span class="eyebrow">01.5</span>
+      <h2>Owner decision 2 &mdash; node kinds differentiate without hue</h2>
+      <span class="tail">the single most important rule in this book</span>
+    </div>
+
+    <p class="note">
+      This is the one real collision between Graphite and Sequence. Graphite has no architecture
+      canvas; Sequence's whole product is one. Sequence had been colouring node borders and fills
+      by kind, which law one forbids outright &mdash; coloured chrome, and more hues than claims
+      &mdash; and which had the further consequence that the layout engine sorted the coloured
+      kinds toward one side, so half of every board read as a wall of &ldquo;passed&rdquo; and
+      &ldquo;warning&rdquo; before a single claim had been made.
+    </p>
+
+    <div class="dev"><b>Verbatim.</b> &ldquo;We kind of need some type of contrast
+    differentiation. If you can solve that while staying true to Graphite, that'd be cool&hellip;
+    some subtle grain, some subtle graphiting&hellip; dotted lines, stuff like that&hellip; Maybe
+    use shapes and icons in higher quantities to really differentiate the actual features&hellip;
+    We just want a good visual experience, but not overpower the eyes too much. Don't kill people
+    when they look at it.&rdquo;</div>
+
+    <p class="note">
+      <b>Resolution: kind is carried by four non-chromatic channels and one glyph, never by hue.</b>
+      A node's <em>kind</em> is a category; a node's <em>state</em> is a claim. Only the second one
+      earns colour.
+    </p>
+
+    <div class="scrollx">
+      <table class="tk">
+        <tr><th style="width:150px">Channel</th><th style="width:230px">Token</th><th>Carries, and the rule</th></tr>
+        <tr><td class="k">Icon</td><td class="v">one <span class="mono">#ic-*</span> per kind</td><td><b>The primary carrier.</b> One icon per kind, one meaning per icon &mdash; which is also the fix for icon reuse. No two entries in the same legend or menu may render the same symbol.</td></tr>
+        <tr><td class="k">Silhouette</td><td class="v">--arch-sil-*</td><td>The kind at a glance, readable when zoomed too far out to read a label. Six genuinely different outlines &mdash; flag, rounded rect, folder, cylinder, stadium, chamfer. Where <span class="inline-code">border-radius</span> cannot express one it is <em>drawn</em>: the cylinder seam, the folder tab and the agent&rsquo;s cut corner are painted plates and a <span class="inline-code">clip-path</span>, never a radius that will not render.</td></tr>
+        <tr><td class="k">Border treatment</td><td class="v">--arch-style-* &middot; --arch-weight-*</td><td>Solid means the analyzer saw it stand there; dashed means a boundary drawn around things; dotted means ambient, sampled, not held.</td></tr>
+        <tr><td class="k">Neutral tone</td><td class="v">--arch-tone-*</td><td>A step in the graphite surface ramp, zero chroma. Carries containment depth first and is never asked to separate every kind on its own.</td></tr>
+      </table>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      Six kinds are drawn below and there is not one hue between them. Every pair differs in at
+      least three of the four channels, which is what makes the invariant hold rather than merely
+      be asserted.
+    </p>
+
+    <div class="boardfield" style="padding:var(--sp-16)">
+      <div style="display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+        <div class="specimen"><div class="node n-entry"><div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div><div class="nd-ft"><span class="prov p-measured">Measured</span></div></div><span class="lbl">.n-entry</span></div>
+        <div class="specimen"><div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-s">Takes an order and charges it.</div></div><span class="lbl">.n-service</span></div>
+        <div class="specimen"><div class="node n-module"><div class="nd-hd"><svg class="i i-14"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div><div class="nd-t">billing</div><div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;members&#8250;</span></span></div></div><span class="lbl">.n-module</span></div>
+        <div class="specimen"><div class="node n-store"><div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div><span class="lbl">.n-store</span></div>
+        <div class="specimen"><div class="node n-topic"><div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div><div class="nd-t">order.placed</div></div><span class="lbl">.n-topic</span></div>
+        <div class="specimen"><div class="node n-agent"><div class="nd-hd"><svg class="i i-14"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div><div class="nd-t">refund worker</div></div><span class="lbl">.n-agent</span></div>
+      </div>
+    </div>
+    <p class="caption">The kind label is mono at <span class="inline-code">--t-10</span> in
+    <span class="inline-code">--ink-3</span> &mdash; a category set as a category. It is never a
+    <span class="inline-code">.verdict</span> badge: green means passed, and a service has not
+    passed anything.</p>
+
+    <div class="dev" id="s01-word-datastore" style="margin-top:var(--sp-16)"><b>The word for that
+    kind is Datastore, and it is the code that gets corrected.</b> Shipped code disagrees with
+    itself before it disagrees with the book.
+    <span class="inline-code">packages/schema/src/seqdiagram.ts</span> declares the node kind
+    <span class="inline-code">'datastore'</span> in
+    <span class="inline-code">SeqDiagramNodeKind</span>;
+    <span class="inline-code">packages/web/src/product/arch/archKinds.ts</span> maps that kind to a
+    presentation kind <span class="inline-code">'storage'</span>, whose
+    <span class="inline-code">ARCH_KIND_LEGEND</span> entry carries the label
+    <span class="inline-code">Storage</span>. Two words for one kind, and the second one exists
+    only in the legend. <b>The book uses Datastore, everywhere, on every sheet</b> &mdash; specimen
+    labels, kind labels and prose &mdash; because that is the word the grounded schema already
+    uses, and a reference that renamed it would put the book at odds with the data model instead
+    of with one string. The label in <span class="inline-code">ARCH_KIND_LEGEND</span> is the
+    defect, and &sect;01.1 already says which way that resolves: where shipped code contradicts a
+    page here, <em>the code is what gets corrected.</em> The CSS class stays
+    <span class="inline-code">.n-store</span> and the tokens stay
+    <span class="inline-code">--arch-*-store</span>; those are short forms of the same word, not a
+    third one, and renaming them buys nothing. No sheet may print <em>Storage</em> for a node
+    kind.</div>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="panel">
+        <h3>The binding invariant</h3>
+        <p class="sub">Stated so a test can enforce it, because it survives refactors that swap one token for another.</p>
+        <p style="font-size:var(--t-13);line-height:var(--lh-13);color:var(--ink-1);background:var(--bg-base);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);padding:var(--sp-10);margin:0 0 var(--sp-10)">
+          <b>Every architecture node kind must remain distinguishable with all colour removed, at
+          every size the silhouette is drawn, from the radii that actually paint.</b>
+          Render the board in greyscale at the size it ships: if two kinds go ambiguous, the
+          differentiation was leaning on hue &mdash; or on a value that was declared and never
+          painted.
+        </p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0 0 var(--sp-10)">
+          The middle clause is the one that was missing, and its absence is why this book was
+          audited. CSS scales every corner on a side by
+          <span class="mono">f = min(side length &divide; sum of the radii on that side)</span>, so
+          any radius at or above half the height paints as a stadium. On a 26&times;18 chip
+          <span class="inline-code">--r-14</span>, <span class="inline-code">--r-18</span> and
+          <span class="inline-code">--r-full</span> all render at 9px &mdash; three kinds, one
+          shape &mdash; while the token file still says they differ. Proving this invariant against
+          declared token values proves nothing about the picture. It is proved against pixels.
+        </p>
+        <p style="font-size:var(--t-12);line-height:var(--lh-12);color:var(--ink-2);margin:0">
+          A second, narrower invariant: no kind token may introduce a hue that is not already in
+          the Graphite palette, and none may collide with a verdict hue. The strongest form of
+          both, and the one actually implemented, is that
+          <b>there is no colour token in the kind namespace at all</b> &mdash; nothing to collide
+          with, and nothing to drift.
+        </p>
+      </div>
+      <div class="panel">
+        <h3>The same six with the labels taken away</h3>
+        <p class="sub">Silhouette, border treatment and tone only. No icon, no text, no hue.</p>
+        <div style="display:flex;gap:var(--sp-8);flex-wrap:wrap;padding:var(--sp-8) 0">
+          <span class="silswatch n-entry"></span><span class="silswatch n-service"></span><span class="silswatch n-module"></span>
+          <span class="silswatch n-store"></span><span class="silswatch n-topic"></span><span class="silswatch n-agent"></span>
+        </div>
+        <p class="caption" style="margin-top:0">Six swatches, six kinds. Border <em>weight</em> is
+        the weakest channel in the set and never carries a pair on its own: a 1.5px border snaps
+        to 1px on a 1x display, so it reinforces and nothing more. Each swatch is drawn at half a
+        card &mdash; <span class="inline-code">--arch-card-w</span> and
+        <span class="inline-code">--arch-card-min-h</span> both halved, so the aspect is a card&rsquo;s
+        &mdash; because that is the honest floor of this ladder. At this size the folder tab
+        already paints 6px, the chamfer 8px and the cylinder arcs 7px &mdash; the features are at
+        their limit here, not one step above it. Below it they go under, silhouette stops
+        separating the six, and the <b>icon</b> becomes the carrier. Do not claim the outlines still separate below this
+        size; state that the glyph has taken over.</p>
+        <dl class="specs" style="margin-top:var(--sp-10)">
+          <dt>Silhouette</dt><dd>--arch-sil-*, plus drawn outlines</dd>
+          <dt>Style</dt><dd>solid / dashed / dotted</dd>
+          <dt>Tone</dt><dd>--surface-1 &hellip; --surface-3</dd>
+          <dt>Hue</dt><dd>none, in any state</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div><div class="nd-ft"><span class="prov p-measured">Measured</span></div></div>
+        </div>
+        <p class="why">Kind in the icon, the cylinder silhouette &mdash; flat sides, an elliptical cap
+        and the seam under it &mdash; and a neutral mono tag. The only hue on the card is the provenance of the claim it carries.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm">
+          <div class="node n-store" style="min-height:auto;border-color:var(--fits-edge);background:var(--fits-wash)"><div class="nd-hd"><svg class="i i-12" style="color:var(--fits)"><use href="#ic-database"/></svg><span class="nd-k" style="color:var(--fits)">Datastore</span></div><div class="nd-t">orders</div><div class="nd-ft"><span class="prov p-measured">Measured</span></div></div>
+        </div>
+        <p class="why">A category painted green. Nothing here passed anything &mdash; and now the
+        provenance tag beside it, which <em>is</em> a claim, cannot be seen at all.</p>
+      </div>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>This decision overrides a written
+    recommendation you will find elsewhere.</b> The migration audit proposes adding
+    <span class="inline-code">module</span> as a first-class kind
+    <em>on a <span class="mono">--viz-*</span> colour</em>. Do not do it. Module is first-class
+    here &mdash; it has its own icon, a folder silhouette no other kind wears, a dashed structural
+    border and its own tone step &mdash; and it earns that without spending a hue. The
+    <span class="mono">--viz-*</span> namespace is for <em>series</em>, not for meaning, and a kind
+    is a meaning. If any other document tells you to assign a kind to a colour, that document is
+    older than this decision.</div>
+  </div>
+
+  <!-- ── 01.6 WHAT SEQUENCE ADDS ─────────────────────────────────────────── -->
+  <div class="sec" id="s01-additions">
+    <div class="sec-head">
+      <span class="eyebrow">01.6</span>
+      <h2>What Sequence adds, that Graphite has no equivalent for</h2>
+      <span class="tail">six gaps &middot; each is a gap, not a licence</span>
+    </div>
+
+    <p class="note">
+      Sequence is a local-first, visual-first code editor: it reads a repository into a live
+      architecture graph you can read, edit, draw and reason about, with a grounded assistant and
+      runnable agent workflows &mdash; one live canvas, chat on the left, a file and functions rail
+      on the right. Graphite was written for a chat product with cards in it. It draws no plane, no
+      object in a plane, no connector, and no containment. Those six gaps below are the entire
+      reason this book exists, and each one is paid for with geometry, an alias, or a glyph
+      &mdash; <b>never with a new colour.</b>
+    </p>
+
+    <div class="scrollx">
+      <table class="tk">
+        <tr><th style="width:180px">Sequence has</th><th style="width:210px">Graphite has</th><th>Paid for with</th></tr>
+        <tr><td class="k">An architecture graph</td><td>Cards in a column</td><td>Nothing new. A node is a <span class="inline-code">.card</span> chassis with a kind's four channels applied to it.</td></tr>
+        <tr><td class="k">A canvas</td><td>A scrolling page</td><td>One dot field at <span class="inline-code">--sp-24</span> pitch in <span class="inline-code">--edge</span>, inside the camera transform. One grid and only one &mdash; two pitches beat against each other and neither reads.</td></tr>
+        <tr><td class="k">Node kinds</td><td>No object categories</td><td>Icon, silhouette, border treatment, neutral tone. Decision 2. Zero hues.</td></tr>
+        <tr><td class="k">Edge kinds</td><td>No connectors at all</td><td>Three proof states as <em>aliases</em> of existing tokens, each reinforced by a dash pattern.</td></tr>
+        <tr><td class="k">Containment</td><td>No nesting anywhere</td><td>One tone step per level, stopping at three, and a wall radius that nests by arithmetic.</td></tr>
+        <tr><td class="k">Depth levels</td><td>Only additive disclosure</td><td>A standing filter that <em>hides real nodes</em> &mdash; so the control that sets it is always visible and always says which level you are on.</td></tr>
+      </table>
+    </div>
+
+    <div class="grid g3" style="margin-top:var(--sp-16)">
+      <div class="panel tight">
+        <h3>Edges may carry colour</h3>
+        <p class="sub" style="margin-bottom:var(--sp-10)">Because a drawn connector is <em>data</em>, not chrome. Law one governs chrome; a series is governed by the viz namespace.</p>
+        <div class="specimens column">
+          <div class="specimen"><svg class="edgespec" viewBox="0 0 200 12" width="200" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6h196"/></svg><span class="lbl">.e-traced &middot; --viz-baseline</span></div>
+          <div class="specimen"><svg class="edgespec" viewBox="0 0 200 12" width="200" height="12" aria-hidden="true"><path class="edgeline e-onflow" d="M2 6h196"/></svg><span class="lbl">.e-onflow &middot; --accent</span></div>
+          <div class="specimen"><svg class="edgespec" viewBox="0 0 200 12" width="200" height="12" aria-hidden="true"><path class="edgeline e-declared" d="M2 6h196"/></svg><span class="lbl">.e-declared &middot; --unknown</span></div>
+          <div class="specimen"><span class="edgetag">POST /charge</span><span class="lbl">.edgetag</span></div>
+        </div>
+        <p class="caption">A claim the source could not confirm is
+        <span class="inline-code">--unknown</span>. <b>It is never
+        <span class="inline-code">--wont</span>:</b> red means failed or blocked, and a claim
+        nobody could check has not failed at anything. The dash carries the same distinction, so
+        the three survive greyscale too.</p>
+      </div>
+
+      <div class="panel tight">
+        <h3>Containment is drawn, not listed</h3>
+        <p class="sub" style="margin-bottom:var(--sp-10)">A module that exists in the data and not in the picture is a module the reader has to be told about.</p>
+        <div class="nest">
+          <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span></span></div>
+          <div class="nest-bd">
+            <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+            <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+          </div>
+        </div>
+        <p class="caption">The wall is <span class="inline-code">--r-18</span> with a
+        <span class="inline-code">--sp-4</span> inset, so its members land on
+        <span class="inline-code">--r-14</span> &mdash; the service silhouette &mdash; by
+        arithmetic rather than by eye. Depth stops at three tone steps, and that ceiling is stated
+        rather than discovered.</p>
+      </div>
+
+      <div class="panel tight">
+        <h3>The canvas, and the level that filters it</h3>
+        <p class="sub" style="margin-bottom:var(--sp-10)">Selection outranks every other carrier and must be louder than the state it replaces, never quieter.</p>
+        <div class="boardfield" style="padding:var(--sp-10);display:flex;flex-direction:column;gap:var(--sp-8)">
+          <div style="display:flex;gap:var(--sp-8);align-items:flex-start;flex-wrap:wrap">
+            <div class="node n-service sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="node n-service dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div>
+          </div>
+          <div style="display:flex;gap:var(--sp-8);align-items:center;flex-wrap:wrap">
+            <div class="minitabs"><button>L1</button><button aria-selected="true">L2</button><button>L3</button></div>
+            <div class="zoomcluster"><button class="iconbtn" aria-label="Zoom out"><svg class="i i-14"><use href="#ic-minus"/></svg></button><span class="pct"><span class="ph">&#8249;zoom&#8250;</span></span><button class="iconbtn" aria-label="Zoom in"><svg class="i i-14"><use href="#ic-plus"/></svg></button><button class="btn ghost sm">Fit</button></div>
+          </div>
+        </div>
+        <p class="caption">A dimmed node recedes to
+        <span class="inline-code">--st-archived-opacity</span> and stays readable &mdash; Graphite
+        already decided what &ldquo;receded but still there&rdquo; is worth. The level control is
+        never hidden, because a filter that removes real nodes without saying so is a lie about
+        the repository.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01.7 THE LADDER AND THE ACCENT ──────────────────────────────────── -->
+  <div class="sec" id="s01-ladder">
+    <div class="sec-head">
+      <span class="eyebrow">01.7</span>
+      <h2>The surface ladder, and the accent, once</h2>
+      <span class="tail">every value is a decision about height, not about colour</span>
+    </div>
+
+    <p class="note">
+      Six planes and three border weights. Nothing on this ladder carries a hue, and that is the
+      first fact about it &mdash; a product whose most valuable sentence is <em>this is what your
+      repository actually does</em> cannot afford to spend colour on the furniture that sentence
+      has to stand out from. A node card gets separated from the board by <b>tone and
+      elevation</b>; the border can then stay quiet at <span class="inline-code">--edge</span>,
+      which is exactly what frees the hue budget for claims.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The ladder</h3>
+        <p class="sub">Shown at real size on the ground it really sits on, in whichever theme you are reading.</p>
+        <div class="stage column" style="gap:var(--sp-6);align-items:stretch">
+          <div class="swline"><span class="sw" style="background:var(--bg-ground)"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--bg-ground</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Behind the window &middot; the board</span></div>
+          <div class="swline"><span class="sw" style="background:var(--bg-base)"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--bg-base</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">App ground, transcript</span></div>
+          <div class="swline"><span class="sw" style="background:var(--surface-1)"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--surface-1</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Rail, pane, composer, module wall</span></div>
+          <div class="swline"><span class="sw" style="background:var(--surface-2)"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--surface-2</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Cards, chips, node cards</span></div>
+          <div class="swline"><span class="sw" style="background:var(--surface-3)"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--surface-3</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Menus, popovers, keycaps</span></div>
+          <div class="swline"><span class="sw" style="background:var(--surface-4)"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--surface-4</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Dialogs. Sparingly</span></div>
+          <hr style="margin:var(--sp-6) 0">
+          <div class="swline"><span style="width:26px;height:0;border-top:var(--w-hair) solid var(--edge-faint);flex:0 0 auto"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--edge-faint</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Hairlines inside a card</span></div>
+          <div class="swline"><span style="width:26px;height:0;border-top:var(--w-hair) solid var(--edge);flex:0 0 auto"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--edge</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Every default border and divider</span></div>
+          <div class="swline"><span style="width:26px;height:0;border-top:var(--w-hair) solid var(--edge-strong);flex:0 0 auto"></span><span class="mono" style="font-size:var(--t-11);color:var(--ink-2)">--edge-strong</span><span style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3)">Hover borders, dashed empty states</span></div>
+        </div>
+        <p class="caption">Three weights of one neutral. <b>A border is never a colour</b> &mdash;
+        including a node's border, which is the whole of decision 2 restated as a sentence about
+        this ladder.</p>
+      </div>
+
+      <div class="panel">
+        <h3>The accent</h3>
+        <p class="sub">One gold, four places it may appear, and no fifth.</p>
+        <div class="stage column" style="gap:var(--sp-10);align-items:stretch">
+          <div style="display:flex;align-items:center;gap:var(--sp-10);flex-wrap:wrap">
+            <button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+            <button class="btn solid">Write the files</button>
+            <span class="thread sel" style="width:var(--rail-w);max-width:100%"><span class="dot" style="color:var(--st-attention)"></span><span class="tt">Why does checkout call billing twice?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--sp-10);flex-wrap:wrap">
+            <input class="input sm forcefocus" value="checkout" aria-label="Rename the node" style="width:var(--pane-w-min);max-width:100%">
+            <span class="marquee" style="width:var(--sp-56);height:var(--sp-32)"></span>
+          </div>
+        </div>
+        <div class="specimens" style="margin-top:var(--sp-12)">
+          <div class="specimen"><span class="sw" style="background:var(--accent)"></span><span class="lbl">--accent</span></div>
+          <div class="specimen"><span class="sw" style="background:var(--accent-solid)"></span><span class="lbl">--accent-solid</span></div>
+          <div class="specimen"><span class="sw" style="background:var(--accent-wash)"></span><span class="lbl">--accent-wash</span></div>
+          <div class="specimen"><span class="sw" style="border-color:var(--accent-edge)"></span><span class="lbl">--accent-edge</span></div>
+        </div>
+        <p class="caption">Send, commitment, selection, focus &mdash; and on the canvas, the
+        selected node's ring and the marquee, which are the same idea. The accent is never good,
+        never bad, never a warning and never information. If a screen shows gold twice for two
+        different reasons, one of them is wrong. The thread row is drawn at
+        <span class="inline-code">--rail-w</span>, because in Sequence a thread row lives in the
+        <em>chat</em> rail on the left &mdash; Graphite put its threads in the right-hand pane and
+        sized them at <span class="inline-code">--pane-w</span>; Sequence's right-hand column is
+        the index rail, which sheet 11 settles. The rename field is drawn at
+        <span class="inline-code">--pane-w-min</span> on purpose, and it is the one specimen in the
+        book allowed to be: it exists to show that the field stays usable at the narrowest drag,
+        so the clamp <em>is</em> its subject. Everywhere else,
+        <span class="inline-code">--pane-w-min</span> is a resize clamp and nothing else &mdash; it
+        is never borrowed as a convenient specimen width, for the same reason one glyph never
+        carries two meanings. A menu or a field that wants 320px asks for
+        <span class="inline-code">--menu-w</span>, which the substrate declares for that job.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01.8 THE STOP LIST ──────────────────────────────────────────────── -->
+  <div class="sec" id="s01-stop">
+    <div class="sec-head">
+      <span class="eyebrow">01.8</span>
+      <h2>Before you write a sheet</h2>
+      <span class="tail">eleven ways to be wrong, and what to do instead</span>
+    </div>
+
+    <p class="note">
+      This sheet is the first one an author reads, so it carries the checks that would otherwise
+      only be discovered in review. Every row below is a real decision somebody has to make, and
+      the right answer to every one of them is already settled &mdash; in the substrate, on this
+      sheet, or on sheet 10. None of them is yours to decide again.
+    </p>
+
+    <div class="scrollx">
+      <table class="tk">
+        <tr><th style="width:300px">If you are about to&hellip;</th><th>Stop. Instead:</th></tr>
+        <tr><td class="k">write a hex</td><td>Write the token. There is no permitted raw hex on any sheet &mdash; not in a specimen, not in an inline style, not &ldquo;just for this one swatch&rdquo;.</td></tr>
+        <tr><td class="k">give a node kind a colour</td><td>Decision 2. Icon, silhouette, border treatment, tone. Check it in greyscale before you claim it works.</td></tr>
+        <tr><td class="k">colour a border, divider or heading</td><td>Law one. <span class="inline-code">--edge</span>, <span class="inline-code">--edge-strong</span>, <span class="inline-code">--edge-faint</span>. That is the whole vocabulary.</td></tr>
+        <tr><td class="k">use red for something unconfirmed</td><td><span class="inline-code">--unknown</span>. Red is failed or blocked. A claim nobody could check has not failed at anything.</td></tr>
+        <tr><td class="k">write a plausible number</td><td>A marked placeholder: <span class="ph">&#8249;detected value&#8250;</span>. A literal is permitted only when a reader can derive it from what is drawn on the sheet.</td></tr>
+        <tr><td class="k">add a radius or a type size</td><td>Six radii plus <span class="inline-code">--r-bar</span>, and nine type steps. <span class="inline-code">--r-6</span>, <span class="inline-code">--r-12</span>, <span class="inline-code">--r-16</span> and <span class="inline-code">--r-20</span> do not exist and resolve to a square corner.</td></tr>
+        <tr><td class="k">add a CSS class</td><td>Use the nearest one that exists and name the gap in your handback. A sheet carries no <span class="inline-code">&lt;style&gt;</span> block. Inline <span class="inline-code">style=""</span> is for layout only, in tokens.</td></tr>
+        <tr><td class="k">tune a light value</td><td>Decision 1. Declare it in the three-state shape and move on. Nobody is judging light yet, and nobody may make finishing it a rebuild.</td></tr>
+        <tr><td class="k">number a section 3.2</td><td><b>Zero-pad it: <span class="inline-code">03.2</span>.</b> An eyebrow is the sheet&rsquo;s own <span class="inline-code">data-page-num</span> followed by the section index, and <span class="inline-code">data-page-num</span> is zero-padded &mdash; so sheet 3&rsquo;s second section is <span class="inline-code">03.2</span>, never <span class="inline-code">3.2</span>. Prose cross-references use the same form. This is the convention for the whole book; a sheet that disagrees is the one that is wrong.</td></tr>
+        <tr><td class="k">set a line-height in pixels</td><td>Write the ramp token that pairs with the size: <span class="inline-code">--t-12</span> takes <span class="inline-code">--lh-12</span>, <span class="inline-code">--t-13</span> takes <span class="inline-code">--lh-13</span>. The line ramp is as closed as the size ramp &mdash; sheet 10 settles it &mdash; so a bare <span class="inline-code">17px</span> or <span class="inline-code">19px</span> is an off-ladder value wearing a different name.</td></tr>
+        <tr><td class="k">write &ldquo;Storage&rdquo; for a data node</td><td>The book&rsquo;s word is <b>Datastore</b>. See &sect;01.5 &mdash; the shipped legend label is the thing that gets corrected, not the book, and both words may not stay in play.</td></tr>
+      </table>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      One last thing, addressed to whoever writes the next sheet. Show the thing, then state the
+      rule beneath it &mdash; a reference that describes a specimen instead of rendering one is a
+      document nobody can disagree with, which is the same as a document nobody can check. Set
+      every value as a token reference so the reader can find it. And judge the result by looking
+      at it: a change is not done because it renders, it is done when somebody has looked at the
+      picture and compared it to what the laws say it should be.
+    </p>
+  </div>
+
+</section>

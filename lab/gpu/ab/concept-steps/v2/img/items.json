@@ -1,0 +1,152 @@
+[
+  {
+    "n": 1,
+    "family": "sys-03",
+    "question": "Teach me how the services here communicate — queues vs HTTP.",
+    "focus": "http.ts",
+    "nodeId": "file:gateway/src/lib/http.ts",
+    "captionOff": "http.ts and what it connects to, from the scanned graph.",
+    "captionCap": "http.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  },
+  {
+    "n": 2,
+    "family": "sys-03",
+    "question": "Teach me how the services here communicate — queues vs HTTP.",
+    "focus": "invoices.ts",
+    "nodeId": "file:gateway/src/routes/invoices.ts",
+    "captionOff": "invoices.ts and what it connects to, from the scanned graph.",
+    "captionCap": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.",
+    "identical": false
+  },
+  {
+    "n": 3,
+    "family": "sys-05",
+    "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+    "focus": "payments.ts",
+    "nodeId": "file:gateway/src/routes/payments.ts",
+    "captionOff": "payments.ts and what it connects to, from the scanned graph.",
+    "captionCap": "What travels here: payments.ts calls index.js (GET /payments/*). From the scanned graph.",
+    "identical": false
+  },
+  {
+    "n": 4,
+    "family": "sys-05",
+    "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+    "focus": "index.js",
+    "nodeId": "file:payments/src/index.js",
+    "captionOff": "index.js and what it connects to, from the scanned graph.",
+    "captionCap": "What travels here: payments.ts calls index.js (GET /payments/*). payments_client.py calls index.js (POST /charge). PaymentClient.java calls index.js (POST /charge). From the scanned graph.",
+    "identical": false
+  },
+  {
+    "n": 5,
+    "family": "sys-06",
+    "question": "Teach me the invoices flow bit by bit with a visual.",
+    "focus": "invoices.ts",
+    "nodeId": "file:gateway/src/routes/invoices.ts",
+    "captionOff": "invoices.ts and what it connects to, from the scanned graph.",
+    "captionCap": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.",
+    "identical": false
+  },
+  {
+    "n": 6,
+    "family": "sys-06",
+    "question": "Teach me the invoices flow bit by bit with a visual.",
+    "focus": "InvoiceController.java",
+    "nodeId": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+    "captionOff": "InvoiceController.java and what it connects to, from the scanned graph.",
+    "captionCap": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). InvoiceController.java reads postgres (invoices). From the scanned graph.",
+    "identical": false
+  },
+  {
+    "n": 7,
+    "family": "sys-06",
+    "question": "Teach me the invoices flow bit by bit with a visual.",
+    "focus": "default.conf",
+    "nodeId": "file:edge/default.conf",
+    "captionOff": "default.conf and what it connects to, from the scanned graph.",
+    "captionCap": "What travels here: default.conf calls invoices.ts (/api/). From the scanned graph.",
+    "identical": false
+  },
+  {
+    "n": 8,
+    "family": "sys-07",
+    "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+    "focus": "index.ts",
+    "nodeId": "file:gateway/src/index.ts",
+    "captionOff": "index.ts and what it connects to, from the scanned graph.",
+    "captionCap": "index.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  },
+  {
+    "n": 9,
+    "family": "sys-07",
+    "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+    "focus": "http.ts",
+    "nodeId": "file:gateway/src/lib/http.ts",
+    "captionOff": "http.ts and what it connects to, from the scanned graph.",
+    "captionCap": "http.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  },
+  {
+    "n": 10,
+    "family": "cs-04",
+    "question": "Teach me idempotency using the payment flow in this repo as the example.",
+    "focus": "index.ts",
+    "nodeId": "file:gateway/src/index.ts",
+    "captionOff": "index.ts and what it connects to, from the scanned graph.",
+    "captionCap": "index.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  },
+  {
+    "n": 11,
+    "family": "cs-04",
+    "question": "Teach me idempotency using the payment flow in this repo as the example.",
+    "focus": "http.ts",
+    "nodeId": "file:gateway/src/lib/http.ts",
+    "captionOff": "http.ts and what it connects to, from the scanned graph.",
+    "captionCap": "http.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  },
+  {
+    "n": 12,
+    "family": "link-03",
+    "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+    "focus": "http.ts",
+    "nodeId": "file:gateway/src/lib/http.ts",
+    "captionOff": "http.ts and what it connects to, from the scanned graph.",
+    "captionCap": "http.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  },
+  {
+    "n": 13,
+    "family": "link-03",
+    "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+    "focus": "invoices.ts",
+    "nodeId": "file:gateway/src/routes/invoices.ts",
+    "captionOff": "invoices.ts and what it connects to, from the scanned graph.",
+    "captionCap": "What travels here: invoices.ts calls InvoiceController.java (GET /invoices/*). default.conf calls invoices.ts (/api/). From the scanned graph.",
+    "identical": false
+  },
+  {
+    "n": 14,
+    "family": "mix-02",
+    "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+    "focus": "index.ts",
+    "nodeId": "file:gateway/src/index.ts",
+    "captionOff": "index.ts and what it connects to, from the scanned graph.",
+    "captionCap": "index.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  },
+  {
+    "n": 15,
+    "family": "mix-02",
+    "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+    "focus": "http.ts",
+    "nodeId": "file:gateway/src/lib/http.ts",
+    "captionOff": "http.ts and what it connects to, from the scanned graph.",
+    "captionCap": "http.ts and what it connects to, from the scanned graph.",
+    "identical": true
+  }
+]

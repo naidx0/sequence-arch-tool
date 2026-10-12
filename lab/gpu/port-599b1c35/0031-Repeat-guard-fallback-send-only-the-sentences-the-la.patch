@@ -1,0 +1,136 @@
+From 3cefce757aebdc4621b0a140f11ec592371535b9 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 02:36:07 -0400
+Subject: [PATCH 31/37] Repeat guard fallback: send only the sentences the last
+ answer did not have (SEQUENCE_TEACH_REPEAT_FALLBACK=new-only); bench takes
+ --convos for a blind set
+
+---
+ packages/analyzer/src/server/askPipeline.ts   | 27 ++++++++++++++++++-
+ .../src/test/teach-product-mode.test.ts       | 22 +++++++++++++++
+ tools/bench/product-question-ab.mjs           | 12 +++++++--
+ 3 files changed, 58 insertions(+), 3 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 2c5ce066..d2859190 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -3496,6 +3496,31 @@ export function answerSimilarity(a: string, b: string): number {
+   return shared / (A.size + B.size - shared);
+ }
+ 
++/**
++ * WHAT TO SEND WHEN THE HOT RETRIES STILL REPEAT (SEQUENCE_TEACH_REPEAT_FALLBACK=new-only).
++ *
++ * The canned "already covered" line ended 9 of 54 guard turns and cost product
++ * shape and quality (2026-09-24). A repeated draft usually still carries a few
++ * sentences the last answer did not: send those, introduced as an addition, when
++ * there are at least two; otherwise the short line.
++ */
++export function repeatFallback(draft: string, historyLines?: readonly string[]): string {
++  if (process.env.SEQUENCE_TEACH_REPEAT_FALLBACK !== 'new-only') return REPEAT_FALLBACK;
++  const last = [...(historyLines ?? [])].reverse().find((l) => l.startsWith('Assistant: '));
++  if (last === undefined) return REPEAT_FALLBACK;
++  const lastSentences = last
++    .slice('Assistant: '.length)
++    .split(/(?<=[.!?])\s+/)
++    .filter((x) => x.trim().length > 0);
++  const fresh = draft
++    .split(/(?<=[.!?])\s+|\n+/)
++    .map((x) => x.trim())
++    .filter((x) => x.split(/\s+/).length >= 6)
++    .filter((x) => lastSentences.every((y) => answerSimilarity(x, y) < 0.5));
++  if (fresh.length < 2) return REPEAT_FALLBACK;
++  return `Adding to my last answer:\n\n${fresh.join(' ')}`;
++}
++
+ export function repeatsLastAnswer(text: string, historyLines?: readonly string[]): boolean {
+   if (process.env.SEQUENCE_TEACH_REPEAT_GUARD !== '1') return false;
+   const last = [...(historyLines ?? [])].reverse().find((l) => l.startsWith('Assistant: '));
+@@ -5762,7 +5787,7 @@ ${lastToolSectionText}`);
+           continue;
+         } else if (repeated) {
+           /* Still the same after the hot retries: say so briefly instead of sending it again. */
+-          text = REPEAT_FALLBACK;
++          text = repeatFallback(text, input.historyLines);
+         } else if (bouncedDraft !== undefined && text.trim() === bouncedDraft.trim()) {
+           teachRepairNotes.push(...citeNotes);
+           text = settleClose(marked);
+diff --git a/packages/analyzer/src/test/teach-product-mode.test.ts b/packages/analyzer/src/test/teach-product-mode.test.ts
+index ada81a16..c80d3c0d 100644
+--- a/packages/analyzer/src/test/teach-product-mode.test.ts
++++ b/packages/analyzer/src/test/teach-product-mode.test.ts
+@@ -37,3 +37,25 @@ test('the product section shows the start of the last answer so it is not sent a
+   const withLast = renderProductQuestionInstructions(['User: what is it?', 'Assistant: The app is a multi-service harness: svc:ml-harness']);
+   assert.match(withLast, /did not land.*The app is a multi-service harness/);
+ });
++
++test('the new-only fallback sends only the sentences the last answer did not have', async () => {
++  const { repeatFallback, REPEAT_FALLBACK } = await import('../server/askPipeline.js');
++  const last = 'Assistant: The gateway takes the request and hands it to the orders service. Orders stores it in postgres.';
++  const draft =
++    'The gateway takes the request and hands it to the orders service. Orders stores it in postgres. ' +
++    'Payments are charged through the Stripe client before the invoice is written. Shipping hears about the order from a queue and books the parcel.';
++  const before = process.env.SEQUENCE_TEACH_REPEAT_FALLBACK;
++  try {
++    delete process.env.SEQUENCE_TEACH_REPEAT_FALLBACK;
++    assert.equal(repeatFallback(draft, [last]), REPEAT_FALLBACK);
++    process.env.SEQUENCE_TEACH_REPEAT_FALLBACK = 'new-only';
++    const out = repeatFallback(draft, [last]);
++    assert.match(out, /^Adding to my last answer:/);
++    assert.match(out, /Stripe client/);
++    assert.doesNotMatch(out, /hands it to the orders service/);
++    assert.equal(repeatFallback('The gateway takes the request and hands it to the orders service.', [last]), REPEAT_FALLBACK);
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_TEACH_REPEAT_FALLBACK;
++    else process.env.SEQUENCE_TEACH_REPEAT_FALLBACK = before;
++  }
++});
+diff --git a/tools/bench/product-question-ab.mjs b/tools/bench/product-question-ab.mjs
+index c2f9b6d2..424b8ed8 100644
+--- a/tools/bench/product-question-ab.mjs
++++ b/tools/bench/product-question-ab.mjs
+@@ -33,8 +33,12 @@ const OUT = arg('--out', path.join(root, 'tools/bench/out', `product-question-${
+ /* Arms: off (neither flag), on (product mode), guard (product mode + repeat guard). */
+ if (ARM === 'on' || ARM === 'guard') process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
+ else delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+-if (ARM === 'guard') process.env.SEQUENCE_TEACH_REPEAT_GUARD = '1';
++if (ARM === 'guard' || ARM === 'guard3') process.env.SEQUENCE_TEACH_REPEAT_GUARD = '1';
+ else delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++if (ARM === 'guard3') process.env.SEQUENCE_TEACH_REPEAT_FALLBACK = 'new-only';
++else delete process.env.SEQUENCE_TEACH_REPEAT_FALLBACK;
++/* --convos <file.json>: [{id, repo, questions}] replaces the built-in set (the blind check). */
++const CONVOS_FILE = arg('--convos');
+ 
+ const { runAskPipeline } = await import(dist('server/askPipeline.js'));
+ const { scanRepoCached } = await import(dist('index.js'));
+@@ -52,6 +56,7 @@ const REPOS = Object.fromEntries(
+     'ml-harness': arg('--ml-harness', 'C:/Users/<user>/Projects/mlh-adapter'),
+     shopfront: path.join(root, 'packages/analyzer/test/fixtures/shopfront'),
+     makemore: path.join(root, 'examples/makemore'),
++    sequence: root,
+   }).map(([k, v]) => [k, fs.realpathSync(v)]),
+ );
+ const GENERIC = [
+@@ -59,7 +64,7 @@ const GENERIC = [
+   'why does it exist and what are the advantages of it?',
+   'i still dont get it, whats the actual product flow, show me on the canvas',
+ ];
+-const CONVOS = [
++const BUILTIN_CONVOS = [
+   {
+     id: 'owner-ml-harness',
+     repo: 'ml-harness',
+@@ -73,6 +78,9 @@ const CONVOS = [
+   { id: 'generic-makemore', repo: 'makemore', questions: GENERIC },
+ ];
+ 
++const CONVOS = CONVOS_FILE ? JSON.parse(fs.readFileSync(CONVOS_FILE, 'utf8')) : BUILTIN_CONVOS;
++for (const c of CONVOS) if (!REPOS[c.repo]) throw new Error(`unknown repo ${c.repo} (have ${Object.keys(REPOS).join(', ')})`);
++
+ const cfg = {
+   provider: 'openai-compat',
+   model: process.env.SEQUENCE_AI_MODEL || 'minicpm5-hermes',
+-- 
+2.51.1.windows.1
+

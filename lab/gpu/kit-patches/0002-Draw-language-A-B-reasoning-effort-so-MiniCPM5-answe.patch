@@ -1,0 +1,53 @@
+From 4f4a5e674db436a560d63b97082f17ee9fdf9252 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 14:00:10 -0400
+Subject: [PATCH 2/2] Draw-language A/B: --reasoning-effort, so MiniCPM5
+ answers inside the token budget
+
+Smoke run: with thinking on, 14/14 calls spent all 400 tokens reasoning and returned no chart.
+---
+ tools/measure/draw-lang-ab.mjs | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/tools/measure/draw-lang-ab.mjs b/tools/measure/draw-lang-ab.mjs
+index 36d514c1..d565e0f1 100644
+--- a/tools/measure/draw-lang-ab.mjs
++++ b/tools/measure/draw-lang-ab.mjs
+@@ -113,6 +113,9 @@ const opts = {
+   /* `default` sends no temperature, so the server's own applies. On this Windows card Ollama
+      hangs about one call in seven at 0, and 0 makes every run the same, so runs measure no noise. */
+   temperature: flag('temperature', '0') === 'default' ? undefined : num('temperature', 0),
++  /* `none` turns a thinking model's reasoning off (Ollama /v1); unset sends nothing. MiniCPM5
++     otherwise spends the whole --max-tokens budget thinking and returns no chart at all. */
++  reasoningEffort: flag('reasoning-effort'),
+   lockWaitMs: num('lock-wait-s', 1800) * 1000,
+   lockPollMs: num('lock-poll-s', 30) * 1000,
+   emitPrompts: flag('emit-prompts'),
+@@ -157,6 +160,7 @@ async function chat(plan, c) {
+       { role: 'user', content: c.user },
+     ],
+     ...(plan.temperature === undefined ? {} : { temperature: plan.temperature }),
++    ...(plan.reasoningEffort === undefined ? {} : { reasoning_effort: plan.reasoningEffort }),
+     max_tokens: plan.maxTokens,
+     stream: plan.stream,
+   };
+@@ -451,7 +455,7 @@ function summarize(results, meta) {
+   lines.push('');
+   lines.push(
+     `${questions.length} question(s) × ${langs.length} language(s), runs ${meta.runs}; ` +
+-      `max_tokens ${opts.maxTokens}, slice ${opts.maxNodes} parts, temperature ${opts.temperature ?? 'server default'}. ${meta.mode}.`,
++      `max_tokens ${opts.maxTokens}, slice ${opts.maxNodes} parts, temperature ${opts.temperature ?? 'server default'}${opts.reasoningEffort ? `, reasoning_effort ${opts.reasoningEffort}` : ''}. ${meta.mode}.`,
+   );
+   lines.push('');
+   lines.push('| lang | n | parse rate | grounded rate | edges real | mean hop cov | median out tok | median ms | median 1st-tok ms |');
+@@ -587,6 +591,7 @@ const plan = {
+   baseUrl: opts.baseUrl,
+   maxTokens: opts.maxTokens,
+   temperature: opts.temperature,
++  reasoningEffort: opts.reasoningEffort,
+   stream: opts.stream,
+   timeoutMs: opts.timeoutMs,
+   calls: [],
+-- 
+2.51.1.windows.1
+

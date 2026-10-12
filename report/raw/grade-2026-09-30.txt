@@ -1,0 +1,25 @@
+
+=== Sequence internal translation grade (deterministic, offline) ===
+
+  shopfront            type=microservices  OK  cov=100.0% nodes= 38 edgeP/R=100.0%/100.0%
+  ticketing-scaffold   type=microservices  OK  cov=100.0% nodes= 12
+  spa-dashboard        type=spa            OK  cov=100.0% nodes=  7
+  mobile-rn            type=mobile         OK  cov=100.0% nodes=  6
+  mobile-flutter       type=mobile         OK  cov=100.0% nodes=  3
+  cli-tool             type=cli            OK  cov=100.0% nodes=  5
+  plainapp             type=microservices  OK  cov=100.0% nodes=  9
+  shared-backend       type=microservices  OK  cov=100.0% nodes= 11
+  dockerfile-env-mini  type=microservices  OK  cov=100.0% nodes=  7
+  k8s-mini/helm        type=server-web     OK  cov=100.0% nodes=  5
+  k8s-mini/plain       type=server-web     OK  cov=100.0% nodes=  5
+
+  design_suggest plumbing: 14/14 checks pass
+
+  GRADES (1-10):
+    Axis 1 code→structure fidelity : 9/10
+    Axis 2 plain-English labeling  : 9/10
+    Axis 3 classifier accuracy     : 8/10
+    Axis 4 word→system (MOCK ONLY) : 7/10   [unproven on a live model]
+
+  Wrote docs\TRANSLATION_GRADE.md (11774 bytes)
+

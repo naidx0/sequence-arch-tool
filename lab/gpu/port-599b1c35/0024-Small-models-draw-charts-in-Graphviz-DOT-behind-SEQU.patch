@@ -1,0 +1,217 @@
+From 59f572a0865f15e8320dabea4512b7a7d2695994 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 15:30:06 -0400
+Subject: [PATCH 24/37] Small models draw charts in Graphviz DOT behind
+ SEQUENCE_CHART_LANG=dot
+
+propose_chart takes a dot digraph of file paths, compiles it with the schema's DOT compiler into
+the same chart, and holds it to the same stem lookup and validator. The flag also turns on the
+invented-link drop with its zero-link refusal, because the MiniCPM5 result holds only with the
+repair (126 fresh answers: grounded 76% vs 43%, hop coverage 0.48 vs 0.16). Off by default;
+unset, the tool the model sees is unchanged. 3 tests.
+---
+ packages/analyzer/src/server/askTools.ts      | 69 +++++++++++++++++-
+ .../analyzer/src/test/chart-lang-dot.test.ts  | 73 +++++++++++++++++++
+ 2 files changed, 139 insertions(+), 3 deletions(-)
+ create mode 100644 packages/analyzer/src/test/chart-lang-dot.test.ts
+
+diff --git a/packages/analyzer/src/server/askTools.ts b/packages/analyzer/src/server/askTools.ts
+index 353ab2fa..2535cd8e 100644
+--- a/packages/analyzer/src/server/askTools.ts
++++ b/packages/analyzer/src/server/askTools.ts
+@@ -43,7 +43,7 @@ import { repoExecutionRefusal } from './repoTrust.js';
+ import { gitDiff, gitStatus, GitWorkspaceError } from './gitWorkspace.js';
+ import type { ArchGraph } from '@sequence/schema';
+ import { validatePlan, type Concept } from './lessonState.js';
+-import { validateChart, CHART_KINDS, FLOW_KINDS, chartFamily, compileFlowLines, flowProblemLine, isChartKind } from '@sequence/schema';
++import { validateChart, CHART_KINDS, FLOW_KINDS, chartFamily, compileDrawing, compileFlowLines, flowProblemLine, isChartKind } from '@sequence/schema';
+ import type { CompiledFlow } from '@sequence/schema';
+ import type { Digest } from '../explain/explain.js';
+ import {
+@@ -4209,6 +4209,27 @@ export function chartFlowLinesEnabled(): boolean {
+   return process.env.SEQUENCE_CHART_FLOW_LINES === '1';
+ }
+ 
++/**
++ * A SMALL MODEL DRAWS IN GRAPHVIZ DOT, WHEN ON. `SEQUENCE_CHART_LANG=dot` publishes
++ * propose_chart with a `dot` argument (a digraph whose nodes are file paths) and
++ * compiles it into the same chart the JSON path builds, checked by the same
++ * validator. It turns on the invented-link drop (0018a) with it, because the
++ * measurement only holds with the repair.
++ *
++ * Measured live on MiniCPM5 (sequence-lab log, 2026-09-23), 126 fresh answers on the
++ * hard shopfront set with the repair on: DOT grounded 76% and hop coverage 0.48
++ * against JSON's 43% and 0.16 (paired by run, +0.33 SE 0.05 and +0.31 SE 0.07).
++ */
++export function chartLang(): 'json' | 'dot' {
++  return process.env.SEQUENCE_CHART_LANG === 'dot' ? 'dot' : 'json';
++}
++
++function dotArg(args: Record<string, unknown>): string | undefined {
++  if (chartLang() !== 'dot' || Array.isArray(args.items)) return undefined;
++  const dot = args.dot;
++  return typeof dot === 'string' && dot.trim() !== '' ? dot : undefined;
++}
++
+ function flowLinesArg(args: Record<string, unknown>): string | undefined {
+   if (!chartFlowLinesEnabled() || Array.isArray(args.items)) return undefined;
+   const flow = args.flow;
+@@ -4234,7 +4255,27 @@ function executeProposeChart(
+ ): AskToolResult {
+   const flow = flowLinesArg(args);
+   let compiled: CompiledFlow | undefined;
+-  if (flow !== undefined) {
++  const dot = dotArg(args);
++  if (dot !== undefined) {
++    const out = compileDrawing('dot', dot, {
++      head: {
++        kind: isChartKind(args.kind) ? args.kind : 'data-flow',
++        title: typeof args.title === 'string' ? args.title : '',
++        ...(typeof args.caption === 'string' ? { caption: args.caption } : {}),
++      },
++    });
++    if (!out.ok) {
++      return {
++        ok: false,
++        evidence: `refused: propose_chart — ${out.problems.slice(0, 6).map((p) => p.message).join('; ')}`,
++      };
++    }
++    /* A DOT node is named by its file, so that name is its claim: it becomes the
++       item's nodeId and goes through the same stem lookup and validator below. */
++    const items = out.chart.items.map((it) => (it.nodeId ? it : { ...it, nodeId: it.label }));
++    /* Same shape where it matters: chart, steps, itemLine and linkLine, which flowProblemLine reads. */
++    compiled = { ...out, chart: { ...out.chart, items } } as unknown as CompiledFlow;
++  } else if (flow !== undefined) {
+     const out = compileFlowLines(flow, {
+       kind: isChartKind(args.kind) ? args.kind : 'data-flow',
+       title: typeof args.title === 'string' ? args.title : '',
+@@ -4389,7 +4430,7 @@ function executeProposeChart(
+  * describe them as real.
+  */
+ export function chartDropInventedLinksEnabled(): boolean {
+-  return process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS === '1';
++  return process.env.SEQUENCE_CHART_DROP_INVENTED_LINKS === '1' || chartLang() === 'dot';
+ }
+ 
+ function withoutInventedLinks(
+@@ -6681,6 +6722,26 @@ const PROPOSE_CHART_PARAMETERS = {
+   additionalProperties: true,
+ };
+ 
++/** `propose_chart` as published when a small model draws in DOT (see chartLang). */
++const PROPOSE_CHART_DOT_DESCRIPTION =
++  'Draw a chart the reader can SEE, as a Graphviz digraph. Name each node by its file in quotes, ' +
++  'copied from the files you were shown, and write each hop as "a" -> "b" [label="what moves"]; ' +
++  'only where the code really calls. Example: digraph G { "web/app.ts" -> "api/server.py" [label="request"]; } ' +
++  'kind is one of: ' + CHART_KINDS.join(', ') + '. A link the repository does not have is left out.';
++
++const PROPOSE_CHART_DOT_PARAMETERS = {
++  type: 'object',
++  properties: {
++    kind: { type: 'string' },
++    title: { type: 'string' },
++    caption: { type: 'string' },
++    dot: { type: 'string' },
++    surface: { type: 'string' },
++  },
++  required: ['kind', 'title', 'dot'],
++  additionalProperties: true,
++};
++
+ /** `propose_chart` as published when flow lines are on (see chartFlowLinesEnabled). */
+ const PROPOSE_CHART_FLOW_DESCRIPTION =
+   'Draw a chart the reader can SEE. You supply the kind and the parts; Sequence renders it. ' +
+@@ -6903,9 +6964,11 @@ export const ASK_TOOL_REGISTRY: Record<AskToolName, AskToolRegistryEntry> = {
+     /* Getters, so the registry stays the one source both wires project from,
+        whichever way SEQUENCE_CHART_FLOW_LINES is set when the belt is built. */
+     get description(): string {
++      if (chartLang() === 'dot') return PROPOSE_CHART_DOT_DESCRIPTION;
+       return chartFlowLinesEnabled() ? PROPOSE_CHART_FLOW_DESCRIPTION : PROPOSE_CHART_DESCRIPTION;
+     },
+     get parameters() {
++      if (chartLang() === 'dot') return PROPOSE_CHART_DOT_PARAMETERS;
+       return chartFlowLinesEnabled() ? PROPOSE_CHART_FLOW_PARAMETERS : PROPOSE_CHART_PARAMETERS;
+     },
+   },
+diff --git a/packages/analyzer/src/test/chart-lang-dot.test.ts b/packages/analyzer/src/test/chart-lang-dot.test.ts
+new file mode 100644
+index 00000000..e4652718
+--- /dev/null
++++ b/packages/analyzer/src/test/chart-lang-dot.test.ts
+@@ -0,0 +1,73 @@
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import path from 'node:path';
++import { test } from 'node:test';
++import { fileURLToPath } from 'node:url';
++import { scanRepo } from '../scan.js';
++import { resolveInRepo } from '../server/jail.js';
++import { ASK_TOOL_REGISTRY, executeAskTool } from '../server/askTools.js';
++
++/**
++ * SEQUENCE_CHART_LANG=dot: a small model draws propose_chart as a Graphviz digraph
++ * of file paths, compiled into the same chart and held to the same validator, with
++ * invented links dropped (0018a) and a chart of only invented links refused.
++ */
++const here = path.dirname(fileURLToPath(import.meta.url));
++const SHOPFRONT = path.join(here, '..', '..', 'test', 'fixtures', 'shopfront');
++
++async function ctx() {
++  const root = fs.realpathSync(SHOPFRONT);
++  const graph = await scanRepo(SHOPFRONT, { cluster: true });
++  return {
++    graph,
++    resolveReadable: (rel: string) => resolveInRepo(root, rel),
++    repoRoot: root,
++    designMode: false,
++    question: 'how does an order get in?',
++    canvasToolsEnabled: true,
++  } as unknown as Parameters<typeof executeAskTool>[2];
++}
++
++async function withLang<T>(value: string | undefined, fn: () => Promise<T> | T): Promise<T> {
++  const before = process.env.SEQUENCE_CHART_LANG;
++  if (value === undefined) delete process.env.SEQUENCE_CHART_LANG;
++  else process.env.SEQUENCE_CHART_LANG = value;
++  try {
++    return await fn();
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_CHART_LANG;
++    else process.env.SEQUENCE_CHART_LANG = before;
++  }
++}
++
++const REAL = '"gateway/src/routes/orders.ts" -> "orders/app/routes.py" [label="the order"];';
++const INVENTED = '"orders/app/routes.py" -> "gateway/src/routes/orders.ts" [label="a callback"];';
++const call = (body: string) => ({ kind: 'data-flow', title: 'How an order gets in', dot: `digraph G {\n  ${body}\n}` });
++
++test('dot on: a digraph of real files is drawn as a grounded chart', async () => {
++  const c = await ctx();
++  const r = await withLang('dot', () => executeAskTool('propose_chart', call(REAL), c));
++  assert.equal(r.ok, true, r.evidence);
++  assert.equal(r.chart?.links?.length, 1);
++  assert.deepEqual(r.chart?.items.map((i) => i.nodeId).sort(), ['file:gateway/src/routes/orders.ts', 'file:orders/app/routes.py']);
++});
++
++test('dot on: an invented hop is left out, and a chart of only invented hops is refused', async () => {
++  const c = await ctx();
++  const mixed = await withLang('dot', () => executeAskTool('propose_chart', call(`${REAL}\n  ${INVENTED}`), c));
++  assert.equal(mixed.ok, true, mixed.evidence);
++  assert.equal(mixed.chart?.links?.length, 1);
++  assert.match(String(mixed.content), /Left out 1 link/);
++  const only = await withLang('dot', () => executeAskTool('propose_chart', call(INVENTED), c));
++  assert.equal(only.ok, false);
++});
++
++test('the tool the model sees asks for dot only when the flag is set', async () => {
++  await withLang('dot', () => {
++    assert.match(ASK_TOOL_REGISTRY.propose_chart.description, /Graphviz digraph/);
++    assert.ok('dot' in (ASK_TOOL_REGISTRY.propose_chart.parameters as { properties: object }).properties);
++  });
++  await withLang(undefined, () => {
++    assert.doesNotMatch(ASK_TOOL_REGISTRY.propose_chart.description, /Graphviz/);
++  });
++});
+-- 
+2.51.1.windows.1
+

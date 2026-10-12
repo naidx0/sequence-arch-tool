@@ -1,0 +1,38 @@
+{
+  "note": "Each row: a control ask that names the file the way the SCANNER spells it, and paraphrases a person would actually type. A paraphrase passes when it produces the SAME queue as its control. The `names_nothing` rows must produce an EMPTY queue -- they are the guard against a matcher that guesses.",
+  "repo": "examples/makemore",
+  "rows": [
+    { "control": "teach me how bigram_counts.py works",
+      "paraphrases": [
+        "teach me how the bigram counts work",
+        "how do the bigram counts work?",
+        "explain the bigram count table",
+        "teach me the bigram counts",
+        "walk me through bigram counting",
+        "how is the bigram count built?"
+      ] },
+    { "control": "teach me how nn_bigram.py works",
+      "paraphrases": [
+        "teach me the nn bigram model",
+        "explain the neural net bigram",
+        "how does the nn bigram work?",
+        "teach me about the nn-bigram file",
+        "walk me through nn bigram"
+      ] },
+    { "control": "teach me how sampling.py works",
+      "paraphrases": [
+        "teach me how sampling works",
+        "explain the sampling step",
+        "how does sampling generate names?",
+        "teach me about sampling"
+      ] }
+  ],
+  "names_nothing": [
+    "teach me the doctrine of past consideration",
+    "teach me about polynomials",
+    "explain gradient descent in general",
+    "teach me what a probability distribution is",
+    "how do I write a unit test?",
+    "teach me the counts"
+  ]
+}

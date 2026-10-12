@@ -1,0 +1,770 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SHEET 07 — MODULES, NESTING AND CONTAINMENT
+     Fragment. Body content only. _core.html supplies every token and every
+     class used here. No <style>, no new class, no raw hex, no emoji.
+
+     This sheet governs the one thing Sequence can express that Graphite never
+     could: a node that CONTAINS other nodes. Every specimen below is built
+     from .boardfield / .node / .n-* / .nest / .edgeline, which the substrate
+     already defines. Absolute positioning inside a fixed-size .boardfield is
+     used so that a drawn edge lands on a real card edge rather than on a
+     description of one.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<section class="page" data-page-num="07" data-page-title="Modules, nesting and containment" id="p07">
+
+  <div class="pagehead">
+    <span class="num">Sheet 07 &middot; The board</span>
+    <h1>Modules, nesting and containment</h1>
+    <p class="lede">
+      A repository is not flat and Sequence's schema has never pretended it was.
+      <span class="inline-code">ArchNode.parentId</span> and
+      <span class="inline-code">SeqDiagramGroup.memberIds</span> both ship today, and today the
+      board draws neither &mdash; <span class="inline-code">presentKindFor()</span> maps
+      <span class="inline-code">module</span> to <span class="inline-code">service</span>, and the
+      children of a node are flattened into a list of names printed on its card face. A list of
+      names is not a picture of containment. It is a picture of a card that knows something and
+      will not show you.
+    </p>
+    <p class="lede">
+      This sheet makes module a first-class kind, gives containment a real drawn form, and states
+      the ceiling on how deep it goes. It closes with the law the rest of it stands on: containment
+      is <b>read</b> from the graph, never inferred from a name, a path or a layout position &mdash;
+      and topology is never fabricated to make a container look busier than it is.
+    </p>
+  </div>
+
+  <!-- ── 07.1 MODULE IS A KIND ───────────────────────────────────────────── -->
+  <div class="sec" id="s07-kind">
+    <div class="sec-head">
+      <span class="eyebrow">07.1</span>
+      <h2>Module is a kind, not a spelling of Service</h2>
+      <span class="tail">six kinds &middot; six icons &middot; six silhouettes &middot; no hue</span>
+    </div>
+
+    <p class="note">
+      The board has six kinds and Module is one of them. Its silhouette is a <em>folder</em>: an
+      <span class="inline-code">--r-14</span> body with a tab
+      (<span class="inline-code">--arch-tab-w</span> by <span class="inline-code">--arch-tab-h</span>)
+      drawn above its top-left corner in the card's own border style, weight and ink, and carrying
+      no bottom edge. The tab is drawn rather than declared because a corner radius could not have
+      carried it: CSS scales every corner by f = min(side length / the radii summed on that side),
+      so below a certain size <span class="inline-code">--r-14</span> and
+      <span class="inline-code">--r-18</span> paint identically and the difference the token
+      asserted is discarded. A drawn tab is not scaled away. The tone is recessive
+      (<span class="inline-code">--surface-1</span>) because a container that sits in front of its
+      own contents is inside out, and the border is dashed at
+      <span class="inline-code">--w-struct</span>: dashed means <em>a boundary drawn around
+      things</em>, which is the whole of what a module is.
+    </p>
+
+    <div class="panel">
+      <div class="kindlegend">
+        <span class="grp">Kinds</span>
+        <span class="k"><span class="silswatch n-service"></span><svg class="i i-14"><use href="#ic-service"/></svg>Service</span>
+        <span class="k"><span class="silswatch n-module"></span><svg class="i i-14"><use href="#ic-module"/></svg>Module</span>
+        <span class="k"><span class="silswatch n-store"></span><svg class="i i-14"><use href="#ic-database"/></svg>Datastore</span>
+        <span class="k"><span class="silswatch n-topic"></span><svg class="i i-14"><use href="#ic-topic"/></svg>Topic</span>
+        <span class="k"><span class="silswatch n-agent"></span><svg class="i i-14"><use href="#ic-agent"/></svg>Agent</span>
+        <span class="grpsep"></span>
+        <span class="grp">Position</span>
+        <span class="k"><span class="silswatch n-entry"></span><svg class="i i-14"><use href="#ic-entry"/></svg>Entry</span>
+      </div>
+      <p class="caption">Six rows in two groups &mdash; five buildable kinds, then the entry
+      <em>position</em>, which sheet 03 &sect;03.7 says may not stand among them. The legend the
+      board ships today has five rows, one flat list, and no Module at all, which is why a reader
+      can look at a board of a monorepo and never learn that it has modules in it.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">billing</div>
+            <div class="nd-s">invoices, ledger, refunds</div>
+          </div>
+        </div>
+        <p class="why">A module rendered as a service, with its children demoted to a comma list on
+        the card face. The silhouette says <em>deployed thing</em>, the tag says
+        <em>Service</em>, and the three things inside it are typography.</p>
+      </div>
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <div class="node n-module" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div>
+            <div class="nd-t">billing</div>
+            <div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;members&#8250;</span> inside</span><span class="right"><svg class="i i-12"><use href="#ic-chevright"/></svg></span></div>
+          </div>
+        </div>
+        <p class="why">Its own kind, its own icon, its own silhouette, and a count that says there
+        is something in there and it can be opened. Nothing here is coloured.</p>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="panel">
+        <h3>Two schema kinds present as Module. Two are not nodes at all.</h3>
+        <p class="sub">The board's six kinds are the vocabulary of things that stand on the board
+        ground. <span class="inline-code">module</span> and
+        <span class="inline-code">package</span> never stand on the ground &mdash; they only ever
+        appear inside something &mdash; and both present as <b>Module</b>, with the exact schema
+        kind printed literally in the mono <span class="inline-code">.nd-k</span> tag.
+        <span class="inline-code">file</span> and <span class="inline-code">function</span> are
+        <b>interior detail, not board kinds</b>: they are reported in the parts strip sheet 02
+        specifies &mdash; <span class="inline-code">#ic-fn</span> and a count in
+        <span class="inline-code">.nd-ft</span> &mdash; and enumerated in the index rail.</p>
+        <div class="specimens">
+          <div class="specimen"><div class="node n-module" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div><div class="nd-t">billing</div></div><span class="lbl">kind: module</span></div>
+          <div class="specimen"><div class="node n-module" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Package</span></div><div class="nd-t">@sequence/schema</div></div><span class="lbl">kind: package</span></div>
+          <div class="specimen"><div class="node n-module" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div><div class="nd-t">billing</div><div class="nd-ft"><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-fn"/></svg><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;fns&#8250;</span></span><span class="right mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;members&#8250;</span></span></div></div><span class="lbl">files and functions: counted here</span></div>
+        </div>
+        <p class="caption">A silhouette carries what must survive zooming out. Module versus package
+        does not need to survive zooming out; it needs to be exact when you are close enough to
+        read, and the mono tag is exact. Collapsing either to <em>Service</em> is one error &mdash;
+        a package is not a deployed thing. Minting a seventh kind for a file is the other: it would
+        take Module's icon, Module's dashed border, Module's tone and Module's silhouette, so the
+        two would render byte-identically with all colour removed &mdash; which is exactly what the
+        greyscale invariant exists to catch.</p>
+      </div>
+      <dl class="specs">
+        <dt>Icon</dt><dd>#ic-module</dd>
+        <dt>Silhouette</dt><dd>--arch-sil-module &middot; --r-14 body</dd>
+        <dt>Folder tab</dt><dd>--arch-tab-w &times; --arch-tab-h &middot; drawn, not a radius</dd>
+        <dt>Border style</dt><dd>--arch-style-module &middot; dashed</dd>
+        <dt>Border weight</dt><dd>--arch-weight-module &middot; --w-struct</dd>
+        <dt>Card tone</dt><dd>--arch-tone-module &middot; --surface-1</dd>
+        <dt>Card elevation</dt><dd>--e1</dd>
+        <dt>Kind tag</dt><dd>--font-mono / --t-10 / .08em / --ink-3</dd>
+        <dt>Hue spent</dt><dd>none</dd>
+      </dl>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>The greyscale invariant, restated for this
+    sheet.</b> <em>Every architecture node kind must remain distinguishable with all colour removed,
+    at every size the silhouette is drawn, from the radii that actually paint.</em> The last clause
+    is the load-bearing one: CSS scales every corner by f = min(side length / the radii summed on
+    that side), so a declared radius is not a rendered radius. Module differs from Service in icon,
+    in silhouette (a drawn folder tab against a plain rounded rectangle &mdash; both bodies are
+    <span class="inline-code">--r-14</span>, and the tab is the part that cannot be scaled away), in
+    border style (dashed against solid), in weight and in tone &mdash; five channels, none of them
+    colour. A <em>file</em> drawn as a card would differ from Module in none of the five, which is
+    the whole reason a file is not a kind on this board.</div>
+  </div>
+
+  <!-- ── 07.2 THE WALL ───────────────────────────────────────────────────── -->
+  <div class="sec" id="s07-wall">
+    <div class="sec-head">
+      <span class="eyebrow">07.2</span>
+      <h2>The container is a wall, and the members are inside it</h2>
+      <span class="tail">--nest-1 &middot; --r-18 &middot; --sp-4 inset &middot; 24px header</span>
+    </div>
+
+    <p class="note">
+      A module with drawn members is not a card. It is a <span class="inline-code">.nest</span>
+      &mdash; a wall with a header and its members laid out inside it. The wall keeps the module's
+      icon and the module's dashed <span class="inline-code">--w-struct</span> border, so a reader
+      who saw the collapsed card recognises the open one as the same object rather than a second
+      one.
+    </p>
+    <p class="note">
+      Two decisions in the wall's geometry are arithmetic rather than taste. The wall is
+      <span class="inline-code">--r-18</span> and its inset is <span class="inline-code">--sp-4</span>,
+      so a member lands on <span class="inline-code">--r-14</span> &mdash; which is exactly the
+      service card's own silhouette. Radii nest correctly by subtraction, never by eye. And the
+      header is 24px because that is the height Graphite already gives
+      <span class="inline-code">.chip</span>, <span class="inline-code">.btn.sm</span> and
+      <span class="inline-code">.railhead</span>. Containment does not get a new rung on the
+      height ladder.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>Rendered</h3>
+        <p class="sub">One wall, three members, two kinds. The wall carries no shadow; the members
+        carry <span class="inline-code">--e1</span>.</p>
+        <div class="boardfield" style="padding:var(--sp-16)">
+          <div class="nest" style="width:100%;max-width:344px">
+            <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span></span></div>
+            <div class="nest-bd">
+              <div class="node n-service" style="min-height:auto">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">invoices</div>
+              </div>
+              <div class="node n-store" style="min-height:auto">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+                <div class="nd-t">ledger</div>
+              </div>
+              <div class="node n-service" style="min-height:auto">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">refunds</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="caption">The wall recedes (<span class="inline-code">--nest-1</span>) and the
+        members sit forward (<span class="inline-code">--nest-2</span>). Depth reads downward into
+        the board, which is the direction containment actually goes.</p>
+      </div>
+      <dl class="specs">
+        <dt>Wall surface</dt><dd>--nest-1</dd>
+        <dt>Wall border</dt><dd>--w-struct dashed --edge</dd>
+        <dt>Wall radius</dt><dd>--r-18</dd>
+        <dt>Wall elevation</dt><dd>--e0</dd>
+        <dt>Wall inset</dt><dd>--nest-inset &middot; --sp-4</dd>
+        <dt>Member radius</dt><dd>--r-14 &middot; 18 &#8722; 4, by arithmetic</dd>
+        <dt>Member surface</dt><dd>--nest-2</dd>
+        <dt>Member gap</dt><dd>--sp-8</dd>
+        <dt>Header height</dt><dd>--nest-hd-h &middot; 24px</dd>
+        <dt>Header type</dt><dd>--font-mono / --t-10 / .08em / --ink-3</dd>
+        <dt>Header padding</dt><dd>0 --sp-6</dd>
+        <dt>Count position</dt><dd>.nest-hd &gt; .right &middot; --ink-4</dd>
+      </dl>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm">
+          <div class="nest" style="width:100%;background:var(--accent-wash);border-color:var(--accent-edge)">
+            <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing</div>
+            <div class="nest-bd">
+              <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+            </div>
+          </div>
+        </div>
+        <p class="why">A tinted wall. The boundary is chrome, and Law 1 says chrome is never
+        coloured &mdash; the moment one wall is gold the reader has to decide whether that means
+        selected.</p>
+      </div>
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <div class="nest" style="width:100%">
+            <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing</div>
+            <div class="nest-bd">
+              <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+            </div>
+          </div>
+        </div>
+        <p class="why">A neutral wall, at <span class="inline-code">--edge</span>. Its job is to be
+        a boundary, and a boundary that competes with a verdict is a boundary that has stopped
+        being furniture.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 07.3 COLLAPSE AND EXPAND ────────────────────────────────────────── -->
+  <div class="sec" id="s07-collapse">
+    <div class="sec-head">
+      <span class="eyebrow">07.3</span>
+      <h2>Collapsed and expanded are one object in two states</h2>
+      <span class="tail">--seq-dur-panel &middot; the count never disappears</span>
+    </div>
+
+    <p class="note">
+      A module is expanded when its members are drawn and collapsed when they are not. Which state
+      a module is in is a fact about the <em>picture</em>, never a fact about the graph &mdash;
+      collapsing hides drawing, it does not hide truth. The member count therefore appears in both
+      states, in the wall header when open and in the card footer when shut, so a collapsed module
+      can never be mistaken for an empty one.
+    </p>
+    <p class="note">
+      The disclosure control is the header itself, not a button parked on it: the whole 24px strip
+      is the hit target and the chevron is a 12px glyph riding at its right end beside the count.
+      That keeps the header at 24px rather than the 26px an
+      <span class="inline-code">.iconbtn</span> would force, and it means the target grows with the
+      wall instead of staying a 26px square in the corner of a 340px object.
+    </p>
+    <p class="note">
+      The leading icon slot belongs to the <em>kind</em> in every state, and the chevron may never
+      take it. Under Decision 2 the icon is the primary carrier of kind; a module whose glyph has
+      been replaced by a chevron has traded the channel that identifies it for the channel that
+      says whether it is open, and open is the less important of the two facts.
+    </p>
+
+    <div class="scrollx">
+      <div class="grid g2" style="min-width:840px">
+
+        <div class="panel">
+          <h3>Expanded</h3>
+          <p class="sub">Each crossing edge lands on the member it actually connects to and keeps
+          its own proof state.</p>
+          <div class="boardfield" style="width:400px;height:200px">
+            <svg class="edgespec" viewBox="0 0 400 200" width="400" height="200" style="position:absolute;left:0;top:0" aria-hidden="true">
+              <path class="edgeline e-traced"   d="M176 97 C 200 97, 202 81, 224 81"/>
+              <path class="edgeline e-declared" d="M176 97 C 200 97, 202 145, 224 145"/>
+            </svg>
+            <div class="node n-service" style="min-height:auto;position:absolute;left:16px;top:69px">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div>
+            </div>
+            <div class="nest" style="position:absolute;left:220px;top:20px;width:168px">
+              <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;n&#8250;</span><svg class="i i-12"><use href="#ic-chevdown"/></svg></span></div>
+              <div class="nest-bd" style="flex-direction:column">
+                <div class="node n-service" style="min-height:auto">
+                  <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                  <div class="nd-t">invoices</div>
+                </div>
+                <div class="node n-store" style="min-height:auto">
+                  <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+                  <div class="nd-t">ledger</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="caption">Two edges, two states, two endpoints. The wall is drawn straight
+          through &mdash; a crossing edge is not re-routed around a boundary it genuinely crosses.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Collapsed</h3>
+          <p class="sub">The members are not drawn, so both edges terminate on the wall as one
+          drawn connector.</p>
+          <div class="boardfield" style="width:400px;height:200px">
+            <svg class="edgespec" viewBox="0 0 400 200" width="400" height="200" style="position:absolute;left:0;top:0" aria-hidden="true">
+              <path class="edgeline e-declared" d="M176 97 H 224"/>
+            </svg>
+            <div class="node n-service" style="min-height:auto;position:absolute;left:16px;top:69px">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+              <div class="nd-t">checkout</div>
+            </div>
+            <div class="node n-module" style="min-height:auto;position:absolute;left:224px;top:48px;width:160px">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Module</span><span class="right"><svg class="i i-12"><use href="#ic-chevright"/></svg></span></div>
+              <div class="nd-t">billing</div>
+              <div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;n&#8250;</span> members</span><span class="right"><span class="edgetag"><span class="ph">&#8249;edges&#8250;</span> in</span></span></div>
+            </div>
+          </div>
+          <p class="caption">The aggregate takes the <b>weakest</b> proof state of the edges it
+          stands for: one declared edge among traced ones makes the bundle declared. An aggregate
+          can be no better evidenced than its worst member.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <dl class="specs" style="margin-top:var(--sp-12)">
+      <dt>Collapsed form</dt><dd>.node.n-module &middot; --arch-card-w</dd>
+      <dt>Expanded form</dt><dd>.nest &middot; width from the members</dd>
+      <dt>Leading icon</dt><dd>#ic-module &middot; the kind, in both states</dd>
+      <dt>Disclosure glyph</dt><dd>#ic-chevright collapsed / #ic-chevdown expanded &middot; .i-12</dd>
+      <dt>Chevron position</dt><dd>.right &middot; trailing, beside the count</dd>
+      <dt>Hit target</dt><dd>the whole .nest-hd / .nd-hd strip</dd>
+      <dt>Transition</dt><dd>--seq-dur-panel &middot; --ease</dd>
+      <dt>Count, collapsed</dt><dd>.nd-ft &middot; mono --t-10 --ink-3</dd>
+      <dt>Count, expanded</dt><dd>.nest-hd &gt; .right &middot; --ink-4</dd>
+      <dt>Aggregate edge label</dt><dd>.edgetag &middot; 16px &middot; mono --t-10</dd>
+    </dl>
+  </div>
+
+  <!-- ── 07.4 EDGES ACROSS A BOUNDARY ────────────────────────────────────── -->
+  <div class="sec" id="s07-edges">
+    <div class="sec-head">
+      <span class="eyebrow">07.4</span>
+      <h2>What happens to an edge that crosses a wall</h2>
+      <span class="tail">four cases &middot; a wall never owns an edge</span>
+    </div>
+
+    <p class="note">
+      There are exactly four cases, and the rule behind all four is one sentence: <b>a wall never
+      owns an edge.</b> An edge drawn touching a wall is always standing in for an edge belonging
+      to something inside it. There is no such thing as <em>the module calls the database</em>
+      unless the analyzer traced a call from a member, and if it did, the edge is the member's.
+    </p>
+
+    <div class="panel">
+      <div class="grid g2">
+        <dl class="specs">
+          <dt>Both ends inside</dt><dd>drawn inside the wall &middot; never routed out and back</dd>
+          <dt>One end outside, open</dt><dd>terminates on the member &middot; crosses the wall</dd>
+          <dt>One end outside, shut</dt><dd>terminates on the wall &middot; weakest proof state wins</dd>
+          <dt>Many to many members</dt><dd>one drawn edge &middot; .edgetag carries the count</dd>
+        </dl>
+        <div class="specimens column">
+          <div class="specimen">
+            <svg class="edgespec" viewBox="0 0 200 12" width="200" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6h196"/></svg>
+            <span class="lbl">.e-traced &middot; the analyzer followed it</span></div>
+          <div class="specimen">
+            <svg class="edgespec" viewBox="0 0 200 12" width="200" height="12" aria-hidden="true"><path class="edgeline e-onflow" d="M2 6h196"/></svg>
+            <span class="lbl">.e-onflow &middot; on the flow being read</span></div>
+          <div class="specimen">
+            <svg class="edgespec" viewBox="0 0 200 12" width="200" height="12" aria-hidden="true"><path class="edgeline e-declared" d="M2 6h196"/></svg>
+            <span class="lbl">.e-declared &middot; claimed, unconfirmed</span></div>
+          <div class="specimen" style="flex-direction:row;gap:var(--sp-6)">
+            <span class="edgetag">POST /charge</span>
+            <span class="edgetag"><span class="ph">&#8249;edges&#8250;</span> in</span>
+          </div>
+        </div>
+      </div>
+      <p class="caption">Collapsing a module can only ever make an edge's proof state
+      <em>weaker</em>, never stronger. A bundle that contains one unconfirmed claim is an
+      unconfirmed bundle, and it is <span class="inline-code">--unknown</span> &mdash; never
+      <span class="inline-code">--wont</span>, because nothing has failed.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="scrollx">
+          <div class="stage pad-sm" style="justify-content:center">
+          <div class="boardfield" style="width:420px;height:132px">
+            <svg class="edgespec" viewBox="0 0 420 132" width="420" height="132" style="position:absolute;left:0;top:0" aria-hidden="true">
+              <path class="edgeline e-traced" d="M2 59 H 42"/>
+              <path class="edgeline e-traced" d="M210 59 C 230 59, 230 73, 250 73"/>
+            </svg>
+            <div class="nest" style="position:absolute;left:42px;top:12px;width:168px">
+              <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing</div>
+              <div class="nest-bd">
+                <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+              </div>
+            </div>
+            <div class="node n-store" style="min-height:auto;position:absolute;left:250px;top:45px">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+              <div class="nd-t">ledger</div>
+            </div>
+          </div>
+        </div>
+        </div>
+        <p class="why">Both connectors stop at the wall while the member that owns them is drawn
+        right there. The reader cannot tell which member the call belongs to, and the wall has
+        acquired behaviour it does not have.</p>
+      </div>
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="scrollx">
+          <div class="stage pad-sm" style="justify-content:center">
+          <div class="boardfield" style="width:420px;height:132px">
+            <svg class="edgespec" viewBox="0 0 420 132" width="420" height="132" style="position:absolute;left:0;top:0" aria-hidden="true">
+              <path class="edgeline e-traced" d="M2 73 H 47"/>
+              <path class="edgeline e-traced" d="M205 73 H 250"/>
+            </svg>
+            <div class="nest" style="position:absolute;left:42px;top:12px;width:168px">
+              <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing</div>
+              <div class="nest-bd">
+                <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+              </div>
+            </div>
+            <div class="node n-store" style="min-height:auto;position:absolute;left:250px;top:45px">
+              <div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+              <div class="nd-t">ledger</div>
+            </div>
+          </div>
+        </div>
+        </div>
+        <p class="why">The same two edges, landing on <span class="inline-code">invoices</span>
+        and passing over the wall. The wall is a boundary the edge crosses, not a terminal the
+        edge stops at.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 07.5 DEPTH ──────────────────────────────────────────────────────── -->
+  <div class="sec" id="s07-depth">
+    <div class="sec-head">
+      <span class="eyebrow">07.5</span>
+      <h2>Depth stops at three, and the ceiling is stated</h2>
+      <span class="tail">--nest-0 &middot; --nest-1 &middot; --nest-2 &middot; --nest-3</span>
+    </div>
+
+    <p class="note">
+      Containment depth is carried by tone, one step per level, and the ramp has four rungs. The
+      board spends three of them &mdash; ground, wall, member &mdash; and the fourth is the
+      ceiling. There is no <span class="inline-code">--nest-4</span>, so a fourth wall would have
+      to reuse a tone that is already spoken for, and the picture would stop saying anything about
+      depth at exactly the point a reader most needs it to.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The ramp</h3>
+        <p class="sub">Four steps, zero chroma. Each box is the surface a thing at that depth sits
+        on.</p>
+        <div style="background:var(--nest-0);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-10)">
+          <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">--nest-0 &middot; the ground</span>
+          <div style="background:var(--nest-1);border:var(--w-struct) dashed var(--edge);border-radius:var(--r-18);padding:var(--sp-10);margin-top:var(--sp-6)">
+            <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">--nest-1 &middot; a wall</span>
+            <div style="background:var(--nest-2);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-10);margin-top:var(--sp-6)">
+              <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">--nest-2 &middot; a member</span>
+              <div style="background:var(--nest-3);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);padding:var(--sp-10);margin-top:var(--sp-6)">
+                <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">--nest-3 &middot; the ceiling</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="caption">Radii shrink with the ramp &mdash; 14, 18 minus its inset, 14, 10 &mdash;
+        because a nested box with the same corner as its parent reads as a box that has escaped.</p>
+      </div>
+
+      <div class="panel">
+        <h3>A module inside a module</h3>
+        <p class="sub">The inner module does not get a wall. It gets a card and a count, and
+        opening it drills in &mdash; the outer wall becomes the ground and the ramp resets to
+        zero.</p>
+        <div class="boardfield" style="padding:var(--sp-16)">
+          <div class="nest" style="width:100%;max-width:344px">
+            <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span><svg class="i i-12"><use href="#ic-chevdown"/></svg></span></div>
+            <div class="nest-bd">
+              <div class="node n-service" style="min-height:auto">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+                <div class="nd-t">invoices</div>
+              </div>
+              <div class="node n-module" style="min-height:auto">
+                <div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Module</span><span class="right"><svg class="i i-12"><use href="#ic-chevright"/></svg></span></div>
+                <div class="nd-t">ledger</div>
+                <div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;n&#8250;</span> members</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="caption">Two walls deep is the whole budget. A reader who wants the third level
+        gets a camera move at <span class="inline-code">--seq-dur-cam</span>, not a fourth grey.</p>
+      </div>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>Why a ceiling is better than a fallback.</b>
+    An undeclared limit is discovered by whoever opens the deepest repository, and it is discovered
+    as a bug. Writing the ceiling down turns the fourth level from a rendering failure into a
+    navigation affordance &mdash; the thing the reader gets instead is a drill-in, which is better
+    than a fourth wall would have been anyway.</div>
+  </div>
+
+  <!-- ── 07.6 LEVELS ─────────────────────────────────────────────────────── -->
+  <div class="sec" id="s07-levels">
+    <div class="sec-head">
+      <span class="eyebrow">07.6</span>
+      <h2>L1, L2, L3 &mdash; and a level only exists when it differs</h2>
+      <span class="tail">a filter that hides real nodes must say what it hid</span>
+    </div>
+
+    <p class="note">
+      The levels are a standing filter over one graph, not three graphs. L1 shows the things a
+      reader would name if asked what the system <em>is</em>: entry points, services and agents.
+      L2 adds every scanned participant &mdash; datastores, topics and modules. L3 shows the same
+      nodes as L2 and opens them: route labels appear on edges, and a module's members are drawn
+      <b>as real nodes inside its wall</b> rather than flattened into a list of names printed on its
+      card face. That last clause is the whole reason L3 was worth unpinning.
+    </p>
+    <p class="note">
+      Opening a module does <b>not</b> promote its files and its functions to cards. They are
+      interior detail, and they are reported in the parts strip sheet 02 specifies &mdash;
+      <span class="inline-code">#ic-fn</span> and a count in
+      <span class="inline-code">.nd-ft</span> &mdash; then enumerated in the index rail. Drawing one
+      as a card would mean drawing it with Module's icon, Module's dashed border, Module's tone and
+      Module's silhouette, and a seventh kind that renders byte-identically to the sixth is not a
+      kind. It is the greyscale invariant failing inside the book that states it.
+    </p>
+    <p class="note">
+      Every level below L2 hides nodes that exist. A filter that hides real nodes has to say so on
+      the board, in the same breath as the counts it is showing &mdash; otherwise L1 reads as a
+      claim that the system has four parts.
+    </p>
+
+    <div class="scrollx">
+      <div class="grid g3" style="min-width:1020px">
+
+        <div class="panel tight">
+          <h3>L1 &middot; Business</h3>
+          <p class="sub">Entry, Service, Agent.</p>
+          <div class="boardfield" style="padding:var(--sp-10);display:flex;flex-wrap:wrap;gap:var(--sp-8)">
+            <div class="node n-entry" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+            <div class="node n-service" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="node n-agent" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div><div class="nd-t">refund worker</div></div>
+          </div>
+          <p class="caption"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)">L1 &middot; business &mdash; <span class="ph">&#8249;shown&#8250;</span> shown &middot; <span class="ph">&#8249;hidden&#8250;</span> hidden &middot; traced from compose + source</span></p>
+        </div>
+
+        <div class="panel tight">
+          <h3>L2 &middot; Systems</h3>
+          <p class="sub">Every scanned participant. Modules collapsed.</p>
+          <div class="boardfield" style="padding:var(--sp-10);display:flex;flex-wrap:wrap;gap:var(--sp-8)">
+            <div class="node n-entry" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+            <div class="node n-service" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="node n-module" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-module"/></svg><span class="nd-k">Module</span><span class="right"><svg class="i i-12"><use href="#ic-chevright"/></svg></span></div><div class="nd-t">billing</div><div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;n&#8250;</span></span></div></div>
+            <div class="node n-store" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+            <div class="node n-topic" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div><div class="nd-t">order.placed</div></div>
+          </div>
+          <p class="caption"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)">L2 &middot; systems &mdash; <span class="ph">&#8249;shown&#8250;</span> shown &middot; nothing hidden</span></p>
+        </div>
+
+        <div class="panel tight">
+          <h3>L3 &middot; Contracts</h3>
+          <p class="sub">Same nodes, opened. Route labels on edges, parts counted in the footer.</p>
+          <div class="boardfield" style="padding:var(--sp-10);display:flex;flex-wrap:wrap;gap:var(--sp-8);align-items:flex-start">
+            <div class="node n-service" style="min-height:auto;width:140px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="nest" style="width:148px">
+              <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span><svg class="i i-12"><use href="#ic-chevdown"/></svg></span></div>
+              <div class="nest-bd" style="flex-direction:column">
+                <div class="node n-service" style="min-height:auto;width:100%"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div><div class="nd-ft"><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-fn"/></svg><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;fns&#8250;</span></span></div></div>
+                <div class="node n-store" style="min-height:auto;width:100%"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div><div class="nd-ft"><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-fn"/></svg><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;fns&#8250;</span></span></div></div>
+              </div>
+            </div>
+            <span class="edgetag">POST /charge</span>
+          </div>
+          <p class="caption"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)">L3 &middot; contracts &mdash; members drawn, parts counted, no new kind</span></p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="panel">
+        <h3>The rail offers only the levels that differ</h3>
+        <p class="sub">A level that renders the same picture as the one above it is a lie about
+        depth, and the correct response is to not offer it.</p>
+        <div class="specimens">
+          <div class="specimen">
+            <div class="seg"><button>L1</button><button aria-selected="true">L2</button><button>L3</button></div>
+            <span class="lbl">L3 differs &mdash; labels or parts present</span></div>
+          <div class="specimen">
+            <div class="seg"><button>L1</button><button aria-selected="true">L2</button></div>
+            <span class="lbl">L3 identical &mdash; not offered</span></div>
+        </div>
+        <p class="caption">Two chips is not a degraded three. It is the honest count of the views
+        this graph actually has.</p>
+      </div>
+      <dl class="specs">
+        <dt>L1 shows</dt><dd>entry &middot; service &middot; agent</dd>
+        <dt>L1 hides</dt><dd>datastore &middot; topic &middot; module</dd>
+        <dt>L2 shows</dt><dd>every scanned participant</dd>
+        <dt>L3 adds</dt><dd>edge route labels &middot; members drawn inside walls</dd>
+        <dt>L3 offered when</dt><dd>an edge carries a label, or a node has members</dd>
+        <dt>Level control</dt><dd>.seg &middot; 2&#8211;3 items &middot; --control-h</dd>
+        <dt>Hidden count</dt><dd>mono --t-10 --ink-3, on the board</dd>
+        <dt>Default level</dt><dd>L2 &middot; the only one that hides nothing</dd>
+      </dl>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>Levels are a filter, and a filter keeps its
+    coordinates.</b> Changing level changes which nodes are drawn, which changes the layout, which
+    moves the camera. All three are one transaction &mdash; a level switch that re-filters without
+    re-laying-out leaves the survivors holding coordinates computed for a graph that is no longer
+    on screen, and the camera then fits to a sparse wreck.</div>
+  </div>
+
+  <!-- ── 07.7 THE GROUNDING LAW ──────────────────────────────────────────── -->
+  <div class="sec" id="s07-grounding">
+    <div class="sec-head">
+      <span class="eyebrow">07.7</span>
+      <h2>Containment is read. Topology is never fabricated.</h2>
+      <span class="tail">parentId &middot; memberIds &middot; and nothing else</span>
+    </div>
+
+    <p class="note">
+      A wall is drawn around a set of nodes for exactly two reasons: they share an
+      <span class="inline-code">ArchNode.parentId</span>, or they appear in one
+      <span class="inline-code">SeqDiagramGroup.memberIds</span>. Not because their labels share a
+      prefix. Not because their paths share a folder. Not because the layout engine happened to put
+      them near each other. A drawn boundary is a claim that the graph asserts the boundary, and if
+      the graph does not, the boundary is a guess wearing the costume of a fact.
+    </p>
+    <p class="note">
+      The second half of the law is stronger and it is where the board is currently wrong.
+      <b>Members are a set, not a sequence.</b> Opening a node's parts today synthesises a chain
+      &mdash; <span class="inline-code">part-0</span> to <span class="inline-code">part-1</span> to
+      <span class="inline-code">part-2</span> &mdash; and hands the reader a drawn arrow that no
+      analyzer ever observed. Every edge in this product carries evidence; the schema says so in
+      its own header. An edge with no evidence record is not a stylistic liberty, it is a schema
+      violation.
+    </p>
+
+    <div class="grid g2">
+      <pre class="codeblock">for (let i = 0; i &lt; nodes.length - 1; i += 1) {
+  edges.push({ from, to, family: <span class="tok-s">'control'</span> })
+}
+<span class="tok-c">// three parts in, two arrows out, zero evidence</span></pre>
+      <pre class="codeblock">nodes = members.map(m =&gt; ({ ...m, parentId: node.id }))
+edges = graph.edges.filter(hasEvidence)
+<span class="tok-c">// three parts in, three members out, no arrows</span></pre>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="scrollx">
+          <div class="stage pad-sm" style="flex-wrap:nowrap;gap:var(--sp-4);min-width:0">
+            <div class="node n-service" style="min-height:auto;width:132px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+            <svg class="edgespec" viewBox="0 0 28 8" width="28" height="8" style="align-self:center" aria-hidden="true"><path class="edgeline e-traced" d="M1 4h26"/></svg>
+            <div class="node n-store" style="min-height:auto;width:132px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+            <svg class="edgespec" viewBox="0 0 28 8" width="28" height="8" style="align-self:center" aria-hidden="true"><path class="edgeline e-traced" d="M1 4h26"/></svg>
+            <div class="node n-service" style="min-height:auto;width:132px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">refunds</div></div>
+          </div>
+        </div>
+        <p class="why">A synthesised <span class="inline-code">part-0 &#8594; part-1 &#8594;
+        part-2</span> chain, drawn in the same paint as a traced call. The reader now believes
+        invoices calls ledger. Nothing in the source says that.</p>
+      </div>
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="scrollx">
+          <div class="stage pad-sm" style="min-width:0">
+            <div class="nest" style="width:100%">
+              <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span><svg class="i i-12"><use href="#ic-chevdown"/></svg></span></div>
+              <div class="nest-bd">
+                <div class="node n-service" style="min-height:auto;width:132px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div><div class="nd-ft"><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-fn"/></svg><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;fns&#8250;</span></span></div></div>
+                <div class="node n-store" style="min-height:auto;width:132px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+                <div class="node n-service" style="min-height:auto;width:132px"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">refunds</div><div class="nd-ft"><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-fn"/></svg><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;fns&#8250;</span></span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="why">The same three members, inside the wall that actually contains them, with no
+        arrows &mdash; because no call between them was traced. Their own parts are counted in the
+        footer, not promoted to cards. Containment is the true relation here, and it is the one
+        drawn.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-16)">
+      <h3>What may be drawn, and on what authority</h3>
+      <div class="grid g2">
+        <dl class="specs">
+          <dt>A wall</dt><dd>shared parentId, or one group's memberIds</dd>
+          <dt>A member</dt><dd>a node whose parentId is this wall's node</dd>
+          <dt>A member count</dt><dd>counted from the graph &middot; .ph until counted</dd>
+          <dt>An edge</dt><dd>an edge with an evidence record</dd>
+        </dl>
+        <dl class="specs">
+          <dt>Never a wall</dt><dd>a shared label prefix or path segment</dd>
+          <dt>Never a wall</dt><dd>proximity produced by the layout engine</dd>
+          <dt>Never an edge</dt><dd>member order, index or alphabetisation</dd>
+          <dt>Never an edge</dt><dd>a container's own name touching another node's</dd>
+        </dl>
+      </div>
+      <p class="caption">Every entry on the left names the field it reads. Every entry on the right
+      names a resemblance that has been mistaken for one. The difference between the two columns is
+      the difference between a diagram of a repository and a diagram of a hunch.</p>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)"><b>Handback &mdash; one measured finding.</b>
+    <span class="inline-code">.nest</span> separates from the board ground by tone alone at
+    <b>1.09:1</b>, and its only other carrier is a <em>dashed</em>
+    <span class="inline-code">--edge</span> border, which resolves to <b>1.21:1</b> against that
+    ground and is then broken into dashes. That is quieter than the node-card defect this
+    migration exists to fix, which was measured at 1.11:1 &mdash; and the wall is the most
+    important structural object on the board. The fix is one token, not a new class:
+    <span class="inline-code">--edge-strong</span> on <span class="inline-code">.nest</span> takes
+    the boundary to <b>1.51:1</b> while staying entirely neutral, which is the same move the
+    substrate already makes on <span class="inline-code">.empty</span> for the same reason &mdash;
+    a dashed border needs more ink than a solid one to read as the same line. Raised here rather
+    than patched locally.</div>
+
+    <div class="dev"><b>Handback &mdash; two implementation notes.</b> First,
+    <span class="inline-code">.nest-bd</span> is
+    <span class="inline-code">flex-wrap:row</span> and a column of members needs
+    <span class="inline-code">flex-direction:column</span> set at the call site; if column members
+    turn out to be the common case on a real board, that belongs in the substrate as a modifier
+    rather than in twenty inline styles. Second, <span class="inline-code">module</span> and
+    <span class="inline-code">package</span> share one silhouette and one icon by decision and are
+    separated only by the mono <span class="inline-code">.nd-k</span> tag &mdash; which means they
+    are told apart by reading and not at zoom. That is the correct trade for two container kinds,
+    and it is the only place on this sheet where the greyscale test passes on a tag rather than on
+    a shape. <span class="inline-code">file</span> and
+    <span class="inline-code">function</span> are outside that trade entirely: they are interior
+    detail rather than board kinds, so they never take a card, never enter the legend and never
+    enter the pair matrix. A tag is a thin enough channel for two; it is not one at all for a
+    seventh kind that would otherwise be pixel-for-pixel a Module.</div>
+  </div>
+
+</section>

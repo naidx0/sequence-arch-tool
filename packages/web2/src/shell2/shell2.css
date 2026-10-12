@@ -1,0 +1,2732 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE RESKIN SHELL (Decision 49) — BArc.dc.html, ported
+   packages/web2/src/shell2/shell2.css
+
+   Values are the artboard's (uiarc.dev direction, "very soft, very glass, very
+   straightforward"); colours are the Ramp Kit tokens. B's variables map onto
+   the token sheet once, here, so every rule below reads like the artboard.
+   Nothing here blurs: the panes and lists are large or scroll, and the only
+   blur in the shell stays on the composer (style ratchet).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.s2 {
+  /* The surface switch's motion (the sliding indicator under the top bar), one place: the model picker opens and
+     closes on it too, so the two read as one hand. */
+  --s2-switch-dur: 220ms;
+  --s2-switch-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --b-bg: var(--bg-base);
+  --b-s1: var(--surface-1);
+  --b-s2: var(--surface-2);
+  --b-s3: var(--surface-3);
+  --b-edge: var(--edge);
+  --b-edge2: var(--edge-strong);
+  --b-ink1: var(--ink-1);
+  --b-ink2: var(--ink-2);
+  --b-ink3: var(--ink-3);
+  --b-acc: var(--accent);
+  --b-accs: var(--accent-solid);
+  --b-accw: var(--accent-wash);
+  --b-ok: var(--fits);
+  --b-del: var(--wont);
+  --b-glass: var(--glass-ctl);
+  --b-glass-hover: var(--glass-ctl-hover);
+  --b-glassedge: var(--glass-ctl-edge);
+  --b-float: var(--float-fill);
+  /* B's own shadows, exactly (BArc.dc.html --shadow, .menu, .dlg); Jaden on
+     checkpoint 3: "some use of shadows like the original example". */
+  --b-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 10px 30px rgba(0, 0, 0, 0.3);
+  --b-lift: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --b-dlg: 0 30px 80px rgba(0, 0, 0, 0.55);
+  /* R11 (Jaden, 10-08): the cards sit 8 px apart, so a card's shadow may not reach past 3 px
+     (offset 1 + blur 2) or it paints over its neighbour; the border between two cards is a
+     fainter hairline. The big floating pill (the surface bar) keeps a dark casting shadow on the ground. */
+  --b-card: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --b-card-edge: color-mix(in srgb, var(--b-edge) 45%, transparent);
+  --b-pill: 0 6px 20px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: 18px;
+  letter-spacing: -0.005em;
+  color: var(--b-ink1);
+  background: var(--b-bg);
+}
+
+/* The light room's equivalents: the same lift, in the ink's own shade. */
+:root[data-theme='light'] .s2 {
+  /* Round 8: softer, and in the warm ink's own shade (the cream room). */
+  --b-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 2px rgba(43, 42, 39, 0.04), 0 8px 24px rgba(43, 42, 39, 0.05);
+  --b-lift: 0 14px 36px rgba(43, 42, 39, 0.12);
+  --b-dlg: 0 24px 64px rgba(43, 42, 39, 0.16);
+  --b-card: 0 1px 2px rgba(43, 42, 39, 0.06);
+  --b-pill: 0 6px 18px rgba(43, 42, 39, 0.16);
+}
+
+/* ── the window ─────────────────────────────────────────────────────────── */
+.s2.s2-app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── glyphs ─────────────────────────────────────────────────────────────── */
+.s2-i {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  display: block;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.s2-i.s2-i-s {
+  width: 14px;
+  height: 14px;
+}
+.s2-grow {
+  flex: 1;
+  min-width: 0;
+}
+.s2-mono {
+  font-family: var(--font-mono);
+}
+
+/* ── controls: B's .btn, .ibtn, .pill ───────────────────────────────────── */
+.s2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-8);
+  height: var(--control-h-lg);
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-full);
+  font: inherit;
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink1);
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.s2-btn:hover {
+  background: var(--b-glass-hover);
+  border-color: var(--glass-ctl-edge-hover);
+}
+.s2-btn.s2-solid {
+  /* New chat: a fixed neutral pair (--solid-neutral and --solid-on-neutral), not
+     the ink or the ground, because both shift a shade with each colour variant
+     (round 11: New chat must match under white and blue as under the rest). */
+  background: var(--solid-neutral);
+  color: var(--solid-on-neutral);
+  border-color: transparent;
+}
+.s2-btn.s2-solid:hover {
+  background: color-mix(in srgb, var(--solid-neutral) 88%, var(--solid-on-neutral));
+}
+.s2-btn.s2-blue {
+  background: var(--b-accs);
+  color: var(--accent-on-solid);
+  border-color: transparent;
+}
+.s2-btn.s2-wide {
+  width: 100%;
+  /* A door (Decision 16): New chat is pressed to go somewhere. */
+  height: var(--control-h-door);
+}
+.s2-btn:active,
+.s2-ibtn:active {
+  transform: scale(0.97);
+}
+
+.s2-ibtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--icon-btn-lg);
+  height: var(--icon-btn-lg);
+  padding: 0;
+  border-radius: var(--r-10);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--b-ink2);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.s2-ibtn:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2-ibtn.s2-g {
+  background: var(--b-glass);
+  border-color: var(--b-glassedge);
+}
+.s2-btn,
+.s2-ibtn.s2-g {
+  box-shadow: var(--b-shadow);
+}
+.s2-btn.s2-solid {
+  box-shadow: var(--b-shadow);
+}
+.s2-ibtn.s2-g:hover {
+  background: var(--b-glass-hover);
+}
+.s2-ibtn.is-on,
+.s2-ibtn[aria-pressed='true'] {
+  background: var(--b-accw);
+  color: var(--b-acc);
+  border-color: transparent;
+}
+.s2-ibtn-sm {
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  border-radius: var(--r-8);
+}
+.s2-ibtn-xs {
+  width: var(--target-min);
+  height: var(--target-min);
+  border-radius: var(--r-8);
+}
+.s2-btn:focus-visible,
+.s2-ibtn:focus-visible,
+.s2-seg button:focus-visible,
+.s2-it-hit:focus-visible,
+.s2-it-more:focus-visible,
+.s2-mi:focus-visible,
+.s2-ph-title:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+
+.s2-badge {
+  height: 18px;
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-full);
+  font-size: var(--t-10-5);
+  font-weight: var(--fw-head);
+  display: inline-flex;
+  align-items: center;
+  background: var(--b-accw);
+  color: var(--b-acc);
+}
+.s2-kbd {
+  font-size: var(--t-10-5);
+  color: var(--b-ink3);
+  border: 1px solid var(--b-edge2);
+  border-radius: 6px;
+  padding: 0 var(--sp-4);
+  line-height: 16px;
+}
+
+/* ── menus: B's .menu (glass2 fill, 16px, 6px in, rows 11px) ───────────── */
+.s2-menu {
+  position: absolute;
+  z-index: 60;
+  width: 244px;
+  padding: var(--sp-6);
+  border-radius: 16px;
+  background: var(--b-float);
+  border: 1px solid var(--b-glassedge);
+  box-shadow: var(--b-lift);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  animation: s2-pop var(--dur-2) var(--ease-enter);
+  transform-origin: top left;
+}
+@keyframes s2-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+.s2-mi {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  padding: var(--sp-8) var(--sp-10);
+  border-radius: 11px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--b-ink2);
+  text-align: left;
+  cursor: pointer;
+}
+.s2-mi:hover,
+.s2-mi.is-on {
+  background: var(--b-accw);
+  color: var(--b-ink1);
+}
+/* UX audit R11 #20: the grey note on the accent-filmed row measured 4.37 to 4.44:1 in dark; the row's own ink lifts it past 4.5. */
+.s2-mi:hover .s2-mi-note,
+.s2-mi.is-on .s2-mi-note {
+  color: var(--b-ink2);
+}
+.s2-menu-sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.s2-mi-d {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
+}
+.s2-mi-d span {
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.s2-mi.s2-mi-muted {
+  color: var(--b-ink3);
+}
+.s2-mi.s2-mi-muted:hover {
+  color: var(--b-ink1);
+}
+/* An icon chip, B's .av / .n .ic shape, centred. */
+.s2-chipicon {
+  flex: none;
+  width: 26px;
+  height: var(--icon-btn);
+  border-radius: 9px;
+  background: var(--b-s3);
+  color: var(--b-ink2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-mi.is-on .s2-chipicon {
+  color: var(--b-acc);
+}
+/* B's .gh: sentence case, quiet, small. */
+.s2-gh.s2-menu-gh {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-10) var(--sp-2);
+}
+.s2-mi-danger:hover {
+  background: color-mix(in srgb, var(--b-del) 14%, transparent);
+  color: var(--b-del);
+}
+
+/* ── the session panel: B's .panel ─────────────────────────────────────── */
+.s2-panel-slot {
+  flex: 0 0 232px;
+  width: 232px;
+  min-width: 0;
+  display: flex;
+  border-right: 1px solid var(--b-edge);
+}
+.s2-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  padding: var(--sp-12) var(--sp-12);
+  background: var(--b-bg);
+}
+.s2-ph {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-2) var(--sp-4);
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.s2-ph > :not(.s2-brandrow) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.s2-ph-title {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: var(--fw-head);
+  font-size: var(--t-15);
+  color: var(--b-ink1);
+  cursor: pointer;
+  text-align: left;
+}
+.s2-ph-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.s2-ph-title .s2-i {
+  color: var(--b-ink3);
+}
+.s2-menu-projects {
+  top: 36px;
+  left: 0;
+}
+.s2-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: var(--control-h-lg);
+  padding: 0 var(--sp-10);
+  border-radius: var(--r-10);
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge);
+  color: var(--b-ink3);
+}
+.s2-field:focus-within {
+  border-color: var(--accent-edge);
+}
+.s2-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--b-ink1);
+}
+.s2-field input::placeholder {
+  color: var(--b-ink3);
+}
+.s2-groups {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  margin: 0 calc(-1 * var(--sp-4));
+  padding: 0 var(--sp-4);
+}
+.s2-grp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.s2-gh {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-4) var(--sp-6);
+  font-size: var(--t-11-5);
+  font-weight: var(--fw-label);
+  color: var(--b-ink3);
+}
+.s2-it {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--control-h-lg);
+  border-radius: var(--r-10);
+  color: var(--b-ink2);
+}
+.s2-it:hover {
+  background: var(--b-glass);
+}
+.s2-it-hit {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.s2-t {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-meta {
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+}
+.s2-it-more {
+  position: absolute;
+  z-index: 1;
+  right: var(--sp-4);
+  top: calc((var(--row-h) - var(--target-min)) / 2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target-min);
+  height: var(--target-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-8);
+  background: var(--b-s2);
+  /* Quiet again (owner, 0.1.6: "three dots stand out a little more now"): the old ink-3 glyph on the row's own fill, no edge. */
+  color: var(--b-ink3);
+  cursor: pointer;
+  opacity: 0;
+}
+/* Hidden at rest on every row (the open chat's too). Shown by the pointer on the row, by keyboard focus, and while its menu is open. */
+.s2-it:hover .s2-it-more,
+.s2-it:has(:focus-visible) .s2-it-more,
+.s2-it-more:focus-visible,
+.s2-it-more[aria-haspopup][aria-expanded='true'] {
+  opacity: 1;
+}
+.s2-it-more:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+/* A row's menu: light (owner, 0.1.6: "the borders are huge, giving a lot of space for a small feature"). A hairline at the
+   faint edge colour, 4 px of padding, 28 px rows, a near-opaque glass fill (no blur); it opens beside its row and is drawn above the
+   scroller. Two classes: edits.css gives every .s2-menu the popover frame, one class would lose to it. */
+.s2-menu.s2-menu-row {
+  position: fixed;
+  width: max-content;
+  min-width: 132px;
+  max-width: 300px;
+  padding: var(--sp-4);
+  gap: 0;
+  border-radius: var(--r-10);
+  border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--b-s2) 96%, transparent); /* near-opaque: no backdrop blur (style ratchet) */
+  transform-origin: top left;
+}
+.s2-menu-row .s2-mi {
+  min-height: var(--control-h);
+  padding: 0 var(--sp-8);
+  gap: var(--sp-8);
+  border-radius: var(--r-8);
+  font-size: var(--t-13);
+  color: var(--b-ink1);
+}
+.s2-menu-row .s2-mi-d {
+  white-space: nowrap;
+}
+.s2-menu-row .s2-mi.s2-mi-danger {
+  color: var(--b-del);
+}
+.s2-empty {
+  margin: 0;
+  padding: var(--sp-4) var(--sp-8);
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}
+.s2-panel-foot {
+  display: flex;
+  flex-direction: column;
+}
+.s2-it.s2-it-foot {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-8);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--b-ink2);
+  cursor: pointer;
+}
+.s2-it.s2-it-foot .s2-kbd {
+  margin-left: auto;
+}
+.s2-it.s2-it-foot:hover {
+  background: var(--b-glass);
+  color: var(--b-ink1);
+}
+
+/* ── the chat column: B's .chat and .ch ─────────────────────────────────── */
+.s2-chat {
+  flex: 0 0 420px;
+  width: 420px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--b-edge);
+  position: relative;
+  background: var(--b-bg);
+}
+.s2-ch {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  height: 56px;
+  padding: 0 var(--sp-12) 0 var(--sp-16);
+  border-bottom: 1px solid var(--b-edge);
+}
+/* 0.1.6 (G2): the chat title bar moves the window, apart from what you can click in it. */
+.s2-ch {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.s2-ch :is(button, input, textarea, select, a[href], [role='button'], .s2-anchor, .s2-menu) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.s2-ch .r9-title {
+  /* The title button is as wide as its words, not the row: the rest of the row is the window's handle. */
+  flex: 0 1 auto;
+}
+.s2-ch b {
+  font-weight: var(--fw-head);
+}
+.s2-av {
+  width: 26px;
+  height: var(--icon-btn);
+  border-radius: 9px;
+  background: var(--b-s3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--b-acc);
+}
+.s2-menu-down-right {
+  top: calc(100% + 6px);
+  right: 0;
+  transform-origin: top right;
+}
+.s2-ch-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-chat-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── the main column: B's .mainp, .topb, .seg, .stage ───────────────────── */
+.s2-mainp {
+  flex: 1;
+  min-width: 0;
+  /* The top bar steps down by the column's own width, not the window's. */
+  container: s2main / inline-size;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.s2-topb {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  height: 56px;
+  padding: 0 var(--sp-16);
+  border-bottom: 1px solid var(--b-edge);
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.s2-topb > :not(.s2-drag) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.s2-topb > .s2-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+  align-self: stretch;
+}
+.s2-topb .shell-winctl {
+  align-self: stretch;
+  margin-right: calc(-1 * var(--sp-16));
+}
+.s2-seg {
+  display: inline-flex;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border-radius: var(--r-full);
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge);
+  min-width: 0;
+  overflow: hidden;
+}
+.s2-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-full);
+  border: 0;
+  background: transparent;
+  color: var(--b-ink3);
+  font: inherit;
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.s2-seg button:hover {
+  color: var(--b-ink1);
+}
+/* Round 8 (Jaden: "always show full names unless the actual thing is
+   minimized"): no width folds a surface to its icon while any surface is
+   open. In a narrow main column the branch pill gives its place to the names
+   (the status bar still names the branch); if they still do not fit, the bar
+   scrolls sideways under fade edges (.s2-surfaces below). */
+@container s2main (max-width: 720px) {
+  .s2-topb .s2-branch {
+    display: none;
+  }
+}
+/* Several can be open: an open surface is lit, the focused one floats. */
+.s2-seg button.is-on {
+  color: var(--b-ink1);
+  background: var(--b-s2);
+}
+.s2-seg button.is-focused {
+  background: var(--b-s3);
+  box-shadow: var(--b-shadow);
+}
+.s2-branch {
+  height: var(--control-h-lg);
+  cursor: default;
+}
+/* A worktree chat's branch can be long; the pill keeps to one line and the
+   title carries the whole name. */
+.s2-branch-l {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-working {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  /* Owner 2026-10-09: "make the fonts cleaner; too minimalistic when working": the UI face at 13, label weight. */
+  font-family: var(--font-ui);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-label);
+  color: var(--b-ink2);
+}
+.s2-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  /* B's stage: two soft washes, blue top right and warm bottom left. */
+  background:
+    radial-gradient(600px 360px at 78% 18%, color-mix(in srgb, var(--b-acc) 10%, transparent), transparent 70%),
+    radial-gradient(520px 320px at 18% 86%, rgba(245, 190, 120, 0.07), transparent 70%),
+    var(--b-bg);
+}
+.s2-stage-empty {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-10);
+  color: var(--b-ink3);
+}
+.s2-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.s2-pane + .s2-pane {
+  border-left: 1px solid var(--b-edge);
+}
+.s2-pane-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: 46px;
+  padding: 0 var(--sp-8);
+  border-bottom: 1px solid var(--b-edge);
+}
+/* The board names itself by its tab: its head floats over the top right,
+   clear of the board's own dock at the bottom right. */
+.s2-pane-head.is-float {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 8;
+  height: auto;
+  padding: 0;
+  border: 0;
+}
+.s2-cap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border-radius: var(--r-full);
+  font-size: var(--t-12);
+  color: var(--b-ink2);
+  border: 1px solid transparent;
+}
+.s2-cap.is-on {
+  background: var(--b-s3);
+  color: var(--b-ink1);
+  border-color: var(--b-edge2);
+}
+.s2-pane-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── the agents dock ────────────────────────────────────────────────────── */
+.s2-agents {
+  flex: 0 0 360px;
+  width: 360px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--b-edge);
+  background: var(--b-s1);
+}
+
+@media (max-width: 1180px) {
+  .s2-panel-slot {
+    flex-basis: 208px;
+    width: 208px;
+  }
+}
+
+/* ── resizing (DeepSeek's behaviour, B's look): a hairline on hover ───── */
+.s2-chat {
+  min-width: 400px;
+}
+/* No easing on the width: the old shell eased its snap frames; this column
+   follows the pointer and opens at its remembered width at once. */
+.s2-chat.v3-chat-col {
+  transition: none;
+}
+.s2-sizer,
+.s2-divider {
+  flex: none;
+  position: relative;
+  z-index: 6;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+.s2-sizer {
+  width: 0;
+  margin-left: 0;
+}
+/* The split's own edge is the divider: one hairline between the two panes. */
+.s2-divider {
+  width: 1px;
+  background: var(--b-edge);
+}
+/* The hit area is 24 px wide (WCAG 2.5.8); the drawn line stays a hairline. */
+.s2-sizer::before,
+.s2-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -12px;
+  right: -12px;
+}
+.s2-sizer::after,
+.s2-divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1px;
+  width: 2px;
+  background: var(--b-acc);
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.s2-divider::after {
+  left: -0.5px;
+}
+/* UX audit R11 #31: the splitter handles had no outline, so Tab landed on nothing visible. The ring is the accent token, offset off the hairline. */
+.s2-sizer:focus-visible,
+.s2-divider:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+.s2-sizer:hover::after,
+.s2-divider:hover::after,
+.s2-sizer:focus-visible::after,
+.s2-divider:focus-visible::after,
+.s2-sizer.is-drag::after,
+.s2-divider.is-drag::after {
+  opacity: 0.7;
+}
+.s2-app[data-resizing='true'] {
+  cursor: col-resize;
+  user-select: none;
+}
+.s2-app[data-resizing='true'] .s2-stage {
+  pointer-events: none;
+}
+
+/* ── a dock that does not fit floats over the board (UX audit) ────────── */
+.s2-row {
+  position: relative;
+}
+.s2-agents.is-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 31;
+  box-shadow: var(--b-shadow);
+}
+.s2-pane.s2-pane-review.is-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  /* Above the board's own floating dock and pane head. */
+  z-index: 30;
+  width: min(560px, 92%);
+  background: var(--b-bg);
+  border-left: 1px solid var(--b-edge);
+  box-shadow: var(--b-shadow);
+}
+
+/* ── the sidebar, collapsed ──────────────────────────────────────────── */
+.s2-panel-slot.is-collapsed {
+  flex-basis: 0;
+  width: 0;
+  border-right: 0;
+}
+
+/* ── a narrow window: one view at a time, a segmented switch above ───── */
+.s2-row > [hidden] {
+  display: none !important;
+}
+/* The switcher is centred on the ROW, not between whatever sits beside it (owner: "make sure chat/workspace is properly
+   centered ... I don't want to see any mistakes with centering"). Space-between centred it only when the two sides were
+   the same width (the sidebar button against the window buttons are not); three columns, the outer two equal, always are. */
+.s2-narrowbar {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-8);
+  height: 48px;
+  padding: 0 var(--sp-10);
+  border-bottom: 1px solid var(--b-edge);
+  background: var(--b-bg);
+  -webkit-app-region: drag;
+}
+.s2-narrowbar > :not(.s2-ibtn-ph) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.s2-narrowbar > :first-child {
+  grid-column: 1;
+  justify-self: start;
+}
+.s2-narrowbar > :not(:first-child):not(.s2-narrow-switch) {
+  grid-column: 3;
+  justify-self: end;
+}
+.s2-narrow-switch {
+  grid-column: 2;
+  justify-self: center;
+  /* Two segments of one width (the wider label's), each label centred in its own. */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+.s2-narrow-switch > button {
+  text-align: center;
+}
+.s2-ibtn-ph {
+  flex: none;
+  width: 30px;
+}
+.s2-row[data-view] > .s2-chat,
+.s2-row[data-view] > .s2-mainp,
+.s2-row[data-view] > .s2-agents {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border-right: 0;
+  border-left: 0;
+}
+.s2-row[data-view] {
+  position: relative;
+}
+.s2-panel-slot.is-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  width: 264px;
+  flex-basis: 264px;
+  box-shadow: var(--b-shadow);
+}
+.s2-rail-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 29;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s2-menu {
+    animation: none;
+  }
+}
+
+/* ── the window is a column: the panes, then the status bar ─────────────── */
+.s2.s2-app {
+  flex-direction: column;
+}
+.s2-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+/* ── provider marks and fixed icon slots ─────────────────────────────── */
+.s2-brand {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  display: block;
+}
+.s2-slot {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--b-ink2);
+}
+.s2-slot .s2-i {
+  width: 16px;
+  height: 16px;
+}
+.s2-slot .s2-brand {
+  width: 15px;
+  height: 15px;
+}
+
+/* ── A's status bar ────────────────────────────────────────────────────── */
+.s2-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+  height: var(--row-h);
+  padding: 0 var(--sp-16);
+  border-top: 1px solid var(--b-edge);
+  /* ink-2, not ink-3: the bar sits on the ground's backdrop, and ink-3 fell to 2.9:1 there (round 11 look). */
+  color: var(--b-ink2);
+  font-size: var(--t-11-5);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.s2-sb-x {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.s2-sb-x .s2-brand,
+.s2-sb-x .s2-i {
+  width: 12px;
+  height: 12px;
+}
+.s2-sb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--b-ink3);
+}
+.s2-sb-dot.is-working {
+  background: var(--b-acc);
+  box-shadow: 0 0 0 3px var(--b-accw);
+}
+.s2-sb-dot.is-waiting {
+  background: var(--spills);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--spills) 18%, transparent);
+}
+.s2-sb-state {
+  font-family: var(--font-ui);
+  color: var(--b-ink2);
+  /* One step up from the bar's 11.5 and a medium weight: a thin face clipped to a moving gradient painted grainy. */
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+}
+span.s2-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+span.s2-brand > svg {
+  width: 100%;
+  height: 100%;
+}
+/* A pill's state in its icon slot: a slow ring while the model draws there, a dot while it waits on you. */
+.s2-tabst {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.s2-tabst.is-needs-input::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--b-acc);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 7: THE CARDS (Mix.dc.html; Jaden: "the chat assistant looks like its
+   own surface... way better than full screen now")
+
+   The sidebar, the chat and each stage surface are floating cards on a
+   slightly darker ground: --r-18, a hairline, B's shadow, CARD_GAP (8 px)
+   between them and around the edge (layoutPrefs.ts counts the same 8 px).
+   The resize handles live in those gaps, a 24 px hit area over 8 px of ground.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2.s2-app {
+  background: var(--bg-ground);
+}
+.s2-row {
+  padding: var(--sp-8);
+  gap: 0;
+}
+.s2-row:has(+ .s2-status) {
+  padding-bottom: 0;
+}
+.s2-panel,
+.s2-iconrail,
+.s2-chat,
+.s2-pane,
+.s2-agents {
+  border: 1px solid var(--b-card-edge);
+  border-radius: var(--r-18);
+  background: var(--b-bg);
+  box-shadow: var(--b-card);
+}
+.s2-chat,
+.s2-pane,
+.s2-agents {
+  overflow: hidden;
+}
+.s2-panel-slot {
+  border-right: 0;
+  margin-right: var(--sp-8);
+}
+/* The folded sidebar's rail: a card as narrow as its buttons, New chat and Settings in reach. */
+.s2-iconrail {
+  flex: 0 0 48px;
+  width: 48px;
+  box-sizing: border-box;
+  margin-right: var(--sp-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-12) 0;
+}
+.s2-iconrail.is-covered {
+  visibility: hidden;
+}
+.s2-btn.s2-iconrail-new {
+  flex: none;
+  justify-content: center;
+  width: var(--icon-btn-lg);
+  height: var(--icon-btn-lg);
+  padding: 0;
+  border-radius: var(--r-10);
+}
+.s2-panel-slot.is-collapsed {
+  margin-right: 0;
+}
+.s2-agents {
+  margin-left: var(--sp-8);
+}
+.s2-agents.is-overlay {
+  top: var(--sp-8);
+  right: var(--sp-8);
+  bottom: var(--sp-8);
+}
+.s2-mainp {
+  gap: var(--sp-8);
+}
+.s2-stage {
+  background: transparent;
+  overflow: visible;
+}
+.s2-pane + .s2-pane {
+  /* Two cards with no sizer between them (three open surfaces, or the review dock) are the
+     same 8 px apart as the chat and the stage. */
+  margin-left: var(--sp-8);
+}
+.s2-pane.s2-pane-review.is-overlay {
+  border: 1px solid var(--b-edge);
+  box-shadow: var(--b-lift);
+}
+
+/* The handles: the gap itself, 8 px of ground; 24 px to grab; a hairline on hover. */
+.s2-sizer,
+.s2-divider {
+  width: var(--sp-8);
+  margin-left: 0;
+  background: transparent;
+}
+.s2-sizer::before,
+.s2-divider::before {
+  left: calc(-1 * var(--sp-8));
+  right: calc(-1 * var(--sp-8));
+}
+.s2-sizer::after,
+.s2-divider::after {
+  left: 3px;
+  border-radius: var(--r-full);
+}
+
+/* ── the surface bar: Mix's .tabs over the stage ──────────────────────── */
+.s2-topb {
+  position: relative;
+  height: 40px;
+  padding: 0 var(--sp-4);
+  gap: var(--sp-8);
+  border-bottom: 0;
+}
+.s2-surfaces {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  flex: 0 1 auto;
+  /* Every name, always (round 8): when they do not fit, the bar scrolls
+     sideways. The block padding keeps the focused pill's 2 px float and its
+     shadow inside the scroller, which would otherwise clip them. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--sp-4) var(--sp-4);
+  position: relative;
+  /* A segmented control: a muted track, the selected pill a raised chip. */
+  border-radius: var(--r-full);
+  /* Round 13 (S2): the surface tabs a little more transparent (5% to 3% track, no pill shadow). */
+  background: color-mix(in srgb, var(--b-ink1) 3%, transparent);
+  box-shadow: none;
+  --ind-x: 0px;
+  --ind-w: 0px;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.s2-surfaces::-webkit-scrollbar {
+  display: none;
+}
+/* The bar's own box (round 14: no arrow circles; the bar is dragged). */
+.s2-surfaces-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+/* The fade edges, only on a side with more to scroll to (Shell2 measures). */
+.s2-surfaces[data-fade='end'] {
+  mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
+}
+.s2-surfaces[data-fade='start'] {
+  mask-image: linear-gradient(90deg, transparent, black 28px);
+}
+.s2-surfaces[data-fade='both'] {
+  mask-image: linear-gradient(90deg, transparent, black 28px, black calc(100% - 28px), transparent);
+}
+.s2-sp {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-lg);
+  border-radius: var(--r-full);
+  border: 1px solid transparent;
+  color: var(--b-ink3);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.s2-sp:hover {
+  color: var(--b-ink1);
+}
+/* Three states, told apart by tint, outline and dimming (round 11; Jaden:
+   "use coloring, dimming, shimmering to differentiate"):
+   closed  dimmed, no chrome;
+   open    the ink steps up, no tint (round 12);
+   focused a deeper outline (the sliding indicator below carries it). */
+.s2-sp[data-state='closed'] {
+  /* A text step on the bar (dimmed by colour, not by fading): the label reads at 4.5:1 in both themes. */
+  color: var(--b-ink2);
+}
+.s2-sp[data-state='closed']:hover {
+  color: var(--b-ink1);
+}
+.s2-sp.is-on {
+  color: var(--b-ink1);
+  /* Open is not a colour (round 12): the ink steps up, the chrome stays quiet. */
+  background: transparent;
+  border-color: transparent;
+}
+.s2-sp.is-on:hover {
+  color: var(--b-ink1);
+}
+.s2-sp.is-focused {
+  color: var(--b-ink1);
+  /* The fill and outline are the sliding indicator under it, not this pill,
+     so the focus glides from name to name. */
+  background: transparent;
+  border-color: transparent;
+}
+.s2-sp.is-focused .s2-sp-main {
+  font-weight: var(--fw-head);
+}
+.s2-sp.is-focused .s2-sp-main > svg {
+  color: var(--b-ink1);
+}
+/* The working dot (round 12): present only while that surface is actively working
+   (the board drawing, an agent running), never for merely being open or selected. */
+.s2-sp-dot {
+  width: var(--sp-6);
+  height: var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--b-ink1);
+  flex: none;
+}
+/* THE ACTIVITY LOADER (shell2/ActivityLoader.tsx): braille on the mono grid, a fixed box, never a brand mark.
+   Integer px font-size from the tokens, line-height equal to the box height, so the glyph sits on the box's
+   centre line in every frame; the box has a fixed whole-pixel width, so no frame can move a neighbour. */
+.act-loader {
+  /* A flex box centres its ink on both axes, and an ink wider than the box overflows equally on both sides (a block
+     line that overflows starts at the left edge instead, which sat a two-cell glyph over 1 px right of its slot). */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  font-family: var(--font-mono);
+  font-weight: var(--fw-body);
+  font-variant-ligatures: none;
+  white-space: pre;
+  /* Neutral ink, never the accent: a loader is not a claim (round 12). */
+  color: var(--b-ink2);
+}
+/* The ink of a braille line sits a little off the centre of its line box in the mono face; each size is nudged (below)
+   so the measured ink centre of a full cell is within 0.5 px of its box centre at 1x and 2x. The box stays where its slot puts it. */
+.act-loader > .act-ink {
+  display: block;
+  flex: none;
+  position: relative;
+}
+.act-loader.is-radar > .act-ink {
+  top: -0.5px;
+}
+/* The compact one: a 14 px slot, the same box as a kind icon, so the row's title never shifts. */
+.act-loader.is-cell {
+  width: 14px;
+  height: 14px;
+  /* Two cells of the mono face are 14.4 px at 12 px: the slot's own width, centred by the flex box. */
+  font-size: var(--t-12);
+  line-height: 14px;
+  overflow: visible;
+}
+/* The radar: 4 cells x 2 lines, so its box is exactly its text. */
+.act-loader.is-radar {
+  /* 4 cells of the mono face are 28.8 px; a whole-pixel box centres the ink on the pixel grid. */
+  width: 29px;
+  height: calc(var(--lh-12) * 2);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  overflow: hidden;
+}
+.s2-sp-ind {
+  position: absolute;
+  top: var(--sp-4);
+  left: 0;
+  height: var(--control-h-lg);
+  width: var(--ind-w);
+  transform: translateX(var(--ind-x));
+  border-radius: var(--r-full);
+  /* The selected surface: a deeper outline and nothing else (round 12): no fill, no dot, no shadow. */
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--b-ink1) 42%, var(--b-edge2));
+  opacity: 0;
+  pointer-events: none;
+}
+.s2-surfaces[data-ind] .s2-sp-ind {
+  opacity: 1;
+}
+.s2-surfaces[data-ind='on'] .s2-sp-ind {
+  transition:
+    transform var(--s2-switch-dur) var(--s2-switch-ease),
+    width var(--s2-switch-dur) var(--s2-switch-ease),
+    opacity var(--dur-1) var(--ease);
+}
+.s2-surfaces.is-compact .s2-sp-ind {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .s2-surfaces[data-ind='on'] .s2-sp-ind {
+    transition: none;
+  }
+}
+/* The top-left of the bar: project and branch, in the same capsule format. */
+.s2-crumb {
+  flex: 0 1 auto;
+  /* Room for "Workspace" whole at 1024 with the sidebar open (it read "Worksp…"). */
+  min-width: 128px;
+  max-width: 280px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--control-h-lg);
+  padding: 0 var(--sp-12);
+  border: 1px solid var(--b-glassedge);
+  border-radius: var(--r-full);
+  background: var(--b-glass);
+  color: var(--b-ink2);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  user-select: none;
+}
+.s2-crumb > svg {
+  flex: none;
+  color: var(--b-ink3);
+}
+.s2-crumb-p {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--b-ink1);
+}
+.s2-crumb-sep {
+  color: var(--b-ink3);
+}
+.s2-crumb-b {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: auto;
+  min-width: 0;
+  color: var(--b-ink2);
+}
+.s2-crumb-b .s2-branch-l {
+  max-width: 120px;
+}
+@container s2main (max-width: 560px) {
+  .s2-crumb {
+    display: none;
+  }
+}
+.s2-sp-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: 100%;
+  padding: 0 var(--sp-12);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.s2-sp.is-on .s2-sp-main {
+  padding-right: var(--sp-4);
+}
+/* The ×: a 24 px target, centred in the pill's own height. */
+.s2-sp-x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target-min);
+  height: var(--target-min);
+  margin-right: var(--sp-2);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--b-ink3);
+  cursor: pointer;
+}
+.s2-sp-x:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2-sp-main:focus-visible,
+.s2-sp-x:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+/* Round 13 (S1 ruling): no surface open does not fold the names either; the old icon-only home bar is gone. */
+
+/* ── the window buttons: B's icon buttons, in the bar's own row ──────────
+   (round 7, B2: they "only expand over the surfaces"). They no longer stretch
+   the bar's height or bleed past its edge; they sit on the row like any
+   other 30 px control. */
+.s2-topb .shell-winctl,
+.s2-narrowbar .shell-winctl {
+  align-self: center;
+  margin-right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.s2-topb .shell-winbtn,
+.s2-narrowbar .shell-winbtn {
+  width: var(--icon-btn-lg);
+  height: var(--icon-btn-lg);
+  border-radius: var(--r-10);
+  color: var(--b-ink2);
+}
+.s2-topb .shell-winbtn:hover,
+.s2-narrowbar .shell-winbtn:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2-topb .shell-winbtn-close:hover,
+.s2-narrowbar .shell-winbtn-close:hover {
+  background: var(--wont);
+  color: var(--accent-on-solid);
+}
+
+/* ── no surface open: the chat comes to the middle (round 7, B3) ───────── */
+.s2-row[data-stage='none'] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: var(--sp-8);
+  background:
+    radial-gradient(600px 360px at 78% 18%, color-mix(in srgb, var(--b-acc) 8%, transparent), transparent 70%),
+    radial-gradient(520px 320px at 22% 86%, rgba(245, 190, 120, 0.06), transparent 70%);
+}
+.s2-row[data-stage='none'] > .s2-panel-slot {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+.s2-row[data-stage='none'] > .s2-mainp {
+  grid-column: 2;
+  grid-row: 1;
+}
+.s2-row[data-stage='none'] > .s2-chat {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+  /* 0.1.6 (owner: chat-only "condenses the chat too narrow"): the card takes the room; the text and the composer
+     keep one reading width inside it, so the words stay comfortable and the box sits under them. */
+  --chat-read-w: 800px;
+  width: min(960px, 100%);
+  min-width: 0;
+}
+/* The reading width is the transcript's own side padding (a percentage of the card), so a message keeps its own
+   alignment inside it: the person's bubbles stay on the right edge of the text column, not stretched across it. */
+.s2-row[data-stage='none'] > .s2-chat .v3-transcript:not(.is-virtual),
+.s2-row[data-stage='none'] > .s2-chat .v3-vrow {
+  padding-left: max(var(--sp-24), calc((100% - var(--chat-read-w)) / 2));
+  padding-right: max(var(--sp-24), calc((100% - var(--chat-read-w)) / 2));
+}
+.s2-row[data-stage='none'] > .s2-chat .s2-comp {
+  width: 100%;
+  max-width: var(--chat-read-w);
+  margin-left: auto;
+  margin-right: auto;
+}
+.s2-row[data-stage='none'] > .s2-agents {
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+/* The icons stay in the bar's flow, centred between two drag strips (round 9):
+   floated over a drag strip, a frameless window swallowed their clicks. */
+.s2-row[data-stage='none'] .s2-surfaces {
+  flex: none;
+}
+
+/* ── a narrow window: the bar on the ground, the view a card ───────────── */
+.s2-narrowbar {
+  border-bottom: 0;
+  background: transparent;
+}
+.s2-row[data-view] > .s2-chat,
+.s2-row[data-view] > .s2-mainp,
+.s2-row[data-view] > .s2-agents {
+  margin: 0;
+}
+.s2-row[data-view] > .s2-chat,
+.s2-row[data-view] > .s2-agents {
+  border: 1px solid var(--b-card-edge);
+}
+/* The sidebar peeking over the content is a card too, inside the ground's edge. */
+.s2-panel-slot.is-overlay {
+  top: var(--sp-8);
+  bottom: var(--sp-8);
+  left: var(--sp-8);
+  margin-right: 0;
+  box-shadow: none;
+}
+.s2-panel-slot.is-overlay .s2-panel {
+  box-shadow: var(--b-lift);
+}
+
+/* ── the status bar sits on the ground, as in Mix ───────────────────────── */
+.s2-status {
+  border-top: 0;
+  background: transparent;
+}
+
+/* ── round 7, B5: the sidebar reads Sequence, then every project ─────────── */
+.s2-brandrow {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  font-weight: var(--fw-head);
+  /* Mix's .brand: 14 px, so the name stays whole beside two buttons at 208 px. */
+  font-size: var(--t-14);
+  color: var(--b-ink1);
+}
+.s2-proj {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* DRAGGING A FOLDER: the one in hand dims; the line on the edge it would land on is drawn over the 2 px gap
+   between folders (absolute, so nothing moves while the pointer does). */
+.s2-proj[data-dragging='true'] {
+  opacity: 0.5;
+}
+.s2-groups[data-dragging='true'],
+.s2-groups[data-dragging='true'] * {
+  cursor: grabbing;
+  user-select: none;
+}
+.s2-proj[data-drop]::before {
+  content: '';
+  position: absolute;
+  left: var(--sp-8);
+  right: var(--sp-8);
+  height: 2px;
+  border-radius: var(--r-full);
+  background: var(--b-acc);
+  pointer-events: none;
+  z-index: 2;
+}
+/* Inside the folder's own box: the section clips what is drawn outside it, so a line on the 2 px gap was cut off. */
+.s2-proj[data-drop='before']::before {
+  top: 0;
+}
+.s2-proj[data-drop='after']::before {
+  bottom: 0;
+}
+/* A pinned chat names its project in muted text, after its title; the title keeps the room (the three dots cover the name on hover). */
+.s2-pin-proj {
+  flex: 0 1 auto;
+  max-width: 34%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* A pinned chat in its own project (or Worktrees) list: a small pin after its title, muted. Not drawn in the Pinned group itself. */
+.s2-pin-mark {
+  width: 12px;
+  height: 12px;
+  color: var(--b-ink3);
+}
+/* Said to a screen reader after a keyboard move; never drawn. */
+.s2-live-note {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.s2-proj-row.is-current {
+  color: var(--b-ink1);
+  font-weight: var(--fw-label);
+}
+.s2-proj-fold {
+  flex: none;
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* The rail's 16 px chevron slot; the hit area reaches 24 px past it. */
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--b-ink3);
+  cursor: pointer;
+}
+.s2-proj-fold:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2-proj-fold:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+/* The current project's mark: one accent dot, the only colour in the list. */
+.s2-proj-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-right: var(--sp-4);
+  border-radius: 50%;
+  background: var(--b-acc);
+  box-shadow: 0 0 0 3px var(--b-accw);
+}
+.s2-proj-chats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.s2-empty.s2-empty-nest {
+  /* Under a project: where a depth-1 row's label starts. */
+  padding-left: calc(var(--sp-4) + var(--sp-12) + var(--sp-16) + var(--sp-6) + var(--sp-16) + var(--sp-6));
+}
+/* A project's chat count (only over 10 chats): centred in the very box the row's "+" takes on hover (target-min wide,
+   4 px in from the row edge, the row's full height), so the number and the + share one centre. The hit button reserves
+   its own right padding, so the count is placed against the row, not flowed in the button. */
+.s2-proj-count {
+  position: absolute;
+  z-index: 0;
+  right: var(--sp-4);
+  top: 0;
+  width: var(--target-min);
+  height: var(--row-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+/* "Show all N": the quiet row, as a button (the same text as the empty line, hover lifts it). */
+.s2-empty.s2-showall {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+  /* s2-fold leads (the kit's quiet disclosure row); this row stays the empty line's look. The left inset is s2-empty-nest's. */
+  padding-block: var(--sp-4);
+  padding-right: var(--sp-8);
+  color: var(--b-ink3);
+}
+.s2-empty.s2-showall:hover {
+  color: var(--b-ink1);
+  background: transparent;
+}
+.s2-empty.s2-showall:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: -2px;
+  border-radius: var(--r-8);
+}
+/* The title row spends no inset of its own: at 208 px the name needs every pixel
+   beside the two buttons (measured 2026-10-06: one pixel short, "Sequen..."). */
+.s2-panel .s2-ph {
+  padding: var(--sp-2) 0 var(--sp-2) var(--sp-2);
+}
+
+/* Round 7 (A7): the Agents dock (agents/AgentsDock.tsx) is the card; its host is
+   only the slot, 8 px from its neighbours like every card. Where there is no
+   room beside the board it stands in for the stage (is-swap), never over it. */
+.s2-agents {
+  border: 0;
+  border-left: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.s2-agents.is-swap {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 8: ONE RAIL ROW (RailRow.tsx)
+   Jaden: "issues between the rail... file rail and the session rails. These
+   things should realistically be matching." The session sidebar and the
+   Files tree draw every row from this one rule: 30 px tall, 4 px in (plus
+   12 px per level), a 16 px chevron slot and a 16 px icon slot with a 14 px
+   glyph, 13 px type at the body weight, the same hover and selected fills.
+   e2e/rails-match.mjs compares the two rails' computed styles.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-rail-row {
+  /* R11: the selected row is a tint of the chosen accent (it was a neutral grey that no accent touched). */
+  --rail-on: color-mix(in srgb, var(--accent) 14%, var(--surface-2));
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--row-h);
+  min-width: 0;
+  padding: 0 var(--sp-8) 0 calc(var(--sp-4) + var(--rail-depth, 0) * var(--sp-12));
+  border-radius: var(--r-10);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-body);
+  letter-spacing: -0.005em;
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+:root[data-theme='light'] .s2-rail-row {
+  --rail-on: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.s2-rail-row:hover {
+  background: var(--glass-ctl);
+  color: var(--ink-1);
+}
+.s2-rail-row.is-on {
+  background: var(--rail-on);
+  color: var(--ink-1);
+}
+.s2-rail-twist,
+.s2-rail-ic {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-rail-twist {
+  color: var(--ink-3);
+}
+.s2-rail-ic > svg,
+.s2-rail-ic > .s2-brand {
+  width: 14px;
+  height: 14px;
+}
+/* Round 13 (S10): a project's folder fills the whole 16 px slot, as the Open project row's does, so the two
+   draw alike (the 14 px copy put its strokes between pixels). */
+.s2-proj-row .s2-rail-ic > svg.s2-i {
+  width: 16px;
+  height: 16px;
+}
+.s2-rail-ic > .s2-brand > svg {
+  width: 100%;
+  height: 100%;
+}
+/* A worktree's branch, on the icon's corner. */
+.s2-rail-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 1px var(--bg-base);
+  border-radius: var(--r-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  color: var(--accent);
+}
+.s2-rail-badge > svg.s2-i {
+  /* Round 13 (S3): smaller, and centred in its disc (flex, no margins). */
+  width: 7px;
+  height: 7px;
+  margin: 0;
+  stroke-width: 2.4;
+}
+/* A whole-row button: its content flows in the row, its target is the row. */
+.s2-it-hit.s2-rail-hit {
+  position: static;
+  height: auto;
+  gap: var(--sp-6);
+  padding: 0;
+  border-radius: 0;
+}
+.s2-rail-hit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-10);
+}
+.s2-it-hit.s2-rail-hit:focus-visible {
+  outline: none;
+}
+.s2-rail-hit:focus-visible::before {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+/* The fold's 24 px hit area around its 16 px slot. */
+.s2-proj-fold::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--sp-4));
+}
+
+/* ── ROUND 8: no black slab in the light room ─────────────────────────────
+   Jaden: "black buttons are too high in contrast". The solid button (New
+   chat) and the send are a softened ink in light, not the full near-black:
+   the ink mixed toward the cream ground. The label stays the ground colour,
+   well over 4.5:1. */
+:root[data-theme='light'] .s2-btn.s2-solid {
+  /* A softened fixed ink (graphite.css --solid-neutral), the same in every colour variant. */
+  background: color-mix(in srgb, var(--solid-neutral) 78%, var(--solid-on-neutral));
+  color: var(--solid-on-neutral);
+  box-shadow: none;
+}
+:root[data-theme='light'] .s2-btn.s2-solid:hover {
+  background: color-mix(in srgb, var(--solid-neutral) 88%, var(--solid-on-neutral));
+}
+/* The send keeps its softened ink (New chat is the fixed pair above). */
+:root[data-theme='light'] .s2-comp .s2-send {
+  background: color-mix(in srgb, var(--b-ink1) 78%, var(--b-bg));
+  color: var(--b-bg);
+  box-shadow: none;
+}
+:root[data-theme='light'] .s2-comp .s2-send:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--b-ink1) 88%, var(--b-bg));
+}
+
+/* ── ROUND 8: the ASCII stage background (backdrop/AsciiStage.tsx) ─────────
+   The Bastion hero's character mosaic, behind whatever surface is not open.
+   With no surface open it fills the window's ground behind the centred chat,
+   blurred (baked into its one draw) and dimmed; on an empty stage it is a
+   little stronger. A still: it fades in once, and not at all under reduced
+   motion. The cards above it stay opaque. */
+.s2-row[data-stage='none'],
+.s2-stage-empty {
+  position: relative;
+  isolation: isolate;
+}
+.s2-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--dur-3, 240ms) var(--ease);
+}
+.s2-backdrop-c {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* Round 13 (S9; Jaden: "undim the background slightly in dark and light, a bit more colour, not fully"):
+   strength up from 0.11 / 0.05 (dark) and 0.15 / 0.07 (light), saturation up with it. */
+/* 0.1.7 (Jaden 10-12: "I want to see some background ... 5 to 10% more"): about 10% stronger than round 13. */
+.s2-backdrop[data-drawn='true'][data-mode='behind-chat'] {
+  opacity: 0.19;
+}
+.s2-backdrop[data-drawn='true'][data-mode='under'] {
+  opacity: 0.09;
+}
+/* Dark: the warm band is calmed a little (round 11 look: the status bar label must stay 4.5:1). */
+:root:not([data-theme='light']) .s2-backdrop-c {
+  filter: saturate(0.45);
+}
+/* Light: the backdrop is grey and faint, so the ink on it keeps its contrast (the status bar label measured 2.92:1 at 0.22). */
+:root[data-theme='light'] .s2-backdrop-c {
+  /* R11 (Jaden, 10-08, light): "I still want to see a bit of that background with the Bastion photo,
+     just a little bit, dimmed." Warmth kept (not greyed away), the strength low. */
+  filter: saturate(0.95);
+}
+:root[data-theme='light'] .s2-backdrop[data-drawn='true'][data-mode='behind-chat'] {
+  opacity: 0.24;
+}
+:root[data-theme='light'] .s2-backdrop[data-drawn='true'][data-mode='under'] {
+  opacity: 0.11;
+}
+/* Zero specificity: an overlay's own z-index (the peeking sidebar, a floating dock) still wins. */
+:where(.s2-row[data-stage='none']) > :where(.s2-panel-slot, .s2-chat, .s2-mainp, .s2-agents) {
+  z-index: 1;
+}
+.s2-stage-empty {
+  margin: 0;
+  flex: 1;
+  align-self: stretch;
+  justify-content: center;
+  border-radius: var(--r-18);
+  overflow: hidden;
+}
+.s2-stage-empty > :not(.s2-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .s2-backdrop {
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 9: THE HOME SCREEN, THE RAIL, THE STATUS BAR, THE DIVIDERS
+   Jaden's third walkthrough (2026-10-07). Each rule names what it fixes.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* "The floating background overlaps... it must not block access." The ASCII
+   ground of the home screen belongs to the window, under every card and the
+   status bar alike (no edge of its own), painted below all of them in the
+   window's own stacking context, and it never takes a click. */
+.s2.s2-app {
+  isolation: isolate;
+}
+.s2-app > .s2-backdrop {
+  z-index: -1;
+  border-radius: 0;
+}
+
+/* "Expanding many section cards pushes Settings under the status bar." The
+   sidebar card is as tall as its slot, never its content: the sections
+   scroll inside it and the foot (Open project, Settings) stays on screen. */
+.s2-panel-slot {
+  min-height: 0;
+}
+.s2-panel {
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+.s2-panel-foot {
+  flex: none;
+}
+
+/* "The session rail and main chat overhang the status bar, and it isn't
+   centered." The cards stop a gap above the bar; the bar's content sits in
+   the middle of the window, its edges on the cards' edges. */
+.s2-row:has(+ .s2-status) {
+  padding-bottom: var(--sp-4);
+}
+.s2-status {
+  position: relative;
+  justify-content: center;
+  margin: 0 var(--sp-8);
+  padding: 0 var(--sp-12);
+}
+
+/* ── the sidebar, DeepSeek's way: transparent, scrolling, animated ─────── */
+.s2-panel {
+  background: color-mix(in srgb, var(--b-bg) 64%, transparent);
+  box-shadow: none;
+}
+.s2-groups {
+  gap: var(--sp-8);
+  overscroll-behavior: contain;
+}
+.s2-sec > .s2-gh {
+  padding: 0 var(--sp-2) 0 0;
+}
+.s2-sec-h {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--target-min);
+  padding: 0 var(--sp-4);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.s2-sec-h:hover {
+  color: var(--b-ink1);
+  background: var(--b-glass);
+}
+.s2-sec-h:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: -2px;
+}
+.s2-sec-chev {
+  display: inline-flex;
+  transition: transform var(--dur-2) var(--ease);
+}
+.s2-sec[data-folded='true'] .s2-sec-chev {
+  transform: rotate(-90deg);
+}
+/* The fold: the body's row grows from nothing to its content. */
+.s2-sec-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+.s2-sec[data-folded='true'] > .s2-sec-body {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.s2-sec-in {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* A row arriving (a new chat, an unfolded project) eases in. */
+.s2-sec-in > .s2-rail-row,
+.s2-sec-in > .s2-proj,
+.s2-proj-chats > .s2-rail-row {
+  animation: s2-row-in var(--dur-2) var(--ease) both;
+}
+@keyframes s2-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s2-sec-body,
+  .s2-sec-chev,
+  .s2-sec-h {
+    transition: none;
+  }
+  .s2-sec-in > .s2-rail-row,
+  .s2-sec-in > .s2-proj,
+  .s2-proj-chats > .s2-rail-row {
+    animation: none;
+  }
+}
+
+/* ── the dividers' lock frames (25, 33, 50, 67, 75 percent) ─────────────
+   While a divider is dragged onto a frame it shows the frame's number. */
+.s2-sizer[data-frame].is-drag::before,
+.s2-divider[data-frame].is-drag::before {
+  content: attr(data-frame) '%';
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--b-s2);
+  border: 1px solid var(--b-edge2);
+  color: var(--b-ink1);
+  font-size: var(--t-11);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* The home screen's icons sit on one glass capsule, so they read as the way
+   to the boards over the ASCII ground (round 9: "the surface icons... do
+   nothing" was also "I can't tell they are buttons"). */
+.s2-surfaces.is-compact {
+  padding: var(--sp-2);
+  border: 1px solid var(--b-glassedge);
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--b-bg) 72%, transparent);
+}
+.s2-surfaces.is-compact .s2-sp {
+  color: var(--b-ink2);
+}
+.s2-surfaces.is-compact .s2-sp:hover {
+  color: var(--b-ink1);
+  background: var(--b-glass-hover);
+}
+
+/* A section's empty line starts where its rows' labels start (round 9 spacing pass). */
+.s2-sec .s2-empty:not(.s2-empty-nest) {
+  padding-left: calc(var(--sp-4) + var(--sp-16) + var(--sp-6) + var(--sp-16) + var(--sp-6));
+}
+
+/* Round 9 (Jaden, 10-08): "centered with the chatbox, or stuck to bottom
+   left, not centered of the whole screen". Shell2 measures the chat box and
+   hands the bar its left edge and width; with no chat box it hugs the left. */
+.s2-status.is-under-chat {
+  justify-content: center;
+  margin-right: 0;
+  padding: 0 var(--sp-8);
+  box-sizing: border-box;
+}
+.s2-status.is-left {
+  justify-content: flex-start;
+}
+
+/* A project that failed to open says so, with a retry (from the PC build). */
+.s2-open-failure {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-8);
+  -webkit-app-region: no-drag;
+}
+.s2-open-failure > span { flex: 1 1 240px; overflow-wrap: anywhere; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 11 (Jaden, 10-08): THE STATUS BAR READS
+   [state] | [model icon + nickname] | [context ring] | [workspace]
+   "We don't need Claude. Just the model name with its icon next to it. Instead
+   of Claude put the context: a circle people can interact with; when they hover
+   it they see the breakdown." The ring is the composer's own component (hover
+   or keyboard focus opens its panel, upward); the bar no longer clips it.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-status {
+  overflow: visible;
+}
+.s2-sb-x {
+  flex: 0 1 auto;
+}
+.s2-sb-x:has([data-testid='s2-status-workspace']) {
+  flex: 0 1 auto;
+  min-width: 72px;
+}
+.s2-sb-x [data-testid='s2-status-workspace'] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 0.1.7 R1 (owner: cut the model name to about 12 characters, fade, no "..."): the same cap and fade as the composer chip. */
+.s2-sb-x [data-testid='s2-status-model'] {
+  min-width: 0;
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.s2-sb-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--b-ink2);
+}
+.s2-sb-ring {
+  padding: 0;
+}
+.s2-status .s2-ctx .ctxring-panel {
+  /* The bar's lines do not wrap; the measurement's sentences do. */
+  white-space: normal;
+  width: 18rem;
+  max-width: calc(100vw - var(--sp-32));
+  /* Grows LEFT from the ring: the composer's model chip and send button sit at the chat box's right edge,
+     and a panel opening rightwards covered them (a pinned panel then ate the click meant for Send). */
+  left: auto;
+  right: 0;
+  bottom: calc(100% + var(--sp-8));
+  /* The whole breakdown shows, never a scrolled panel (round 12 review): lift the generic cap. */
+  max-height: none;
+  overflow: visible;
+}
+/* ROUND 13 (S8): more room inside the panel (the text sat on the border), and above everything the stage
+   draws, the board toolbar included, at every width: the popover layer is raised from here, not in the
+   board's CSS. */
+:root {
+  --ctx-pop-pad-y: var(--sp-16);
+  --ctx-pop-pad-x: var(--sp-20);
+  --z-popover: 80;
+}
+.s2 .s2-status .s2-ctx .ctxring-panel {
+  padding: var(--ctx-pop-pad-y) var(--ctx-pop-pad-x);
+  z-index: var(--z-popover);
+}
+.s2-chat:has(.s2-ctx .ctxring-panel) {
+  z-index: var(--z-popover);
+}
+
+/* R11 light: the cards are a little transparent over the beige ground and its faint photo (the glass idea),
+   the text on them still >= 4.5:1 (measured in e2e/r11-look-shots.mjs). */
+:root[data-theme='light'] .s2-chat,
+:root[data-theme='light'] .s2-pane,
+:root[data-theme='light'] .s2-agents {
+  background: color-mix(in srgb, var(--b-bg) 90%, transparent);
+}
+
+/* A refusal from the server: components/FailureNote under the row, indented to the row's name. */
+.s2-connect-why {
+  padding: 0 var(--sp-8) var(--sp-6) var(--sp-32);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 12 (Jaden): THE STATUS BAR NEVER LEAVES THE CHAT BOX
+   A long state ("Running pnpm --filter ... test ..."), workspace or branch
+   shortens with an ellipsis inside the bar's own width; the ring and the
+   dividers keep their size, and the state gives way first.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-status {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.s2-status > .s2-vb {
+  flex: none;
+}
+.s2-status > .s2-sb-x {
+  min-width: 0;
+  overflow: hidden;
+}
+.s2-status > .s2-sb-x:has(.s2-sb-ring) {
+  flex: none;
+  overflow: visible;
+}
+.s2-status > .s2-sb-x:has(.s2-sb-state) {
+  flex: 0 3 auto;
+}
+.s2-status > .s2-sb-x:has([data-testid='s2-status-workspace']) {
+  flex: 0 2 auto;
+}
+.s2-status > .s2-sb-x:has([data-testid='s2-status-model']) {
+  /* The model keeps its name while the state and the workspace give way (round 12). */
+  flex: 0 0 auto;
+  max-width: 45%;
+}
+.s2-sb-state,
+.s2-status .s2-sb-x > span:not(.s2-sb-dot):not(.s2-sb-icon):not(.s2-sb-ring) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-sb-dot {
+  flex: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 13 (S1; Jaden: "revert icon-only ... surfaces always keep names at the
+   very top, with scroll"). Round 12 folded every pill to its icon below 720 px
+   of main column; that is reverted. The names stay at every width and the bar
+   scrolls under a pointer drag or the arrows when they do not fit. The
+   working dot stays in the flow after the name, so it can never sit over the
+   close X.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-surfaces {
+  touch-action: pan-x;
+}
+.s2-surfaces[data-scrollable='true'] {
+  cursor: grab;
+}
+.s2-surfaces[data-dragging='true'] {
+  cursor: grabbing;
+  user-select: none;
+}
+.s2-surfaces[data-dragging='true'] .s2-sp-main {
+  pointer-events: none;
+}
+
+/* ── the Windows title-bar controls keep their strip ──────────────────────
+   Round 12 (Jaden): leave room top right. The desktop app is frameless and draws
+   its own minimise, maximise and close (WindowControls, desktop/src/main.ts);
+   when they render, the bar keeps that strip clear so nothing sits under them.
+   Without them (a browser build) nothing is reserved. */
+:root {
+  --win-controls-w: 138px;
+}
+.s2[data-platform='win'] .s2-topb:has(.shell-winctl) {
+  padding-right: var(--win-controls-w);
+}
+.s2[data-platform='win'] .s2-topb .shell-winctl {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: var(--win-controls-w);
+  margin: 0;
+  justify-content: flex-end;
+  padding-right: var(--sp-8);
+  box-sizing: border-box;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 14 (Jaden): THE SURFACE BAR
+   "Surfaces are not centered with the actual chat." The bar's row is as tall
+   as the chat header (56 px plus the card's border), so the names sit on the
+   same line as the chat's title, and the pills are centred over the main
+   column itself, not pushed along by the crumb. "Remove the little arrow you
+   click; you should be able to just drag. Make it clear you can drag." The
+   arrow circles are gone: the bar takes a grab cursor, edge fades, and a grip
+   that shows on hover. "They should just be condensed to the icon instead of
+   cutting off": (superseded 2026-10-09: the top bar never folds to icons, it scrolls).
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-topb {
+  --bar-side: 140px;
+  /* The pills' width: Shell2 writes the measured value inline; this is the first-paint guess. */
+  --wrap-w: 280px;
+  height: 58px;
+  margin-bottom: calc(-1 * var(--sp-8));
+}
+@container s2main (max-width: 640px) {
+  .s2-topb {
+    --bar-side: 8px;
+  }
+  .s2-crumb {
+    display: none;
+  }
+}
+.s2[data-platform='win'] .s2-topb:has(.shell-winctl) {
+  --bar-side: 146px;
+}
+.s2-topb > .s2-surfaces-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  max-width: calc(100% - 2 * var(--bar-side) - 16px);
+}
+.s2-topb > .s2-crumb {
+  flex: 0 1 auto;
+  /* The crumb has the first claim on its half: the project name is never cut to "Works…" while the branch can give. */
+  min-width: 112px;
+  max-width: calc(50% - var(--wrap-w, 280px) / 2 - var(--sp-12));
+  overflow: hidden;
+}
+.s2-ch > .s2-working {
+  flex: none;
+}
+.s2-row[data-stage='none'] .s2-topb > .s2-branch {
+  position: absolute;
+  top: 50%;
+  left: var(--sp-4);
+  transform: translateY(-50%);
+}
+/* The drag cue: a grip at the edge that has more, shown while the pointer is over the bar. */
+.s2-surfaces-wrap::before,
+.s2-surfaces-wrap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  width: 6px;
+  height: 15px;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, var(--b-ink2) 1px, transparent 1.6px) 0 0 / 6px 5px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.s2-surfaces-wrap::before {
+  left: var(--sp-4);
+}
+.s2-surfaces-wrap::after {
+  right: var(--sp-4);
+}
+.s2-surfaces-wrap:hover[data-more='start']::before,
+.s2-surfaces-wrap:hover[data-more='both']::before,
+.s2-surfaces-wrap:hover[data-more='end']::after,
+.s2-surfaces-wrap:hover[data-more='both']::after {
+  opacity: 0.75;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 14 (Jaden): THE SIDEBAR PEEKING OVER THE BOARDS
+   "When it minimizes and I click show sidebar, it's too transparent and blends
+   in too hard with the background, the background shines through." Docked, the
+   sidebar is glass over the ground; peeking over the boards it is the card's
+   own colour, opaque, with the lift shadow. Its width is the reader's (drag
+   the edge, 208 to 420 px).
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-panel-slot.is-overlay {
+  /* The handle sits on the sheet's outer edge, in the 8 px of ground beside it. */
+  overflow: visible;
+}
+.s2-panel-slot.is-overlay .s2-panel {
+  background: var(--b-bg);
+}
+.s2-panel-slot.is-overlay .s2-peek-sizer {
+  position: absolute;
+  top: 0;
+  right: calc(-1 * var(--sp-8));
+  bottom: 0;
+  height: auto;
+  z-index: 2;
+}
+
+/* The crumb gives up its branch before it is cut mid-word (the status bar and the tab title name it too). */
+@container s2main (max-width: 900px) {
+  .s2-crumb-sep,
+  .s2-crumb-b {
+    display: none;
+  }
+}
+
+/* ROUND 14 (Jaden: "when Architecture and Whiteboard are both open, they hide each other in between. They should just
+   be condensed to the icon instead of cutting off."): in a pane under 560 px the board tags that are not on screen
+   fold to their icons (each keeps its title), and the one that is keeps a short name, so none is cut mid-word. */
+.s2-pane {
+  container: s2pane / inline-size;
+}
+@container s2pane (max-width: 559px) {
+  .board-tabs .btag[data-on='false'] .btag-t {
+    display: none;
+  }
+  .board-tabs .btag[data-on='false'] .btag-main,
+  .board-tabs .btag[data-on='false'] .btag-main[data-board-kind='whiteboard'] {
+    padding: 0 var(--sp-10);
+  }
+  .board-tabs .btag[data-on='true'] .btag-t {
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+.s2-crumb-p {
+  /* The cut element: it gives way inside the pill's border and fades there, so the border is never masked. */
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 20ch;
+}
+.s2-crumb-b {
+  overflow: hidden;
+}
+/* The state keeps its dot and the first letters of its word beside the longer context label; the workspace gives way first. */
+.s2-status > .s2-sb-x:has(.s2-sb-state) {
+  flex: 0 1 auto;
+  min-width: 36px;
+}
+.s2-status > .s2-sb-x:has([data-testid='s2-status-workspace']) {
+  flex: 0 4 auto;
+  min-width: 40px;
+}
+/* Windows keeps 138 px of the bar's right padding for the window buttons, and a percentage is of the padding-less box:
+   the crumb's half is measured from the bar's true centre (round 14 fix: it read "seq-wt13-she" at 1440). */
+.s2[data-platform='win'] .s2-topb:has(.shell-winctl) > .s2-crumb {
+  max-width: calc(50% + (var(--win-controls-w) + var(--sp-4)) / 2 - var(--wrap-w, 280px) / 2 - var(--sp-16));
+}
+.s2-crumb[data-trim='true'] .s2-crumb-sep,
+.s2-crumb[data-trim='true'] .s2-crumb-b {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STATUS BAR PRIORITY AT THE DEFAULT CHAT WIDTH (audit: the workspace read "s..."
+   and the branch "H..." in a 420px chat column). State and model first, then
+   the workspace name (at least about 12 characters), the branch last: it gives
+   way first and shows only when there is room. Full values are in the titles.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-status > .s2-sb-x:has(.s2-sb-state) {
+  flex: 0 3 auto;
+  min-width: 9ch;
+}
+.s2-status > .s2-sb-x:has([data-testid='s2-status-workspace']) {
+  flex: 0 2 auto;
+  min-width: calc(13ch + 18px);
+}
+.s2-status > .s2-sb-x:has([data-testid='s2-status-branch']) {
+  flex: 0 8 auto;
+  min-width: 0;
+}
+/* StatusBar.fitBranch sets this when the branch cannot be read whole: it and its divider go, never "H...". */
+.s2-status[data-nobranch] > .s2-sb-x:has([data-testid='s2-status-branch']),
+.s2-status[data-nobranch] > .s2-vb:has(+ .s2-sb-x [data-testid='s2-status-branch']) {
+  display: none;
+}
+
+/* The surface pill's label: a name never wraps inside its pill. */
+.s2-seg-l {
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 0.1.5 (G2; owner: "the surfaces and the tabs you can't select, you can't drag"); reworked 0.1.6
+   1. The pills are no-drag all the way down. The top bar is the window's drag handle in the desktop app, and the
+      surfaces sit centred over the stretching spacer spans. Electron builds the drag region in tree order, a later
+      region winning over an earlier one wherever they overlap. 0.1.5 gave the spacers an app-region of none, which
+      Chromium computes as no-drag, so they cut the whole bar out of the drag. 0.1.6: the spacers are explicit drag
+      and come BEFORE the pills in the DOM (Shell2), so the pills are the later region.
+   1b. The bar is one no-drag box: the pills scroll inside it, and a pill scrolled out of sight still has a box, so a
+      per-pill rule would give it a region of its own. The pills declare none (no rule names them) and the wrap above
+      them is no-drag; a hit-box (.s2-bar-hit) after them, exactly the visible bar's size, is the one no-drag region
+      over the bar. Do not make the names drag: scrolled out they sit over the chat column (earlier in the tree) and
+      would win over its buttons.
+   2. A name you can click shows it (hover fill, pointer); a name being dragged lifts.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-surfaces-wrap > .s2-bar-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+/* 0.1.6: a generous handle. The crumb is a label (no click), so it is part of the window's handle; the chat title
+   button is as wide as its words but leaves 132 px of the row (the whole 56 px height) for the window to be dragged by. */
+.s2-topb > .s2-crumb {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.s2-ch .r9-title-wrap {
+  align-self: stretch;
+  justify-content: center;
+}
+.s2-ch .r9-title {
+  align-self: flex-start;
+  flex: none;
+  max-width: calc(100% - 132px);
+}
+.s2-sp:not(.is-focused):hover {
+  background: var(--b-glass-hover);
+}
+.s2-sp-main {
+  cursor: pointer;
+}
+.s2-sp.is-lift {
+  z-index: 2;
+  background: var(--b-glass-hover);
+  box-shadow: var(--b-lift);
+}
+.s2-surfaces[data-lifted] {
+  cursor: grabbing;
+  user-select: none;
+}
+.s2-surfaces[data-lifted] .s2-sp-main {
+  cursor: grabbing;
+}
+/* Tight main column: the names take a little less padding. */
+@container s2main (max-width: 760px) {
+  .s2-sp-main {
+    padding: 0 var(--sp-10);
+  }
+}
+/* No scroll snap (0.1.6, owner: dragging the bar "is very choppy"). Measured: with proximity snap to each name's start,
+   a bar that overflows by 42 px (1024 wide) had two stops, 0 and 42; setting scrollLeft to 5, 20 or 41 landed on 0, 0
+   and 42, so a drag jumped between the two and the wheel could not stop between them. The bar scrolls freely and
+   eases (Shell2: one write per frame, glide, inertia); focus still keeps its names clear of the edge (scroll-padding). */
+.s2-surfaces {
+  scroll-padding: 0 var(--sp-8);
+}
+/* A narrow column (under 760 px): five names and the two closers still fit (the owner's "Whiteboard" cut at the edge). */
+@container s2main (max-width: 760px) {
+  .s2-sp-main {
+    padding: 0 var(--sp-8);
+    gap: var(--sp-4);
+  }
+  .s2-sp.is-on .s2-sp-main {
+    padding-right: var(--sp-2);
+  }
+  .s2-surfaces {
+    gap: 0;
+    padding-inline: 0;
+  }
+  .s2-sp-x {
+    margin-right: 0;
+  }
+}
+/* Names never fold to icons (owner, 0.1.6: "it should always show the names of everything"). A bar that does not fit scrolls
+   by drag, wheel or thumb, and keeps a name a fade's width clear of the edge. */
+.s2-surfaces {
+  scroll-padding: 0 28px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE CHAT TRANSCRIPT'S SCROLLBAR IS AN OVERLAY (0.1.6 B4, owner: "Do we need a scroll bar for the actual chat
+   itself? ... If no, maybe we can stray away from that.")
+   Hidden at rest; its 6 px thumb shows while the transcript scrolls (Shell2 marks the scroller data-scrolling for
+   about a second after each scroll event: wheel, keys, drag, a programmatic jump alike) and while the pointer is
+   over the transcript. It takes no width from the messages: the gutter is always reserved
+   (scrollbar-gutter) and comes out of the transcript's side padding, so a message is the same width with the thumb
+   shown, hidden, or not needed. Wheel and keyboard scrolling are untouched (the scroller still scrolls natively).
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2 .v3-transcript-wrap .v3-transcript:not(.is-virtual),
+.s2 .v3-transcript-wrap .v3-vlist {
+  scrollbar-gutter: stable;
+}
+.s2 .v3-transcript-wrap .v3-transcript:not(.is-virtual) {
+  padding-right: calc(var(--sp-16) + var(--sp-2) - var(--scrollbar-size));
+}
+.s2 .v3-transcript-wrap .v3-vrow {
+  padding-right: calc(var(--sp-24) - var(--scrollbar-size));
+}
+/* Chat only (no surface open): the reading column keeps its own side padding (see the data-stage rule above), and the
+   gutter comes out of the right one here too, or the column sits 6 px off centre against the composer (review B4 5).
+   The plain transcript's percentage is of the card; the virtual rows' is of the list inside the gutter, so theirs
+   adds the gutter back: both leave the text exactly the reading width, centred in the card. */
+.s2-row[data-stage='none'] > .s2-chat .v3-transcript-wrap .v3-transcript:not(.is-virtual) {
+  padding-right: calc(max(var(--sp-24), calc((100% - var(--chat-read-w)) / 2)) - var(--scrollbar-size));
+}
+.s2-row[data-stage='none'] > .s2-chat .v3-transcript-wrap .v3-vrow {
+  padding-left: max(var(--sp-24), calc((100% + var(--scrollbar-size) - var(--chat-read-w)) / 2));
+  padding-right: calc(max(var(--sp-24), calc((100% + var(--scrollbar-size) - var(--chat-read-w)) / 2)) - var(--scrollbar-size));
+}
+.s2 .v3-transcript-wrap .v3-transcript:not(.is-virtual)::-webkit-scrollbar-thumb,
+.s2 .v3-transcript-wrap .v3-vlist::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+.s2 .v3-transcript-wrap:hover .v3-transcript:not(.is-virtual)::-webkit-scrollbar-thumb,
+.s2 .v3-transcript-wrap:hover .v3-vlist::-webkit-scrollbar-thumb,
+.s2 .v3-transcript-wrap .v3-transcript[data-scrolling]::-webkit-scrollbar-thumb,
+.s2 .v3-transcript-wrap .v3-vlist[data-scrolling]::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+.s2 .v3-transcript-wrap:hover .v3-transcript:not(.is-virtual)::-webkit-scrollbar-thumb:hover,
+.s2 .v3-transcript-wrap:hover .v3-vlist::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SOFT EDGES (0.1.6 C6; owner: "a long file name doesn't blend between the borders. Let's add some nice blending and
+   smoothing there. Same with some of the status bar elements.")
+   A name that does not fit its box fades out at the box's edge, over the last 18 px, instead of a hard cut or "...".
+   Shell2 / StatusBar mark the ones that are cut (data-cut, softEdge.ts); the mask is never on a name that fits. The
+   full text stays on the title. The surface bar keeps its own edge fades (data-fade) above.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-sb-state[data-cut='true'],
+.s2-status .s2-sb-x > span[data-cut='true']:not(.s2-sb-dot):not(.s2-sb-icon):not(.s2-sb-ring),
+.s2-sb-x [data-testid='s2-status-workspace'][data-cut='true'],
+.s2-sb-x [data-testid='s2-status-model'][data-cut='true'],
+.s2-crumb-p[data-cut='true'],
+.s2-branch-l[data-cut='true'] {
+  text-overflow: clip;
+  -webkit-mask-image: linear-gradient(90deg, black calc(100% - 18px), transparent);
+  mask-image: linear-gradient(90deg, black calc(100% - 18px), transparent);
+}
+/* 0.1.7 R1: the model name fades like the rest (it was an ellipsis in H4); its 12ch cap is above. */
+.s2-status .s2-sb-x > span[data-testid='s2-status-model']:not(.s2-sb-dot):not(.s2-sb-icon):not(.s2-sb-ring) {
+  text-overflow: clip;
+}

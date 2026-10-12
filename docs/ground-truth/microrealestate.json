@@ -1,0 +1,30 @@
+{
+  "description": "Ground truth for microrealestate/microrealestate (root docker-compose.yml), hand-verified against gateway proxy code, service route/client code, and compose env wiring. The Next.js frontends (webapps/*) call the gateway via DOCKER_GATEWAY_URL but live outside the inferrable service dirs — their outbound edges are listed as known misses, not counted in the gate.",
+  "edges": [
+    { "src": "gateway", "dst": "landlord-frontend", "kind": "http" },
+    { "src": "gateway", "dst": "tenant-frontend", "kind": "http" },
+    { "src": "gateway", "dst": "authenticator", "kind": "http" },
+    { "src": "gateway", "dst": "pdfgenerator", "kind": "http" },
+    { "src": "gateway", "dst": "api", "kind": "http" },
+    { "src": "gateway", "dst": "tenantapi", "kind": "http" },
+    { "src": "authenticator", "dst": "emailer", "kind": "http" },
+    { "src": "authenticator", "dst": "mongo", "kind": "db_access" },
+    { "src": "authenticator", "dst": "redis", "kind": "db_access" },
+    { "src": "api", "dst": "emailer", "kind": "http" },
+    { "src": "api", "dst": "pdfgenerator", "kind": "http" },
+    { "src": "api", "dst": "mongo", "kind": "db_access" },
+    { "src": "emailer", "dst": "pdfgenerator", "kind": "http" },
+    { "src": "emailer", "dst": "mongo", "kind": "db_access" },
+    { "src": "pdfgenerator", "dst": "mongo", "kind": "db_access" },
+    { "src": "tenantapi", "dst": "mongo", "kind": "db_access" }
+  ],
+  "knownMisses": [
+    { "src": "landlord-frontend", "dst": "gateway", "kind": "http", "why": "Next.js app in webapps/, outside service-dir inference" },
+    { "src": "tenant-frontend", "dst": "gateway", "kind": "http", "why": "Next.js app in webapps/, outside service-dir inference" }
+  ],
+  "traps": [
+    "gateway env has EMAILER_URL wired but the code never proxies it — no gateway->emailer edge",
+    "RESETSERVICE_URL proxy exists in code but is unwired in compose — no gateway->resetservice edge",
+    "GATEWAY_URL on frontends points at the public localhost URL, not an internal service"
+  ]
+}

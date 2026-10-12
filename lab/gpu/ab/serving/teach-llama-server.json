@@ -1,0 +1,2883 @@
+{
+ "model": "minicpm5",
+ "when": "2026-09-24T14:47:30.115Z",
+ "results": [
+  {
+   "id": "sys-01",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-01",
+    "subject": {
+     "ask": "Teach me the architecture of this system point to point — walk one order from entry to database, visually.",
+     "nodeIds": []
+    },
+    "queue": [],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 34,
+     "text": "name=\"trace_flow\"> name=\"from\">file:orders.ts (not read this turn) name=\"to\">ds:postgres\n\n(Sequence marked orders.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you cited orders.ts WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 50,
+      "sub": {
+       "clarity": 86.8,
+       "chunking": 100,
+       "jargon": 75,
+       "tone": 85,
+       "visual": 65,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 20
+      },
+      "flags": [
+       "under 40 words: too thin to teach anything",
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "names 1 internal tool term(s) at the learner",
+       "draws a picture but the text never points at it",
+       "does not close on a check-in question",
+       "no example or analogy"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 81,
+     "text": "The system is built around eight services: `svc:gateway` (Express), `svc:orders` (FastAPI), `svc:payments` (Express), `svc:notifications` (Python), `svc:inventory` (Python), `svc:shipping` (Go), `svc:invoices` (Java), and `svc:edge` (Config). Data lives in `ds:postgres` and `ds:redis`, with events published to `topic:order.created`. Requests arrive at `svc:gateway`, which routes via HTTP to specific services—e.g., `GET /orders` and `POST /orders` go to `svc:orders`, which interacts with `ds:postgres`. Events from `svc:orders` are published to `topic:order.created`, consumed by `svc:notifications` and `svc:shipping`.  \n\nWhich service does the gateway forward a POST /orders request to?",
+     "endsWithQuestion": true,
+     "endsWithCheck": true,
+     "checkShape": "comprehension",
+     "visual": true,
+     "questions": [
+      "Which service does the gateway forward a POST /orders request to?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "kind": "progression",
+       "title": "Continuing to the next point",
+       "items": [
+        {
+         "id": "understanding",
+         "label": "Understanding"
+        },
+        {
+         "id": "confidence",
+         "label": "Confidence"
+        },
+        {
+         "id": "continuation",
+         "label": "Continuation"
+        },
+        {
+         "id": "next-point",
+         "label": "Next Point"
+        },
+        {
+         "id": "completion",
+         "label": "Completion"
+        }
+       ],
+       "links": [
+        {
+         "from": "understanding",
+         "to": "confidence"
+        },
+        {
+         "from": "confidence",
+         "to": "continuation"
+        },
+        {
+         "from": "continuation",
+         "to": "next-point"
+        },
+        {
+         "from": "next-point",
+         "to": "completion"
+        }
+       ],
+       "caption": "Drawn from general knowledge — not from this repository’s scan.",
+       "version": 1
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [],
+     "quality": {
+      "overall": 69.1,
+      "sub": {
+       "clarity": 95.5,
+       "chunking": 95.2,
+       "jargon": 26,
+       "tone": 79,
+       "visual": 72.5,
+       "teaching": 40,
+       "grounding": 30,
+       "hygiene": 100
+      },
+      "flags": [
+       "1 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+       "4.0 code names per sentence; gloss each in plain words",
+       "shouts: POST",
+       "draws a picture but the text never points at it"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "own-check-in",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 2,
+     "words": 2,
+     "text": " name=\"trace_flow\"> name=\"from\">svc:gateway",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": {
+      "edgesSeen": 22,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "invoices",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": [
+       "inventory",
+       "notifications"
+      ]
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires"
+     ],
+     "quality": {
+      "overall": 11.7,
+      "sub": {
+       "clarity": 0,
+       "chunking": 0,
+       "jargon": 0,
+       "tone": 0,
+       "visual": 65,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 0
+      },
+      "flags": [
+       "no lesson: fewer than 12 words of prose"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 3,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.3333333333333333,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "sys-02",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-02",
+    "subject": {
+     "ask": "Teach me what the gateway service does, from its real code.",
+     "nodeIds": []
+    },
+    "queue": [],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 0,
+     "text": "",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": null,
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "error: the model spent its output on reasoning and returned no answer (19040 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens."
+     ],
+     "quality": null,
+     "stopReason": null,
+     "rounds": null,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": false
+     },
+     "error": "the model spent its output on reasoning and returned no answer (19040 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens."
+    }
+   ],
+   "score": {
+    "turnsRun": 1,
+    "errored": 1,
+    "pacedRate": 0,
+    "questionRate": 0,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "sys-03",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-03",
+    "subject": {
+     "ask": "Teach me how the services here communicate — queues vs HTTP.",
+     "nodeIds": [
+      "file:gateway/src/lib/http.ts",
+      "file:gateway/src/routes/invoices.ts",
+      "file:gateway/src/routes/orders.ts",
+      "file:gateway/src/routes/shipments.ts"
+     ]
+    },
+    "queue": [
+     {
+      "title": "orders.ts",
+      "nodeId": "file:gateway/src/routes/orders.ts"
+     },
+     {
+      "title": "shipments.ts",
+      "nodeId": "file:gateway/src/routes/shipments.ts"
+     }
+    ],
+    "taught": [
+     {
+      "title": "http.ts",
+      "nodeId": "file:gateway/src/lib/http.ts",
+      "turn": 0
+     },
+     {
+      "title": "invoices.ts",
+      "nodeId": "file:gateway/src/routes/invoices.ts",
+      "turn": 1
+     }
+    ]
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 56,
+     "text": " name=\"read_file\"> name=\"path\">gateway/src/lib/http.ts\n\nThe model provider failed after 1 completed round(s) (the model spent its output on reasoning and returned no answer (14202 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens.), so this turn was cut short. Everything above was established before the failure; nothing after it exists.",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 4,
+     "conceptGiven": "http.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "http.ts",
+       "caption": "http.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/lib/http.ts",
+         "label": "http.ts",
+         "nodeId": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/orders.ts",
+         "label": "orders.ts",
+         "nodeId": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/shipments.ts",
+         "label": "shipments.ts",
+         "nodeId": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/orders.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/shipments.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/lib/http.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you cited http.ts WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 65.1,
+      "sub": {
+       "clarity": 94.3,
+       "chunking": 100,
+       "jargon": 75,
+       "tone": 85,
+       "visual": 67.5,
+       "teaching": 6,
+       "grounding": 6,
+       "hygiene": 20
+      },
+      "flags": [
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "names 1 internal tool term(s) at the learner",
+       "draws a picture but the text never points at it",
+       "does not close on a check-in question",
+       "no example or analogy",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 105,
+     "text": "The system uses an Express gateway (`svc:gateway`) to handle HTTP requests. It routes to services like `svc:orders` for order management, `svc:payments` for processing, and `svc:invoices` for billing. Requests flow through the gateway's routes, which then call the appropriate services. For example, a GET to `/orders/*` hits `svc:orders`'s routes. The gateway also publishes to the `topic:order.created` for downstream consumers like notifications and shipping.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing question \"which part do you think gateway hands off to next?\": it copied the lesson contract's example.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": true,
+     "checkShape": "prediction",
+     "visual": true,
+     "questions": [
+      "Looking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 3,
+     "conceptGiven": "invoices.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "invoices.ts",
+       "caption": "invoices.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+         "label": "InvoiceController.java",
+         "nodeId": "file:invoices/src/main/java/shop/invoices/InvoiceController.java"
+        },
+        {
+         "id": "file:edge/default.conf",
+         "label": "default.conf",
+         "nodeId": "file:edge/default.conf"
+        },
+        {
+         "id": "file:gateway/src/index.ts",
+         "label": "index.ts",
+         "nodeId": "file:gateway/src/index.ts"
+        },
+        {
+         "id": "file:gateway/src/lib/http.ts",
+         "label": "http.ts",
+         "nodeId": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:invoices/src/main/java/shop/invoices/InvoiceController.java"
+        },
+        {
+         "from": "file:edge/default.conf",
+         "to": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/routes/invoices.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you asked a question mid-lesson and moved on without answering it. The learner cannot reply inside your turn, so an unanswered check is rhetorical and teaches nothing — ask, then TELL, and tell why. Only the closing check-in may stay open",
+      "you cited invoices.ts, index.ts WITHOUT reading them this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 77.2,
+      "sub": {
+       "clarity": 97.1,
+       "chunking": 98.2,
+       "jargon": 82.9,
+       "tone": 100,
+       "visual": 75,
+       "teaching": 20,
+       "grounding": 30,
+       "hygiene": 100
+      },
+      "flags": [
+       "does not close on a check-in question",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "sys-04",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-04",
+    "subject": {
+     "ask": "Teach me what a datastore node is in this graph and which services touch it.",
+     "nodeIds": []
+    },
+    "queue": [],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 37,
+     "text": "Datastore nodes are `ds:postgres` and `ds:redis`. `ds:postgres` is touched by `svc:orders`, `svc:payments`, `svc:shipping`, and `svc:invoices` via database edges (`db_read`, `db_write`, `db_access`). `ds:redis` is the parent of `topic:order.created` but has no direct service edges in the current structure.",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "quality": {
+      "overall": 50,
+      "sub": {
+       "clarity": 100,
+       "chunking": 100,
+       "jargon": 32,
+       "tone": 85,
+       "visual": 0,
+       "teaching": 0,
+       "grounding": 30,
+       "hygiene": 100
+      },
+      "flags": [
+       "under 40 words: too thin to teach anything",
+       "1 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+       "4.0 code names per sentence; gloss each in plain words",
+       "no picture: nothing drawn and no flow in the text",
+       "does not close on a check-in question",
+       "no example or analogy"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "no-chart-derived-this-turn",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 107,
+     "text": "The request starts at the gateway, which routes HTTP calls to services like orders, payments, and notifications. For example, GET /orders/* goes to the orders service, which then uses gRPC to call the inventory service and writes to the database. The payments service handles charge requests, and the edge service provides configuration. The next step would be to explore how the orders service processes orders.\n\nLooking at the picture: if Completion changed what it returns, what do you think would break in Next Point?\n\n(Sequence took out the closing question \"Check-in: which part do you think gateway hands off to next?\": it copied the lesson contract's example.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": true,
+     "checkShape": "prediction",
+     "visual": true,
+     "questions": [
+      "Looking at the picture: if Completion changed what it returns, what do you think would break in Next Point?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "kind": "progression",
+       "title": "Continuing to the next point",
+       "items": [
+        {
+         "id": "understanding",
+         "label": "Understanding"
+        },
+        {
+         "id": "confidence",
+         "label": "Confidence"
+        },
+        {
+         "id": "continuation",
+         "label": "Continuation"
+        },
+        {
+         "id": "next-point",
+         "label": "Next Point"
+        },
+        {
+         "id": "completion",
+         "label": "Completion"
+        }
+       ],
+       "links": [
+        {
+         "from": "understanding",
+         "to": "confidence"
+        },
+        {
+         "from": "confidence",
+         "to": "continuation"
+        },
+        {
+         "from": "continuation",
+         "to": "next-point"
+        },
+        {
+         "from": "next-point",
+         "to": "completion"
+        }
+       ],
+       "caption": "Drawn from general knowledge — not from this repository’s scan.",
+       "version": 1
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you asked a question mid-lesson and moved on without answering it. The learner cannot reply inside your turn, so an unanswered check is rhetorical and teaches nothing — ask, then TELL, and tell why. Only the closing check-in may stay open"
+     ],
+     "quality": {
+      "overall": 76.8,
+      "sub": {
+       "clarity": 87,
+       "chunking": 97,
+       "jargon": 100,
+       "tone": 100,
+       "visual": 80.5,
+       "teaching": 20,
+       "grounding": 0,
+       "hygiene": 100
+      },
+      "flags": [
+       "does not close on a check-in question"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0,
+    "visualRate": 0.5
+   }
+  },
+  {
+   "id": "sys-05",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-05",
+    "subject": {
+     "ask": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+     "nodeIds": [
+      "file:gateway/src/routes/payments.ts",
+      "file:payments/src/index.js",
+      "file:orders/app/payments_client.py",
+      "file:invoices/src/main/java/shop/invoices/PaymentClient.java",
+      "file:gateway/src/index.ts",
+      "file:gateway/src/routes/shipments.ts"
+     ]
+    },
+    "queue": [
+     {
+      "title": "payments_client.py",
+      "nodeId": "file:orders/app/payments_client.py"
+     },
+     {
+      "title": "PaymentClient.java",
+      "nodeId": "file:invoices/src/main/java/shop/invoices/PaymentClient.java"
+     },
+     {
+      "title": "index.ts",
+      "nodeId": "file:gateway/src/index.ts"
+     },
+     {
+      "title": "shipments.ts",
+      "nodeId": "file:gateway/src/routes/shipments.ts"
+     }
+    ],
+    "taught": [
+     {
+      "title": "payments.ts",
+      "nodeId": "file:gateway/src/routes/payments.ts",
+      "turn": 0
+     },
+     {
+      "title": "index.js",
+      "nodeId": "file:payments/src/index.js",
+      "turn": 1
+     }
+    ]
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 68,
+     "text": "The payments service is a single point of failure with a blast radius of **4 nodes** out of 11 total (per the digest's `risks` section). If the payments route fails, 4 downstream components are affected. This includes dependencies on payments via HTTP calls from gateway, orders, and invoices services. \n\nCheck-in: Does this make sense so far? Which part of the payments flow do you think would break first?",
+     "endsWithQuestion": true,
+     "endsWithCheck": true,
+     "checkShape": "prediction",
+     "visual": true,
+     "questions": [
+      "Check-in: Does this make sense so far?",
+      "Which part of the payments flow do you think would break first?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 6,
+     "conceptGiven": "payments.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "payments.ts",
+       "caption": "payments.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/routes/payments.ts",
+         "label": "payments.ts",
+         "nodeId": "file:gateway/src/routes/payments.ts"
+        },
+        {
+         "id": "file:payments/src/index.js",
+         "label": "index.js",
+         "nodeId": "file:payments/src/index.js"
+        },
+        {
+         "id": "file:gateway/src/index.ts",
+         "label": "index.ts",
+         "nodeId": "file:gateway/src/index.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/payments.ts",
+         "to": "file:payments/src/index.js"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/payments.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/routes/payments.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 31,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "gateway",
+       "invoices",
+       "orders",
+       "payments"
+      ],
+      "packagesMissed": [
+       "edge",
+       "inventory",
+       "notifications",
+       "shipping"
+      ]
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "you asked a question mid-lesson and moved on without answering it. The learner cannot reply inside your turn, so an unanswered check is rhetorical and teaches nothing — ask, then TELL, and tell why. Only the closing check-in may stay open"
+     ],
+     "quality": {
+      "overall": 78.4,
+      "sub": {
+       "clarity": 100,
+       "chunking": 100,
+       "jargon": 100,
+       "tone": 100,
+       "visual": 65,
+       "teaching": 29,
+       "grounding": 6,
+       "hygiene": 100
+      },
+      "flags": [
+       "draws a picture but the text never points at it",
+       "1 mid-lesson question(s) never answered",
+       "no example or analogy",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 0,
+     "checkInSkipped": "own-check-in",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 100,
+     "text": " name=\"propose_chart\"> name=\"kind\">system-architecture name=\"title\">Payments Service Overview name=\"items\">[{'id': 'svc:payments', 'label': 'payments'}, {'id': 'file:payments/src/index.js', 'label': 'index entry'}, {'id': 'file:payments/src/stripe.js', 'label': 'Stripe integration'}, {'id': 'file:payments/src/db.js', 'label': 'DB layer'}] name=\"links\">[{'from': 'file:gateway/src/routes/payments.ts', 'to': 'file:payments/src/index.js', 'label': 'GET /payments/*'}, {'from': 'file:orders/app/payments_client.py', 'to': 'file:payments/src/index.js', 'label': 'POST /charge'}, {'from': 'file:invoices/src/main/java/shop/invoices/PaymentClient.java', 'to': 'file:payments/src/index.js', 'label': 'POST /charge'}] name=\"focusItemId\">svc:payments\n\nThe model provider failed after 1 completed round(s) (the model spent its output on reasoning and returned no answer (21330 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens.), so this turn was cut short. Everything above was established before the failure; nothing after it exists.",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 5,
+     "conceptGiven": "index.js",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "index.js",
+       "caption": "index.js and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:payments/src/index.js",
+         "label": "index.js",
+         "nodeId": "file:payments/src/index.js"
+        },
+        {
+         "id": "file:gateway/src/routes/payments.ts",
+         "label": "payments.ts",
+         "nodeId": "file:gateway/src/routes/payments.ts"
+        },
+        {
+         "id": "file:orders/app/payments_client.py",
+         "label": "payments_client.py",
+         "nodeId": "file:orders/app/payments_client.py"
+        },
+        {
+         "id": "file:invoices/src/main/java/shop/invoices/PaymentClient.java",
+         "label": "PaymentClient.java",
+         "nodeId": "file:invoices/src/main/java/shop/invoices/PaymentClient.java"
+        },
+        {
+         "id": "file:payments/src/db.js",
+         "label": "db.js",
+         "nodeId": "file:payments/src/db.js"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/payments.ts",
+         "to": "file:payments/src/index.js"
+        },
+        {
+         "from": "file:orders/app/payments_client.py",
+         "to": "file:payments/src/index.js"
+        },
+        {
+         "from": "file:invoices/src/main/java/shop/invoices/PaymentClient.java",
+         "to": "file:payments/src/index.js"
+        },
+        {
+         "from": "file:payments/src/index.js",
+         "to": "file:payments/src/db.js"
+        }
+       ],
+       "focusItemId": "file:payments/src/index.js"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you cited index.js, stripe.js, db.js, payments.ts, payments_client.py, paymentclient.java WITHOUT reading them this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 42.3,
+      "sub": {
+       "clarity": 19.8,
+       "chunking": 99.4,
+       "jargon": 0,
+       "tone": 73,
+       "visual": 75,
+       "teaching": 6,
+       "grounding": 30,
+       "hygiene": 0
+      },
+      "flags": [
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "1 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+       "sentences average 29 words; aim under 20",
+       "reads at grade 16; aim at 8 to 11",
+       "2.3 code names per sentence; gloss each in plain words",
+       "names 3 internal tool term(s) at the learner",
+       "shouts: POST, POST",
+       "draws a picture but the text never points at it",
+       "does not close on a check-in question",
+       "no example or analogy",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.5,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "sys-06",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-06",
+    "subject": {
+     "ask": "Teach me the invoices flow bit by bit with a visual.",
+     "nodeIds": [
+      "file:gateway/src/routes/invoices.ts",
+      "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+      "file:edge/default.conf",
+      "file:gateway/src/index.ts",
+      "file:gateway/src/routes/orders.ts",
+      "file:gateway/src/routes/payments.ts"
+     ]
+    },
+    "queue": [
+     {
+      "title": "invoices.ts",
+      "nodeId": "file:gateway/src/routes/invoices.ts"
+     },
+     {
+      "title": "InvoiceController.java",
+      "nodeId": "file:invoices/src/main/java/shop/invoices/InvoiceController.java"
+     },
+     {
+      "title": "default.conf",
+      "nodeId": "file:edge/default.conf"
+     },
+     {
+      "title": "index.ts",
+      "nodeId": "file:gateway/src/index.ts"
+     },
+     {
+      "title": "orders.ts",
+      "nodeId": "file:gateway/src/routes/orders.ts"
+     },
+     {
+      "title": "payments.ts",
+      "nodeId": "file:gateway/src/routes/payments.ts"
+     }
+    ],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 0,
+     "text": "",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 6,
+     "conceptGiven": "invoices.ts",
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": null,
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "error: the model spent its output on reasoning and returned no answer (18933 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens."
+     ],
+     "quality": null,
+     "stopReason": null,
+     "rounds": null,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": false
+     },
+     "error": "the model spent its output on reasoning and returned no answer (18933 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens."
+    }
+   ],
+   "score": {
+    "turnsRun": 1,
+    "errored": 1,
+    "pacedRate": 0,
+    "questionRate": 0,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "sys-07",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-07",
+    "subject": {
+     "ask": "Teach me the difference between an import edge and an interaction edge in this repo.",
+     "nodeIds": [
+      "file:gateway/src/index.ts",
+      "file:gateway/src/lib/http.ts",
+      "file:gateway/src/routes/invoices.ts",
+      "file:gateway/src/routes/orders.ts",
+      "file:gateway/src/routes/payments.ts",
+      "file:gateway/src/routes/shipments.ts"
+     ]
+    },
+    "queue": [
+     {
+      "title": "invoices.ts",
+      "nodeId": "file:gateway/src/routes/invoices.ts"
+     },
+     {
+      "title": "orders.ts",
+      "nodeId": "file:gateway/src/routes/orders.ts"
+     },
+     {
+      "title": "payments.ts",
+      "nodeId": "file:gateway/src/routes/payments.ts"
+     },
+     {
+      "title": "shipments.ts",
+      "nodeId": "file:gateway/src/routes/shipments.ts"
+     }
+    ],
+    "taught": [
+     {
+      "title": "index.ts",
+      "nodeId": "file:gateway/src/index.ts",
+      "turn": 0
+     },
+     {
+      "title": "http.ts",
+      "nodeId": "file:gateway/src/lib/http.ts",
+      "turn": 1
+     }
+    ]
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 267,
+     "text": "The draft was rejected because it's not yet a lesson — I need to expand it with the root overview. Let me add the full component and hop detail.\n\nIn this repository, **import edges** (e.g., `imp1`–`imp7`) are file imports *within* a service — for example, `index.ts` (not read this turn) imports its route files. **Interaction edges** (e.g., `http`, `grpc`, `queue`, `db`) represent actual communication *between* services. For instance, the gateway uses interaction edges to call other services via HTTP (e.g., `e8:http` from `edge/default.conf` to `gateway/src/routes/invoices.ts`).\n\nThe root overview follows. The request arrives at `edge/default.conf` (the edge service), which calls the gateway over HTTP at `/api/`. The gateway then hands off to its route handlers — `invoices.ts`, `orders.ts`, `payments.ts`, and `shipments.ts` — each of which imports `http.ts` (not read this turn) (the import edges `imp5`–`imp7`). Each route handler then makes interaction calls: `invoices.ts` calls `invoices` over HTTP, `orders.ts` calls `orders` over HTTP, `payments.ts` calls `payments` over HTTP, and `shipments.ts` calls `shipping` over HTTP. The `invoices` service reads from `ds:postgres`, `orders` reads from `ds:postgres`, `payments` writes to `ds:postgres`, `inventory` is called over gRPC by `orders`, and `order.created` is published by `orders` and consumed by `notifications` and `shipping`. The `edge` service itself is the entry point — it has no import edges, only the `e8:http` interaction edge to the gateway.\n\nThe first concept to explore next is `index.ts` (not read this turn) (the gateway's entry point).\n\nDoes this make sense so far?\n\n(Sequence marked index.ts, http.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": true,
+     "checkShape": "comprehension",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 6,
+     "conceptGiven": "index.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "index.ts",
+       "caption": "index.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/index.ts",
+         "label": "index.ts",
+         "nodeId": "file:gateway/src/index.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/orders.ts",
+         "label": "orders.ts",
+         "nodeId": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/payments.ts",
+         "label": "payments.ts",
+         "nodeId": "file:gateway/src/routes/payments.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/shipments.ts",
+         "label": "shipments.ts",
+         "nodeId": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/payments.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/index.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 8,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway"
+      ],
+      "packagesMissed": [
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ]
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply is 267 words — the contract is ONE concept in at most ~150 words. Cut everything past the first concept; the rest of the lesson comes in later turns",
+      "your reply does not END with the closing check-in question the contract requires",
+      "you cited index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts, http.ts WITHOUT reading them this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 58.5,
+      "sub": {
+       "clarity": 86.4,
+       "chunking": 44,
+       "jargon": 24,
+       "tone": 85,
+       "visual": 61.5,
+       "teaching": 30,
+       "grounding": 30,
+       "hygiene": 100
+      },
+      "flags": [
+       "2 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+       "1 paragraph(s) over 90 words; break into steps or bullets",
+       "3.0 code names per sentence; gloss each in plain words",
+       "does not close on a check-in question",
+       "picture: an inventory drawn as a hub: every arrow says \"contains\"",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "own-check-in",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 52,
+     "text": "name=\"read_file\"> name=\"path\">index.ts (not read this turn)\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 5,
+     "conceptGiven": "http.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "http.ts",
+       "caption": "http.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/lib/http.ts",
+         "label": "http.ts",
+         "nodeId": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/orders.ts",
+         "label": "orders.ts",
+         "nodeId": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/shipments.ts",
+         "label": "shipments.ts",
+         "nodeId": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/orders.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/shipments.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/lib/http.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you cited index.ts WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 62.7,
+      "sub": {
+       "clarity": 90,
+       "chunking": 100,
+       "jargon": 75,
+       "tone": 85,
+       "visual": 65,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 20
+      },
+      "flags": [
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "names 1 internal tool term(s) at the learner",
+       "draws a picture but the text never points at it",
+       "does not close on a check-in question",
+       "no example or analogy",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 0.5,
+    "questionRate": 0,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "sys-08",
+   "domain": "systems",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "sys-08",
+    "subject": {
+     "ask": "Teach me how docker-compose declares these services and how the scan reads it.",
+     "nodeIds": []
+    },
+    "queue": [],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 2,
+     "text": " name=\"search_files\"> name=\"query\">docker-compose",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires"
+     ],
+     "quality": {
+      "overall": 11.7,
+      "sub": {
+       "clarity": 0,
+       "chunking": 0,
+       "jargon": 0,
+       "tone": 0,
+       "visual": 65,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 0
+      },
+      "flags": [
+       "no lesson: fewer than 12 words of prose"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 81,
+     "text": "The system is built around eight services: `svc:gateway` (Express), `svc:orders` (FastAPI), `svc:payments` (Express), `svc:notifications` (Python), `svc:inventory` (Python), `svc:shipping` (Go), `svc:invoices` (Java), and `svc:edge` (Config). Data lives in `ds:postgres` and `ds:redis`, with events published to `topic:order.created`. Requests arrive at `svc:gateway`, which routes via HTTP to specific services—e.g., `GET /orders` and `POST /orders` go to `svc:orders`, which interacts with `ds:postgres`. Events from `svc:orders` are published to `topic:order.created`, consumed by `svc:notifications` and `svc:shipping`.  \n\nWhich service does the gateway forward a POST /orders request to?",
+     "endsWithQuestion": true,
+     "endsWithCheck": true,
+     "checkShape": "comprehension",
+     "visual": true,
+     "questions": [
+      "Which service does the gateway forward a POST /orders request to?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "kind": "progression",
+       "title": "Continuing to the next point",
+       "items": [
+        {
+         "id": "understanding",
+         "label": "Understanding"
+        },
+        {
+         "id": "confidence",
+         "label": "Confidence"
+        },
+        {
+         "id": "continuation",
+         "label": "Continuation"
+        },
+        {
+         "id": "next-point",
+         "label": "Next Point"
+        },
+        {
+         "id": "completion",
+         "label": "Completion"
+        }
+       ],
+       "links": [
+        {
+         "from": "understanding",
+         "to": "confidence"
+        },
+        {
+         "from": "confidence",
+         "to": "continuation"
+        },
+        {
+         "from": "continuation",
+         "to": "next-point"
+        },
+        {
+         "from": "next-point",
+         "to": "completion"
+        }
+       ],
+       "caption": "Drawn from general knowledge — not from this repository’s scan.",
+       "version": 1
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [],
+     "quality": {
+      "overall": 69.1,
+      "sub": {
+       "clarity": 95.5,
+       "chunking": 95.2,
+       "jargon": 26,
+       "tone": 79,
+       "visual": 72.5,
+       "teaching": 40,
+       "grounding": 30,
+       "hygiene": 100
+      },
+      "flags": [
+       "1 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+       "4.0 code names per sentence; gloss each in plain words",
+       "shouts: POST",
+       "draws a picture but the text never points at it"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "own-check-in",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.5,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "cs-03",
+   "domain": "cs",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "cs-03",
+    "subject": {
+     "ask": "Teach me what makes a service boundary real versus cosmetic, using two services here.",
+     "nodeIds": []
+    },
+    "queue": [],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 71,
+     "text": " name=\"propose_chart\"> name=\"kind\">system-architecture name=\"title\">Service Boundary Concepts name=\"items\">[{'id': 'real_boundary', 'label': 'Real service boundary'}, {'id': 'cosmetic_boundary', 'label': 'Cosmetic service boundary'}]\n\nThe model provider failed after 1 completed round(s) (the model spent its output on reasoning and returned no answer (21040 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens.), so this turn was cut short. Everything above was established before the failure; nothing after it exists.",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "kind": "concept-map",
+       "title": "Real vs Cosmetic Service Boundaries",
+       "items": [
+        {
+         "id": "real",
+         "label": "Real service boundary"
+        },
+        {
+         "id": "cosmetic",
+         "label": "Cosmetic service boundary"
+        },
+        {
+         "id": "api_contract",
+         "label": "API contract"
+        },
+        {
+         "id": "independent_deployment",
+         "label": "Independent deployment"
+        },
+        {
+         "id": "data_ownership",
+         "label": "Data ownership"
+        },
+        {
+         "id": "blast_radius",
+         "label": "Blast radius"
+        },
+        {
+         "id": "shared_codebase",
+         "label": "Shared codebase"
+        },
+        {
+         "id": "same_deployment",
+         "label": "Same deployment"
+        }
+       ],
+       "links": [
+        {
+         "from": "real",
+         "to": "api_contract"
+        },
+        {
+         "from": "real",
+         "to": "independent_deployment"
+        },
+        {
+         "from": "real",
+         "to": "data_ownership"
+        },
+        {
+         "from": "cosmetic",
+         "to": "shared_codebase"
+        },
+        {
+         "from": "cosmetic",
+         "to": "same_deployment"
+        }
+       ],
+       "caption": "Drawn from general knowledge — not from this repository’s scan.",
+       "version": 1
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires"
+     ],
+     "quality": {
+      "overall": 56,
+      "sub": {
+       "clarity": 65,
+       "chunking": 100,
+       "jargon": 50,
+       "tone": 85,
+       "visual": 70,
+       "teaching": 6,
+       "grounding": 0,
+       "hygiene": 0
+      },
+      "flags": [
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "names 2 internal tool term(s) at the learner",
+       "draws a picture but the text never points at it",
+       "does not close on a check-in question",
+       "no example or analogy",
+       "picture: 1 box(es) joined to nothing"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 81,
+     "text": "The system is built around eight services: `svc:gateway` (Express), `svc:orders` (FastAPI), `svc:payments` (Express), `svc:notifications` (Python), `svc:inventory` (Python), `svc:shipping` (Go), `svc:invoices` (Java), and `svc:edge` (Config). Data lives in `ds:postgres` and `ds:redis`, with events published to `topic:order.created`. Requests arrive at `svc:gateway`, which routes via HTTP to specific services—e.g., `GET /orders` and `POST /orders` go to `svc:orders`, which interacts with `ds:postgres`. Events from `svc:orders` are published to `topic:order.created`, consumed by `svc:notifications` and `svc:shipping`.  \n\nWhich service does the gateway forward a POST /orders request to?",
+     "endsWithQuestion": true,
+     "endsWithCheck": true,
+     "checkShape": "comprehension",
+     "visual": true,
+     "questions": [
+      "Which service does the gateway forward a POST /orders request to?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "kind": "progression",
+       "title": "Continuing to the next point",
+       "items": [
+        {
+         "id": "understanding",
+         "label": "Understanding"
+        },
+        {
+         "id": "confidence",
+         "label": "Confidence"
+        },
+        {
+         "id": "continuation",
+         "label": "Continuation"
+        },
+        {
+         "id": "next-point",
+         "label": "Next Point"
+        },
+        {
+         "id": "completion",
+         "label": "Completion"
+        }
+       ],
+       "links": [
+        {
+         "from": "understanding",
+         "to": "confidence"
+        },
+        {
+         "from": "confidence",
+         "to": "continuation"
+        },
+        {
+         "from": "continuation",
+         "to": "next-point"
+        },
+        {
+         "from": "next-point",
+         "to": "completion"
+        }
+       ],
+       "caption": "Drawn from general knowledge — not from this repository’s scan.",
+       "version": 1
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [],
+     "quality": {
+      "overall": 69.1,
+      "sub": {
+       "clarity": 95.5,
+       "chunking": 95.2,
+       "jargon": 26,
+       "tone": 79,
+       "visual": 72.5,
+       "teaching": 40,
+       "grounding": 30,
+       "hygiene": 100
+      },
+      "flags": [
+       "1 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+       "4.0 code names per sentence; gloss each in plain words",
+       "shouts: POST",
+       "draws a picture but the text never points at it"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "own-check-in",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.5,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "cs-04",
+   "domain": "cs",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "cs-04",
+    "subject": {
+     "ask": "Teach me idempotency using the payment flow in this repo as the example.",
+     "nodeIds": [
+      "file:gateway/src/index.ts",
+      "file:gateway/src/lib/http.ts",
+      "file:gateway/src/routes/invoices.ts",
+      "file:gateway/src/routes/orders.ts",
+      "file:gateway/src/routes/payments.ts",
+      "file:gateway/src/routes/shipments.ts"
+     ]
+    },
+    "queue": [
+     {
+      "title": "invoices.ts",
+      "nodeId": "file:gateway/src/routes/invoices.ts"
+     },
+     {
+      "title": "orders.ts",
+      "nodeId": "file:gateway/src/routes/orders.ts"
+     },
+     {
+      "title": "payments.ts",
+      "nodeId": "file:gateway/src/routes/payments.ts"
+     },
+     {
+      "title": "shipments.ts",
+      "nodeId": "file:gateway/src/routes/shipments.ts"
+     }
+    ],
+    "taught": [
+     {
+      "title": "index.ts",
+      "nodeId": "file:gateway/src/index.ts",
+      "turn": 0
+     },
+     {
+      "title": "http.ts",
+      "nodeId": "file:gateway/src/lib/http.ts",
+      "turn": 1
+     }
+    ]
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 60,
+     "text": "name=\"read_file\"> name=\"path\">payments/src/index.js\n\n(The rewrite the lesson contract asked for came back as the model planning, not answering, so this is the answer written before it; it was sent back only for its length or its closing question.)\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?",
+     "endsWithQuestion": true,
+     "endsWithCheck": true,
+     "checkShape": "prediction",
+     "visual": true,
+     "questions": [
+      "name=\"read_file\"> name=\"path\">payments/src/index.js\n\n(The rewrite the lesson contract asked for came back as the model planning, not answering, so this is the answer written before it; it was sent back only for its length or its closing question.)\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 6,
+     "conceptGiven": "index.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "index.ts",
+       "caption": "index.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/index.ts",
+         "label": "index.ts",
+         "nodeId": "file:gateway/src/index.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/orders.ts",
+         "label": "orders.ts",
+         "nodeId": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/payments.ts",
+         "label": "payments.ts",
+         "nodeId": "file:gateway/src/routes/payments.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/shipments.ts",
+         "label": "shipments.ts",
+         "nodeId": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/payments.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/index.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "you cited index.js, index.ts, invoices.ts, orders.ts, payments.ts WITHOUT reading them this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 65,
+      "sub": {
+       "clarity": 60.9,
+       "chunking": 100,
+       "jargon": 75,
+       "tone": 100,
+       "visual": 59.5,
+       "teaching": 40,
+       "grounding": 6,
+       "hygiene": 20
+      },
+      "flags": [
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "names 1 internal tool term(s) at the learner",
+       "no example or analogy",
+       "picture: an inventory drawn as a hub: every arrow says \"contains\"",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 33,
+     "text": "name=\"read_file\"> name=\"path\">http.ts (not read this turn)\n\n(Sequence marked http.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 5,
+     "conceptGiven": "http.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "http.ts",
+       "caption": "http.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/lib/http.ts",
+         "label": "http.ts",
+         "nodeId": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/orders.ts",
+         "label": "orders.ts",
+         "nodeId": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/shipments.ts",
+         "label": "shipments.ts",
+         "nodeId": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/orders.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/shipments.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/lib/http.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you cited http.ts WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 50,
+      "sub": {
+       "clarity": 91.3,
+       "chunking": 100,
+       "jargon": 75,
+       "tone": 85,
+       "visual": 67.5,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 20
+      },
+      "flags": [
+       "under 40 words: too thin to teach anything",
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "names 1 internal tool term(s) at the learner",
+       "draws a picture but the text never points at it",
+       "does not close on a check-in question",
+       "no example or analogy",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.5,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "link-03",
+   "domain": "link",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "link-03",
+    "subject": {
+     "ask": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+     "nodeIds": [
+      "file:gateway/src/lib/http.ts",
+      "file:gateway/src/routes/invoices.ts",
+      "file:gateway/src/routes/orders.ts",
+      "file:gateway/src/routes/shipments.ts"
+     ]
+    },
+    "queue": [
+     {
+      "title": "orders.ts",
+      "nodeId": "file:gateway/src/routes/orders.ts"
+     },
+     {
+      "title": "shipments.ts",
+      "nodeId": "file:gateway/src/routes/shipments.ts"
+     }
+    ],
+    "taught": [
+     {
+      "title": "http.ts",
+      "nodeId": "file:gateway/src/lib/http.ts",
+      "turn": 0
+     },
+     {
+      "title": "invoices.ts",
+      "nodeId": "file:gateway/src/routes/invoices.ts",
+      "turn": 1
+     }
+    ]
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 2,
+     "text": " name=\"fetch_url\"> name=\"url\">https://en.wikipedia.org/wiki/Message_queue",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 4,
+     "conceptGiven": "http.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "http.ts",
+       "caption": "http.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/lib/http.ts",
+         "label": "http.ts",
+         "nodeId": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/orders.ts",
+         "label": "orders.ts",
+         "nodeId": "file:gateway/src/routes/orders.ts"
+        },
+        {
+         "id": "file:gateway/src/routes/shipments.ts",
+         "label": "shipments.ts",
+         "nodeId": "file:gateway/src/routes/shipments.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/orders.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/shipments.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/lib/http.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires"
+     ],
+     "quality": {
+      "overall": 11.7,
+      "sub": {
+       "clarity": 0,
+       "chunking": 0,
+       "jargon": 0,
+       "tone": 0,
+       "visual": 65,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 0
+      },
+      "flags": [
+       "no lesson: fewer than 12 words of prose",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 99,
+     "text": "The lesson focuses on `file:invoices.ts (not read this turn)`, which handles GET /invoices/* requests via an HTTP edge to the invoices service. To check understanding, ask: \"So what do you think happens when the order.created topic gets full?\" This tests whether you grasp how the queue (topic:order.created) backs up under load.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": true,
+     "checkShape": "prediction",
+     "visual": true,
+     "questions": [
+      "Looking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 1,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 3,
+     "conceptGiven": "invoices.ts",
+     "chartOutcomes": [],
+     "charts": [
+      {
+       "version": 1,
+       "kind": "data-flow",
+       "title": "invoices.ts",
+       "caption": "invoices.ts and what it connects to, from the scanned graph.",
+       "items": [
+        {
+         "id": "file:gateway/src/routes/invoices.ts",
+         "label": "invoices.ts",
+         "nodeId": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "id": "file:invoices/src/main/java/shop/invoices/InvoiceController.java",
+         "label": "InvoiceController.java",
+         "nodeId": "file:invoices/src/main/java/shop/invoices/InvoiceController.java"
+        },
+        {
+         "id": "file:edge/default.conf",
+         "label": "default.conf",
+         "nodeId": "file:edge/default.conf"
+        },
+        {
+         "id": "file:gateway/src/index.ts",
+         "label": "index.ts",
+         "nodeId": "file:gateway/src/index.ts"
+        },
+        {
+         "id": "file:gateway/src/lib/http.ts",
+         "label": "http.ts",
+         "nodeId": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "links": [
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:invoices/src/main/java/shop/invoices/InvoiceController.java"
+        },
+        {
+         "from": "file:edge/default.conf",
+         "to": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "from": "file:gateway/src/index.ts",
+         "to": "file:gateway/src/routes/invoices.ts"
+        },
+        {
+         "from": "file:gateway/src/routes/invoices.ts",
+         "to": "file:gateway/src/lib/http.ts"
+        }
+       ],
+       "focusItemId": "file:gateway/src/routes/invoices.ts"
+      }
+     ],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you asked a question mid-lesson and moved on without answering it. The learner cannot reply inside your turn, so an unanswered check is rhetorical and teaches nothing — ask, then TELL, and tell why. Only the closing check-in may stay open",
+      "you cited invoices.ts, index.ts WITHOUT reading them this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 69,
+      "sub": {
+       "clarity": 54.1,
+       "chunking": 100,
+       "jargon": 100,
+       "tone": 100,
+       "visual": 75,
+       "teaching": 10,
+       "grounding": 6,
+       "hygiene": 100
+      },
+      "flags": [
+       "does not close on a check-in question",
+       "no example or analogy",
+       "picture: a flow with no steps to play"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 0,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0,
+    "visualRate": 1
+   }
+  },
+  {
+   "id": "mix-02",
+   "domain": "mixed",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "mix-02",
+    "subject": {
+     "ask": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+     "nodeIds": [
+      "file:gateway/src/index.ts",
+      "file:gateway/src/lib/http.ts",
+      "file:gateway/src/routes/invoices.ts",
+      "file:gateway/src/routes/orders.ts",
+      "file:gateway/src/routes/payments.ts",
+      "file:gateway/src/routes/shipments.ts"
+     ]
+    },
+    "queue": [
+     {
+      "title": "index.ts",
+      "nodeId": "file:gateway/src/index.ts"
+     },
+     {
+      "title": "http.ts",
+      "nodeId": "file:gateway/src/lib/http.ts"
+     },
+     {
+      "title": "invoices.ts",
+      "nodeId": "file:gateway/src/routes/invoices.ts"
+     },
+     {
+      "title": "orders.ts",
+      "nodeId": "file:gateway/src/routes/orders.ts"
+     },
+     {
+      "title": "payments.ts",
+      "nodeId": "file:gateway/src/routes/payments.ts"
+     },
+     {
+      "title": "shipments.ts",
+      "nodeId": "file:gateway/src/routes/shipments.ts"
+     }
+    ],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 0,
+     "text": "",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 6,
+     "conceptGiven": "index.ts",
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": null,
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "error: the model spent its output on reasoning and returned no answer (12928 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens."
+     ],
+     "quality": null,
+     "stopReason": null,
+     "rounds": null,
+     "checkInSkipped": null,
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": false
+     },
+     "error": "the model spent its output on reasoning and returned no answer (12928 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens."
+    }
+   ],
+   "score": {
+    "turnsRun": 1,
+    "errored": 1,
+    "pacedRate": 0,
+    "questionRate": 0,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "mix-05",
+   "domain": "mixed",
+   "repo": "shopfront",
+   "lesson": {
+    "version": 1,
+    "sessionId": "mix-05",
+    "subject": {
+     "ask": "Quiz-teach me: show one service, ask me what I think it calls, then reveal the truth with evidence.",
+     "nodeIds": []
+    },
+    "queue": [],
+    "taught": []
+   },
+   "turns": [
+    {
+     "turn": 0,
+     "words": 2,
+     "text": " name=\"read_topology\"> name=\"service\">svc:gateway",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": true,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": {
+      "edgesSeen": 40,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "edge",
+       "gateway",
+       "inventory",
+       "invoices",
+       "notifications",
+       "orders",
+       "payments",
+       "shipping"
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires"
+     ],
+     "quality": {
+      "overall": 11.7,
+      "sub": {
+       "clarity": 0,
+       "chunking": 0,
+       "jargon": 0,
+       "tone": 0,
+       "visual": 65,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 0
+      },
+      "flags": [
+       "no lesson: fewer than 12 words of prose"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 52,
+     "text": "name=\"who_calls\"> name=\"target\">file:index.js (not read this turn)\n\n(Sequence marked index.js as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)",
+     "endsWithQuestion": false,
+     "endsWithCheck": false,
+     "checkShape": "none",
+     "visual": true,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "planCalls": 0,
+     "planAccepted": 0,
+     "planOutcomes": [],
+     "stub": false,
+     "queueLen": 0,
+     "conceptGiven": null,
+     "chartOutcomes": [],
+     "charts": [],
+     "coverage": {
+      "edgesSeen": 31,
+      "edgesTotal": 40,
+      "packagesSeen": [
+       "gateway",
+       "invoices",
+       "orders",
+       "payments"
+      ],
+      "packagesMissed": [
+       "edge",
+       "inventory",
+       "notifications",
+       "shipping"
+      ]
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "you cited index.js WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "quality": {
+      "overall": 66.6,
+      "sub": {
+       "clarity": 89.9,
+       "chunking": 100,
+       "jargon": 100,
+       "tone": 85,
+       "visual": 65,
+       "teaching": 0,
+       "grounding": 0,
+       "hygiene": 40
+      },
+      "flags": [
+       "a tool call leaked into the text as debris (serving/template fault, not the model refusing)",
+       "draws a picture but the text never points at it",
+       "does not close on a check-in question",
+       "no example or analogy"
+      ]
+     },
+     "stopReason": "complete",
+     "rounds": 1,
+     "checkInSkipped": "stub",
+     "claims": {
+      "unsupportedTechnologies": 0,
+      "unsupportedTerms": [],
+      "unknownPaths": 0,
+      "checked": null,
+      "ran": true
+     },
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0,
+    "visualRate": 1
+   }
+  }
+ ]
+}

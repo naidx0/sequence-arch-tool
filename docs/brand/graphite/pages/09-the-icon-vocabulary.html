@@ -1,0 +1,1083 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SHEET 09 — ONE GLYPH, ONE MEANING
+     Fragment. Body content only. Requires _core.html to be included once.
+     Extends Graphite page 09 (the icon set). Nothing here redraws a symbol;
+     this sheet writes the MEANING each of the seventy-six carries and the surfaces
+     it is allowed on, which is the half Graphite left to the product.
+     ══════════════════════════════════════════════════════════════════════ -->
+<section class="page" data-page-num="09" data-page-title="One glyph, one meaning">
+
+  <div class="pagehead">
+    <span class="num">Sheet 09 &middot; Primitives</span>
+    <h1>One glyph, one meaning</h1>
+    <p class="lede">Seventy-six symbols, one stroke weight, one grid &mdash; and, from this sheet
+    forward, one written meaning each. Graphite gave Sequence the drawings and the discipline that
+    makes them a set. It did not give the product a table saying what each one <em>claims</em>, and
+    that omission is where the reuse came from: a glyph with no written meaning acquires one every
+    time somebody reaches for it.</p>
+    <p class="lede">The law is short. <b>One glyph, one written meaning; an icon that means two
+    things means neither.</b> Its corollary is the half people forget: <b>two glyphs may never mean
+    the same thing.</b> Both failures are live in the product today &mdash; one drawing carrying
+    eleven meanings, and one meaning carrying three drawings &mdash; and both are fixed by the same
+    table, not by drawing more.</p>
+  </div>
+
+  <!-- ── 09.1 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.1</span>
+      <h2>The law, and the two ways it breaks</h2>
+      <span class="tail">both specimens are reported defects</span>
+    </div>
+
+    <p class="note">
+      The test is not whether a glyph appears twice &mdash; <span class="inline-code">ic-check</span>
+      legitimately means passed, accepted and done, because those are one claim wearing three
+      words. The test is whether one drawing stands in for two things <b>a reader must tell
+      apart</b>. When it does, the reader has to already know the answer to read the screen, which
+      is the definition of an interface that does not work.
+    </p>
+
+    <div class="grid g2">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="menu" style="width:var(--menu-w)">
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-pen"/></svg>New board</div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-pen"/></svg>Draw</div>
+          <hr>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-download"/></svg>Export</div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-download"/></svg>Save</div>
+        </div>
+        <p class="why">Two duplicate pairs in one four-row popup. The glyph column has stopped
+        carrying information: the reader is reading four words beside four marks that say nothing,
+        and the mark is the part the eye reaches first.</p>
+      </div>
+
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="menu" style="width:var(--menu-w)">
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-board"/></svg>New board</div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-pen"/></svg>Draw</div>
+          <hr>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-download"/></svg>Export</div>
+          <div class="menuitem"><svg class="i i-14" aria-hidden="true"></svg>Save</div>
+        </div>
+        <p class="why">Each row takes the glyph for its own object; the verb is carried by the word
+        beside it. <b>Save has no drawing in the sprite, so it ships without one.</b> An item with
+        no glyph is legible. An item wearing somebody else's glyph is not.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      The second failure is the mirror of the first and is harder to see, because every individual
+      screen looks fine. One meaning wearing several drawings costs the reader the ability to
+      recognise the same act twice &mdash; and it is worst exactly where recognition matters most,
+      on the control that writes to disk.
+    </p>
+
+    <div class="grid g2">
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="toolrow bordered"><svg class="i i-14"><use href="#ic-check"/></svg><span class="name">Accept</span></div>
+        <div class="toolrow bordered"><svg class="i i-14"><use href="#ic-pen"/></svg><span class="name">Accept &amp; write all files</span></div>
+        <p class="why">One meaning, two drawings &mdash; and the pencil is on the one that
+        overwrites the repository. The reader has learned that a tick means accept, and the
+        consequential act is the one that does not look like it.</p>
+      </div>
+
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="toolrow bordered"><svg class="i i-14"><use href="#ic-check"/></svg><span class="name">Accept</span></div>
+        <div style="display:flex;gap:var(--sp-6);margin-top:var(--sp-4)">
+          <button class="btn solid sm"><svg class="i i-14"><use href="#ic-check"/></svg>Write <span class="ph-on-dark">&#8249;changed files&#8250;</span> to disk</button>
+          <button class="btn ghost sm">Discard</button>
+        </div>
+        <p class="why">One meaning, one drawing. The weight of the act is carried by the shape of
+        the control and by the sentence in it &mdash; <b>a consequential act is worded, never
+        re-glyphed</b> &mdash; and <span class="inline-code">Discard</span> is a word rather than an
+        <span class="inline-code">ic-x</span>, because that X means dismiss.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 09.2 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.2</span>
+      <h2>How one is drawn</h2>
+      <span class="tail">24px grid &middot; 1.5px &middot; round caps and joins</span>
+    </div>
+
+    <p class="note">
+      Inherited from Graphite unchanged, and restated here because it is half of what makes
+      seventy-six drawings one vocabulary. Every symbol is authored on a 24&times;24 grid and rendered through
+      <span class="inline-code">.i</span>, which sets the stroke, the caps, the joins and the size in
+      one place. The glyph carries no stroke width and no colour of its own, so a symbol cannot
+      drift from the set by being used somewhere new.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The one rule that makes them a set</h3>
+        <p class="sub">Declared once, on the class, inherited by all seventy-six.</p>
+        <pre class="codeblock">.i{
+  width:16px; height:16px; flex:0 0 auto;
+  stroke:currentColor; fill:none;
+  stroke-width:1.5;
+  stroke-linecap:round; stroke-linejoin:round;
+}</pre>
+        <p class="caption">A glyph that sets its own <span class="inline-code">stroke-width</span> or
+        its own <span class="inline-code">fill</span> is a defect, not a variant. There are exactly
+        two sanctioned exceptions and they are named and drawn in &sect;09.6. <b>No emoji, at any
+        size, on any surface, ever.</b></p>
+      </div>
+
+      <dl class="specs">
+        <dt>Author grid</dt><dd>24 &times; 24</dd>
+        <dt>Stroke</dt><dd>1.5 &middot; currentColor</dd>
+        <dt>Fill</dt><dd>none</dd>
+        <dt>Caps / joins</dt><dd>round / round</dd>
+        <dt>Default render</dt><dd>16px (.i)</dd>
+        <dt>Size steps</dt><dd>.i-12 .i-14 .i .i-18 .i-20</dd>
+        <dt>Delivery</dt><dd>one inline &lt;svg&gt; sprite</dd>
+        <dt>Reference</dt><dd>&lt;svg class="i"&gt;&lt;use href="#ic-name"/&gt;&lt;/svg&gt;</dd>
+        <dt>Icon-only control</dt><dd>aria-label, required</dd>
+      </dl>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="panel">
+        <h3>The ramp, at real size</h3>
+        <p class="sub">Same symbol, five steps. Nothing between them exists.</p>
+        <div class="specimens" style="align-items:flex-end;margin-top:var(--sp-8)">
+          <div class="specimen"><svg class="i i-12"><use href="#ic-board"/></svg><span class="lbl">i-12</span></div>
+          <div class="specimen"><svg class="i i-14"><use href="#ic-board"/></svg><span class="lbl">i-14</span></div>
+          <div class="specimen"><svg class="i"><use href="#ic-board"/></svg><span class="lbl">i &middot; 16</span></div>
+          <div class="specimen"><svg class="i i-18"><use href="#ic-board"/></svg><span class="lbl">i-18</span></div>
+          <div class="specimen"><svg class="i i-20"><use href="#ic-board"/></svg><span class="lbl">i-20</span></div>
+        </div>
+        <p class="caption">The stroke does not scale with the box: 1.5 is a width on the 24-unit
+        grid, so a glyph gets smaller and never heavier. There is no such thing as
+        &ldquo;the size of <span class="inline-code">ic-board</span>&rdquo; &mdash; the size comes
+        from the row it sits in.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Where each step ships in Sequence</h3>
+        <p class="sub">Read this column, not your judgement.</p>
+        <div class="scrollx">
+          <table class="tk">
+            <tr><th style="width:74px">Step</th><th>Host</th></tr>
+            <tr><td class="k">.i-12</td><td>Node-card headers, the kind legend, chips, the branch line, a folder's disclosure chevron, the book mark and the jump control</td></tr>
+            <tr><td class="k">.i-14</td><td>Rail rows, tool rows, run rows, menu items, buttons, the zoom cluster, the send button &mdash; the workhorse</td></tr>
+            <tr><td class="k">.i (16)</td><td>Icon-only 26px buttons in the app bar and the zoom cluster; this sheet's specimen cells</td></tr>
+            <tr><td class="k">.i-18</td><td>The product mark on an empty thread. One host.</td></tr>
+            <tr><td class="k">.i-20</td><td>The dashed <span class="inline-code">.empty</span> state's glyph, and specimen sheets. Nothing in the working chrome.</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 09.3 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.3</span>
+      <h2>The six kind glyphs</h2>
+      <span class="tail">Decision 2 &middot; the icon is the primary carrier</span>
+    </div>
+
+    <p class="note">
+      These six are repeated here from the board sheet so the vocabulary is complete in one place,
+      and because under Decision 2 they are load-bearing in a way no other glyph is: kind is carried
+      by icon, silhouette, border treatment and neutral tone &mdash; <b>never by hue</b> &mdash; and
+      the icon is the first of those four the eye resolves. A kind without its own drawing pushes
+      the difference straight back onto colour, which is the defect this rebuild exists to remove.
+    </p>
+
+    <div class="panel">
+      <div class="kindlegend">
+        <span class="grp">Kinds</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-service"/></svg>Service</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-module"/></svg>Module</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-database"/></svg>Datastore</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-topic"/></svg>Topic</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-agent"/></svg>Agent</span>
+        <span class="grpsep"></span>
+        <span class="grp">Position</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-entry"/></svg>Entry</span>
+      </div>
+      <p class="caption">The shipped host. Six entries, six drawings, six words, and not one hue
+      between them &mdash; the legend is legible with all colour removed because there was never any
+      colour in it to remove.</p>
+
+      <div class="grid g4" style="margin-top:var(--sp-16)">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-entry"/></svg>
+          <span class="lbl">ic-entry</span>
+          <span class="caption" style="margin:0">The way into the system: the thing the outside world reaches first.</span>
+          <span class="lbl">node card &middot; legend &middot; the index rail</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-service"/></svg>
+          <span class="lbl">ic-service</span>
+          <span class="caption" style="margin:0">A deployed runtime thing that does work when something calls it.</span>
+          <span class="lbl">node card &middot; legend &middot; the index rail</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-module"/></svg>
+          <span class="lbl">ic-module</span>
+          <span class="caption" style="margin:0">A container of other nodes. The only kind that holds a membership.</span>
+          <span class="lbl">node card &middot; module wall &middot; legend</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-database"/></svg>
+          <span class="lbl">ic-database</span>
+          <span class="caption" style="margin:0">A datastore: something that holds state between calls.</span>
+          <span class="lbl">node card &middot; legend &middot; source picker</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-topic"/></svg>
+          <span class="lbl">ic-topic</span>
+          <span class="caption" style="margin:0">A lane something flows along, rather than a thing that runs.</span>
+          <span class="lbl">node card &middot; legend &middot; the index rail</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-agent"/></svg>
+          <span class="lbl">ic-agent</span>
+          <span class="caption" style="margin:0">An actor, not a deployed thing: it acts on its own schedule.</span>
+          <span class="lbl">node card &middot; legend &middot; the index rail</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>The glyph in place</h3>
+      <p class="sub">Card header, <span class="inline-code">.i-12</span>, at
+      <span class="inline-code">--ink-3</span> &mdash; the same weight as the kind word beside it.</p>
+      <div class="specimens" style="margin-top:var(--sp-8)">
+        <div class="specimen"><div class="node n-entry" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t"><span class="ph">&#8249;route&#8250;</span></div></div><span class="lbl">.n-entry</span></div>
+        <div class="specimen"><div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t"><span class="ph">&#8249;service&#8250;</span></div></div><span class="lbl">.n-service</span></div>
+        <div class="specimen"><div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t"><span class="ph">&#8249;store&#8250;</span></div></div><span class="lbl">.n-store</span></div>
+        <div class="specimen"><div class="node n-agent" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div><div class="nd-t"><span class="ph">&#8249;agent&#8250;</span></div></div><span class="lbl">.n-agent</span></div>
+      </div>
+      <p class="caption">Four cards, four silhouettes, four glyphs, no hue. Cover the words and the
+      kinds still separate; cover the glyphs and they still separate. That redundancy is the design,
+      not a belt-and-braces afterthought.</p>
+    </div>
+  </div>
+
+  <!-- ── 09.4 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.4</span>
+      <h2>The complete vocabulary</h2>
+      <span class="tail">glyph &middot; the one meaning &middot; where it may appear</span>
+    </div>
+
+    <p class="note">
+      Every remaining symbol, drawn at <span class="inline-code">.i</span>, with the single meaning
+      it carries and the surfaces it is allowed on. <b>The third line is binding.</b> A glyph outside
+      its listed surfaces is a new meaning being minted quietly, which is precisely how one drawing
+      came to carry eleven of them. Adding a surface to a row is a change to this sheet, made
+      deliberately, and never a decision taken at a call site.
+    </p>
+
+    <div class="panel">
+      <h3>The canvas</h3>
+      <p class="sub">Sequence's one live canvas &mdash; the board, its tools and its camera.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-board"/></svg>
+          <span class="lbl">ic-board</span>
+          <span class="caption" style="margin:0">The architecture board itself.</span>
+          <span class="lbl">rail row &middot; app bar &middot; empty state &middot; the book mark</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-flow"/></svg>
+          <span class="lbl">ic-flow</span>
+          <span class="caption" style="margin:0">A traced flow: the path a call takes from node to node.</span>
+          <span class="lbl">flow chip &middot; playback &middot; edge legend</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-cursor"/></svg>
+          <span class="lbl">ic-cursor</span>
+          <span class="caption" style="margin:0">Select mode.</span>
+          <span class="lbl">board toolbar. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-pen"/></svg>
+          <span class="lbl">ic-pen</span>
+          <span class="caption" style="margin:0">Draw mode. The nib, and nothing else: not new, not rename, not accept.</span>
+          <span class="lbl">board toolbar &middot; draw toggle</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-frame"/></svg>
+          <span class="lbl">ic-frame</span>
+          <span class="caption" style="margin:0">A frame: the boundary drawn around a selection.</span>
+          <span class="lbl">context menu. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-plus"/></svg>
+          <span class="lbl">ic-plus</span>
+          <span class="caption" style="margin:0">One more of whatever this control governs.</span>
+          <span class="lbl">zoom cluster &middot; composer attach &middot; rail head</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-minus"/></svg>
+          <span class="lbl">ic-minus</span>
+          <span class="caption" style="margin:0">One less of whatever this control governs.</span>
+          <span class="lbl">zoom cluster. one host</span>
+        </div>
+      </div>
+      <p class="caption">Seven &mdash; and <b>they do not cover the board toolbar.</b>
+      <span class="inline-code">boardTools.ts</span> exports five tools: Select, Pan, Draw, Erase
+      and Arrow. Two of the five have a drawing above; the other three have none, and &sect;09.5 says
+      what they do until they do. <span class="inline-code">ic-frame</span> is not one of them
+      &mdash; a frame is a boundary you make, not a mode you are in, so its toolbar host is struck
+      here. <span class="inline-code">ic-plus</span> and <span class="inline-code">ic-minus</span>
+      are the one pair whose meaning is an <em>operation</em> rather than an object &mdash;
+      see &sect;09.7.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>The repository</h3>
+      <p class="sub">What the analyzer reads, and what the file and functions rail shows.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-folder"/></svg>
+          <span class="lbl">ic-folder</span>
+          <span class="caption" style="margin:0">A folder.</span>
+          <span class="lbl">file rail &middot; source picker</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-folderplus"/></svg>
+          <span class="lbl">ic-folderplus</span>
+          <span class="caption" style="margin:0">A new folder.</span>
+          <span class="lbl">rail head. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-file"/></svg>
+          <span class="lbl">ic-file</span>
+          <span class="caption" style="margin:0">One file.</span>
+          <span class="lbl">the index rail &middot; tool row</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-fn"/></svg>
+          <span class="lbl">ic-fn</span>
+          <span class="caption" style="margin:0">One function.</span>
+          <span class="lbl">the index rail &middot; node footer</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-code"/></svg>
+          <span class="lbl">ic-code</span>
+          <span class="caption" style="margin:0">Source or config, read as text.</span>
+          <span class="lbl">tool row &middot; code block header</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-terminal"/></svg>
+          <span class="lbl">ic-terminal</span>
+          <span class="caption" style="margin:0">A shell: a command run on your machine.</span>
+          <span class="lbl">tool row &middot; run output</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-branch"/></svg>
+          <span class="lbl">ic-branch</span>
+          <span class="caption" style="margin:0">A git branch. Never &ldquo;parallel&rdquo;, never &ldquo;a decision&rdquo;.</span>
+          <span class="lbl">under-composer branch line &middot; repo chip</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-commit"/></svg>
+          <span class="lbl">ic-commit</span>
+          <span class="caption" style="margin:0">A git commit.</span>
+          <span class="lbl">history &middot; tool row</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-search"/></svg>
+          <span class="lbl">ic-search</span>
+          <span class="caption" style="margin:0">Search &mdash; and, on a tool row, what a search explored.</span>
+          <span class="lbl">rail search &middot; tool row</span>
+        </div>
+      </div>
+      <p class="caption">Nine. <span class="inline-code">ic-code</span> is angle brackets and
+      <span class="inline-code">ic-fn</span> is braces: code is a language, a function is a thing you
+      can click. The two are adjacent in the rail, which is exactly why they may not share a
+      drawing. <b>Neither row lists a properties column.</b> Sheet 11 settles it &mdash; Sequence
+      has one canvas, chat on the left and an <em>index rail</em> on the right, and the file rail
+      and the functions rail are two views of that one rail, so a second name for it would have
+      been a second surface.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Chat and the assistant</h3>
+      <p class="sub">The left column: threads, the composer, and what the assistant did.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-thread"/></svg>
+          <span class="lbl">ic-thread</span>
+          <span class="caption" style="margin:0">A conversation.</span>
+          <span class="lbl">thread row &middot; rail</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-newthread"/></svg>
+          <span class="lbl">ic-newthread</span>
+          <span class="caption" style="margin:0">Start a new conversation. A page with a pencil, and only ever this.</span>
+          <span class="lbl">rail head. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-send"/></svg>
+          <span class="lbl">ic-send</span>
+          <span class="caption" style="margin:0">Send this message.</span>
+          <span class="lbl">the send button. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-model"/></svg>
+          <span class="lbl">ic-model</span>
+          <span class="caption" style="margin:0">A model.</span>
+          <span class="lbl">model selector &middot; settings</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-skill"/></svg>
+          <span class="lbl">ic-skill</span>
+          <span class="caption" style="margin:0">A packaged capability you can run: a program.</span>
+          <span class="lbl">programs list. never the board</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-help"/></svg>
+          <span class="lbl">ic-help</span>
+          <span class="caption" style="margin:0">Why? &mdash; the reasoning behind what is on screen.</span>
+          <span class="lbl">the index rail &middot; risk row &middot; verdict</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-copy"/></svg>
+          <span class="lbl">ic-copy</span>
+          <span class="caption" style="margin:0">Copy this to the clipboard.</span>
+          <span class="lbl">code block &middot; message actions &middot; kv row</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-refresh"/></svg>
+          <span class="lbl">ic-refresh</span>
+          <span class="caption" style="margin:0">Do it again: re-scan, retry.</span>
+          <span class="lbl">app bar &middot; tool row &middot; error state</span>
+        </div>
+      </div>
+      <p class="caption">Eight. <span class="inline-code">ic-skill</span> is barred from the board:
+      its silhouette is a hexagon and so is <span class="inline-code">ic-agent</span>'s, and
+      <span class="inline-code">ic-agent</span> is load-bearing under Decision 2. See &sect;09.7.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Runs and time</h3>
+      <p class="sub">Five drawings, five transport states. None of them is a text character.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-run"/></svg>
+          <span class="lbl">ic-run</span>
+          <span class="caption" style="margin:0">A run: one execution, with a beginning and an end.</span>
+          <span class="lbl">run row &middot; programs list</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-play"/></svg>
+          <span class="lbl">ic-play</span>
+          <span class="caption" style="margin:0">Start.</span>
+          <span class="lbl">run controls &middot; flow playback</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-pause"/></svg>
+          <span class="lbl">ic-pause</span>
+          <span class="caption" style="margin:0">Pause.</span>
+          <span class="lbl">run controls &middot; flow playback</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-stop"/></svg>
+          <span class="lbl">ic-stop</span>
+          <span class="caption" style="margin:0">Stop.</span>
+          <span class="lbl">run controls &middot; flow playback</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-clock"/></svg>
+          <span class="lbl">ic-clock</span>
+          <span class="caption" style="margin:0">Elapsed time, or something that runs on a schedule.</span>
+          <span class="lbl">run row meta &middot; automation row</span>
+        </div>
+      </div>
+      <div class="specimens" style="margin-top:var(--sp-12);align-items:center">
+        <div class="specimen"><div class="zoomcluster"><button class="iconbtn" aria-label="Start"><svg class="i i-14"><use href="#ic-play"/></svg></button><button class="iconbtn" aria-label="Pause"><svg class="i i-14"><use href="#ic-pause"/></svg></button><button class="iconbtn" aria-label="Stop"><svg class="i i-14"><use href="#ic-stop"/></svg></button></div><span class="lbl">drawn</span></div>
+      </div>
+      <p class="caption">Drawn, from the sprite, at <span class="inline-code">.i-14</span>. The
+      typed characters that currently stand in for these three are not part of the vocabulary: they
+      carry no stroke weight, no grid and no colour inheritance, and they are the one place an emoji
+      gets in.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Claims</h3>
+      <p class="sub">The only glyphs that ever take a hue &mdash; and never without a word beside
+      them.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-check"/></svg>
+          <span class="lbl">ic-check</span>
+          <span class="caption" style="margin:0">Passed, accepted, done. One claim, three words.</span>
+          <span class="lbl">verdict &middot; tool row &middot; approval</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-x"/></svg>
+          <span class="lbl">ic-x</span>
+          <span class="caption" style="margin:0">Dismiss: close this, without consequence.</span>
+          <span class="lbl">close control &middot; chip &middot; dialog</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-alert"/></svg>
+          <span class="lbl">ic-alert</span>
+          <span class="caption" style="margin:0">A risk, or a block: something that stops you.</span>
+          <span class="lbl">risk row &middot; banner &middot; node footer</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-info"/></svg>
+          <span class="lbl">ic-info</span>
+          <span class="caption" style="margin:0">A notice, not a verdict.</span>
+          <span class="lbl">banner &middot; kv row &middot; deviation callout</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-chart"/></svg>
+          <span class="lbl">ic-chart</span>
+          <span class="caption" style="margin:0">Measured numbers, drawn.</span>
+          <span class="lbl">chart frame header</span>
+        </div>
+      </div>
+      <div class="specimens" style="margin-top:var(--sp-12)">
+        <div class="specimen"><span style="color:var(--ink-3)"><svg class="i"><use href="#ic-check"/></svg></span><span class="lbl">--ink-3 &middot; resting</span></div>
+        <div class="specimen"><span style="color:var(--fits)"><svg class="i"><use href="#ic-check"/></svg></span><span class="lbl">--fits &middot; passed</span></div>
+        <div class="specimen"><span style="color:var(--wont)"><svg class="i"><use href="#ic-alert"/></svg></span><span class="lbl">--wont &middot; blocked</span></div>
+        <div class="specimen"><span style="color:var(--spills)"><svg class="i"><use href="#ic-alert"/></svg></span><span class="lbl">--spills &middot; a risk</span></div>
+        <div class="specimen"><span style="color:var(--info)"><svg class="i"><use href="#ic-info"/></svg></span><span class="lbl">--info &middot; notice</span></div>
+        <div class="specimen"><span style="color:var(--accent)"><svg class="i"><use href="#ic-send"/></svg></span><span class="lbl">--accent &middot; our voice</span></div>
+        <div class="specimen"><button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button><span class="lbl">--accent-on-solid</span></div>
+      </div>
+      <p class="caption">Colour is inherited, which is the whole reason one sprite is enough. It is
+      also the reason a glyph is never the only carrier: the same
+      <span class="inline-code">ic-alert</span> is a risk in amber and a block in red, and the two
+      are told apart by the word beside it, not by the mark.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Chrome and navigation</h3>
+      <p class="sub">The four chevrons are one drawing rotated. Direction is not a second meaning.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-panelleft"/></svg>
+          <span class="lbl">ic-panelleft</span>
+          <span class="caption" style="margin:0">Show or hide the left rail.</span>
+          <span class="lbl">app bar. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-panel"/></svg>
+          <span class="lbl">ic-panel</span>
+          <span class="caption" style="margin:0">Show or hide the index rail. The rail's own header carries the word &ldquo;Index&rdquo;, never this glyph &mdash; sheet 11.</span>
+          <span class="lbl">app bar. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-chevright"/></svg>
+          <span class="lbl">ic-chevright</span>
+          <span class="caption" style="margin:0">Disclosure, closed: this opens.</span>
+          <span class="lbl">folder &middot; tree row &middot; kv group</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-chevdown"/></svg>
+          <span class="lbl">ic-chevdown</span>
+          <span class="caption" style="margin:0">Disclosure, open &mdash; and the mark on a select.</span>
+          <span class="lbl">folder &middot; select &middot; menu &middot; card header</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-chevup"/></svg>
+          <span class="lbl">ic-chevup</span>
+          <span class="caption" style="margin:0">Disclosure, collapsing upward.</span>
+          <span class="lbl">popover &middot; sticky section head</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-chevleft"/></svg>
+          <span class="lbl">ic-chevleft</span>
+          <span class="caption" style="margin:0">Disclosure, pointing back one level.</span>
+          <span class="lbl">rail breadcrumb &middot; nested pane</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-arrowleft"/></svg>
+          <span class="lbl">ic-arrowleft</span>
+          <span class="caption" style="margin:0">Previous.</span>
+          <span class="lbl">the book shell. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-arrowright"/></svg>
+          <span class="lbl">ic-arrowright</span>
+          <span class="caption" style="margin:0">Next.</span>
+          <span class="lbl">the book shell. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-more"/></svg>
+          <span class="lbl">ic-more</span>
+          <span class="caption" style="margin:0">More: the overflow menu. The only drawing that means this.</span>
+          <span class="lbl">any row &middot; app bar &middot; board foot</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-filter"/></svg>
+          <span class="lbl">ic-filter</span>
+          <span class="caption" style="margin:0">Narrow what this list is showing.</span>
+          <span class="lbl">rail &middot; file rail &middot; run list</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-open"/></svg>
+          <span class="lbl">ic-open</span>
+          <span class="caption" style="margin:0">Open somewhere else: an external target.</span>
+          <span class="lbl">link &middot; file row &middot; menu item</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-eye"/></svg>
+          <span class="lbl">ic-eye</span>
+          <span class="caption" style="margin:0">Preview: look without changing anything.</span>
+          <span class="lbl">diff header &middot; node hover &middot; proposal</span>
+        </div>
+      </div>
+      <p class="caption">Twelve. <b>An overflow menu is never a chevron</b> &mdash; a chevron
+      discloses a thing that is already on the screen; three dots opens a list that is not. Getting
+      those two the wrong way round is the reported defect where &ldquo;More&rdquo; wore three
+      different marks in one product.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Account, settings, and this book</h3>
+      <p class="sub">Six drawings, and one of them exists because Sequence's settings glyph was
+      geometrically the hyperparameter one.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-user"/></svg>
+          <span class="lbl">ic-user</span>
+          <span class="caption" style="margin:0">Your account.</span>
+          <span class="lbl">rail foot. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-gear"/></svg>
+          <span class="lbl">ic-gear</span>
+          <span class="caption" style="margin:0">Settings. Never <span class="inline-code">ic-sliders</span>, which means hyperparameters.</span>
+          <span class="lbl">rail foot &middot; app bar &middot; menu item</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-key"/></svg>
+          <span class="lbl">ic-key</span>
+          <span class="caption" style="margin:0">A provider key or credential of yours.</span>
+          <span class="lbl">settings &middot; provider row</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-book"/></svg>
+          <span class="lbl">ic-book</span>
+          <span class="caption" style="margin:0">The reference.</span>
+          <span class="lbl">the book shell. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-sun"/></svg>
+          <span class="lbl">ic-sun</span>
+          <span class="caption" style="margin:0">Light theme.</span>
+          <span class="lbl">theme toggle. one host</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-moon"/></svg>
+          <span class="lbl">ic-moon</span>
+          <span class="caption" style="margin:0">Dark theme.</span>
+          <span class="lbl">theme toggle. one host</span>
+        </div>
+      </div>
+      <p class="caption">Six. Light is deferred under Decision 1, which defers the
+      <em>tuning</em> of the light palette and not the control: the toggle ships, and both glyphs
+      keep their meaning.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Removing and taking out</h3>
+      <p class="sub">Two drawings that change something outside the app. Both are worded wherever
+      they act.</p>
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-trash"/></svg>
+          <span class="lbl">ic-trash</span>
+          <span class="caption" style="margin:0">Delete permanently. Not dismiss, not close, not hide.</span>
+          <span class="lbl">menu item, worded &middot; confirm dialog</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-download"/></svg>
+          <span class="lbl">ic-download</span>
+          <span class="caption" style="margin:0">Export: take this out of Sequence as a file.</span>
+          <span class="lbl">menu item &middot; board foot &middot; diff header</span>
+        </div>
+      </div>
+      <div class="menu" style="margin-top:var(--sp-12);width:var(--menu-w)">
+        <div class="menuitem"><svg class="i i-14"><use href="#ic-download"/></svg>Export board&hellip;<span class="right">E</span></div>
+        <div class="menuitem"><svg class="i i-14"><use href="#ic-copy"/></svg>Copy as text</div>
+        <hr>
+        <div class="menuitem"><svg class="i i-14"><use href="#ic-trash"/></svg>Delete this board&hellip;</div>
+      </div>
+      <p class="caption">Three rows, three drawings, and the destructive one is identified by its
+      sentence and its ellipsis &mdash; it opens a confirmation. <b>It is worded, not reddened:</b> a
+      red menu row spends the verdict budget on chrome, and then a real failure has nothing left to
+      say with.</p>
+    </div>
+  </div>
+
+  <!-- ── 09.5 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.5</span>
+      <h2>Held &mdash; drawn, and allowed nowhere</h2>
+      <span class="tail">inherited from a product Sequence is not</span>
+    </div>
+
+    <p class="note">
+      Ten of the inherited drawings name things Sequence does not have: hardware feasibility,
+      datasets, train/eval splits, hyperparameters. They stay in the sprite because deleting them
+      loses the drawing and the discipline that made it, but <b>they are allowed on no surface at
+      all</b> &mdash; and a held glyph is the most tempting thing in the vocabulary, because it looks
+      free. It is not. Borrowing one is exactly how a drawing acquires a second meaning.
+    </p>
+
+    <div class="panel">
+      <div class="grid g4">
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-gpu"/></svg>
+          <span class="lbl">ic-gpu</span>
+          <span class="caption" style="margin:0">Hardware, feasibility.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-gauge"/></svg>
+          <span class="lbl">ic-gauge</span>
+          <span class="caption" style="margin:0">Diagnose, feasibility.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-dataset"/></svg>
+          <span class="lbl">ic-dataset</span>
+          <span class="caption" style="margin:0">A dataset, a table.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-split"/></svg>
+          <span class="lbl">ic-split</span>
+          <span class="caption" style="margin:0">A train / eval split.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-sliders"/></svg>
+          <span class="lbl">ic-sliders</span>
+          <span class="caption" style="margin:0">Hyperparameters.</span>
+          <span class="lbl">held &mdash; never settings</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-upload"/></svg>
+          <span class="lbl">ic-upload</span>
+          <span class="caption" style="margin:0">Add data.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-cloud"/></svg>
+          <span class="lbl">ic-cloud</span>
+          <span class="caption" style="margin:0">A cloud run target.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-sensitive"/></svg>
+          <span class="lbl">ic-sensitive</span>
+          <span class="caption" style="margin:0">Sensitive; stays local.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-mic"/></svg>
+          <span class="lbl">ic-mic</span>
+          <span class="caption" style="margin:0">Voice.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+        <div class="specimen" style="gap:var(--sp-4)">
+          <svg class="i"><use href="#ic-pin"/></svg>
+          <span class="lbl">ic-pin</span>
+          <span class="caption" style="margin:0">Pin.</span>
+          <span class="lbl">held &mdash; no surface</span>
+        </div>
+      </div>
+      <p class="caption">Ten held. When a surface for one of these is actually built, its row moves
+      into &sect;09.4 and gains a list of hosts &mdash; in the same change, not afterwards.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>The mirror &mdash; three shipped tools with no drawing</h3>
+      <p class="sub">A held glyph is a drawing with no surface. This is the opposite: a surface with
+      no drawing. The answer is the one &sect;09.1 gave <span class="inline-code">Save</span>.</p>
+      <div class="specimens" style="margin-top:var(--sp-8)">
+        <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-cursor"/></svg>Select<span class="m">V</span></span><span class="lbl">drawn</span></div>
+        <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-pan"/></svg>Pan<span class="m">H</span></span><span class="lbl">drawn &mdash; Decision 9</span></div>
+        <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-pen"/></svg>Draw<span class="m">D</span></span><span class="lbl">drawn</span></div>
+        <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-erase"/></svg>Erase<span class="m">E</span></span><span class="lbl">drawn &mdash; Decision 8</span></div>
+        <div class="specimen"><span class="chip">Arrow<span class="m">A</span></span><span class="lbl">worded</span></div>
+      </div>
+      <p class="caption">The five tools <span class="inline-code">boardTools.ts</span> exports, in
+      its order, with its shortcuts. Decision 8 closed Erase; Decision 9 closed Pan (and the
+      whiteboard's Box tool as <span class="inline-code">ic-rect</span>) through &sect;09.8.
+      <b>Arrow still ships as a word</b> &mdash; the nearest glyph is
+      <span class="inline-code">ic-arrowright</span>, which already means <em>next</em> in the book
+      shell, and borrowing it would mint a second meaning on a drawing that has one. Until a
+      distinct arrow is authored, a word is legible and a borrowed glyph is not.</p>
+    </div>
+
+    <div class="dev">
+      <b>Why this matters more than it looks.</b> Two of the ten are the near misses that would do
+      real damage: <span class="inline-code">ic-sliders</span> is geometrically what the product
+      currently draws for <em>settings</em>, and <span class="inline-code">ic-gauge</span> is what a
+      &ldquo;diagnose&rdquo; control would reach for first. Both are already spoken for. Settings is
+      <span class="inline-code">ic-gear</span>; diagnosis, if it ever gets a surface, gets a
+      justification and a row before it gets a drawing.
+    </div>
+  </div>
+
+  <!-- ── 09.6 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.6</span>
+      <h2>One stroke weight, and its two sanctioned exceptions</h2>
+      <span class="tail">76 symbols &middot; 1 filled &middot; 3 cap-dots</span>
+    </div>
+
+    <p class="note">
+      One weight for the whole set, declared on <span class="inline-code">.i</span> and never
+      overridden. Two constructions in the sprite do not fit that sentence literally, and both are
+      drawn here rather than hidden, because an undocumented exception is how a set stops being a
+      set. There is no third.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>Exception 1 &mdash; <span class="mono">ic-more</span> is filled</h3>
+        <p class="sub">The only symbol carrying <span class="inline-code">fill="currentColor"</span>
+        and <span class="inline-code">stroke="none"</span>.</p>
+        <div class="stage base pad-sm" style="margin-top:var(--sp-8)">
+          <div class="specimens">
+            <div class="specimen"><svg class="i"><use href="#ic-more"/></svg><span class="lbl">ic-more &middot; filled</span></div>
+            <div class="specimen"><svg class="i"><use href="#ic-commit"/></svg><span class="lbl">ic-commit &middot; stroked</span></div>
+          </div>
+        </div>
+        <p class="caption">Its three dots are radius 0.9 on the 24-unit grid. A 1.5-wide ring at
+        that radius has no hole left in it and renders as three smudges. The dot is drawn solid so
+        that it reads as a dot, and that is the whole exception.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Exception 2 &mdash; the cap is the dot</h3>
+        <p class="sub"><span class="inline-code">ic-alert</span>,
+        <span class="inline-code">ic-info</span> and <span class="inline-code">ic-help</span> each
+        end in a zero-length path.</p>
+        <div class="stage base pad-sm" style="margin-top:var(--sp-8)">
+          <div class="specimens">
+            <div class="specimen"><svg class="i"><use href="#ic-alert"/></svg><span class="lbl">ic-alert</span></div>
+            <div class="specimen"><svg class="i"><use href="#ic-info"/></svg><span class="lbl">ic-info</span></div>
+            <div class="specimen"><svg class="i"><use href="#ic-help"/></svg><span class="lbl">ic-help</span></div>
+          </div>
+        </div>
+        <pre class="codeblock" style="margin-top:var(--sp-8)">&lt;path d="M12 16.4h.01"/&gt;</pre>
+        <p class="caption">A path that goes nowhere, drawn with a round cap, <em>is</em> a round dot
+        the width of the stroke. In spirit this is the opposite of an exception: it keeps the one
+        weight rather than adding a filled circle beside it. It is listed because the geometry looks
+        like a mistake to anyone reading the sprite.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 09.7 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.7</span>
+      <h2>Where the vocabulary is under strain</h2>
+      <span class="tail">four rulings, made here so they are not made at a call site</span>
+    </div>
+
+    <p class="note">
+      Four places where the law had to be applied rather than merely quoted. Each is settled below.
+      A ruling written on a sheet is a decision; the same ruling improvised in a component is a
+      defect waiting for its second instance.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>1 &mdash; The chevron family is not four meanings</h3>
+        <p class="sub">One drawing, four rotations, one meaning: disclosure.</p>
+        <div class="specimens" style="margin-top:var(--sp-8)">
+          <div class="specimen"><svg class="i"><use href="#ic-chevright"/></svg><span class="lbl">closed</span></div>
+          <div class="specimen"><svg class="i"><use href="#ic-chevdown"/></svg><span class="lbl">open</span></div>
+          <div class="specimen"><svg class="i"><use href="#ic-chevup"/></svg><span class="lbl">collapse</span></div>
+          <div class="specimen"><svg class="i"><use href="#ic-chevleft"/></svg><span class="lbl">back</span></div>
+        </div>
+        <p class="caption">Direction is a parameter of one meaning, not a second meaning, which is
+        why four names do not break the corollary. The rule that follows: <b>a disclosure caret
+        rotates, it never swaps drawing</b> &mdash; and it is never
+        <span class="inline-code">ic-more</span>.</p>
+      </div>
+
+      <div class="panel">
+        <h3>2 &mdash; Plus and minus name an operation, not an object</h3>
+        <p class="sub">The glyph says what happens; the control says what it happens to.</p>
+        <div class="specimens" style="margin-top:var(--sp-8);align-items:center">
+          <div class="specimen">
+            <div class="zoomcluster">
+              <button class="iconbtn" aria-label="Zoom out"><svg class="i i-14"><use href="#ic-minus"/></svg></button>
+              <span class="pct"><span class="ph">&#8249;zoom&#8250;</span></span>
+              <button class="iconbtn" aria-label="Zoom in"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+            </div>
+            <span class="lbl">one less &middot; one more</span>
+          </div>
+          <div class="specimen">
+            <button class="plusbtn" aria-label="Attach a file"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+            <span class="lbl">one more attachment</span>
+          </div>
+        </div>
+        <p class="caption">This is the same rule that governs size &mdash; <em>set by the row, not by
+        the glyph</em>. The pair is never adjacent to a third meaning, and nothing else in the
+        seventy means increase or decrease, so the corollary holds.</p>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="panel">
+        <h3>3 &mdash; Fit is a camera move, not a frame</h3>
+        <p class="sub"><span class="inline-code">ic-frame</span> means the boundary drawn
+        <em>around</em> a selection. Fitting the board to the viewport creates no boundary.</p>
+        <div class="specimens" style="margin-top:var(--sp-8);align-items:center">
+          <div class="specimen">
+            <div class="zoomcluster">
+              <button class="iconbtn" aria-label="Zoom out"><svg class="i i-14"><use href="#ic-minus"/></svg></button>
+              <span class="pct"><span class="ph">&#8249;zoom&#8250;</span></span>
+              <button class="iconbtn" aria-label="Zoom in"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+              <button class="btn ghost sm">Fit</button>
+            </div>
+            <span class="lbl">the ruling</span>
+          </div>
+        </div>
+        <p class="caption">Fit ships as a word. The vocabulary has no drawing for it and does not
+        borrow one, exactly as <span class="inline-code">Save</span> did not in &sect;09.1. The
+        worded control is a plain <span class="inline-code">.btn.ghost.sm</span> &mdash; 24px,
+        <span class="inline-code">--r-10</span>. This sheet owns the <em>vocabulary</em>; sheet 10
+        owns the <em>ladder</em>, and a control's height and radius are ladder business. A 24px
+        word standing beside 26px icon buttons is not a defect to be sized away: it is what the
+        ladder looks like when a word and a glyph sit in one cluster.</p>
+      </div>
+
+      <div class="panel">
+        <h3>4 &mdash; Two hexagons, and only one of them may be on the board</h3>
+        <p class="sub">A silhouette collision, resolved by scope rather than by redrawing.</p>
+        <div class="stage base pad-sm" style="margin-top:var(--sp-8)">
+          <div class="specimens">
+            <div class="specimen"><svg class="i i-12"><use href="#ic-agent"/></svg><span class="lbl">ic-agent &middot; i-12</span></div>
+            <div class="specimen"><svg class="i i-12"><use href="#ic-skill"/></svg><span class="lbl">ic-skill &middot; i-12</span></div>
+            <div class="specimen"><svg class="i i-20"><use href="#ic-agent"/></svg><span class="lbl">ic-agent &middot; i-20</span></div>
+            <div class="specimen"><svg class="i i-20"><use href="#ic-skill"/></svg><span class="lbl">ic-skill &middot; i-20</span></div>
+          </div>
+        </div>
+        <p class="caption">At <span class="inline-code">.i-20</span> the interior separates them
+        &mdash; a core dot against three seams. At <span class="inline-code">.i-12</span>, the size
+        the kind glyph actually ships at, it very nearly does not.
+        <span class="inline-code">ic-agent</span> is a node kind and load-bearing under Decision 2,
+        so <span class="inline-code">ic-skill</span> yields: it is allowed in the programs list and
+        <b>never on the board or in the kind legend</b>.</p>
+      </div>
+    </div>
+
+    <div class="dev">
+      <b>Handback.</b> Three items for the substrate, two still open. (1) <b>Closed.</b> The
+      reference sheet's zoom cluster used to render <span class="inline-code">ic-frame</span> under
+      <span class="inline-code">aria-label="Fit"</span>. Ruling 3 replaced it with the worded
+      control everywhere it was drawn &mdash; <span class="inline-code">_core.html</span>, sheet 01
+      and sheet 08 &mdash; and <span class="inline-code">_core.html</span> now carries a real
+      <span class="inline-code">.btn.ghost.sm</span> rule so no sheet needs an inline size. The
+      alternative &mdash; drawing an <span class="inline-code">ic-fit</span> &mdash; still needs a
+      justification written before the drawing. (2) <span class="inline-code">ic-skill</span>
+      and <span class="inline-code">ic-agent</span> share a hexagonal silhouette at
+      <span class="inline-code">.i-12</span>. Ruling 4 confines the collision rather than resolving
+      it; if programs and agents ever appear in one list, one of the two must be redrawn, and it
+      cannot be the node kind. (3) The board toolbar ships five tools and the sprite now draws four
+      of them &mdash; Decision 8 closed Erase; Decision 9 closed Pan. Arrow remains worded in
+      &sect;09.5; an arrow that is not <span class="inline-code">ic-arrowright</span> would close it,
+      and it still owes the five conditions of &sect;09.8 before it is drawn.</p>
+    </div>
+  </div>
+
+  <!-- ── 09.8 ──────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">09.8</span>
+      <h2>Drawing a seventy-seventh</h2>
+      <span class="tail">the bar, stated so it can be met</span>
+    </div>
+
+    <p class="note">
+      A new symbol is justified by a named surface that has nothing to draw &mdash; the same standard
+      the twelve Sequence additions met, and the same one the fifteen before them met. Before you
+      draw: the set already covers the six node kinds, the canvas, files, functions, folders,
+      branches, commits, shells, threads, models, programs, runs, claims, chrome, settings and every
+      chevron. Decision 8 closed four whiteboard gaps; Decision 9 closed Pan and Box
+      (<span class="inline-code">ic-rect</span>) against the table below &mdash; but the bar itself
+      does not move: Arrow is still worded in &sect;09.5, and it remains the standing worked
+      example rather than a gap to be filled at a call site. Ten more are held in
+      &sect;09.5 with meanings already written. If the thing you need a mark for is a <em>state</em>,
+      it is a verdict badge or a provenance tag, and those carry a word.
+    </p>
+
+    <div class="panel">
+      <h3>The four Decision 8 drew &mdash; all five conditions, on the record</h3>
+      <p class="sub">Authored 2026-08-24 for the whiteboard toolbar; entered the sprite, never a page.</p>
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th style="width:150px">Symbol</th><th>Written meaning</th><th>The five conditions</th></tr></thead>
+          <tbody>
+            <tr><td class="k"><span class="inline-code">ic-oval</span></td><td>the oval tool &mdash; an ellipse drawn on the canvas</td><td rowspan="4" style="vertical-align:top">Named surface: the whiteboard toolbar, whose ten tools render glyph-first (Decision 8). Hosts: the whiteboard toolbar and its tooltips only. No existing claimant: no symbol draws a shape tool, and <span class="inline-code">ic-database</span>'s ellipse means <em>a datastore</em>, not <em>draw an oval</em>; <span class="inline-code">ic-frame</span> is already taken by the frame tool it does mean. Construction: 24-unit grid, no stroke-width, no fill, round caps and joins.</td></tr>
+            <tr><td class="k"><span class="inline-code">ic-text</span></td><td>the text tool &mdash; a type layer placed on the canvas</td></tr>
+            <tr><td class="k"><span class="inline-code">ic-link</span></td><td>the link tool &mdash; connect two things on the canvas</td></tr>
+            <tr><td class="k"><span class="inline-code">ic-erase</span></td><td>the erase tool &mdash; remove marks from the canvas</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">The standing prohibition held while drawing them, as always: <b>no emoji,
+      at any size, on any surface, ever.</b> An emoji sets its own weight,
+      its own colour and its own grid, and it is the one mark in a product that cannot be made to
+      match anything else on the screen.</p>
+    </div>
+
+    <div class="panel">
+      <h3>The two Decision 9 drew &mdash; Pan and Box</h3>
+      <p class="sub">Authored 2026-08-25 (seat-walk); book 74 &rarr; 76. No borrowing of
+      <span class="inline-code">ic-frame</span> or <span class="inline-code">ic-module</span>.</p>
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th style="width:150px">Symbol</th><th>Written meaning</th><th>The five conditions</th></tr></thead>
+          <tbody>
+            <tr><td class="k"><span class="inline-code">ic-pan</span></td><td>the pan tool &mdash; move the canvas without selecting</td><td rowspan="2" style="vertical-align:top">Named surface: the whiteboard toolbar (and the board toolbar's Pan control when it ships a glyph). Hosts: whiteboard toolbar and tooltips. No existing claimant: nothing in the sprite meant pan; a cross of arrows is not <span class="inline-code">ic-plus</span>. Construction: 24-unit grid, no stroke-width, no fill, round caps and joins. <span class="inline-code">ic-rect</span> is the box tool only &mdash; not a module, not a frame.</td></tr>
+            <tr><td class="k"><span class="inline-code">ic-rect</span></td><td>the box tool &mdash; a rectangle drawn on the canvas</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>The five conditions, all of them</h3>
+      <p class="sub">Any one unmet and the answer is a word, not a drawing.</p>
+      <div class="scrollx">
+        <table class="tk">
+          <tr><th style="width:190px">Condition</th><th>What satisfies it</th></tr>
+          <tr><td class="k">A named surface</td><td>The component, and the row in it, that has nothing to draw today</td></tr>
+          <tr><td class="k">A written meaning</td><td>One sentence, in this sheet, at the same time as the drawing &mdash; never after</td></tr>
+          <tr><td class="k">A list of hosts</td><td>The surfaces it may appear on. &ldquo;Anywhere&rdquo; is not a list</td></tr>
+          <tr><td class="k">No existing claimant</td><td>No symbol already means this, including the ten held ones</td></tr>
+          <tr><td class="k">The construction</td><td>24-unit grid, no <span class="inline-code">stroke-width</span>, no <span class="inline-code">fill</span>, round caps and joins, added to the sprite and not to a page</td></tr>
+        </table>
+      </div>
+      <p class="caption">And the standing prohibition, which is not a condition because it is not
+      negotiable: <b>no emoji, at any size, on any surface, ever.</b> An emoji sets its own weight,
+      its own colour and its own grid, and it is the one mark in a product that cannot be made to
+      match anything else on the screen.</p>
+    </div>
+  </div>
+
+</section>

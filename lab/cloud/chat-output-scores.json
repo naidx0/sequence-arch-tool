@@ -1,0 +1,279 @@
+{
+  "lessons": [
+    {
+      "name": "re-measure r4, Teach on (best answer)",
+      "words": 85,
+      "overall": 79.7,
+      "sub": {
+        "clarity": 100,
+        "chunking": 98.2,
+        "jargon": 95.1,
+        "tone": 100,
+        "visual": 71.3,
+        "teaching": 30,
+        "grounding": 24,
+        "hygiene": 100
+      },
+      "flags": [
+        "draws a picture but the text never points at it",
+        "no example or analogy",
+        "picture: 2 box(es) joined to nothing"
+      ]
+    },
+    {
+      "name": "third r2, Teach on (best answer)",
+      "words": 106,
+      "overall": 70.6,
+      "sub": {
+        "clarity": 99.3,
+        "chunking": 66.2,
+        "jargon": 66.7,
+        "tone": 100,
+        "visual": 76.7,
+        "teaching": 10,
+        "grounding": 30,
+        "hygiene": 100
+      },
+      "flags": [
+        "1 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+        "1 paragraph(s) over 90 words; break into steps or bullets",
+        "draws a picture but the text never points at it",
+        "does not close on a check-in question",
+        "no example or analogy",
+        "picture: the flow loops back on itself, so there is no start or end to follow"
+      ]
+    },
+    {
+      "name": "re-measure r1, leaked reasoning",
+      "words": 24,
+      "overall": 48.6,
+      "sub": {
+        "clarity": 65.7,
+        "chunking": 100,
+        "jargon": 100,
+        "tone": 85,
+        "visual": 0,
+        "teaching": 0,
+        "grounding": 0,
+        "hygiene": 0
+      },
+      "flags": [
+        "under 40 words: too thin to teach anything",
+        "reasoning or a tool call leaked into the answer",
+        "opens by narrating its own plan instead of teaching",
+        "no picture: nothing drawn and no flow in the text",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "bastion-skeleton narration (09-22)",
+      "words": 114,
+      "overall": 44.6,
+      "sub": {
+        "clarity": 88.2,
+        "chunking": 99.4,
+        "jargon": 17,
+        "tone": 85,
+        "visual": 0,
+        "teaching": 0,
+        "grounding": 0,
+        "hygiene": 40
+      },
+      "flags": [
+        "1 sentence(s) read out a list of five or more names; make it bullets with a gloss each",
+        "names 3 internal tool term(s) at the learner",
+        "no picture: nothing drawn and no flow in the text",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "bastion-greeting (09-22 20:45)",
+      "words": 51,
+      "overall": 40,
+      "sub": {
+        "clarity": 92.8,
+        "chunking": 100,
+        "jargon": 100,
+        "tone": 100,
+        "visual": 0,
+        "teaching": 10,
+        "grounding": 0,
+        "hygiene": 100
+      },
+      "flags": [
+        "hands the work back (asks, refuses or stops) instead of teaching",
+        "no picture: nothing drawn and no flow in the text",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "bastion round-budget stop (22:50)",
+      "words": 92,
+      "overall": 40,
+      "sub": {
+        "clarity": 93.8,
+        "chunking": 100,
+        "jargon": 25,
+        "tone": 85,
+        "visual": 73,
+        "teaching": 9,
+        "grounding": 0,
+        "hygiene": 40
+      },
+      "flags": [
+        "hands the work back (asks, refuses or stops) instead of teaching",
+        "names 3 internal tool term(s) at the learner",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "bastion time-budget stop (12:11)",
+      "words": 86,
+      "overall": 40,
+      "sub": {
+        "clarity": 100,
+        "chunking": 100,
+        "jargon": 25,
+        "tone": 85,
+        "visual": 65,
+        "teaching": 6,
+        "grounding": 0,
+        "hygiene": 40
+      },
+      "flags": [
+        "hands the work back (asks, refuses or stops) instead of teaching",
+        "names 3 internal tool term(s) at the learner",
+        "draws a picture but the text never points at it",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "third r4 final",
+      "words": 20,
+      "overall": 40,
+      "sub": {
+        "clarity": 100,
+        "chunking": 100,
+        "jargon": 68.6,
+        "tone": 100,
+        "visual": 0,
+        "teaching": 0,
+        "grounding": 18,
+        "hygiene": 100
+      },
+      "flags": [
+        "hands the work back (asks, refuses or stops) instead of teaching",
+        "under 40 words: too thin to teach anything",
+        "no picture: nothing drawn and no flow in the text",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "third r3 streamed",
+      "words": 15,
+      "overall": 40,
+      "sub": {
+        "clarity": 87.3,
+        "chunking": 100,
+        "jargon": 100,
+        "tone": 85,
+        "visual": 0,
+        "teaching": 0,
+        "grounding": 0,
+        "hygiene": 100
+      },
+      "flags": [
+        "hands the work back (asks, refuses or stops) instead of teaching",
+        "under 40 words: too thin to teach anything",
+        "no picture: nothing drawn and no flow in the text",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "ML Harness plan chat, drew nothing (01:00)",
+      "words": 147,
+      "overall": 36,
+      "sub": {
+        "clarity": 59.7,
+        "chunking": 33.2,
+        "jargon": 32.9,
+        "tone": 76.9,
+        "visual": 10,
+        "teaching": 10,
+        "grounding": 30,
+        "hygiene": 20
+      },
+      "flags": [
+        "ends by promising a drawing in words; the drawing should just be there",
+        "1 paragraph(s) over 90 words; break into steps or bullets",
+        "names 2 internal tool term(s) at the learner",
+        "no picture: nothing drawn and no flow in the text",
+        "does not close on a check-in question",
+        "no example or analogy"
+      ]
+    },
+    {
+      "name": "README lookup, before fix",
+      "words": 5,
+      "overall": 0,
+      "sub": {
+        "clarity": 0,
+        "chunking": 0,
+        "jargon": 0,
+        "tone": 0,
+        "visual": 0,
+        "teaching": 0,
+        "grounding": 0,
+        "hygiene": 0
+      },
+      "flags": [
+        "no lesson: fewer than 12 words of prose"
+      ]
+    }
+  ],
+  "charts": {
+    "r5": {
+      "score": 80,
+      "items": 8,
+      "links": 5,
+      "steps": 0,
+      "flow": false,
+      "rawIdLabels": 0,
+      "longLabels": 0,
+      "dupLabels": 0,
+      "orphans": 2,
+      "containsHub": false,
+      "cycle": false,
+      "maxOut": 2,
+      "groundedShare": 1,
+      "flags": [
+        "2 box(es) joined to nothing"
+      ]
+    },
+    "floor": {
+      "score": 75,
+      "items": 6,
+      "links": 5,
+      "steps": 5,
+      "flow": true,
+      "rawIdLabels": 0,
+      "longLabels": 0,
+      "dupLabels": 0,
+      "orphans": 0,
+      "containsHub": false,
+      "cycle": true,
+      "maxOut": 1,
+      "groundedShare": 1,
+      "flags": [
+        "the flow loops back on itself, so there is no start or end to follow"
+      ]
+    }
+  }
+}

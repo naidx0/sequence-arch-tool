@@ -1,0 +1,28 @@
+From b71da02d35494140ef3f8c11d84f7ddb52b4a7e1 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 14:58:24 -0400
+Subject: [PATCH 11/37] Draw-language kit: let the worker's sockets close
+ before exit (Windows libuv crash, from lab/draw-lang-ab-gpu)
+
+tools/ci/draw-lang-ab 3 failing -> 6/6.
+---
+ tools/measure/draw-lang-ab.mjs | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/tools/measure/draw-lang-ab.mjs b/tools/measure/draw-lang-ab.mjs
+index c6b07a72..6d326ad2 100644
+--- a/tools/measure/draw-lang-ab.mjs
++++ b/tools/measure/draw-lang-ab.mjs
+@@ -124,6 +124,9 @@ for (const l of opts.langs) if (!ALL_LANGS.includes(l)) die(`unknown language "$
+ if (opts.worker !== undefined) {
+   if (!opts.out) die('--worker needs --out');
+   await runWorker(opts.worker, opts.out);
++  /* Let fetch's sockets finish closing first: on Windows (Node 24) an exit while one is
++     still closing trips a libuv assertion, and the batch reads as a crash (3221226505). */
++  await new Promise((r) => setTimeout(r, 250));
+   process.exit(0);
+ }
+ 
+-- 
+2.51.1.windows.1
+

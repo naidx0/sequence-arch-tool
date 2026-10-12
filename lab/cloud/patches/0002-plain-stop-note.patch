@@ -1,0 +1,74 @@
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 59f9522..63f8083 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -2480,14 +2480,33 @@ export function buildAskContextBreakdown(input: {
+   };
+ }
+ 
+-/** Summarize executed tool names for forced final answers (B2.1). */
+-function summarizeExecutedTools(toolNames: readonly string[]): string {
++/* What each tool did, in the reader's words. The stop note is read by the person who asked, and
++   the belt already keeps tool names away from them: "propose_topology, read_topology" in a note
++   is the harness reading out its own API (seen live on Bastion, 09-22). */
++const TOOL_PLAIN_WORDS: Record<string, string> = {
++  read_file: 'opened files',
++  search_files: 'searched the code',
++  read_topology: 'read the architecture',
++  propose_topology: 'drew on the architecture board',
++  propose_chart: 'drew on the canvas',
++  propose_files: 'drafted files',
++  propose_plan: 'drafted a plan',
++  write_plan: 'wrote the plan',
++  edit_file: 'edited files',
++  run_command: 'ran commands',
++};
++export function toolInPlainWords(name: string): string {
++  if (TOOL_PLAIN_WORDS[name]) return TOOL_PLAIN_WORDS[name];
++  if (name.startsWith('canvas.')) return 'wrote on the canvas';
++  return 'looked things up';
++}
++
++/** Summarize executed tools for forced final answers (B2.1), in plain words. */
++export function summarizeExecutedTools(toolNames: readonly string[]): string {
+   if (toolNames.length === 0) return '';
+-  const unique = [...new Set(toolNames)].sort();
+-  return (
+-    ` I ran ${toolNames.length} tool call${toolNames.length === 1 ? '' : 's'} ` +
+-    `(${unique.join(', ')}) before stopping.`
+-  );
++  const acts = [...new Set(toolNames.map(toolInPlainWords))];
++  const list = acts.length === 1 ? acts[0] : `${acts.slice(0, -1).join(', ')} and ${acts[acts.length - 1]}`;
++  return ` Before stopping I ${list} (${toolNames.length} step${toolNames.length === 1 ? '' : 's'}).`;
+ }
+ 
+ /**
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index e495902..5377263 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -1257,8 +1257,9 @@ test('askPipeline: a turn always ends in words, even when the last round is tool
+     'tools-only empty ending must record ceiling or no-progress stop reason',
+   );
+   assert.ok(result.metrics!.rounds > 0, 'tool rounds ran before the forced final answer');
+-  assert.match(result.text, /tool (rounds|call)/i, 'forced answer names why tools stopped');
+-  assert.match(result.text, /read_file/, 'forced answer summarizes what tools ran');
++  assert.match(result.text, /\b(?:tool rounds|rounds brought back|time budget)\b/i, 'forced answer names why tools stopped');
++  assert.match(result.text, /opened files/, 'forced answer summarizes what tools ran, in plain words');
++  assert.doesNotMatch(result.text, /read_file/, 'the stop note never reads a tool name out to the person');
+ });
+ 
+ test('askPipeline: design mode refuses tool requests (no fabricated files)', async () => {
+@@ -4721,3 +4722,12 @@ test('subject not in the repo: a chart the MODEL drew still says where it came f
+     'the step beside the picture did not say where the picture came from',
+   );
+ });
++
++test('the stop note names what the turn did in plain words, never a tool name', async () => {
++  const { summarizeExecutedTools } = await import('../server/askPipeline.js');
++  const note = summarizeExecutedTools(['read_topology', 'propose_topology', 'read_topology']);
++  assert.strictEqual(note, ' Before stopping I read the architecture and drew on the architecture board (3 steps).');
++  assert.strictEqual(summarizeExecutedTools(['read_file']), ' Before stopping I opened files (1 step).');
++  assert.match(summarizeExecutedTools(['canvas.write_markdown', 'mystery_tool', 'search_files']), /wrote on the canvas, looked things up and searched the code/);
++  assert.strictEqual(summarizeExecutedTools([]), '');
++});

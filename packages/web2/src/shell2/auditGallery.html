@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Page audit gallery</title>
+    <!--
+      NEVER BUILT INTO THE APP (vite.config.ts sets no rollupOptions.input).
+      Served by `vite` for e2e/audit-gallery.mjs: the parts the live shell only
+      shows in a state (approval cards, merge panel, queue, rewind turns, empty
+      states), drawn on fixtures so each can be looked at in both rooms.
+      ?theme=light sets the cream room.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./auditGallery.tsx"></script>
+  </body>
+</html>

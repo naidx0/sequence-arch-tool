@@ -1,0 +1,41 @@
+From 40f26be5dad4311640992cc643ac9cb514c8eda5 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 07:36:10 -0400
+Subject: [PATCH 35/37] turnCarry.reach: the chart-slot count is five now (the
+ product steps chart, teach-gated)
+
+---
+ packages/analyzer/src/test/turnCarry.reach.test.ts | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/packages/analyzer/src/test/turnCarry.reach.test.ts b/packages/analyzer/src/test/turnCarry.reach.test.ts
+index 3f6b23f9..a7eb8e75 100644
+--- a/packages/analyzer/src/test/turnCarry.reach.test.ts
++++ b/packages/analyzer/src/test/turnCarry.reach.test.ts
+@@ -148,16 +148,18 @@ test('SOURCE SHAPE (weaker evidence, stated as such): the other two slots are te
+    * other mention in this file is a read.
+    */
+   /*
+-   * FOUR ASSIGNMENTS: teach-derived, general-knowledge teach, forced
+-   * propose_chart on a plot/draw turn, and the product plot floor (owner walk
+-   * 2026-09-16 — model dumps seqd/prose; Sequence still draws). Count alone is
+-   * not the check — EVERY assignment must sit inside teach OR a plot/draw gate.
++   * FIVE ASSIGNMENTS: teach-derived, general-knowledge teach, forced
++   * propose_chart on a plot/draw turn, the product plot floor (owner walk
++   * 2026-09-16 — model dumps seqd/prose; Sequence still draws), and the
++   * product-question steps chart (2026-09-24, SEQUENCE_TEACH_PRODUCT_MODE, inside
++   * `input.teach === true`). Count alone is not the check — EVERY assignment
++   * must sit inside teach OR a plot/draw gate.
+    */
+   const CODE = PIPELINE.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+   const chartAssignments = [...CODE.matchAll(/lastChartThisTurn\s*=(?!=)/g)];
+   assert.equal(
+     chartAssignments.length,
+-    4,
++    5,
+     'the number of chart-slot assignments changed; check each is still gated below',
+   );
+   /*
+-- 
+2.51.1.windows.1
+

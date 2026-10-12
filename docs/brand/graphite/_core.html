@@ -1,0 +1,2250 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SEQUENCE — GRAPHITE SUBSTRATE
+     docs/brand/graphite/_core.html
+
+     THIS IS A FRAGMENT, NOT A DOCUMENT. No doctype, no html element, no head,
+     no body. Include it ONCE, at the top of a sheet file or at the top of the
+     assembled book, and then write sheets after it.
+
+     WHERE THIS COMES FROM
+       ml-harness/docs/brand/graphite/README.md    the contract and the five laws
+       ml-harness/docs/brand/graphite/_core.html   the substrate this extends
+       ml-harness/frontend/src/styles/tokens.css   the implemented token layer
+       sequence/docs/brand/GRAPHITE-DECISIONS.md   the owner decisions of record
+     Every hex, every rgba and every px in §1 and §2 below was COPIED from
+     tokens.css, not retyped from memory. If a value here disagrees with that
+     file, this file is wrong.
+
+     YOU EXTEND GRAPHITE. YOU DO NOT REDESIGN IT. If you find yourself
+     inventing a colour, a radius, a type size or a spacing value — stop. The
+     answer is already below.
+
+     ── HOW TO WRITE A SHEET ────────────────────────────────────────────────
+
+     A sheet is a self-contained fragment: one <section class="page"> with a
+     data-page-num and a data-page-title, a .pagehead, then real RENDERED
+     SPECIMENS — never descriptions of specimens. Show the thing, then state
+     the rule beneath it. Prose is tight and declarative.
+
+       <section class="page" data-page-num="22" data-page-title="The node card">
+         <div class="pagehead">
+           <span class="num">Sheet 22 · The board</span>
+           <h1>The node card</h1>
+           <p class="lede">One chassis, six kinds, and not one hue between them.</p>
+         </div>
+         <div class="sec">
+           <div class="sec-head"><span class="eyebrow">22.1</span><h2>The six kinds</h2>
+             <span class="tail">icon · silhouette · border · tone</span></div>
+           <p class="note">…</p>
+           <div class="panel"><div class="specimens">…</div>
+             <p class="caption">…</p></div>
+         </div>
+       </section>
+
+     THE EIGHT RULES FOR SHEET AUTHORS
+
+     1. NO <style> BLOCK OF YOUR OWN, AND NO NEW CSS CLASS. If a sheet needs a
+        shape that is genuinely absent, say so in your handback rather than
+        inventing it locally. Six local inventions are six contradictions.
+     2. Inline style="" is allowed ONLY for layout — grid columns, widths,
+        gaps, margin-top — and only with var(--token) values. Never an inline
+        hex. Never an inline px type size.
+     3. NEVER A RAW HEX, anywhere, for anything. Tokens only.
+     4. NEVER INVENT A NUMBER. Any value the engine computes at run time is a
+        marked placeholder: <span class="ph">&#8249;detected VRAM&#8250;</span>.
+        Use &#8249; &#8250;, never < >. The only literals permitted are ones a
+        reader can derive from what is visibly drawn on the sheet.
+     5. EVERY ICON COMES FROM THE SPRITE: <svg class="i"><use href="#ic-name"/></svg>.
+        One 1.5px stroke, inherited from .i. No emoji, ever. Give an icon-only
+        control an aria-label.
+     6. CHROME IS NEVER COLOURED. Dividers, headings, section rules, borders
+        and panel edges are --edge / --ink-*. A hue is a claim about the world.
+     7. WIDE CONTENT GOES IN .scrollx. No sheet may scroll horizontally at the
+        document level. Composed app shells go in .winscroll, which does this
+        already.
+     8. RENDER THE SHEET IN GREYSCALE BEFORE YOU HAND IT BACK. If two things
+        that mean different things become ambiguous, the sheet was leaning on
+        hue and it is wrong. See Decision 2 below — this is binding for the
+        board, and it is good practice everywhere else.
+
+     ── THE FIVE LAWS, INHERITED AND BINDING ────────────────────────────────
+
+     1. Every hue on screen is a claim about the world, and there are never
+        more hues than there are claims.
+     2. Gold is the accent and can never be mistaken for a verdict.
+     3. Compact is the only density. Working type 10/11/12px. Thread rows 28,
+        tool rows 26, controls 28, icon buttons 26. Airy is a defect.
+     4. Never invent a number.
+     5. Both themes ship at equal quality — DEFERRED for Sequence, not waived.
+        See Decision 1.
+
+     ── OWNER DECISIONS — THESE OUTRANK THE SOURCE BOOK ─────────────────────
+
+     DECISION 1 — LIGHT IS DEFERRED. Max, 2026-08-19: "ignore light theme for
+     the moment." The token layer is still written in Graphite's three-state
+     shape so that finishing light later is a fill-in-the-values job and never
+     a re-architecture. No effort is spent tuning light values and no light
+     specimens are built. Note that every Sequence extension below that carries
+     colour is an ALIAS of a token that already resolves in all three states,
+     so the deferral touches Graphite's palette only — nothing in §3 needs a
+     second value written for it later.
+
+     DECISION 2 — ARCHITECTURE NODE KINDS DIFFERENTIATE WITHOUT HUE. This
+     overrides any recommendation anywhere that assigns kinds to --viz-*
+     colours. Max, 2026-08-19: "use shapes and icons in higher quantities to
+     really differentiate the actual features… not overpower the eyes too much.
+     Don't kill people when they look at it."
+
+     Kind is carried by four NON-CHROMATIC channels:
+       ICON              one icon per kind, one meaning per icon
+       SILHOUETTE        kinds differ in shape, readable when zoomed too far
+                         out to read a label
+       BORDER TREATMENT  solid / dashed / dotted, and weight
+       NEUTRAL TONE      steps in the graphite surface ramp, ZERO chroma
+
+     Hue stays reserved for CLAIMS: verdict, risk, error, selection, focus. A
+     node's KIND is a category; a node's STATE is a claim. Only the second one
+     earns colour.
+
+     THE BINDING INVARIANT, which every board sheet must state and specify
+     against:
+       Every architecture node kind must remain distinguishable with ALL
+       COLOUR REMOVED, at every size the silhouette is drawn, FROM THE RADII
+       THAT ACTUALLY PAINT.
+     The last clause is the one that was missing, and its absence was the
+     central defect. CSS scales every corner radius by
+     f = min(side length / sum of the radii on that side), so a DECLARED radius
+     is not a RENDERED radius: on a 26x18 swatch --r-14, --r-18 and --r-full all
+     paint as 9px, and three kinds collapse into one shape. Any radius at or
+     above half the box height paints as a stadium. Prove the invariant against
+     what the renderer draws, never against the token list, and draw every
+     silhouette specimen at card aspect and at least half a card tall so the
+     radii have room to paint.
+     And the narrower one: no --arch-* token may introduce a hue that is not
+     already in the Graphite palette, and none may collide with a verdict hue.
+     The --arch-* namespace below contains NO colour token at all, which is the
+     strongest form of that guarantee.
+
+     ── CONTENTS ────────────────────────────────────────────────────────────
+       1. Typefaces
+       2. One style block
+            §1 the token layer, three-state, transcribed from tokens.css
+            §2 the ramps — type, space, radius, controls, motion
+            §3 Sequence's declared extensions, each justified at the declaration
+            §4 reset and page chrome
+            §5 the component vocabulary
+       3. One svg sprite — 58 inherited symbols + 12 declared Sequence additions
+       4. The book shell markup and script
+       5. Sheet 00 — the rendered component reference
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<!-- 1 ─ TYPEFACES ─────────────────────────────────────────────────────────
+     Instrument Sans for UI, chrome and prose; JetBrains Mono for every number,
+     identifier, path, log line, diff line, verdict badge and provenance tag.
+     Mono always sets one step down from the sans beside it. The book links
+     Google Fonts because it must open by double-clicking; the APP must not —
+     a local-first product that blocks first paint on a CDN contradicts itself.
+     ───────────────────────────────────────────────────────────────────── -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   §1 THE TOKEN LAYER
+   Transcribed from ml-harness/frontend/src/styles/tokens.css.
+
+   THREE-STATE THEMING, exactly as the book structures it:
+     :root                              → the COMPLETE light palette
+     @media (prefers-color-scheme:dark)
+       :root:not([data-theme="light"])  → system default resolves dark
+     :root[data-theme="dark"]           → explicit choice wins
+
+   The dark declaration list is written twice on purpose. Plain CSS has no way
+   to share one list between a media query and an attribute selector, so the
+   duplication is real; it comes from one source list and cannot drift as long
+   as both blocks are edited together.
+
+   LIGHT IS PRESENT AND UNTUNED — Decision 1. The values below are Graphite's
+   own tuned light palette, carried over verbatim so the shape is right; no
+   Sequence surface has been checked against them and none should be until the
+   decision is revisited.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  color-scheme:light;
+
+  /* ground + surfaces — light */
+  --bg-ground:#EFEFF0; --bg-base:#F6F6F7;
+  --surface-1:#FBFBFC; --surface-2:#FFFFFF; --surface-3:#FFFFFF; --surface-4:#FFFFFF;
+  --edge:rgba(19,19,21,.11); --edge-strong:rgba(19,19,21,.20); --edge-faint:rgba(19,19,21,.06);
+
+  /* ink — light */
+  --ink-1:#131315; --ink-2:#4C4D53; --ink-3:#6C6D75; --ink-4:#9A9BA2;
+
+  /* interaction overlays — light moves DOWNWARD (darker). A hovered light row
+     that gets lighter is the classic light-mode failure. */
+  --state-hover:rgba(19,19,21,.045); --state-press:rgba(19,19,21,.085);
+  --state-selected:rgba(232,197,71,.10);
+
+  /* accent — Graphite gold (Decision 22–24). Picked by elimination: green, amber, red, blue
+     and grey are each already spoken for by a meaning, so the accent can never
+     be mistaken for a verdict. */
+  --accent:#E8C547; --accent-solid:#C9A227; --accent-on-solid:#FFFFFF;
+  --accent-wash:rgba(232,197,71,.14); --accent-edge:rgba(232,197,71,.45);
+
+  /* semantic — verdicts. THIS IS THE WHOLE HUE BUDGET. */
+  --fits:#0C7B53; --spills:#8F5A00; --wont:#C2352F; --unknown:#6C6D75; --info:#1667A8;
+  --mix-wash:10%; --mix-edge:38%;
+
+  /* semantic — data visualisation (separate namespace, never mixed with the
+     verdict vocabulary). --viz-* are for SERIES, not for meaning. */
+  --viz-1:#E8C547; --viz-2:#1A6FA8; --viz-3:#AB3782;
+  --viz-4:#0B7566; --viz-5:#845E0C; --viz-6:#4A56C4;
+  --viz-baseline:#6C6D75;
+  --viz-band:rgba(232,197,71,.10); --viz-grid:rgba(19,19,21,.07);
+  --viz-axis:rgba(19,19,21,.16); --viz-crosshair:rgba(19,19,21,.30);
+
+  /* diff — background wash only, never foreground. Disjoint from the verdict
+     channel, so a removed line can never be misread as "won't fit". */
+  --diff-add-bg:rgba(12,123,83,.10); --diff-add-gutter:#0C7B53;
+  --diff-del-bg:rgba(194,53,47,.09); --diff-del-gutter:#C2352F;
+
+  /* utility */
+  --selection-bg:rgba(232,197,71,.22);
+  --scrollbar-thumb:rgba(19,19,21,.18); --scrollbar-thumb-hover:rgba(19,19,21,.30);
+  --scrim:rgba(19,19,21,.36);
+
+  /* elevation — light separates by shadow + hairline ring, never by tone,
+     which is why surfaces 2, 3 and 4 are all #FFFFFF there. */
+  --e0:none;
+  --e1:0 0 0 1px rgba(19,19,21,.05), 0 1px 2px rgba(19,19,21,.06);
+  --e2:0 0 0 1px rgba(19,19,21,.06), 0 2px 8px rgba(19,19,21,.08);
+  /* The same two steps expressed as a FILTER, for the one card whose outline
+     no box can follow. A box-shadow is drawn on the border box, so on the
+     agent — whose shape is a clip-path chamfer — it would paint a rectangular
+     shadow under a cut corner and announce the lie. drop-shadow() follows the
+     alpha of what is actually painted. The hairline ring half of --e1 is
+     dropped because the agent already draws its own outline plate; the blur
+     and the offset are the same numbers, so the agent sits at the same height
+     as its five siblings rather than flat on the field. */
+  --e1-drop:drop-shadow(0 1px 2px rgba(19,19,21,.06));
+  --e2-drop:drop-shadow(0 2px 8px rgba(19,19,21,.08));
+  --e3:0 0 0 1px rgba(19,19,21,.07), 0 8px 24px rgba(19,19,21,.10);
+  --e4:0 0 0 1px rgba(19,19,21,.08), 0 20px 48px rgba(19,19,21,.14);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §2 THE RAMPS — theme-invariant below this line
+   ══════════════════════════════════════════════════════════════════════════ */
+
+  --font-sans:"Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --num:tabular-nums lining-nums;
+
+  /* type scale — COMPACT is the only mode. There is no size above 26px and no
+     size below 10px. Body weight 450, headings 600, labels and controls 550,
+     .btn.solid 600, .verdict 700. Mono always sets one step down from the sans
+     beside it. Line height is paired to size, never a role ratio. */
+  --t-10:10px; --lh-10:14px;
+  --t-11:11px; --lh-11:15px;
+  --t-12:12px; --lh-12:16px;
+  --t-13:13px; --lh-13:18px;
+  --t-14:14px; --lh-14:21px;
+  --t-15:15px; --lh-15:23px;
+  --t-17:17px; --lh-17:22px;
+  --t-20:20px; --lh-20:26px;
+  --t-26:26px; --lh-26:30px;
+
+  /* spacing — 4px base, named for pixels. The assignments are BINDING, not
+     illustrative: 2 icon-to-label · 4 inside chips · 6 button gaps · 8 row
+     padding · 10 button horizontal padding · 12 card and composer padding ·
+     16 panel padding · 20 transcript sides · 24 page header · 32 between page
+     sections · 40 between major sections · 56 page bottom. The scale skips
+     14, 18, 28, 36 and 48 — a 14px gap is an invented number. */
+  --sp-2:2px; --sp-4:4px; --sp-6:6px; --sp-8:8px; --sp-10:10px; --sp-12:12px;
+  --sp-16:16px; --sp-20:20px; --sp-24:24px; --sp-32:32px; --sp-40:40px; --sp-56:56px;
+
+  /* radius — SIX steps, and only six. Apple-like rounding is a stated
+     priority. --r-6, --r-12, --r-16 and --r-20 DO NOT EXIST; writing one
+     yields an invalid border-radius and a square corner, deliberately.
+       --r-4    inline code chips, colour swatches, keycaps, checkbox
+       --r-8    icon buttons, tool rows, kv rows, file headers, tab pills, menu items
+       --r-10   buttons, rail rows, thread rows, run rows, code blocks, inputs, menus
+       --r-14   panels, cards, NODE CARDS, chart frames, empty states, stages
+       --r-18   the window, the composer, the user bubble, page header, dialogs
+       --r-full pills, dots, avatars, the plus button, THE CIRCULAR SEND BUTTON
+     Two rules travel with the ramp. NEVER NEST EQUAL RADII: inner radius =
+     outer minus its inset, so a --r-18 composer with --sp-10 padding holds a
+     --r-8 selector. THE PILL IS RESERVED: --r-full means "this is a state or a
+     label", never "this is an interactive container". */
+  --r-4:4px; --r-8:8px; --r-10:10px; --r-14:14px; --r-18:18px;
+  --r-full:999px;
+
+  /* The single sanctioned sub-4px radius: VRAM/budget segments (8px tall) and
+     chart legend keys (3px tall), where --r-4 would round a 3px key into a
+     lozenge and destroy the difference between a swatch and a rule. It is the
+     ONLY place a radius below 4px is allowed. */
+  --r-bar:2px;
+
+  /* layout constants */
+  --rail-w:280px; --pane-w:392px; /* one host: .win's third column */ --col-max:720px;
+  /* --menu-w exists because sheet 01 forbids borrowing a resize clamp as a
+     convenient specimen width, and four places were borrowing --pane-w-min for
+     exactly that. A popup menu and a path field are not a pane at its narrowest
+     drag; they only happened to want the same number. The number is the same
+     320 the clamp is, and saying so is the point: it is a coincidence, not a
+     derivation, and a name is what stops the next reader treating it as one. */
+  --menu-w:320px;
+  --row-h:30px; --row-h-thread:28px; --control-h:28px; --icon-btn:26px;
+  --topbar-h:44px; --dot:6px;
+
+  /* resize bounds — the shipped shell's existing clamps, kept so a drag cannot
+     produce a rail narrower than the folders and timestamps need. */
+  --rail-w-min:216px; --rail-w-max:400px;
+  --pane-w-min:320px; --pane-w-max:640px;
+  --col-min:420px;
+
+  /* motion */
+  --dur-1:110ms; --dur-2:170ms; --ease:cubic-bezier(.2,.7,.3,1);
+}
+
+/* derived washes/edges — one derivation, both themes, driven by --mix-*.
+   Written once rather than ten times, so a change to --fits cannot leave a
+   wash behind on last year's hue. Never mix your own. */
+:root{
+  --fits-wash:color-mix(in srgb, var(--fits) var(--mix-wash), transparent);
+  --fits-edge:color-mix(in srgb, var(--fits) var(--mix-edge), transparent);
+  --spills-wash:color-mix(in srgb, var(--spills) var(--mix-wash), transparent);
+  --spills-edge:color-mix(in srgb, var(--spills) var(--mix-edge), transparent);
+  --wont-wash:color-mix(in srgb, var(--wont) var(--mix-wash), transparent);
+  --wont-edge:color-mix(in srgb, var(--wont) var(--mix-edge), transparent);
+  --unknown-wash:color-mix(in srgb, var(--unknown) var(--mix-wash), transparent);
+  --unknown-edge:color-mix(in srgb, var(--unknown) var(--mix-edge), transparent);
+  --info-wash:color-mix(in srgb, var(--info) var(--mix-wash), transparent);
+  --info-edge:color-mix(in srgb, var(--info) var(--mix-edge), transparent);
+  --accent-solid-hover:color-mix(in srgb, var(--accent-solid) 86%, #fff 14%);
+  --accent-solid-press:color-mix(in srgb, var(--accent-solid) 88%, #000 12%);
+  /* six run-state roles, each an explicit alias of a token that already exists */
+  --st-neutral:var(--ink-3); --st-active:var(--info); --st-attention:var(--accent);
+  --st-stalled:var(--spills); --st-failed:var(--wont); --st-done:var(--fits);
+  --st-archived-opacity:.6;
+}
+
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg-ground:#08080A; --bg-base:#0D0D0F;
+  --surface-1:#141416; --surface-2:#1A1A1D; --surface-3:#232327; --surface-4:#2C2C31;
+  --edge:rgba(255,255,255,.09); --edge-strong:rgba(255,255,255,.16); --edge-faint:rgba(255,255,255,.05);
+  --ink-1:#F5F5F7; --ink-2:#C3C4C9; --ink-3:#8A8B93; --ink-4:#56575E;
+  --state-hover:rgba(255,255,255,.045); --state-press:rgba(255,255,255,.085);
+  --state-selected:rgba(232,197,71,.16);
+  --accent:#E8C547; --accent-solid:#C9A227; --accent-on-solid:#FFFFFF;
+  --accent-wash:rgba(232,197,71,.16); --accent-edge:rgba(232,197,71,.58);
+  --fits:#57D2A6; --spills:#F0B45F; --wont:#F47C7C; --unknown:#8A8B93; --info:#6FB5E8;
+  --mix-wash:14%; --mix-edge:46%;
+  --viz-1:#E8C547; --viz-2:#5EA8DC; --viz-3:#E07BB4;
+  --viz-4:#4ECFB0; --viz-5:#D6A45A; --viz-6:#9AA3FF;
+  --viz-baseline:#8A8B93;
+  --viz-band:rgba(232,197,71,.14); --viz-grid:rgba(255,255,255,.06);
+  --viz-axis:rgba(255,255,255,.14); --viz-crosshair:rgba(255,255,255,.28);
+  --diff-add-bg:rgba(87,210,166,.12); --diff-add-gutter:#57D2A6;
+  --diff-del-bg:rgba(244,124,124,.12); --diff-del-gutter:#F47C7C;
+  --selection-bg:rgba(232,197,71,.34);
+  --scrollbar-thumb:rgba(255,255,255,.14); --scrollbar-thumb-hover:rgba(255,255,255,.24);
+  --scrim:rgba(4,4,6,.64);
+  --e0:none;
+  --e1:inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.40);
+  --e2:inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.45);
+  --e1-drop:drop-shadow(0 1px 2px rgba(0,0,0,.40));
+  --e2-drop:drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  --e3:inset 0 1px 0 rgba(255,255,255,.08), 0 12px 32px rgba(0,0,0,.50);
+  --e4:inset 0 1px 0 rgba(255,255,255,.10), 0 24px 64px rgba(0,0,0,.60);
+}}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg-ground:#08080A; --bg-base:#0D0D0F;
+  --surface-1:#141416; --surface-2:#1A1A1D; --surface-3:#232327; --surface-4:#2C2C31;
+  --edge:rgba(255,255,255,.09); --edge-strong:rgba(255,255,255,.16); --edge-faint:rgba(255,255,255,.05);
+  --ink-1:#F5F5F7; --ink-2:#C3C4C9; --ink-3:#8A8B93; --ink-4:#56575E;
+  --state-hover:rgba(255,255,255,.045); --state-press:rgba(255,255,255,.085);
+  --state-selected:rgba(232,197,71,.16);
+  --accent:#E8C547; --accent-solid:#C9A227; --accent-on-solid:#FFFFFF;
+  --accent-wash:rgba(232,197,71,.16); --accent-edge:rgba(232,197,71,.58);
+  --fits:#57D2A6; --spills:#F0B45F; --wont:#F47C7C; --unknown:#8A8B93; --info:#6FB5E8;
+  --mix-wash:14%; --mix-edge:46%;
+  --viz-1:#E8C547; --viz-2:#5EA8DC; --viz-3:#E07BB4;
+  --viz-4:#4ECFB0; --viz-5:#D6A45A; --viz-6:#9AA3FF;
+  --viz-baseline:#8A8B93;
+  --viz-band:rgba(232,197,71,.14); --viz-grid:rgba(255,255,255,.06);
+  --viz-axis:rgba(255,255,255,.14); --viz-crosshair:rgba(255,255,255,.28);
+  --diff-add-bg:rgba(87,210,166,.12); --diff-add-gutter:#57D2A6;
+  --diff-del-bg:rgba(244,124,124,.12); --diff-del-gutter:#F47C7C;
+  --selection-bg:rgba(232,197,71,.34);
+  --scrollbar-thumb:rgba(255,255,255,.14); --scrollbar-thumb-hover:rgba(255,255,255,.24);
+  --scrim:rgba(4,4,6,.64);
+  --e0:none;
+  --e1:inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.40);
+  --e2:inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.45);
+  --e1-drop:drop-shadow(0 1px 2px rgba(0,0,0,.40));
+  --e2-drop:drop-shadow(0 4px 12px rgba(0,0,0,.45));
+  --e3:inset 0 1px 0 rgba(255,255,255,.08), 0 12px 32px rgba(0,0,0,.50);
+  --e4:inset 0 1px 0 rgba(255,255,255,.10), 0 24px 64px rgba(0,0,0,.60);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §3 SEQUENCE'S DECLARED EXTENSIONS
+   ──────────────────────────────────────────────────────────────────────────
+   Graphite's own precedent for this is tokens.css's sanctioned additions: a
+   derivation of an existing token, or a shipped constraint the book does not
+   model, each NAMED AND JUSTIFIED IN PLACE. It is NOT a licence for a new
+   colour, radius, type size or spacing value, and nothing below introduces
+   one. Every token here is either a pure geometry value Graphite has no slot
+   for, or an alias of a token that already resolves in all three theme states.
+
+   Graphite has no board, no canvas, no node, no edge and no containment.
+   Sequence's whole product is one canvas. That gap — not taste — is what each
+   declaration below is paying for.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+
+  /* ── STROKE WIDTHS ────────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite has no stroke-width token at all. Its .i
+     class writes a literal 1.5. A board genuinely needs the scale, because on
+     a canvas an EDGE and a BORDER are different objects drawn in the same
+     paint, and "1px" appearing in both means neither can be tuned without
+     moving the other. Five widths, each with one job. */
+  --w-hair:1px;      /* a resting border: node cards, panels, chips */
+  --w-edge:1.2px;    /* a connector the reader is not being asked to follow */
+  --w-flow:1.5px;    /* a connector on the flow being read; matches the icon stroke */
+  --w-struct:1.5px;  /* a structural boundary: a module wall, a containment edge */
+  --w-rule:2px;      /* a claim drawn as a line: the selection ring, a budget rule */
+
+  /* ── V3 GOLD GLASS (Decision 24) ───────────────────────────────────────
+     Mirrored from packages/web2/src/tokens/graphite.css so the brand book
+     specimens and the live fill-screen chrome share one glass recipe.
+     White-at-low-alpha fills + balanced hi/lo inset — not a dark translucent
+     slab. Accent stays gold; glass itself stays neutral. */
+  --glass-pane:color-mix(in srgb, var(--surface-1) 70%, transparent);
+  --glass-edge:color-mix(in srgb, var(--edge-strong) 80%, var(--accent-edge) 20%);
+  --glass-blur:20px;
+  --glass-ctl:rgba(255,255,255,.13);
+  --glass-ctl-hover:rgba(255,255,255,.20);
+  --glass-ctl-hi:rgba(255,255,255,.22);
+  --glass-ctl-edge:rgba(255,255,255,.20);
+  --glass-ctl-lo:rgba(0,0,0,.28);
+  --glass-ctl-blur:20px;
+  --glass-ctl-sat:1.9;
+  --glass-pane-fill:rgba(255,255,255,.055);
+  --glass-hover:rgba(255,255,255,.075);
+  --glass-press-hover:rgba(255,255,255,.095);
+  --glass-fill-2:rgba(255,255,255,.040);
+  --glass-blur-pane:24px;
+  --glass-blur-bar:20px;
+  --glass-blur-input:18px;
+  --glass-sheen:linear-gradient(152deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 44%, transparent 72%);
+  --glass-rim:rgba(255,255,255,.26);
+  --glass-sel:rgba(255,255,255,.22);
+  --glass-sel-edge:rgba(255,255,255,.32);
+  --glass-inset:
+    inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi),
+    inset 0 calc(-1 * var(--w-hair)) 0 0 var(--glass-ctl-lo);
+  --glass-sel-inset:
+    inset 0 0 0 var(--w-hair) var(--glass-sel-edge),
+    inset 0 var(--w-hair) 0 0 var(--glass-ctl-hi),
+    inset 0 calc(-1 * var(--w-hair)) 0 0 var(--glass-ctl-lo);
+
+  /* ── NODE-KIND CHANNELS — Decision 2 ──────────────────────────────────
+     CANNOT BE INHERITED: Graphite has no architecture canvas and therefore no
+     concept of a node kind. It also, correctly, has nowhere to put one — its
+     verdict namespace is a closed budget of claims and its --viz-* namespace
+     is "for SERIES, not for meaning". Sequence previously spent five hues on
+     kinds, four of which were byte-identical to its own status vocabulary, so
+     the downstream half of every board read as a wall of passed and warning.
+
+     THERE IS NO COLOUR TOKEN IN THIS BLOCK. Kind is carried by silhouette,
+     border style, border weight, neutral tone and an icon — four non-chromatic
+     channels and one glyph. Every pair of kinds differs in at least three of
+     them, which is what makes the greyscale invariant hold rather than merely
+     be asserted. Hue on a node is reserved for what the node IS DOING:
+     verdict, risk, error, selection, focus.
+
+     SILHOUETTE — read at a zoom too far out for a label. CORNER RADIUS ALONE
+     IS TOO WEAK A CHANNEL: four of the six kinds used to be four rounded
+     rectangles differing only in a number the renderer was free to discard, so
+     the six get six genuinely different OUTLINES instead.
+       entry      capsule left end against a hard square right edge   the way in
+       service    rounded rect, --r-14                    the default runtime thing
+       module     rounded rect --r-14 with a top-left tab  a container of other nodes
+       datastore  cylinder: flat sides, elliptical top and bottom  it holds still
+       topic      stadium, both ends fully round          a lane something flows along
+       agent      rounded rect, chamfered top-right corner  an actor, not a deployment
+     Each token below is written as what ACTUALLY PAINTS. The old entry token
+     read --r-full --r-14 --r-14 --r-full, which on a 160x96 card sums 1998
+     against 96 on the left side: f = 0.048, and the two --r-14 corners painted
+     at 0.67px, i.e. square. The token asserted a value the renderer threw away.
+     It now says square, because square is what ships.
+     Two of the six are shapes border-radius cannot express, so they are DRAWN
+     rather than declared — the module's tab is an added bordered element, the
+     agent's chamfer is cut out of a two-layer plate. Neither is faked with a
+     radius that will not render.
+     BORDER — solid means the analyzer saw it stand there; dashed means it is a
+     boundary drawn around things; dotted means it is ambient, sampled, not
+     held. Weight separates the two kinds inside each style — but weight is the
+     WEAKEST channel in the set and no pair of kinds may ever rely on it alone:
+     a 1.5px border is snapped to 1px on a 1x display, so --w-hair and
+     --w-struct are indistinguishable there. Every pair below is separated by
+     icon AND silhouette AND at least one of style or tone before weight is
+     counted at all.
+     TONE — the weakest channel, and deliberately so. It carries containment
+     depth first (a module recedes behind its members) and is not asked to
+     separate every kind on its own. */
+
+  --arch-sil-entry:var(--r-full) 0 0 var(--r-full);
+  --arch-sil-service:var(--r-14);
+  --arch-sil-module:var(--r-14);
+  --arch-sil-store:50% / var(--r-14);
+  --arch-sil-topic:var(--r-full);
+  --arch-sil-agent:var(--r-4);
+
+  /* the two outlines a radius cannot express. The chamfer is a clip, cut at
+     --sp-16 so it is a fixed bite out of the corner at every card size; the tab
+     is an added element and carries its own two dimensions off the space ramp.
+     Both are used by .n-module and .n-agent in §5B and nowhere else. */
+  --arch-clip-agent:polygon(0 0, calc(100% - var(--sp-16)) 0, 100% var(--sp-16), 100% 100%, 0 100%);
+  --arch-tab-w:var(--sp-32);
+  --arch-tab-h:var(--sp-12);
+
+  --arch-style-entry:dashed;   --arch-weight-entry:var(--w-hair);
+  --arch-style-service:solid;  --arch-weight-service:var(--w-hair);
+  --arch-style-module:dashed;  --arch-weight-module:var(--w-struct);
+  --arch-style-store:solid;    --arch-weight-store:var(--w-struct);
+  --arch-style-topic:dotted;   --arch-weight-topic:var(--w-hair);
+  /* agent's outline is PAINTED, not bordered — a drawn plate cannot carry a
+     dash pattern, so solid is the truth rather than a preference. The pair it
+     could be confused with, store, is separated by icon, silhouette and tone. */
+  --arch-style-agent:solid;    --arch-weight-agent:var(--w-struct);
+
+  --arch-tone-entry:var(--surface-2);
+  --arch-tone-service:var(--surface-2);
+  --arch-tone-module:var(--surface-1);
+  --arch-tone-store:var(--surface-2);
+  --arch-tone-topic:var(--surface-2);
+  --arch-tone-agent:var(--surface-3);
+
+  /* Shipped geometry constraints the book does not model. --arch-card-h was
+     renamed to --arch-card-min-h because the card's height is content-driven
+     and this is a FLOOR: a one-line card must be a one-line card, not a 96px
+     block box holding one 16px line over 60px of dead ground. */
+  --arch-card-w:160px;
+  --arch-card-min-h:96px;
+
+  /* ── EDGE PROOF STATE ─────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite has no connector of any kind, and this is
+     the one place on the board where colour IS permitted. A drawn connector
+     between two nodes is DATA — a chart series with two endpoints — not
+     chrome. Law 1 governs chrome; a series is governed by the viz namespace.
+
+     Three states, three aliases, no new hue:
+       TRACED     the analyzer followed a real call in the source. This is the
+                  majority and the reference everything else is read against,
+                  so it takes --viz-baseline, which is exactly what that token
+                  means on a chart.
+       ON-FLOW    this edge is part of the flow being played back or selected.
+                  Selection is the product's own voice, so it takes --accent.
+       DECLARED   a claim from config or a manifest that the source could not
+                  confirm. It is --unknown. IT IS NEVER --wont: red means
+                  failed or blocked, and a claim nobody could check has not
+                  failed at anything.
+     The dash patterns matter as much as the colour and are the reason the
+     three states survive greyscale: a trace is continuous because it was
+     observed continuously, and a declaration is broken because the evidence
+     is. */
+  --flow-traced:var(--viz-baseline);
+  --flow-onflow:var(--accent);
+  --flow-declared:var(--unknown);
+  --flow-dash-traced:none;
+  --flow-dash-declared:5 4;
+
+  /* ── THE BOARD FIELD ──────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite draws no infinite plane. The field is a DOT
+     grid, one grid and only one — two grids at different pitches beat against
+     each other and neither reads. Pitch is --sp-24, straight off the space
+     ramp; the dot is one hairline wide. The ink is --edge rather than
+     --viz-grid because a 1px dot at 24px pitch carries far less weight than a
+     continuous hairline, and --edge is where the two match perceptually. The
+     field lives INSIDE the camera transform: if it does not pan and scale with
+     the content it is a backdrop, not a board. */
+  --board-field-ink:var(--edge);
+  --board-field-pitch:var(--sp-24);
+  --board-field-dot:var(--w-hair);
+
+  /* ── CANVAS SELECTION ─────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite selects rows, not objects in a plane, and
+     has no marquee. Selection OUTRANKS every other carrier and must be MORE
+     visible than the state it replaces, never less — the defect being fixed
+     dropped a selected node's border to 1.54:1 and dimmed everything else
+     below 3:1. Fill plus a --w-rule accent ring at full strength.
+     Dimming reuses --st-archived-opacity: Graphite already decided what
+     "receded but still readable" is worth, and it is .6, not .4. */
+  --board-select-fill:var(--state-selected);
+  --board-select-edge:var(--accent);
+  --board-marquee-fill:var(--accent-wash);
+  --board-marquee-edge:var(--accent-edge);
+  --board-dim-opacity:var(--st-archived-opacity);
+
+  /* ── CONTAINMENT AND NESTING ──────────────────────────────────────────
+     CANNOT BE INHERITED: "nesting" returns zero hits across all forty Graphite
+     pages. Sequence has parentId on ArchNode and memberIds on diagram groups,
+     and today draws neither. Depth is carried by TONE, one step per level, and
+     it stops at three: past that the ramp repeats and the border style has to
+     carry it instead. That ceiling is stated rather than discovered.
+     The header height is the 24px component height Graphite already uses for
+     .chip, .btn.sm, .seg button and .railhead — not a new rung.
+     The inset is --sp-4 for one reason: a module wall is --r-18, and 18 minus
+     4 is 14, which is exactly the service card's silhouette. Radii nest
+     correctly by arithmetic, not by eye. */
+  --nest-0:var(--bg-ground);   /* the board ground itself */
+  --nest-1:var(--surface-1);   /* a module wall */
+  --nest-2:var(--surface-2);   /* a node inside a module */
+  --nest-3:var(--surface-3);   /* a part inside a node */
+  --nest-inset:var(--sp-4);
+  --nest-hd-h:24px;
+
+  /* ── SEQUENTIAL RAMP — DELETED, AND THE DELETION IS THE POINT ──────────
+     --seq-heat-1 … --seq-heat-5 used to live here, five steps derived from
+     --viz-2. No sheet used them and no board surface in the product used them.
+     An ungoverned five-step hue ramp sitting in the substrate is the exact hole
+     through which kind-by-hue comes back: five slots, six kinds, and a reader
+     who assumes a ramp must mean an ordering. Decision 2 says kind is carried
+     by icon, silhouette, border and neutral tone. If a real heat surface is
+     ever specified, it arrives WITH the surface that justifies it and with a
+     written meaning for each step — not before. */
+
+  /* ── CAMERA MOTION ────────────────────────────────────────────────────
+     CANNOT BE INHERITED: Graphite ships two durations because nothing in it
+     moves further than a hover. A camera flying to fit, a panel sliding, and a
+     playback hop stepping from node to node are three durations a 170ms
+     ceiling cannot express. --dur-1 and --dur-2 still govern every control;
+     these three govern the canvas only. */
+  --seq-dur-panel:180ms;
+  --seq-dur-cam:240ms;
+  --seq-dur-hop:400ms;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §4 RESET AND PAGE CHROME — inherited verbatim
+   ══════════════════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg-base); color:var(--ink-1);
+  font-family:var(--font-sans); font-size:var(--t-13); line-height:var(--lh-13);
+  font-weight:450; letter-spacing:0; -webkit-font-smoothing:antialiased;
+  font-feature-settings:"ss01" 1;
+}
+::selection{background:var(--selection-bg); color:var(--ink-1)}
+*{scrollbar-width:thin; scrollbar-color:var(--scrollbar-thumb) transparent}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:var(--r-full);border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-track{background:transparent}
+/* Focus is a DOUBLE RING and is never removed. */
+:focus-visible{outline:none; box-shadow:0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent); border-radius:inherit}
+svg{display:block}
+.i{width:16px;height:16px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i-14{width:14px;height:14px}
+.i-12{width:12px;height:12px}
+.i-18{width:18px;height:18px}
+.i-20{width:20px;height:20px}
+.mono{font-family:var(--font-mono); font-variant-numeric:var(--num)}
+.num{font-variant-numeric:var(--num)}
+
+/* placeholder rendering — the hard rule made visible. Anything in angle
+   brackets is a value the engine computes at run time. It is never a plausible
+   fiction and it is never allowed to look like one. */
+.ph{color:var(--ink-2); border-bottom:1px dotted var(--edge-strong); padding-bottom:1px; white-space:nowrap}
+.ph-on-dark{color:inherit;opacity:.86}
+
+/* book shell */
+#topbar{
+  position:sticky; top:0; z-index:60; height:var(--topbar-h);
+  display:flex; align-items:center; gap:var(--sp-16);
+  padding:0 var(--sp-20);
+  background:color-mix(in srgb, var(--bg-base) 88%, transparent);
+  backdrop-filter:blur(20px) saturate(1.4); -webkit-backdrop-filter:blur(20px) saturate(1.4);
+  border-bottom:1px solid var(--edge);
+}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  #topbar{background:var(--bg-base)}
+}
+.bookmark{display:flex;align-items:center;gap:var(--sp-8);font-size:var(--t-12);color:var(--ink-2);white-space:nowrap}
+.markglyph{
+  width:20px;height:20px;border:1px solid var(--edge-strong);border-radius:var(--r-8);
+  display:grid;place-items:center;color:var(--ink-1);
+}
+.bookmark b{color:var(--ink-1);font-weight:600}
+.bookmark .sep{color:var(--ink-4)}
+.seg{display:flex;gap:2px;padding:2px;background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-10)}
+.seg button{
+  appearance:none;border:0;background:transparent;color:var(--ink-3);
+  font-family:inherit;font-size:var(--t-12);font-weight:550;line-height:1;
+  height:24px;padding:0 var(--sp-10);border-radius:var(--r-8);cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:color var(--dur-1) var(--ease),background var(--dur-1) var(--ease);
+}
+.seg button:hover{color:var(--ink-1);background:var(--state-hover)}
+.seg button[aria-selected="true"]{background:var(--surface-3);color:var(--ink-1);box-shadow:var(--e1)}
+.spacer{flex:1}
+.themetoggle{
+  appearance:none;height:26px;padding:0 var(--sp-10);display:flex;align-items:center;gap:6px;
+  background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-10);
+  color:var(--ink-2);font-family:inherit;font-size:var(--t-12);font-weight:550;cursor:pointer;
+  transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease);
+}
+.themetoggle:hover{background:var(--surface-3);color:var(--ink-1)}
+.jump{
+  display:flex;align-items:center;gap:var(--sp-6);height:26px;
+  padding:0 var(--sp-8) 0 var(--sp-10);max-width:360px;min-width:0;
+  background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-10);
+  color:var(--ink-2);
+  transition:background var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease);
+}
+.jump:hover{background:var(--surface-3);border-color:var(--edge-strong)}
+.jump > svg{color:var(--ink-3);flex:0 0 auto}
+.jump:focus-within{box-shadow:0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent)}
+.jumpsel{
+  appearance:none;-webkit-appearance:none;border:0;background:transparent;color:var(--ink-1);
+  font-family:inherit;font-size:var(--t-12);font-weight:550;line-height:1;
+  padding:0;margin:0;cursor:pointer;min-width:0;max-width:100%;text-overflow:ellipsis;
+}
+.jumpsel:focus{outline:none}
+.jumpsel:disabled{color:var(--ink-4);cursor:not-allowed}
+.jumpsel option{background:var(--surface-2);color:var(--ink-1);font-weight:400}
+.pagenav{display:flex;align-items:center;gap:2px}
+.pagecount{
+  font-family:var(--font-mono);font-size:var(--t-10);line-height:var(--lh-10);
+  font-variant-numeric:var(--num);color:var(--ink-3);white-space:nowrap;
+}
+
+main{padding:var(--sp-32) var(--sp-20) var(--sp-56)}
+.page{display:none;max-width:1180px;margin:0 auto}
+.page.on{display:block}
+.page.wide{max-width:1420px}
+html:not(.js) .page{display:block}
+html:not(.js) .page + .page{
+  margin-top:var(--sp-56);padding-top:var(--sp-40);border-top:1px solid var(--edge);
+}
+.page[id],.sec[id],.anchor[id]{scroll-margin-top:calc(var(--topbar-h) + var(--sp-16))}
+
+/* page furniture */
+.pagehead{
+  border:1px solid var(--edge);border-radius:var(--r-18);background:var(--surface-1);
+  padding:var(--sp-24);margin:0 0 var(--sp-32);
+}
+.pagehead .num{
+  display:block;margin-bottom:var(--sp-8);
+  font-family:var(--font-mono);font-size:var(--t-10);line-height:var(--lh-10);
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:500;
+}
+.pagehead h1{
+  margin:0 0 var(--sp-12);font-size:var(--t-26);line-height:var(--lh-26);
+  font-weight:600;letter-spacing:-.024em;color:var(--ink-1);
+}
+.pagehead .lede{margin:0;max-width:82ch;font-size:var(--t-14);line-height:20px;color:var(--ink-2)}
+.pagehead .lede + .lede{margin-top:var(--sp-10)}
+
+.sec{margin:0 0 var(--sp-40)}
+.sec-head{display:flex;align-items:baseline;gap:var(--sp-12);margin-bottom:var(--sp-12);
+  padding-bottom:var(--sp-8);border-bottom:1px solid var(--edge)}
+.eyebrow{font-family:var(--font-mono);font-size:var(--t-10);line-height:var(--lh-10);
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:500;white-space:nowrap}
+.sec-head h2{margin:0;font-size:var(--t-17);line-height:var(--lh-17);font-weight:600;letter-spacing:-.012em;color:var(--ink-1)}
+.sec-head .tail{margin-left:auto;font-size:var(--t-11);color:var(--ink-3)}
+.note{font-size:var(--t-13);line-height:18px;color:var(--ink-2);max-width:74ch;margin:0 0 var(--sp-16)}
+.note + .note{margin-top:calc(-1 * var(--sp-8))}
+.note code, .inline-code{
+  font-family:var(--font-mono);font-size:.92em;background:var(--surface-3);
+  border:1px solid var(--edge-faint);border-radius:var(--r-4);padding:1px 5px;color:var(--ink-1);
+  white-space:nowrap
+}
+.caption{font-size:var(--t-11);line-height:15px;color:var(--ink-3);margin:var(--sp-8) 0 0}
+.dev{border-left:2px solid var(--info);background:var(--info-wash);border-radius:0 var(--r-8) var(--r-8) 0;
+  padding:var(--sp-10) var(--sp-12);font-size:var(--t-12);line-height:17px;color:var(--ink-2);max-width:82ch;margin:0 0 var(--sp-16)}
+.dev b{color:var(--ink-1);font-weight:600}
+
+.grid{display:grid;gap:var(--sp-12)}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1000px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:980px){.g2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:680px){.g2,.g3,.g4{grid-template-columns:minmax(0,1fr)}}
+.panel table{max-width:100%}
+.panel:has(> table),.panel.tight:has(> table){overflow-x:auto}
+
+.panel{background:var(--surface-1);border:1px solid var(--edge);border-radius:var(--r-14);padding:var(--sp-16)}
+.panel.tight{padding:var(--sp-12)}
+.panel h3{margin:0 0 var(--sp-4);font-size:var(--t-13);font-weight:600;color:var(--ink-1);letter-spacing:0}
+.panel .sub{font-size:var(--t-11);line-height:15px;color:var(--ink-3);margin:0 0 var(--sp-12)}
+
+table.tk{width:100%;border-collapse:collapse;font-size:var(--t-12)}
+table.tk th{text-align:left;font-weight:550;color:var(--ink-3);font-size:var(--t-10);
+  letter-spacing:.08em;text-transform:uppercase;font-family:var(--font-mono);
+  padding:0 var(--sp-8) var(--sp-6) 0;border-bottom:1px solid var(--edge);white-space:nowrap}
+table.tk td{padding:5px var(--sp-8) 5px 0;border-bottom:1px solid var(--edge-faint);vertical-align:middle;color:var(--ink-2)}
+table.tk tr:last-child td{border-bottom:0}
+table.tk td.k{color:var(--ink-1);font-family:var(--font-mono);font-size:var(--t-11);white-space:nowrap}
+table.tk td.v{font-family:var(--font-mono);font-size:var(--t-11);font-variant-numeric:var(--num);color:var(--ink-2)}
+table.tk td.r{font-family:var(--font-mono);font-size:var(--t-11);font-variant-numeric:var(--num);text-align:right;color:var(--ink-1);white-space:nowrap}
+.sw{display:inline-block;width:26px;height:18px;border-radius:var(--r-4);border:1px solid var(--edge);flex:0 0 auto;vertical-align:middle}
+.swline{display:flex;align-items:center;gap:var(--sp-8)}
+
+.specs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 var(--sp-12);margin:0}
+.specs dt{font-size:var(--t-11);line-height:15px;color:var(--ink-3);
+  padding:4px 0;white-space:nowrap;border-bottom:1px solid var(--edge-faint)}
+.specs dd{margin:0;padding:4px 0;border-bottom:1px solid var(--edge-faint);min-width:0;
+  font-family:var(--font-mono);font-size:var(--t-11);line-height:15px;
+  font-variant-numeric:var(--num);color:var(--ink-1);overflow-wrap:anywhere}
+.specs dt:last-of-type,.specs dd:last-of-type{border-bottom:0}
+
+.specimens{display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--sp-12)}
+.specimens.column{flex-direction:column}
+.specimen{display:flex;flex-direction:column;gap:var(--sp-6);align-items:flex-start;min-width:0}
+.specimen > .lbl{
+  font-family:var(--font-mono);font-size:var(--t-10);line-height:var(--lh-10);
+  letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);
+}
+
+.stage{
+  background:var(--bg-ground);border:1px solid var(--edge);border-radius:var(--r-14);
+  padding:var(--sp-16);display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start;
+}
+.stage.base{background:var(--bg-base)}
+.stage.column{flex-direction:column;flex-wrap:nowrap}
+.stage.pad-sm{padding:var(--sp-10)}
+
+/* correct / incorrect — THE FRAME STAYS NEUTRAL. The green and the red live on
+   the 14px mark and the four-character label only, never on the border and
+   never on the fill. */
+.do,.dont{
+  border:1px solid var(--edge);border-radius:var(--r-14);background:var(--surface-1);
+  padding:var(--sp-12);display:flex;flex-direction:column;gap:var(--sp-8);min-width:0;
+}
+.do > .lbl,.dont > .lbl{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:var(--t-10);line-height:1;
+  letter-spacing:.08em;text-transform:uppercase;font-weight:500;
+}
+.do > .lbl{color:var(--fits)}
+.dont > .lbl{color:var(--wont)}
+.do > .why,.dont > .why{font-size:var(--t-11);line-height:15px;color:var(--ink-3);margin:0}
+
+.codeblock{
+  margin:0;font-family:var(--font-mono);font-size:var(--t-11);line-height:18px;
+  font-variant-numeric:var(--num);color:var(--ink-1);
+  background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-10);
+  padding:var(--sp-10) var(--sp-12);overflow-x:auto;white-space:pre;
+}
+.kbd{
+  display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;
+  padding:0 5px;background:var(--surface-3);border:1px solid var(--edge);
+  border-bottom-color:var(--edge-strong);border-radius:var(--r-4);
+  font-family:var(--font-mono);font-size:var(--t-10);line-height:1;color:var(--ink-1);
+}
+hr{border:0;border-top:1px solid var(--edge);margin:var(--sp-20) 0}
+.scrollx{overflow-x:auto;max-width:100%}
+.page img{max-width:100%;height:auto}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §5 THE COMPONENT VOCABULARY
+   ──────────────────────────────────────────────────────────────────────────
+   5A — inherited from Graphite verbatim. Nothing here needs re-deriving.
+   Short names are scoped and reused on purpose: .k .v .t .m .w .right .name
+   .file .seg .key .rule .lbl .num mean different things inside different
+   parents. ALWAYS write them nested inside their parent, never bare.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* buttons */
+.btn{
+  appearance:none;font-family:inherit;font-size:var(--t-12);font-weight:550;line-height:1;
+  height:var(--control-h);padding:0 var(--sp-10);display:inline-flex;align-items:center;gap:6px;
+  background:transparent;color:var(--ink-2);border:1px solid var(--edge);border-radius:var(--r-10);
+  cursor:pointer;white-space:nowrap;
+  transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease);
+}
+.btn:hover{background:var(--state-hover);color:var(--ink-1);border-color:var(--edge-strong)}
+.btn:active{background:var(--state-press)}
+.btn.pill{border-radius:var(--r-full);padding:0 var(--sp-12)}
+.btn.ghost{border-color:transparent}
+.btn.ghost:hover{border-color:transparent;background:var(--state-hover)}
+/* .btn.solid is a BUDGET, not a style. One per surface, on the action the
+   product is asking the reader to commit to. A destructive action is a .btn
+   with a plain label — never red. */
+.btn.solid{background:var(--accent-solid);border-color:transparent;color:var(--accent-on-solid);font-weight:600}
+.btn.solid:hover{background:var(--accent-solid-hover)}
+.btn.solid:active{background:var(--accent-solid-press)}
+.btn[disabled]{color:var(--ink-4);border-color:var(--edge-faint);background:transparent;cursor:not-allowed}
+.btn.solid[disabled]{background:var(--surface-3);color:var(--ink-4)}
+.btn.sm{height:24px;font-size:var(--t-11);padding:0 var(--sp-8)}
+/* Fit — and every worded control that sits in a cluster of icon buttons — is a
+   WORD, not a glyph: sheet 09 ruling 3. Its SIZE is the ladder's business, not
+   the cluster's, so it takes the 24 rung and --r-10 like any other .btn.sm.
+   This class exists so that no sheet has to reach for an inline height or
+   radius to say it: a mixed-height cluster is what the ladder looks like when
+   it is obeyed, not a defect to be papered over locally. */
+.btn.ghost.sm{height:24px;border-radius:var(--r-10)}
+.iconbtn{
+  appearance:none;width:var(--icon-btn);height:var(--icon-btn);display:inline-grid;place-items:center;
+  background:transparent;border:1px solid transparent;border-radius:var(--r-8);
+  color:var(--ink-3);cursor:pointer;transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease);
+}
+.iconbtn:hover{background:var(--state-hover);color:var(--ink-1)}
+.iconbtn:active{background:var(--state-press)}
+.iconbtn.bordered{border-color:var(--edge)}
+.iconbtn[disabled]{color:var(--ink-4);cursor:not-allowed;background:transparent}
+/* THE SIGNATURE ELEMENT. 28px, circular, filled. It is never square. */
+.sendbtn{
+  appearance:none;width:28px;height:28px;border-radius:var(--r-full);border:0;
+  background:var(--accent-solid);color:var(--accent-on-solid);display:grid;place-items:center;cursor:pointer;
+  transition:background var(--dur-1) var(--ease),transform var(--dur-1) var(--ease);
+}
+.sendbtn:hover{background:var(--accent-solid-hover)}
+.sendbtn:active{transform:scale(.94)}
+.sendbtn[disabled]{background:var(--surface-3);color:var(--ink-4);cursor:not-allowed}
+.forcefocus{box-shadow:0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent)}
+
+/* badges, tags, chips */
+.verdict{
+  display:inline-flex;align-items:center;height:22px;padding:0 var(--sp-10);
+  border-radius:var(--r-full);font-family:var(--font-mono);font-size:var(--t-10);line-height:1;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+}
+.v-fits{color:var(--fits);background:var(--fits-wash);border:1px solid var(--fits-edge)}
+.v-spills{color:var(--spills);background:var(--spills-wash);border:1px solid var(--spills-edge)}
+.v-wont{color:var(--wont);background:var(--wont-wash);border:1px solid var(--wont-edge)}
+.v-unknown{color:var(--unknown);background:var(--unknown-wash);border:1px solid var(--unknown-edge)}
+.v-info{color:var(--info);background:var(--info-wash);border:1px solid var(--info-edge)}
+
+.prov{
+  display:inline-flex;align-items:center;gap:4px;height:16px;padding:0 6px;border-radius:var(--r-full);
+  font-family:var(--font-mono);font-size:var(--t-10);line-height:1;font-weight:500;letter-spacing:.07em;
+  text-transform:uppercase;white-space:nowrap;
+}
+.p-measured{color:var(--fits);background:var(--fits-wash)}
+.p-inferred{color:var(--info);background:var(--info-wash)}
+.p-defaulted{color:var(--spills);background:var(--spills-wash)}
+.p-declared{color:var(--unknown);background:var(--unknown-wash)}
+
+.chip{
+  display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 var(--sp-8) 0 6px;
+  background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-full);
+  font-size:var(--t-11);color:var(--ink-1);white-space:nowrap;
+}
+.chip .m{color:var(--ink-3);font-family:var(--font-mono);font-size:var(--t-10)}
+.chip.two{height:38px;border-radius:var(--r-10);padding:0 var(--sp-10) 0 var(--sp-8);align-items:center}
+.chip.two .stack{display:flex;flex-direction:column;gap:1px;line-height:1.25}
+.chip.sensitive{border-color:var(--spills-edge);background:var(--spills-wash)}
+.chip.sensitive .w{color:var(--spills);font-weight:600;font-size:var(--t-10);letter-spacing:.04em}
+.chip:hover{background:var(--surface-3)}
+
+/* state dot — colour it with a --st-* role, never with a raw verdict token */
+.dot{width:var(--dot);height:var(--dot);border-radius:var(--r-full);flex:0 0 auto;background:currentColor}
+.dot.hollow{background:transparent;border:1.5px solid currentColor;width:7px;height:7px}
+.dot.ringed{position:relative}
+.dot.ringed::after{content:"";position:absolute;inset:-3px;border-radius:var(--r-full);border:1px solid currentColor;opacity:.5}
+.pulse{animation:pulse 1.8s var(--ease) infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
+
+/* rows */
+.toolrow{
+  display:flex;align-items:center;gap:var(--sp-8);height:26px;padding:0 var(--sp-10);
+  border-radius:var(--r-8);color:var(--ink-3);font-size:var(--t-12);white-space:nowrap;
+}
+.toolrow.bordered{border:1px solid var(--edge);background:var(--surface-1)}
+.toolrow .name{color:var(--ink-2)}
+.toolrow .file{font-family:var(--font-mono);font-size:var(--t-11);color:var(--ink-1)}
+.toolrow .right{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--ink-3)}
+.toolrow .ok{color:var(--fits)}
+.runrow{
+  display:flex;align-items:center;gap:var(--sp-8);height:38px;padding:0 var(--sp-10);
+  border-radius:var(--r-10);cursor:pointer;transition:background var(--dur-1) var(--ease);
+}
+.runrow:hover{background:var(--state-hover)}
+.runrow .mid{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.runrow .ttl{font-size:var(--t-12);color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.runrow .meta{font-size:var(--t-10);color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.runrow .state{font-size:var(--t-10);font-weight:600}
+.runrow .right{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:1px;align-items:flex-end}
+.runrow .delta{font-family:var(--font-mono);font-size:var(--t-10);font-variant-numeric:var(--num);color:var(--ink-2);white-space:nowrap}
+.runrow .elapsed{font-family:var(--font-mono);font-size:var(--t-10);font-variant-numeric:var(--num);color:var(--ink-2)}
+.runrow .quiet{color:var(--ink-3)}
+.runrow.archived{opacity:var(--st-archived-opacity)}
+.kv{display:flex;align-items:center;gap:var(--sp-8);height:26px;padding:0 var(--sp-8);border-radius:var(--r-8)}
+.kv:hover{background:var(--state-hover)}
+.kv .k{font-size:var(--t-11);color:var(--ink-3);flex:0 0 96px}
+.kv .v{font-family:var(--font-mono);font-size:var(--t-11);color:var(--ink-1);font-variant-numeric:var(--num);
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kv .t{margin-left:auto}
+
+/* prose and cards */
+.prose{font-size:var(--t-15);line-height:var(--lh-15);color:var(--ink-1);max-width:68ch}
+.prose p{margin:0 0 var(--sp-10)}
+.prose p:last-child{margin-bottom:0}
+.prose code{font-family:var(--font-mono);font-size:.86em;background:var(--surface-2);
+  border:1px solid var(--edge-faint);border-radius:var(--r-4);padding:1.5px 5px;color:var(--ink-1)}
+.prose strong{font-weight:600}
+.card{background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-14);box-shadow:var(--e1)}
+.card .hd{display:flex;align-items:center;gap:var(--sp-8);padding:var(--sp-10) var(--sp-12);
+  font-size:var(--t-11);color:var(--ink-3);border-bottom:1px solid var(--edge-faint)}
+.card .hd .t{font-family:var(--font-mono);font-size:var(--t-10);letter-spacing:.08em;text-transform:uppercase}
+.card .bd{padding:var(--sp-12)}
+.suggest{
+  background:var(--surface-1);border:1px solid var(--edge);border-radius:var(--r-14);
+  padding:var(--sp-10) var(--sp-12);cursor:pointer;text-align:left;font-family:inherit;
+  display:flex;flex-direction:column;gap:var(--sp-8);min-height:82px;
+  transition:background var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease);
+}
+.suggest:hover{background:var(--surface-2);border-color:var(--edge-strong)}
+.suggest .gl{color:var(--ink-3)}
+.suggest .tx{font-size:var(--t-12);line-height:16px;color:var(--ink-2)}
+.suggest .tx b{color:var(--ink-1);font-weight:550;display:block}
+.empty{border:1px dashed var(--edge-strong);border-radius:var(--r-14);padding:var(--sp-20);
+  display:flex;flex-direction:column;gap:var(--sp-8);align-items:flex-start;background:var(--surface-1)}
+
+/* budget bar — the track is a SCALE, not a container */
+.budget{position:relative;height:8px;border-radius:var(--r-full);background:var(--surface-3);margin-top:2px}
+.budget .seg{position:absolute;top:0;height:8px;border-radius:var(--r-bar)}
+.budget .cap{position:absolute;top:-4px;height:16px;width:2px;border-radius:var(--r-full);background:currentColor}
+.budget .over{position:absolute;top:0;height:8px;border-radius:0 var(--r-full) var(--r-full) 0;
+  background:repeating-linear-gradient(135deg,currentColor 0 2px,transparent 2px 5px);opacity:.5}
+.legend{display:flex;flex-wrap:wrap;gap:var(--sp-12);font-size:var(--t-10);color:var(--ink-3);margin-top:9px}
+.legend i{display:inline-block;width:10px;height:3px;border-radius:var(--r-bar);margin-right:5px;vertical-align:middle}
+.legend i.rule{width:2px;height:10px;border-radius:var(--r-full)}
+
+/* chart frame */
+.chartframe{background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-14);box-shadow:var(--e1);overflow:hidden}
+.chartframe .ch-hd{display:flex;align-items:center;gap:var(--sp-8);padding:var(--sp-8) var(--sp-12);border-bottom:1px solid var(--edge-faint);font-size:var(--t-11);color:var(--ink-3)}
+.chartframe .ch-hd b{color:var(--ink-1);font-weight:600;font-size:var(--t-12)}
+.chartframe .ch-bd{padding:var(--sp-10) var(--sp-12) var(--sp-8)}
+.chartframe .ch-ft{display:flex;gap:var(--sp-16);padding:0 var(--sp-12) var(--sp-10);font-size:var(--t-10);color:var(--ink-3);flex-wrap:wrap}
+.chartframe .ch-ft .k{display:flex;align-items:center;gap:6px}
+.chartframe .ch-ft svg.key{width:18px;height:4px;overflow:visible}
+
+/* diff — background wash only; .tx stays --ink-1 in every state */
+.diffwrap{font-family:var(--font-mono);font-size:var(--t-11);line-height:18px}
+.diffline{display:flex;align-items:stretch}
+.diffline .ln{width:34px;flex:0 0 auto;text-align:right;padding-right:var(--sp-8);color:var(--ink-3);
+  font-variant-numeric:var(--num);user-select:none;border-right:1px solid var(--edge-faint)}
+.diffline .sg{width:16px;flex:0 0 auto;text-align:center;color:var(--ink-3)}
+.diffline .tx{padding-right:var(--sp-8);white-space:pre;color:var(--ink-1);overflow:hidden;text-overflow:ellipsis}
+.diffline.add{background:var(--diff-add-bg);box-shadow:inset 2px 0 0 var(--diff-add-gutter)}
+.diffline.add .sg{color:var(--diff-add-gutter)}
+.diffline.del{background:var(--diff-del-bg);box-shadow:inset 2px 0 0 var(--diff-del-gutter)}
+.diffline.del .sg{color:var(--diff-del-gutter)}
+.tok-k{color:var(--viz-1)} .tok-s{color:var(--viz-4)} .tok-c{color:var(--ink-3)} .tok-n{color:var(--viz-5)}
+.stat-add{color:var(--fits);font-family:var(--font-mono);font-size:var(--t-11);font-variant-numeric:var(--num)}
+.stat-del{color:var(--wont);font-family:var(--font-mono);font-size:var(--t-11);font-variant-numeric:var(--num)}
+
+/* ── the composed app shell ───────────────────────────────────────────────
+   Sequence's workspace is the same three columns Graphite draws: chat on the
+   left (.rail), ONE live canvas in the centre (.centre), the file/functions
+   rail on the right (.pane). The class names are kept so a shell specimen in
+   this book and a shell specimen in Graphite are the same object. */
+.win{
+  background:var(--bg-base);border:1px solid var(--edge);border-radius:var(--r-18);
+  box-shadow:var(--e4);overflow:hidden;display:grid;
+  grid-template-columns:var(--rail-w) minmax(0,1fr) var(--pane-w);
+  grid-template-rows:minmax(0,1fr);
+  height:1000px;
+}
+.win > *{min-height:0;min-width:0}
+.transcript,.rail-scroll,.pane-scroll{min-height:0}
+.win.narrow{grid-template-columns:var(--rail-w) minmax(0,1fr)}
+.winscroll{overflow-x:auto;overflow-y:hidden;padding:10px 0 18px}
+.win{min-width:1312px}
+.win.narrow{min-width:936px}
+/* .lights — DELETED, and the deletion is the point. It drew three macOS
+   traffic-light dots from three hard-coded literals: a red, an amber and a
+   green, declared nowhere and belonging to nothing. They were the only raw hex
+   left anywhere in this book, they sat outside the status vocabulary that owns
+   those exact three claims, and no sheet ever rendered the class — so it was
+   three uncheckable colours whose only job was to look like somebody else's
+   operating system. Law 3 and sheet 01's stop list say the same thing: there is
+   no permitted raw hex. The class went rather than the rule. A window chrome
+   that wants a title bar draws it from --surface-* and --edge like every other
+   surface here does. */
+.rail{background:var(--surface-1);border-right:1px solid var(--edge);display:flex;flex-direction:column;min-width:0}
+.rail-top{height:var(--topbar-h);display:flex;align-items:center;padding:0 var(--sp-12);gap:var(--sp-8)}
+.rail-scroll{flex:1;overflow:auto;padding:var(--sp-4) var(--sp-8) var(--sp-8)}
+.railitem{
+  display:flex;align-items:center;gap:var(--sp-8);height:var(--row-h);padding:0 var(--sp-8);
+  border-radius:var(--r-10);color:var(--ink-2);font-size:var(--t-12);cursor:pointer;
+  transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease);
+}
+.railitem:hover{background:var(--state-hover);color:var(--ink-1)}
+.railitem svg{color:var(--ink-3)}
+.railitem:hover svg{color:var(--ink-2)}
+.railhead{
+  display:flex;align-items:center;height:24px;padding:0 var(--sp-8);margin-top:var(--sp-10);
+  font-size:var(--t-10);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  font-family:var(--font-mono);font-weight:500;
+}
+.railhead .acts{margin-left:auto;display:flex;gap:2px}
+.railhead .acts button{width:20px;height:20px;border-radius:var(--r-8);border:0;background:transparent;
+  color:var(--ink-3);display:grid;place-items:center;cursor:pointer}
+.railhead .acts button:hover{background:var(--state-hover);color:var(--ink-1)}
+.folder{display:flex;align-items:center;gap:var(--sp-8);height:var(--row-h);padding:0 var(--sp-8);
+  border-radius:var(--r-10);color:var(--ink-2);font-size:var(--t-12);cursor:pointer;font-weight:500}
+.folder:hover{background:var(--state-hover);color:var(--ink-1)}
+.folder svg{color:var(--ink-3)}
+.folder .cv{margin-left:auto;color:var(--ink-4)}
+.threads{padding-left:var(--sp-16)}
+.thread{
+  display:flex;align-items:center;gap:var(--sp-8);height:var(--row-h-thread);padding:0 var(--sp-8);
+  border-radius:var(--r-10);color:var(--ink-2);font-size:var(--t-12);cursor:pointer;
+}
+.thread:hover{background:var(--state-hover);color:var(--ink-1)}
+.thread.sel{background:var(--state-selected);color:var(--ink-1)}
+.thread .tt{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread .ts{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);font-variant-numeric:var(--num)}
+.thread .dot{margin-right:1px}
+.emptyfolder{padding:0 var(--sp-8);height:var(--row-h-thread);display:flex;align-items:center;
+  color:var(--ink-4);font-size:var(--t-11);margin-left:var(--sp-16)}
+.rail-foot{border-top:1px solid var(--edge);padding:var(--sp-8);display:flex;align-items:center;gap:var(--sp-8)}
+.acct{display:flex;align-items:center;gap:var(--sp-8);flex:1;height:var(--row-h);padding:0 var(--sp-8);
+  border-radius:var(--r-10);font-size:var(--t-12);color:var(--ink-2);cursor:pointer}
+.acct:hover{background:var(--state-hover);color:var(--ink-1)}
+.avatar{width:18px;height:18px;border-radius:var(--r-full);background:var(--surface-3);
+  border:1px solid var(--edge);display:grid;place-items:center;color:var(--ink-3)}
+.centre{display:flex;flex-direction:column;min-width:0;background:var(--bg-base)}
+.appbar{height:var(--topbar-h);display:flex;align-items:center;gap:var(--sp-8);padding:0 var(--sp-12);
+  border-bottom:1px solid var(--edge);flex:0 0 auto}
+.appbar .title{font-size:var(--t-13);color:var(--ink-1);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .right{margin-left:auto;display:flex;align-items:center;gap:var(--sp-6)}
+.repochip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 var(--sp-8);
+  background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-full);
+  font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-2);white-space:nowrap}
+.transcript{flex:1;overflow:auto;padding:var(--sp-20) var(--sp-20) var(--sp-8)}
+.tcol{max-width:var(--col-max);margin:0 auto;display:flex;flex-direction:column;gap:var(--sp-16)}
+.userbubble{
+  align-self:flex-end;max-width:82%;background:var(--surface-2);border:1px solid var(--edge);
+  border-radius:var(--r-18);padding:var(--sp-10) var(--sp-12);font-size:var(--t-14);line-height:var(--lh-14);
+  color:var(--ink-1);
+}
+.toolstack{display:flex;flex-direction:column;gap:2px;margin-left:calc(-1 * var(--sp-10))}
+.composerwrap{padding:0 var(--sp-20) var(--sp-12);flex:0 0 auto}
+.composerwrap .inner{max-width:var(--col-max);margin:0 auto}
+.composer{
+  background:var(--surface-1);border:1px solid var(--edge);border-radius:var(--r-18);
+  box-shadow:var(--e2);padding:var(--sp-10) var(--sp-10) var(--sp-8);
+  transition:border-color var(--dur-2) var(--ease),box-shadow var(--dur-2) var(--ease);
+}
+.composer.focused{border-color:var(--edge-strong);box-shadow:var(--e3)}
+.composer .field{font-size:var(--t-14);line-height:var(--lh-14);color:var(--ink-3);
+  padding:var(--sp-4) var(--sp-6) var(--sp-12)}
+.composer .field.filled{color:var(--ink-1)}
+.composer .ctrls{display:flex;align-items:center;gap:var(--sp-6)}
+.composer .ctrls .right{margin-left:auto;display:flex;align-items:center;gap:var(--sp-4)}
+.modelsel{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 var(--sp-8);
+  border-radius:var(--r-8);color:var(--ink-2);font-size:var(--t-11);cursor:pointer;border:1px solid transparent}
+.modelsel:hover{background:var(--state-hover);color:var(--ink-1)}
+.modelsel .mono{font-size:var(--t-11)}
+.plusbtn{width:24px;height:24px;border-radius:var(--r-full);border:1px solid var(--edge);
+  background:transparent;color:var(--ink-2);display:grid;place-items:center;cursor:pointer}
+.plusbtn:hover{background:var(--state-hover);color:var(--ink-1)}
+.undercomposer{display:flex;align-items:center;gap:var(--sp-8);padding:var(--sp-6) var(--sp-4) 0;
+  max-width:var(--col-max);margin:0 auto}
+.minitabs{display:flex;gap:2px}
+.minitabs button{appearance:none;border:0;background:transparent;color:var(--ink-3);
+  font-family:inherit;font-size:var(--t-10);font-weight:500;height:20px;padding:0 var(--sp-8);
+  border-radius:var(--r-8);cursor:pointer}
+.minitabs button:hover{background:var(--state-hover);color:var(--ink-2)}
+.minitabs button[aria-selected="true"]{background:var(--surface-2);color:var(--ink-1);border:1px solid var(--edge)}
+.branch{margin-left:auto;display:flex;align-items:center;gap:5px;font-family:var(--font-mono);
+  font-size:var(--t-10);color:var(--ink-3)}
+.pane{background:var(--surface-1);border-left:1px solid var(--edge);display:flex;flex-direction:column;min-width:0}
+.pane-hd{height:var(--topbar-h);display:flex;align-items:center;gap:var(--sp-8);padding:0 var(--sp-10);
+  border-bottom:1px solid var(--edge);flex:0 0 auto}
+.pane-hd .t{font-size:var(--t-12);font-weight:600;color:var(--ink-1)}
+.pane-hd .right{margin-left:auto;display:flex;gap:2px}
+.pane-scroll{flex:1;overflow:auto;padding:var(--sp-8)}
+.filehd{display:flex;align-items:center;gap:var(--sp-8);height:28px;padding:0 var(--sp-8);
+  background:var(--surface-2);border:1px solid var(--edge);border-radius:var(--r-8) var(--r-8) 0 0;
+  font-family:var(--font-mono);font-size:var(--t-11);color:var(--ink-2)}
+.filebody{border:1px solid var(--edge);border-top:0;border-radius:0 0 var(--r-8) var(--r-8);
+  background:var(--surface-2);overflow:hidden;padding:var(--sp-4) 0}
+.provstrip{font-size:var(--t-10);color:var(--ink-3);font-family:var(--font-mono);
+  padding:var(--sp-4) var(--sp-8) var(--sp-8)}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5B — SEQUENCE'S ADDED COMPONENTS
+   Each one is a shape Graphite genuinely does not have. Every rule below is
+   assembled from tokens that already exist: no new colour, no new type size,
+   no new radius, no new spacing value.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── inputs ───────────────────────────────────────────────────────────────
+   Graphite ships .composer .field and nothing else — the book documents one
+   text surface, not a form. Sequence has settings, rename, search, filter and
+   the key dialog. The input is a .btn turned inside out: same 28px height,
+   same --r-10, same border, but it carries a surface because it is a place to
+   PUT something rather than a thing to press.
+   The group wrapper is .formfield, NOT .field — .field is already the
+   composer's text area, and one name may not mean two things. */
+.input{
+  appearance:none;font-family:inherit;font-size:var(--t-12);line-height:1;width:100%;
+  height:var(--control-h);padding:0 var(--sp-10);
+  background:var(--surface-2);color:var(--ink-1);
+  border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);
+  transition:border-color var(--dur-1) var(--ease),background var(--dur-1) var(--ease);
+}
+.input::placeholder{color:var(--ink-3)}
+.input:hover{border-color:var(--edge-strong)}
+.input:focus,.input:focus-visible{outline:none;border-color:transparent;
+  box-shadow:0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent)}
+.input[disabled]{color:var(--ink-4);background:var(--surface-1);cursor:not-allowed}
+.input[aria-invalid="true"]{border-color:var(--wont-edge)}
+.input.sm{height:24px;font-size:var(--t-11);padding:0 var(--sp-8);border-radius:var(--r-8)}
+.input.mono{font-family:var(--font-mono);font-size:var(--t-11);font-variant-numeric:var(--num)}
+textarea.input{height:auto;padding:var(--sp-8) var(--sp-10);line-height:var(--lh-12);resize:vertical}
+.inputwrap{position:relative;display:flex;align-items:center;min-width:0}
+.inputwrap > svg{position:absolute;left:var(--sp-8);color:var(--ink-3);pointer-events:none}
+.inputwrap > .input{padding-left:var(--sp-32)}          /* 8 + 16 icon + 8 */
+.selectwrap{position:relative;display:inline-flex;align-items:center;min-width:0}
+.selectwrap > svg{position:absolute;right:var(--sp-8);color:var(--ink-3);pointer-events:none}
+.selectwrap > .input{padding-right:var(--sp-24);cursor:pointer}  /* 8 + 12 chevron + 4 */
+.formfield{display:flex;flex-direction:column;gap:var(--sp-6);min-width:0}
+.formfield > .lbl{font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3)}
+.formfield > .hint{font-size:var(--t-10);line-height:var(--lh-10);color:var(--ink-3);margin:0}
+.checkline{display:flex;align-items:center;gap:var(--sp-8);font-size:var(--t-12);color:var(--ink-2);cursor:pointer}
+.checkbox,.radio{
+  appearance:none;width:14px;height:14px;flex:0 0 auto;display:inline-grid;place-items:center;
+  background:var(--surface-2);border:var(--w-hair) solid var(--edge-strong);border-radius:var(--r-4);
+  cursor:pointer;transition:background var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease);
+}
+.radio{border-radius:var(--r-full)}
+.checkbox:checked,.radio:checked{background:var(--accent-solid);border-color:transparent}
+.checkbox:checked::after{content:"";width:7px;height:4px;
+  border-left:var(--w-flow) solid var(--accent-on-solid);border-bottom:var(--w-flow) solid var(--accent-on-solid);
+  transform:translateY(-1px) rotate(-45deg)}
+.radio:checked::after{content:"";width:5px;height:5px;border-radius:var(--r-full);background:var(--accent-on-solid)}
+.switch{
+  appearance:none;position:relative;width:28px;height:16px;flex:0 0 auto;cursor:pointer;
+  background:var(--surface-3);border:var(--w-hair) solid var(--edge);border-radius:var(--r-full);
+  transition:background var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease);
+}
+.switch::after{content:"";position:absolute;top:1px;left:1px;width:12px;height:12px;
+  border-radius:var(--r-full);background:var(--ink-3);
+  transition:transform var(--dur-1) var(--ease),background var(--dur-1) var(--ease)}
+.switch:checked{background:var(--accent-solid);border-color:transparent}
+.switch:checked::after{transform:translateX(12px);background:var(--accent-on-solid)}
+
+/* ── transient surfaces ───────────────────────────────────────────────────
+   Graphite documents menus only. Sequence needs four: a menu, a tooltip, a
+   popover and a modal dialog. They differ by ELEVATION and RADIUS, never by
+   colour: menu --e3/--r-10, tooltip --e2/--r-8, popover --e3/--r-14, dialog
+   --e4/--r-18. The scrim is --scrim and nothing else dims. */
+.scrim{position:absolute;inset:0;background:var(--scrim);border-radius:inherit}
+.menu{min-width:180px;padding:var(--sp-4);background:var(--surface-2);
+  border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);box-shadow:var(--e3)}
+.menu hr{margin:var(--sp-4) 0}
+.menuitem{display:flex;align-items:center;gap:var(--sp-8);height:var(--row-h);padding:0 var(--sp-8);
+  border-radius:var(--r-8);font-size:var(--t-12);color:var(--ink-2);cursor:pointer;white-space:nowrap;
+  transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease)}
+.menuitem:hover{background:var(--state-hover);color:var(--ink-1)}
+.menuitem svg{color:var(--ink-3)}
+.menuitem:hover svg{color:var(--ink-2)}
+.menuitem[aria-disabled="true"]{color:var(--ink-4);cursor:not-allowed;background:transparent}
+/* A destructive item is worded, not reddened. Two items in one menu never
+   render the same glyph. */
+.menuitem .right{margin-left:auto;font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-4)}
+.popover{min-width:220px;background:var(--surface-1);border:var(--w-hair) solid var(--edge);
+  border-radius:var(--r-14);box-shadow:var(--e3);padding:var(--sp-12)}
+.tooltip{display:inline-flex;align-items:center;height:22px;padding:0 var(--sp-8);
+  background:var(--surface-4);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);
+  box-shadow:var(--e2);font-size:var(--t-11);color:var(--ink-1);white-space:nowrap}
+.dialog{background:var(--surface-1);border:var(--w-hair) solid var(--edge);border-radius:var(--r-18);
+  box-shadow:var(--e4);width:100%;max-width:420px;overflow:hidden}
+.dialog .dl-hd{display:flex;align-items:center;gap:var(--sp-8);padding:var(--sp-12) var(--sp-16);
+  border-bottom:var(--w-hair) solid var(--edge-faint)}
+.dialog .dl-hd .t{font-size:var(--t-13);font-weight:600;color:var(--ink-1)}
+.dialog .dl-hd .right{margin-left:auto;display:flex;gap:2px}
+.dialog .dl-bd{padding:var(--sp-16);font-size:var(--t-13);line-height:18px;color:var(--ink-2);
+  display:flex;flex-direction:column;gap:var(--sp-12)}
+.dialog .dl-ft{display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-6);
+  padding:var(--sp-12) var(--sp-16);border-top:var(--w-hair) solid var(--edge-faint)}
+
+/* ── the board ────────────────────────────────────────────────────────────
+   ONE background-image and only one. The field is a dot grid at --sp-24 pitch
+   and it belongs inside the camera transform. */
+.boardfield{
+  background-color:var(--nest-0);
+  background-image:radial-gradient(var(--board-field-ink) var(--board-field-dot), transparent var(--board-field-dot));
+  background-size:var(--board-field-pitch) var(--board-field-pitch);
+  background-position:0 0;
+  border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);
+  position:relative;overflow:hidden;
+}
+
+/* the node card. Kind sets four custom properties and nothing else; the
+   chassis is identical for every kind. Content-driven height with
+   --arch-card-min-h as a FLOOR.
+   FOUR of the six silhouettes are a pure border-radius, so those kinds keep a
+   real CSS border and with it the whole style-and-weight channel. TWO are
+   shapes border-radius cannot express and are drawn instead — see the two
+   blocks below. --arch-line exists so that hover and selection can repaint the
+   outline once, whether that outline is a border or a painted plate. */
+.node{
+  --arch-line:var(--edge);
+  position:relative;display:flex;flex-direction:column;gap:var(--sp-4);
+  width:var(--arch-card-w);min-height:var(--arch-card-min-h);padding:var(--sp-10);
+  background:var(--arch-tone);
+  border:var(--arch-weight) var(--arch-style) var(--arch-line);
+  border-radius:var(--arch-sil);
+  box-shadow:var(--e1);text-align:left;
+  transition:background var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease),
+             opacity var(--seq-dur-panel) var(--ease);
+}
+.n-entry  {--arch-sil:var(--arch-sil-entry);  --arch-style:var(--arch-style-entry);  --arch-weight:var(--arch-weight-entry);  --arch-tone:var(--arch-tone-entry)}
+.n-service{--arch-sil:var(--arch-sil-service);--arch-style:var(--arch-style-service);--arch-weight:var(--arch-weight-service);--arch-tone:var(--arch-tone-service)}
+.n-module {--arch-sil:var(--arch-sil-module); --arch-style:var(--arch-style-module); --arch-weight:var(--arch-weight-module); --arch-tone:var(--arch-tone-module)}
+.n-store  {--arch-sil:var(--arch-sil-store);  --arch-style:var(--arch-style-store);  --arch-weight:var(--arch-weight-store);  --arch-tone:var(--arch-tone-store)}
+.n-topic  {--arch-sil:var(--arch-sil-topic);  --arch-style:var(--arch-style-topic);  --arch-weight:var(--arch-weight-topic);  --arch-tone:var(--arch-tone-topic)}
+.n-agent  {--arch-sil:var(--arch-sil-agent);  --arch-style:var(--arch-style-agent);  --arch-weight:var(--arch-weight-agent);  --arch-tone:var(--arch-tone-agent)}
+
+/* THE CAPSULE PADDING, AND WHY IT IS NOT --sp-10 LIKE EVERY OTHER KIND.
+   Entry and Topic are the two kinds whose silhouette is --r-full, and --r-full
+   never paints 999px: it paints half the shorter side. On a card at the
+   --arch-card-min-h floor — 160 x 96 — that is 48px, a half-circle end cap
+   rather than a rounded corner.
+   Padding is measured from the BORDER BOX, which is a rectangle. The paint is
+   an arc inside it, and near the top of the card the arc has barely started to
+   come back out. Measured on the rendered card: the kind glyph occupies the
+   band 11px to 25px down from the card's top edge, and across that band the
+   48px arc reaches as far in as ~17px. At --sp-10 the glyph box starts at
+   x=10 + the 1px border = 11 — well outside the paint at its own top corner,
+   so the icon hung off the card onto the board field. Every entry and topic
+   specimen in the book had it.
+   --sp-20 is therefore not a taste decision. It puts the glyph box at x=21,
+   past the arc's deepest excursion over the band the glyph actually occupies,
+   with a few pixels to spare. Sheet 03 found this and fixed it inline on its
+   own specimens; the fix belongs here, once, where every kind is defined. */
+.node.n-entry,.node.n-topic{padding-left:var(--sp-20);padding-right:var(--sp-20)}
+
+/* ── THE THREE OUTLINES A BORDER-RADIUS CANNOT DRAW ───────────────────────
+   Every rule below applies to .node and to .silswatch alike, so a card and its
+   legend chip are the same shape by construction and cannot drift apart.
+   An absolutely positioned child is offset from the PADDING box, whose outer
+   edge is the border box inset by the border width — which is why every offset
+   here is written against --arch-weight and never against the padding.
+
+   STORE — a cylinder. 50% / --r-14 makes the top and the bottom a full
+   semi-ellipse and leaves the sides flat, and unlike a clip it keeps the real
+   border, so the whole outline is stroked. The ::before draws the seam, which
+   is the lower arc of that same top ellipse: an ellipse box 2 x --r-14 tall
+   showing only its bottom edge. */
+.node.n-store::before,.silswatch.n-store::before{
+  content:"";position:absolute;pointer-events:none;
+  inset:calc(-1 * var(--arch-weight)) calc(-1 * var(--arch-weight)) auto;
+  height:calc(2 * var(--r-14));
+  border-bottom:var(--arch-weight) var(--arch-style) var(--arch-line);
+  border-radius:50%;
+}
+
+/* MODULE — a folder. The --r-14 body plus a tab above its top-left corner,
+   carrying the card's own border style, weight and ink and having NO bottom
+   edge, so it covers the strip of top border under it and the interior runs
+   through. The card reserves the tab's height as margin, so a module aligns
+   with its siblings by its OUTER silhouette rather than by its body. */
+.node.n-module,.silswatch.n-module{margin-top:var(--arch-tab-h)}
+.node.n-module::before,.silswatch.n-module::before{
+  content:"";position:absolute;pointer-events:none;
+  left:calc(-1 * var(--arch-weight));bottom:100%;
+  width:var(--arch-tab-w);height:var(--arch-tab-h);
+  background:var(--arch-tone);
+  border:var(--arch-weight) var(--arch-style) var(--arch-line);border-bottom:0;
+  border-radius:var(--r-8) var(--r-8) 0 0;
+}
+
+/* AGENT — a chamfered top-right corner, which no radius expresses. Two clipped
+   plates: the lower paints the outline, the upper is inset by the stroke width
+   and paints the fill, so the cut edge is stroked exactly like every other
+   edge instead of ending in bare fill. The card itself carries no border and no
+   drop shadow, because both would paint the rectangle the clip just removed. */
+.node.n-agent,.silswatch.n-agent{
+  background:transparent;border:0;box-shadow:none;isolation:isolate;
+}
+.node.n-agent::before,.node.n-agent::after,
+.silswatch.n-agent::before,.silswatch.n-agent::after{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  border-radius:var(--arch-sil);clip-path:var(--arch-clip-agent);
+}
+/* THE AGENT'S ELEVATION, AND WHY IT IS THE ONE CARD THAT CANNOT USE --e1.
+   .node.n-agent sets box-shadow:none because a box-shadow is painted on the
+   BORDER BOX: on a chamfered card it would draw a square shadow under a cut
+   corner, which is exactly the lie the drawn silhouette exists to remove. The
+   card is not therefore allowed to sit flat while its five siblings are lifted
+   — that would make elevation a sixth carrier of kind, which Decision 2
+   forbids. So the outer plate carries the same step as a FILTER, which follows
+   the clip. --e1 at rest, --e2 when selected: the same ladder, drawn on the
+   real shape. */
+.node.n-agent::before,.silswatch.n-agent::before{inset:0;background:var(--arch-line)}
+/* Elevation goes on the CARD's plate only. .silswatch carries no box-shadow for
+   any of the six — it is an outline key, not an object sitting on a field — so
+   the agent's swatch must stay flat with its five siblings. Lifting it here
+   would fix one inconsistency by drawing another. */
+.node.n-agent::before{filter:var(--e1-drop)}
+.node.n-agent.sel::before{filter:var(--e2-drop)}
+.node.n-agent::after,.silswatch.n-agent::after{inset:var(--arch-weight);background:var(--arch-tone)}
+
+.node .nd-hd{display:flex;align-items:center;gap:var(--sp-6);color:var(--ink-3);min-width:0}
+.node .nd-k{font-family:var(--font-mono);font-size:var(--t-10);line-height:var(--lh-10);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.node .nd-t{font-size:var(--t-12);line-height:var(--lh-12);font-weight:550;color:var(--ink-1);overflow-wrap:anywhere}
+.node .nd-s{font-size:var(--t-11);line-height:var(--lh-11);color:var(--ink-3)}
+.node .nd-ft{margin-top:auto;display:flex;align-items:center;gap:var(--sp-6);padding-top:var(--sp-4)}
+.node .right{margin-left:auto}
+/* Selection OUTRANKS every other carrier and is louder than what it replaces.
+   It repaints --arch-line, so the tab, the seam and the agent's plates all
+   follow the same instruction the border does. The agent overrides the fill
+   and the ring because a rectangular ring around a chamfered card is exactly
+   the lie this pass exists to remove: its outline thickens to --w-rule
+   instead, which is the same 2px claim drawn on the real shape. */
+.node.sel{--arch-line:var(--board-select-edge);background:var(--board-select-fill);
+  box-shadow:var(--e2), 0 0 0 var(--w-rule) var(--board-select-edge)}
+.node.n-agent.sel{background:transparent;box-shadow:none;
+  --arch-tone:var(--board-select-fill);--arch-weight:var(--w-rule)}
+.node.dim{opacity:var(--board-dim-opacity)}
+.node.hover,.node:hover{--arch-line:var(--edge-strong)}
+
+/* containment. A module wall is --r-18 and its inset is --sp-4, so the cards
+   inside it land on --r-14 by arithmetic. */
+.nest{background:var(--nest-1);border:var(--w-struct) dashed var(--edge);border-radius:var(--r-18);
+  padding:var(--nest-inset);display:flex;flex-direction:column;gap:var(--sp-4);min-width:0}
+.nest > .nest-hd{display:flex;align-items:center;gap:var(--sp-6);height:var(--nest-hd-h);
+  padding:0 var(--sp-6);color:var(--ink-3);font-family:var(--font-mono);font-size:var(--t-10);
+  letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.nest > .nest-hd .right{margin-left:auto;color:var(--ink-4)}
+.nest > .nest-bd{display:flex;flex-wrap:wrap;gap:var(--sp-8)}
+
+/* edges. Colour is permitted here because a connector is DATA. Dash carries
+   the same distinction so the three states survive greyscale. */
+.edgespec{display:block;overflow:visible}
+.edgeline{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.e-traced  {stroke:var(--flow-traced);  stroke-width:var(--w-edge); stroke-dasharray:var(--flow-dash-traced)}
+.e-onflow  {stroke:var(--flow-onflow);  stroke-width:var(--w-flow); stroke-dasharray:var(--flow-dash-traced)}
+.e-declared{stroke:var(--flow-declared);stroke-width:var(--w-edge); stroke-dasharray:var(--flow-dash-declared)}
+/* the label plaque. 16px tall to match .prov, and --t-10 because the 9px it
+   used to be is below the type floor. */
+.edgetag{display:inline-flex;align-items:center;height:16px;padding:0 var(--sp-6);
+  background:var(--nest-0);border:var(--w-hair) solid var(--edge);border-radius:var(--r-4);
+  font-family:var(--font-mono);font-size:var(--t-10);line-height:1;color:var(--ink-2);white-space:nowrap}
+
+/* canvas furniture */
+.marquee{background:var(--board-marquee-fill);border:var(--w-hair) solid var(--board-marquee-edge);
+  border-radius:var(--r-4)}
+.zoomcluster{display:inline-flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2);background:var(--surface-1);
+  border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);box-shadow:var(--e1)}
+.zoomcluster .pct{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);
+  font-variant-numeric:var(--num);min-width:var(--sp-40);text-align:center}
+.kindlegend{display:flex;flex-wrap:wrap;gap:var(--sp-12);padding:var(--sp-8) var(--sp-10);
+  background:var(--surface-1);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14)}
+.kindlegend .k{display:flex;align-items:center;gap:var(--sp-6);font-family:var(--font-mono);
+  font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.kindlegend .k svg{color:var(--ink-2)}
+/* ENTRY IS A POSITION, NOT A KIND, AND THE LEGEND HAS TO SAY SO.
+   Sheet 03 §03.7: any kind can occupy the entry position, and a legend that
+   lists entry as the sixth peer teaches the reader that entry is a thing you
+   can build. So every legend that renders entry draws two groups, and the
+   substrate supplies the two parts rather than leaving nine sheets to invent
+   nine separators. --grp is the caption, --grpsep the divider; both are drawn
+   in ink and edge tokens the legend already uses, so no colour is spent and
+   nothing new appears in greyscale. */
+.kindlegend .grp{font-family:var(--font-mono);font-size:var(--t-10);letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-4);white-space:nowrap;align-self:center}
+.kindlegend .grpsep{align-self:stretch;width:var(--w-hair);min-height:var(--sp-16);
+  background:var(--edge);flex:0 0 auto}
+/* The kind's silhouette shown on its own, for a legend or a zoomed-out key.
+   IT IS DRAWN AT CARD ASPECT AND AT HALF A CARD — 80 x 48 — derived from
+   --arch-card-w and --arch-card-min-h so it cannot drift from the thing it
+   depicts. The 26 x 18 chip this replaces was the defect made visible: at 18px
+   tall, f clamped --r-14, --r-18 and --r-full to the same 9px, so three kinds
+   rendered as one stadium. A swatch smaller than twice its largest radius is a
+   lie about the shape.
+   Half a card is also the honest floor of the ladder, and the floor is where
+   those features are ALREADY at their limit rather than one step above it. At
+   half a card the folder tab (--arch-tab-h, --sp-12) paints 6px, the chamfer
+   (--sp-16) paints 8px and the cylinder arcs (--r-14) paint 7px — at or under
+   8px, at the floor itself. Below it they go under, silhouette stops separating
+   the six, and the ICON becomes the carrier. Do not claim the outlines still
+   separate below this size.
+   The shape itself comes from the .n-* class, which is the same rule that
+   shapes the card — including the two drawn outlines above. */
+.silswatch{
+  --arch-line:var(--edge-strong);
+  position:relative;display:inline-block;flex:0 0 auto;
+  width:calc(var(--arch-card-w) / 2);height:calc(var(--arch-card-min-h) / 2);
+  background:var(--arch-tone);
+  border:var(--arch-weight) var(--arch-style) var(--arch-line);
+  border-radius:var(--arch-sil);
+}
+</style>
+
+<!-- 3 ─ ICON SPRITE ──────────────────────────────────────────────────────
+     74 outline symbols on a 24px grid: 58 inherited from Graphite verbatim,
+     12 declared Sequence additions, and 4 whiteboard tools authored through
+     sheet 09 §09.8 under Decision 8. One stroke weight, 1.5, inherited
+     from .i and never scaled. Round caps and joins. Inline SVG: no icon font,
+     no external request, NO EMOJI. Colour is inherited, which is what lets one
+     glyph sit in a rail at --ink-3, on a node card at --ink-2 and inside the
+     send button at --accent-on-solid.
+     Reference one with:  <svg class="i"><use href="#ic-name"/></svg>
+
+     ONE GLYPH, ONE WRITTEN MEANING. The test is not "is this drawing used
+     twice" — ic-check legitimately means passed, accepted and done. The test
+     is whether one glyph stands in for two things a reader must TELL APART,
+     and the rule that follows from it: no two entries in the same menu may
+     render the same symbol.
+     ───────────────────────────────────────────────────────────────────── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ic-thread" viewBox="0 0 24 24"><path d="M4 6.2A2.2 2.2 0 0 1 6.2 4h11.6A2.2 2.2 0 0 1 20 6.2v8.1a2.2 2.2 0 0 1-2.2 2.2H9.3L4.9 20V16.5H4V6.2"/></symbol>
+<symbol id="ic-newthread" viewBox="0 0 24 24"><path d="M12.5 4.5H6.6A2.6 2.6 0 0 0 4 7.1v10.3A2.6 2.6 0 0 0 6.6 20h10.3a2.6 2.6 0 0 0 2.6-2.6v-5.9"/><path d="M17.9 3.6a2 2 0 0 1 2.8 2.8l-7.4 7.4-3.5.7.7-3.5z"/></symbol>
+<symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.4v4.9l3.1 1.8"/></symbol>
+<symbol id="ic-skill" viewBox="0 0 24 24"><path d="M12 3.4 20 7.7v8.6L12 20.6 4 16.3V7.7z"/><path d="M4 7.7 12 12l8-4.3M12 12v8.6"/></symbol>
+<symbol id="ic-folder" viewBox="0 0 24 24"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h2.9l2.1 2.4h6.2A2.4 2.4 0 0 1 20 9.8v6.8A2.4 2.4 0 0 1 17.6 19H6.4A2.4 2.4 0 0 1 4 16.6z"/></symbol>
+<symbol id="ic-folderplus" viewBox="0 0 24 24"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h2.9l2.1 2.4h6.2A2.4 2.4 0 0 1 20 9.8v6.8A2.4 2.4 0 0 1 17.6 19H6.4A2.4 2.4 0 0 1 4 16.6z"/><path d="M12 11v4.6M9.7 13.3h4.6"/></symbol>
+<symbol id="ic-filter" viewBox="0 0 24 24"><path d="M4.4 6.2h15.2l-5.9 6.9v5.2l-3.4 1.7v-6.9z"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.1"/><path d="M15.4 15.4 20 20"/></symbol>
+<symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5.2v13.6M5.2 12h13.6"/></symbol>
+<symbol id="ic-chevdown" viewBox="0 0 24 24"><path d="M6.8 9.6 12 14.8l5.2-5.2"/></symbol>
+<symbol id="ic-chevright" viewBox="0 0 24 24"><path d="M9.6 6.8 14.8 12l-5.2 5.2"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24"><path d="M5 12.6 9.6 17.2 19 7.2"/></symbol>
+<symbol id="ic-x" viewBox="0 0 24 24"><path d="M6.6 6.6 17.4 17.4M17.4 6.6 6.6 17.4"/></symbol>
+<symbol id="ic-alert" viewBox="0 0 24 24"><path d="M10.7 4.6a1.5 1.5 0 0 1 2.6 0l7.2 12.6a1.5 1.5 0 0 1-1.3 2.3H4.8a1.5 1.5 0 0 1-1.3-2.3z"/><path d="M12 9.6v4"/><path d="M12 16.4h.01"/></symbol>
+<symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 11.2v5"/><path d="M12 8.1h.01"/></symbol>
+<symbol id="ic-gpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.4"/><rect x="9.6" y="9.6" width="4.8" height="4.8" rx="1.2"/><path d="M9.2 3.2V6M14.8 3.2V6M9.2 18v2.8M14.8 18v2.8M3.2 9.2H6M3.2 14.8H6M18 9.2h2.8M18 14.8h2.8"/></symbol>
+<symbol id="ic-dataset" viewBox="0 0 24 24"><rect x="3.6" y="5" width="16.8" height="14" rx="2.4"/><path d="M3.6 10h16.8M3.6 14.4h16.8M9.6 10v9"/></symbol>
+<symbol id="ic-model" viewBox="0 0 24 24"><path d="m12 3.4 8.4 4.2-8.4 4.2-8.4-4.2z"/><path d="m3.6 12.4 8.4 4.2 8.4-4.2"/><path d="m3.6 16.6 8.4 4.2 8.4-4.2"/></symbol>
+<symbol id="ic-run" viewBox="0 0 24 24"><path d="M3.2 12h3.9l2.6-7.2 4.6 14.4 2.6-7.2h3.9"/></symbol>
+<symbol id="ic-play" viewBox="0 0 24 24"><path d="M8.2 5.6a.6.6 0 0 1 .9-.5l9 6.4a.6.6 0 0 1 0 1l-9 6.4a.6.6 0 0 1-.9-.5z"/></symbol>
+<symbol id="ic-stop" viewBox="0 0 24 24"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2.6"/></symbol>
+<symbol id="ic-terminal" viewBox="0 0 24 24"><rect x="3.2" y="5" width="17.6" height="14" rx="2.6"/><path d="m7.6 9.6 2.8 2.4-2.8 2.4M12.8 14.8h4"/></symbol>
+<symbol id="ic-chart" viewBox="0 0 24 24"><path d="M4 4v15.2a.8.8 0 0 0 .8.8H20"/><path d="m7.6 15.4 3.4-4.4 3 2.4 4-5.8"/></symbol>
+<symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 4v10.4"/><path d="m8 10.8 4 4 4-4"/><path d="M4.6 18.6h14.8"/></symbol>
+<symbol id="ic-sensitive" viewBox="0 0 24 24"><rect x="4.6" y="10.4" width="14.8" height="9.2" rx="2.6"/><path d="M8.1 10.4V7.9a3.9 3.9 0 0 1 7.8 0v2.5"/></symbol>
+<symbol id="ic-send" viewBox="0 0 24 24"><path d="M12 19V5.6"/><path d="m5.8 11.8 6.2-6.2 6.2 6.2"/></symbol>
+<symbol id="ic-branch" viewBox="0 0 24 24"><circle cx="6.4" cy="5.6" r="2.2"/><circle cx="6.4" cy="18.4" r="2.2"/><circle cx="17.2" cy="7.8" r="2.2"/><path d="M6.4 7.8v8.4"/><path d="M17.2 10v1a4 4 0 0 1-4 4H6.4"/></symbol>
+<symbol id="ic-mic" viewBox="0 0 24 24"><rect x="9.2" y="3.2" width="5.6" height="10.6" rx="2.8"/><path d="M5.8 11.6a6.2 6.2 0 0 0 12.4 0"/><path d="M12 17.8V20.8"/></symbol>
+<symbol id="ic-panel" viewBox="0 0 24 24"><rect x="3.2" y="5" width="17.6" height="14" rx="2.6"/><path d="M14.6 5v14"/></symbol>
+<symbol id="ic-panelleft" viewBox="0 0 24 24"><rect x="3.2" y="5" width="17.6" height="14" rx="2.6"/><path d="M9.4 5v14"/></symbol>
+<symbol id="ic-pin" viewBox="0 0 24 24"><path d="M9 3.6h6"/><path d="M10.4 3.6v6.2L8 13.6h8l-2.4-3.8V3.6"/><path d="M12 13.6v6.8"/></symbol>
+<symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M19.6 12a7.6 7.6 0 1 1-2.3-5.4"/><path d="M19.9 4.6v4.2h-4.2"/></symbol>
+<symbol id="ic-copy" viewBox="0 0 24 24"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.6"/><path d="M15.6 8.6V6.4A2.4 2.4 0 0 0 13.2 4H6.4A2.4 2.4 0 0 0 4 6.4v6.8a2.4 2.4 0 0 0 2.4 2.4h2.2"/></symbol>
+<symbol id="ic-more" viewBox="0 0 24 24"><circle cx="5.6" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="18.4" cy="12" r=".9" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-user" viewBox="0 0 24 24"><circle cx="12" cy="8.6" r="3.8"/><path d="M4.8 19.8a7.4 7.4 0 0 1 14.4 0"/></symbol>
+<symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.8" cy="16.2" r="3.6"/><path d="m10.4 13.6 8.6-8.6"/><path d="m15.8 8.2 2.2 2.2M18.4 5.6l2.2 2.2"/></symbol>
+<symbol id="ic-open" viewBox="0 0 24 24"><path d="M14.2 4H20v5.8"/><path d="M20 4 11.4 12.6"/><path d="M17.6 14v4.4A1.6 1.6 0 0 1 16 20H5.6A1.6 1.6 0 0 1 4 18.4V8A1.6 1.6 0 0 1 5.6 6.4H10"/></symbol>
+<symbol id="ic-commit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.4"/><path d="M2.8 12h5.8M15.4 12h5.8"/></symbol>
+<symbol id="ic-gauge" viewBox="0 0 24 24"><path d="M4.2 17.6a8.6 8.6 0 1 1 15.6 0"/><path d="m12 13.4 3.6-3.6"/></symbol>
+<symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2.6 12S6.2 5.8 12 5.8 21.4 12 21.4 12 17.8 18.2 12 18.2 2.6 12 2.6 12Z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+<symbol id="ic-book" viewBox="0 0 24 24"><path d="M12 7.4v12"/><path d="M12 7.4C10.5 6 8.6 5.3 6.5 5.3H4.2v11.4h2.3c2.1 0 4 .7 5.5 2.1z"/><path d="M12 7.4c1.5-1.4 3.4-2.1 5.5-2.1h2.3v11.4h-2.3c-2.1 0-4 .7-5.5 2.1z"/></symbol>
+<symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M4.4 4.4l1.6 1.6M18 18l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.4 19.6 6 18M18 6l1.6-1.6"/></symbol>
+<symbol id="ic-moon" viewBox="0 0 24 24"><path d="M20 13.6A8.4 8.4 0 0 1 10.4 4a8.4 8.4 0 1 0 9.6 9.6Z"/></symbol>
+<symbol id="ic-chevleft" viewBox="0 0 24 24"><path d="M14.4 6.8 9.2 12l5.2 5.2"/></symbol>
+<symbol id="ic-chevup" viewBox="0 0 24 24"><path d="M6.8 14.4 12 9.2l5.2 5.2"/></symbol>
+<symbol id="ic-arrowleft" viewBox="0 0 24 24"><path d="M19 12H5.6"/><path d="m11.8 5.8-6.2 6.2 6.2 6.2"/></symbol>
+<symbol id="ic-arrowright" viewBox="0 0 24 24"><path d="M5 12h13.4"/><path d="m12.2 5.8 6.2 6.2-6.2 6.2"/></symbol>
+<symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.9"/><circle cx="12" cy="12" r="7.2"/><path d="M12 3.4v1.5M12 19.1v1.5M20.6 12h-1.5M4.9 12H3.4M18.08 5.92l-1.06 1.06M6.98 17.02l-1.06 1.06M18.08 18.08l-1.06-1.06M6.98 6.98 5.92 5.92"/></symbol>
+<symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 7.4h7.6M17.2 7.4H20M4 16.6h2.8M12.4 16.6H20"/><circle cx="14.4" cy="7.4" r="2.4"/><circle cx="9.6" cy="16.6" r="2.4"/></symbol>
+<symbol id="ic-trash" viewBox="0 0 24 24"><path d="M4.8 6.6h14.4"/><path d="M9.6 6.6V5.2A1.6 1.6 0 0 1 11.2 3.6h1.6A1.6 1.6 0 0 1 14.4 5.2v1.4"/><path d="M6.8 6.6v11.6A2.2 2.2 0 0 0 9 20.4h6a2.2 2.2 0 0 0 2.2-2.2V6.6"/><path d="M10.4 10.4v6M13.6 10.4v6"/></symbol>
+<symbol id="ic-upload" viewBox="0 0 24 24"><path d="M12 15.6V4.8"/><path d="m8 8.8 4-4 4 4"/><path d="M4.6 18.6h14.8"/></symbol>
+<symbol id="ic-file" viewBox="0 0 24 24"><path d="M13.6 3.6H7.6A2.4 2.4 0 0 0 5.2 6v12a2.4 2.4 0 0 0 2.4 2.4h8.8a2.4 2.4 0 0 0 2.4-2.4V8.4z"/><path d="M13.6 3.6v4.8h5.2"/></symbol>
+<symbol id="ic-database" viewBox="0 0 24 24"><ellipse cx="12" cy="6.2" rx="7.2" ry="2.6"/><path d="M4.8 6.2v11.6c0 1.44 3.22 2.6 7.2 2.6s7.2-1.16 7.2-2.6V6.2"/><path d="M4.8 12c0 1.44 3.22 2.6 7.2 2.6s7.2-1.16 7.2-2.6"/></symbol>
+<symbol id="ic-cloud" viewBox="0 0 24 24"><path d="M7.6 18.4h9.2a3.8 3.8 0 0 0 .5-7.57 5.4 5.4 0 0 0-10.36-1.1A4.2 4.2 0 0 0 7.6 18.4Z"/></symbol>
+<symbol id="ic-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M9.8 9.8a2.3 2.3 0 0 1 4.47.77c0 1.53-2.3 2.3-2.3 2.3"/><path d="M12 16.2h.01"/></symbol>
+<symbol id="ic-pause" viewBox="0 0 24 24"><rect x="7.6" y="5.6" width="3.4" height="12.8" rx="1.4"/><rect x="13" y="5.6" width="3.4" height="12.8" rx="1.4"/></symbol>
+<symbol id="ic-code" viewBox="0 0 24 24"><path d="m8.8 8.4-4.4 3.6 4.4 3.6"/><path d="m15.2 8.4 4.4 3.6-4.4 3.6"/><path d="M13.6 4.6 10.4 19.4"/></symbol>
+<symbol id="ic-split" viewBox="0 0 24 24"><rect x="3.6" y="5.2" width="16.8" height="5.6" rx="2"/><rect x="3.6" y="13.2" width="10.4" height="5.6" rx="2"/></symbol>
+<!-- ── DECLARED SEQUENCE ADDITIONS (12) ─────────────────────────────────────
+     Same construction as the 58 above: 24px grid, one 1.5px stroke inherited
+     from .i, round caps and joins, no fill. Each is here because a surface
+     this book must document has no glyph for it — six of them because
+     Decision 2 makes the icon the PRIMARY carrier of node kind, and a kind
+     without its own glyph would push the difference back onto hue.
+
+       ic-entry    an entry point — the way into the system
+       ic-service  a service — a deployed runtime thing
+       ic-module   a module — a container of other nodes
+       ic-topic    a topic or queue — a lane something flows along
+       ic-agent    an agent — an actor, not a deployed thing
+       ic-flow     a traced flow / playback path (ic-run is a RUN, a heartbeat)
+       ic-board    the architecture board (ic-panel is the index rail)
+       ic-frame    a frame or group on the canvas
+       ic-pen      draw mode, the pen tool (ic-newthread is a PAGE with a
+                   pencil, which means compose; this is the bare nib)
+       ic-cursor   the select tool
+       ic-minus    zoom out — Graphite drew ic-plus and never its opposite
+       ic-fn       a function, in braces (ic-code is angle brackets: code)
+     Datastore deliberately has NO new glyph: ic-database already means "a
+     database" and adding a second drawing for one meaning is the other half
+     of the icon-reuse defect.
+     ───────────────────────────────────────────────────────────────────── -->
+<symbol id="ic-entry" viewBox="0 0 24 24"><path d="M3.6 12h9.2"/><path d="m9.4 8.4 3.6 3.6-3.6 3.6"/><path d="M15.2 4.8h3.2a2 2 0 0 1 2 2v10.4a2 2 0 0 1-2 2h-3.2"/></symbol>
+<symbol id="ic-service" viewBox="0 0 24 24"><rect x="3.6" y="5" width="16.8" height="5.8" rx="2"/><rect x="3.6" y="13.2" width="16.8" height="5.8" rx="2"/><path d="M7 7.9h.01M7 16.1h.01"/></symbol>
+<symbol id="ic-module" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3.2"/><rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.6"/></symbol>
+<symbol id="ic-topic" viewBox="0 0 24 24"><path d="M3.6 8.4h6.2M3.6 12h9.6M3.6 15.6h6.2"/><path d="m16.4 8.4 3.6 3.6-3.6 3.6"/></symbol>
+<symbol id="ic-chatbox" viewBox="0 0 24 24"><path d="M4 6.4A2.4 2.4 0 0 1 6.4 4h11.2A2.4 2.4 0 0 1 20 6.4v7.2A2.4 2.4 0 0 1 17.6 16H10l-4.4 3.2V16H6.4A2.4 2.4 0 0 1 4 13.6z"/><path d="M8 9.2h8M8 12h5.6"/></symbol>
+<symbol id="ic-spark" viewBox="0 0 24 24"><path d="M12 3l1.6 5.8L19 10l-5.4 1.2L12 17l-1.6-5.8L5 10l5.4-1.2z"/></symbol>
+<symbol id="ic-brain" viewBox="0 0 24 24"><path d="M9 5.2c-2.2.6-3.6 2.6-3.6 5 0 1 .3 1.9.8 2.6-.6.8-1 1.8-1 2.9 0 2.4 1.9 4.3 4.3 4.3h.7"/><path d="M15 5.2c2.2.6 3.6 2.6 3.6 5 0 1-.3 1.9-.8 2.6.6.8 1 1.8 1 2.9 0 2.4-1.9 4.3-4.3 4.3h-.7"/><path d="M12 8.4v7.2M9.6 11.2h4.8"/></symbol>
+<symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.4"/></symbol>
+<symbol id="ic-agent" viewBox="0 0 24 24"><path d="m12 3.4 7.4 4.3v8.6L12 20.6 4.6 16.3V7.7z"/><circle cx="12" cy="12" r="2.4"/></symbol>
+<symbol id="ic-flow" viewBox="0 0 24 24"><path d="M3.6 6.6h5.6a2.4 2.4 0 0 1 2.4 2.4v5.6a2.4 2.4 0 0 0 2.4 2.4h4.4"/><path d="m16.8 14.2 3.6 2.8-3.6 2.8"/></symbol>
+<symbol id="ic-board" viewBox="0 0 24 24"><rect x="3.2" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="13.8" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="8.5" y="14.4" width="7" height="5.4" rx="1.6"/><path d="M6.7 9.6v2.6h10.6V9.6M12 12.2v2.2"/></symbol>
+<symbol id="ic-frame" viewBox="0 0 24 24"><path d="M8.4 3.6v16.8M15.6 3.6v16.8M3.6 8.4h16.8M3.6 15.6h16.8"/></symbol>
+<symbol id="ic-pen" viewBox="0 0 24 24"><path d="M17.2 3.8a2.4 2.4 0 0 1 3.4 3.4L9.4 18.4l-4.6 1.2 1.2-4.6z"/><path d="m15.4 5.6 3.4 3.4"/></symbol>
+<symbol id="ic-cursor" viewBox="0 0 24 24"><path d="m6 3.8 12.2 8.1-5.3 1.1-2.2 5.2z"/></symbol>
+<symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5.2 12h13.6"/></symbol>
+<symbol id="ic-fn" viewBox="0 0 24 24"><path d="M9.8 4.4c-1.9 0-2.5 1-2.5 2.6v2.2c0 1.6-.8 2.8-2.4 2.8 1.6 0 2.4 1.2 2.4 2.8V17c0 1.6.6 2.6 2.5 2.6"/><path d="M14.2 4.4c1.9 0 2.5 1 2.5 2.6v2.2c0 1.6.8 2.8 2.4 2.8-1.6 0-2.4 1.2-2.4 2.8V17c0 1.6-.6 2.6-2.5 2.6"/></symbol>
+<!-- ── WHITEBOARD TOOLS (6) — Decisions 8–9, sheet 09 §09.8 ─────────────────
+     Same construction as the seventy above: 24px grid, one 1.5px stroke
+     inherited from .i, round caps and joins, no fill. Each satisfies the five
+     conditions of §09.8 with the whiteboard toolbar as its named surface.
+
+       ic-oval    the oval tool — an ellipse drawn on the canvas
+       ic-text    the text tool — a type layer placed on the canvas
+       ic-link    the link tool — connect two things on the canvas
+       ic-erase   the erase tool — remove marks from the canvas
+       ic-pan     the pan tool — move the canvas without selecting
+       ic-rect    the box tool — a rectangle drawn on the canvas
+     ───────────────────────────────────────────────────────────────────── -->
+<symbol id="ic-oval" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8.4" ry="5.4"/></symbol>
+<symbol id="ic-text" viewBox="0 0 24 24"><path d="M5.6 5.6h12.8"/><path d="M12 5.6v12.8"/></symbol>
+<symbol id="ic-link" viewBox="0 0 24 24"><path d="m9.9 14.1a4.4 4.4 0 0 1 0-6.2l2.3-2.3a4.4 4.4 0 0 1 6.2 6.2l-1.2 1.2"/><path d="m14.1 9.9a4.4 4.4 0 0 1 0 6.2l-2.3 2.3a4.4 4.4 0 0 1-6.2-6.2l1.2-1.2"/><path d="m9.9 14.1 4.2-4.2"/></symbol>
+<symbol id="ic-erase" viewBox="0 0 24 24"><path d="m8.8 20.2-4.2-4.2a2.4 2.4 0 0 1 0-3.4l8-8a2.4 2.4 0 0 1 3.4 0l4.2 4.2a2.4 2.4 0 0 1 0 3.4L14 20.2z"/><path d="M14 20.2h6.2"/><path d="m7.2 10 8.2 8.2"/></symbol>
+<symbol id="ic-pan" viewBox="0 0 24 24"><path d="M12 4.4v15.2M4.4 12h15.2"/><path d="m8.2 8.2 3.8-3.8 3.8 3.8M8.2 15.8l3.8 3.8 3.8-3.8"/></symbol>
+<symbol id="ic-rect" viewBox="0 0 24 24"><rect x="4.8" y="5.6" width="14.4" height="12.8" rx="1.6"/></symbol>
+<!-- Decision 33: the model chip and Build, icon only. -->
+<symbol id="ic-bot" viewBox="0 0 24 24"><path d="M12 8V4.6H8.6"/><rect x="4" y="8" width="16" height="12" rx="2.4"/><path d="M2.4 14h1.6M20 14h1.6M15 13v2.2M9 13v2.2"/></symbol>
+<symbol id="ic-hammer" viewBox="0 0 24 24"><path d="m15 12-8.5 8.5a2.12 2.12 0 0 1-3-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"/></symbol>
+<!-- THE WINDOW BUTTONS (GRAPHITE-DECISIONS.md Decision 12, addendum).
+     Graphite has no window chrome because it never drew an application that
+     owned its own frame; Sequence's desktop shell does, and draws its own
+     minimise / maximise / close rather than letting the platform paint them
+     over the app bar. Authored on this sprite's own 24-grid at its own stroke.
+     Named after the verb, never after the shape, so `win-restore` stays right
+     if a platform ever draws that verb differently. -->
+<symbol id="ic-win-minimize" viewBox="0 0 24 24"><path d="M6.6 12h10.8"/></symbol>
+<symbol id="ic-win-maximize" viewBox="0 0 24 24"><path d="M6.6 6.6h10.8v10.8H6.6z"/></symbol>
+<symbol id="ic-win-restore" viewBox="0 0 24 24"><path d="M9 9h8.4v8.4H9z"/><path d="M6.6 14.4V6.6H15"/></symbol>
+</defs></svg>
+
+
+<!-- 4 ─ THE BOOK SHELL ───────────────────────────────────────────────────
+     Paste-once furniture, inherited from Graphite unchanged apart from the
+     book name and its mark. Authors do not retype this and MUST NOT restyle
+     it. Two jobs, no framework, no dependency, works from file://
+       1. THEME. Three viewer states all resolve. This fragment sets NO
+          attribute on load unless the reader has chosen one before, so an
+          untouched page shows the system state. Light is deferred per
+          Decision 1; the toggle still works, it is simply not tuned.
+       2. PAGES. One document with many <section class="page">, or many
+          documents with one each via window.GRAPHITE_PAGES = [{href,num,title}].
+     With script blocked the sheets stack and stay readable.
+     ───────────────────────────────────────────────────────────────────── -->
+<header id="topbar">
+  <div class="bookmark">
+    <span class="markglyph"><svg class="i i-12"><use href="#ic-board"/></svg></span>
+    <b>Sequence</b><span class="sep">/</span><span>Graphite</span>
+  </div>
+
+  <label class="jump" for="pagejump" title="Jump to page">
+    <svg class="i i-12"><use href="#ic-book"/></svg>
+    <select class="jumpsel" id="pagejump" aria-label="Jump to page"></select>
+    <svg class="i i-12"><use href="#ic-chevdown"/></svg>
+  </label>
+
+  <div class="pagenav">
+    <button class="iconbtn" id="pageprev" aria-label="Previous page"><svg class="i i-14"><use href="#ic-arrowleft"/></svg></button>
+    <button class="iconbtn" id="pagenext" aria-label="Next page"><svg class="i i-14"><use href="#ic-arrowright"/></svg></button>
+  </div>
+  <span class="pagecount" id="pagecount"></span>
+
+  <span class="spacer"></span>
+
+  <button class="themetoggle" id="themebtn" aria-label="Toggle theme">
+    <svg class="i i-12" id="themeicon"><use href="#ic-moon"/></svg><span id="themelabel">Dark</span>
+  </button>
+</header>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   BOOK SHELL — BEHAVIOUR
+   Two jobs, no framework, no dependency, works from file://.
+
+   1. THEME. Three viewer states all resolve, because the tokens define all
+      three: bare :root is light, the media query is system-dark, and
+      [data-theme] is an explicit choice. This fragment sets NO attribute on
+      load unless the reader has chosen one before, so an untouched page shows
+      the system state. The button then writes an explicit choice and remembers
+      it, so the theme survives a jump to another page of the book.
+
+   2. PAGES. Works two ways without the author doing anything differently:
+      • ONE DOCUMENT, MANY PAGES — every <section class="page"> in the
+        document is found, listed in the jump, and shown one at a time.
+      • MANY DOCUMENTS, ONE PAGE EACH — define window.GRAPHITE_PAGES before
+        this fragment as [{href, num, title}, ...] and the jump navigates
+        between files instead. The single .page in each file still shows.
+      With script blocked, .page stays visible (see html:not(.js) above).
+   ══════════════════════════════════════════════════════════════════════════ */
+(function(){
+  var root = document.documentElement;
+  root.classList.add('js');
+
+  var KEY = 'graphite-theme';
+  function readPref(){ try { return localStorage.getItem(KEY) || ''; } catch(e){ return ''; } }
+  function writePref(v){ try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch(e){} }
+
+  var saved = readPref();
+  if (saved === 'dark' || saved === 'light') root.setAttribute('data-theme', saved);
+
+  function ready(fn){
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  ready(function(){
+    var $ = function(id){ return document.getElementById(id); };
+
+    /* ── theme ────────────────────────────────────────────────────────── */
+    var btn = $('themebtn'), icon = $('themeicon'), label = $('themelabel');
+    function isDark(){
+      var a = root.getAttribute('data-theme');
+      if (a === 'dark') return true;
+      if (a === 'light') return false;
+      return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    }
+    function paintTheme(){
+      if (!icon || !label) return;
+      var d = isDark();
+      icon.innerHTML = '<use href="#' + (d ? 'ic-sun' : 'ic-moon') + '"/>';
+      label.textContent = d ? 'Light' : 'Dark';
+    }
+    if (btn) btn.addEventListener('click', function(){
+      var next = isDark() ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      writePref(next);
+      paintTheme();
+    });
+    if (window.matchMedia){
+      var mq = window.matchMedia('(prefers-color-scheme:dark)');
+      var onSystemChange = function(){ if (!root.getAttribute('data-theme')) paintTheme(); };
+      if (mq.addEventListener) mq.addEventListener('change', onSystemChange);
+      else if (mq.addListener) mq.addListener(onSystemChange);
+    }
+    paintTheme();
+
+    /* ── pages ────────────────────────────────────────────────────────── */
+    var sel = $('pagejump'), prev = $('pageprev'), nextBtn = $('pagenext'), count = $('pagecount');
+    var manifest = (window.GRAPHITE_PAGES && window.GRAPHITE_PAGES.length) ? window.GRAPHITE_PAGES : null;
+    var sections = [].slice.call(document.querySelectorAll('section.page'));
+
+    function titleOf(el, i){
+      var h = el.querySelector('.pagehead h1');
+      return el.getAttribute('data-page-title') || (h && h.textContent.trim()) || el.id || ('Page ' + (i + 1));
+    }
+    function numOf(el, i){ return el.getAttribute('data-page-num') || String(i + 1); }
+    function optionFor(num, title){
+      var o = document.createElement('option');
+      o.textContent = (num ? num + ' · ' : '') + title;
+      return o;
+    }
+
+    /* MANY DOCUMENTS — the jump is a file navigator. */
+    if (manifest){
+      var here = location.pathname.split('/').pop().toLowerCase();
+      var at = 0;
+      manifest.forEach(function(p, i){
+        var o = optionFor(p.num, p.title);
+        o.value = p.href;
+        sel.appendChild(o);
+        if (String(p.href).split('/').pop().toLowerCase() === here) at = i;
+      });
+      sel.selectedIndex = at;
+      sel.addEventListener('change', function(){ location.href = sel.value; });
+      if (prev) prev.disabled = (at === 0);
+      if (nextBtn) nextBtn.disabled = (at === manifest.length - 1);
+      if (prev) prev.addEventListener('click', function(){ if (at > 0) location.href = manifest[at - 1].href; });
+      if (nextBtn) nextBtn.addEventListener('click', function(){ if (at < manifest.length - 1) location.href = manifest[at + 1].href; });
+      if (count) count.textContent = (at + 1) + '/' + manifest.length;
+      sections.forEach(function(s){ s.classList.add('on'); });
+      return;
+    }
+
+    /* ONE DOCUMENT — the jump switches sections. */
+    if (!sections.length){
+      if (sel){ sel.appendChild(optionFor('', 'No pages in this document')); sel.disabled = true; }
+      if (prev) prev.disabled = true;
+      if (nextBtn) nextBtn.disabled = true;
+      if (count) count.textContent = '0/0';
+      return;
+    }
+
+    sections.forEach(function(s, i){
+      if (!s.id) s.id = 'p' + numOf(s, i);
+      var o = optionFor(numOf(s, i), titleOf(s, i));
+      o.value = s.id;
+      sel.appendChild(o);
+    });
+
+    var index = 0;
+    function show(i, push){
+      index = Math.max(0, Math.min(sections.length - 1, i));
+      sections.forEach(function(s, j){ s.classList.toggle('on', j === index); });
+      sel.selectedIndex = index;
+      if (prev) prev.disabled = (index === 0);
+      if (nextBtn) nextBtn.disabled = (index === sections.length - 1);
+      if (count) count.textContent = (index + 1) + '/' + sections.length;
+      if (push && sections[index].id) history.replaceState(null, '', '#' + sections[index].id);
+      window.scrollTo(0, 0);
+    }
+    sel.addEventListener('change', function(){ show(sel.selectedIndex, true); });
+    if (prev) prev.addEventListener('click', function(){ show(index - 1, true); });
+    if (nextBtn) nextBtn.addEventListener('click', function(){ show(index + 1, true); });
+    window.addEventListener('hashchange', function(){ jumpToHash(false); });
+
+    function jumpToHash(push){
+      var id = (location.hash || '').replace('#', '');
+      var i = 0;
+      sections.forEach(function(s, j){ if (s.id === id) i = j; });
+      show(i, push);
+    }
+    jumpToHash(false);
+  });
+})();
+</script>
+
+<!-- 5 ─ SHEET 00 — THE COMPONENT REFERENCE ─────────────────────────────────
+     Every class a sheet author may use, rendered once. If a shape is not on
+     this sheet it does not exist; say so in your handback rather than
+     inventing it locally.
+     ───────────────────────────────────────────────────────────────────── -->
+<main>
+<section class="page" data-page-num="00" data-page-title="Substrate — component reference">
+
+  <div class="pagehead">
+    <span class="num">Sheet 00 · Substrate</span>
+    <h1>The component reference</h1>
+    <p class="lede">Every class this substrate defines, rendered once. Nothing below needs
+    re-deriving and nothing below may be restyled. If a sheet needs a shape that is genuinely
+    absent, name it in the handback — six local inventions are six contradictions.</p>
+    <p class="lede">The rules for writing a sheet, the five inherited laws and the two owner
+    decisions are in the comment at the top of this file. Read them before you write.</p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.1</span><h2>Controls</h2>
+      <span class="tail">28px · --r-10 · quiet border, no fill until hover</span></div>
+    <p class="note">A button carries no fill at rest. <span class="inline-code">.btn.solid</span>
+    is a budget, not a style: one per surface, on the action the product is asking the reader to
+    commit to. A destructive action is a plain <span class="inline-code">.btn</span> with a
+    worded label — never red, because red is a verdict.</p>
+    <div class="panel">
+      <div class="specimens">
+        <div class="specimen"><button class="btn">Recheck</button><span class="lbl">.btn</span></div>
+        <div class="specimen"><button class="btn ghost">Dismiss</button><span class="lbl">.btn.ghost</span></div>
+        <div class="specimen"><button class="btn pill">Filter</button><span class="lbl">.btn.pill</span></div>
+        <div class="specimen"><button class="btn solid">Apply</button><span class="lbl">.btn.solid</span></div>
+        <div class="specimen"><button class="btn sm">Evidence</button><span class="lbl">.btn.sm</span></div>
+        <div class="specimen"><button class="btn" disabled>Apply</button><span class="lbl">[disabled]</span></div>
+        <div class="specimen"><button class="btn forcefocus">Focused</button><span class="lbl">.forcefocus</span></div>
+      </div>
+      <hr>
+      <div class="specimens">
+        <div class="specimen"><button class="iconbtn" aria-label="More"><svg class="i i-14"><use href="#ic-more"/></svg></button><span class="lbl">.iconbtn</span></div>
+        <div class="specimen"><button class="iconbtn bordered" aria-label="Refresh"><svg class="i i-14"><use href="#ic-refresh"/></svg></button><span class="lbl">.bordered</span></div>
+        <div class="specimen"><button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button><span class="lbl">.sendbtn</span></div>
+        <div class="specimen"><button class="plusbtn" aria-label="Attach"><svg class="i i-12"><use href="#ic-plus"/></svg></button><span class="lbl">.plusbtn</span></div>
+        <div class="specimen">
+          <div class="seg"><button aria-selected="true">Board</button><button>Draw</button></div>
+          <span class="lbl">.seg</span></div>
+        <div class="specimen">
+          <div class="minitabs"><button aria-selected="true">L2</button><button>L3</button></div>
+          <span class="lbl">.minitabs</span></div>
+        <div class="specimen"><span class="kbd">&#8984;</span><span class="lbl">.kbd</span></div>
+      </div>
+      <p class="caption">The circular filled send button is the signature element. It is never square.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.2</span><h2>Inputs</h2>
+      <span class="tail">--surface-2 · --r-10 · focus is a double ring</span></div>
+    <p class="note">An input is a button turned inside out — same height, same radius, same
+    border — but it carries a surface because it is a place to put something rather than a thing
+    to press. The group wrapper is <span class="inline-code">.formfield</span>, not
+    <span class="inline-code">.field</span>: <span class="inline-code">.field</span> is already
+    the composer's text area, and one name may not mean two things.</p>
+    <div class="panel">
+      <div class="grid g2">
+        <div class="formfield">
+          <span class="lbl">Repository name</span>
+          <input class="input" value="sequence" aria-label="Repository name">
+          <p class="hint">.formfield &gt; .lbl · .input · .formfield &gt; .hint</p>
+        </div>
+        <div class="formfield">
+          <span class="lbl">Search the graph</span>
+          <span class="inputwrap"><svg class="i"><use href="#ic-search"/></svg>
+            <input class="input" placeholder="Find a service or a function" aria-label="Search the graph"></span>
+          <p class="hint">.inputwrap</p>
+        </div>
+        <div class="formfield">
+          <span class="lbl">Depth</span>
+          <span class="selectwrap"><select class="input" aria-label="Depth"><option>L2 — services</option><option>L3 — internal parts</option></select>
+            <svg class="i i-12"><use href="#ic-chevdown"/></svg></span>
+          <p class="hint">.selectwrap</p>
+        </div>
+        <div class="formfield">
+          <span class="lbl">Notes</span>
+          <textarea class="input" rows="2" aria-label="Notes">A claim the source could not confirm.</textarea>
+          <p class="hint">textarea.input</p>
+        </div>
+      </div>
+      <hr>
+      <div class="specimens">
+        <div class="specimen"><input class="input sm" value="main" aria-label="Branch" style="width:var(--sp-56)"><span class="lbl">.input.sm</span></div>
+        <div class="specimen"><input class="input mono" value="src/arch/archKinds.ts" aria-label="Path" style="width:var(--menu-w)"><span class="lbl">.input.mono</span></div>
+        <div class="specimen"><input class="input" value="not a path" aria-invalid="true" aria-label="Invalid" style="width:var(--sp-56)"><span class="lbl">[aria-invalid]</span></div>
+      </div>
+      <hr>
+      <div class="specimens">
+        <div class="specimen"><label class="checkline"><input class="checkbox" type="checkbox" checked>Show declared edges</label><span class="lbl">.checkbox</span></div>
+        <div class="specimen"><label class="checkline"><input class="radio" type="radio" name="r0" checked>Dot field</label><span class="lbl">.radio</span></div>
+        <div class="specimen"><label class="checkline"><input class="switch" type="checkbox" checked>Snap to grid</label><span class="lbl">.switch</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.3</span><h2>State and data</h2>
+      <span class="tail">mono · --t-10 · uppercase · tracked</span></div>
+    <p class="note">This is the whole hue budget. A verdict is a claim about the world and it is
+    the only place red is allowed, which is the entire reason a red one is alarming. A provenance
+    tag rides on every number the engine produced. Nothing else on any sheet is green, amber
+    or red.</p>
+    <div class="panel">
+      <div class="specimens">
+        <div class="specimen"><span class="verdict v-fits">Fits</span><span class="lbl">--fits</span></div>
+        <div class="specimen"><span class="verdict v-spills">Spills</span><span class="lbl">--spills</span></div>
+        <div class="specimen"><span class="verdict v-wont">Won't fit</span><span class="lbl">--wont</span></div>
+        <div class="specimen"><span class="verdict v-unknown">Unknown</span><span class="lbl">--unknown</span></div>
+        <div class="specimen"><span class="verdict v-info">Running</span><span class="lbl">--info</span></div>
+      </div>
+      <hr>
+      <div class="specimens">
+        <div class="specimen"><span class="prov p-measured">Measured</span><span class="lbl">.p-measured</span></div>
+        <div class="specimen"><span class="prov p-inferred">Inferred</span><span class="lbl">.p-inferred</span></div>
+        <div class="specimen"><span class="prov p-defaulted">Defaulted</span><span class="lbl">.p-defaulted</span></div>
+        <div class="specimen"><span class="prov p-declared">Declared</span><span class="lbl">.p-declared</span></div>
+        <div class="specimen"><span style="font-size:var(--t-13);color:var(--ink-2)">Reads <span class="ph">&#8249;file count&#8250;</span> files</span><span class="lbl">.ph</span></div>
+      </div>
+      <hr>
+      <div class="specimens">
+        <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-folder"/></svg>sequence<span class="m">monorepo</span></span><span class="lbl">.chip</span></div>
+        <div class="specimen"><span class="chip two"><svg class="i i-14"><use href="#ic-database"/></svg><span class="stack"><span>orders</span><span class="m">postgres</span></span></span><span class="lbl">.chip.two</span></div>
+        <div class="specimen"><span class="chip sensitive"><svg class="i i-12"><use href="#ic-sensitive"/></svg>keys<span class="w">Stays local</span></span><span class="lbl">.chip.sensitive</span></div>
+        <div class="specimen"><span class="repochip"><svg class="i i-12"><use href="#ic-branch"/></svg><span class="ph">&#8249;branch&#8250;</span></span><span class="lbl">.repochip</span></div>
+      </div>
+      <hr>
+      <div class="specimens">
+        <div class="specimen"><span class="dot" style="color:var(--st-done)"></span><span class="lbl">--st-done</span></div>
+        <div class="specimen"><span class="dot pulse" style="color:var(--st-active)"></span><span class="lbl">--st-active .pulse</span></div>
+        <div class="specimen"><span class="dot hollow" style="color:var(--st-neutral)"></span><span class="lbl">.dot.hollow</span></div>
+        <div class="specimen"><span class="dot ringed" style="color:var(--st-attention)"></span><span class="lbl">.dot.ringed</span></div>
+      </div>
+      <p class="caption">Colour a dot with a <span class="inline-code">--st-*</span> role, never with a raw verdict token.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.4</span><h2>Rows</h2>
+      <span class="tail">tool 26 · thread 28 · rail 30 · run 38</span></div>
+    <p class="note">Row height is semantic, not decorative. A tool call is 26px because it is a
+    footnote; a run is 38px because it carries two lines and a delta. Compact is the only
+    density.</p>
+    <div class="panel">
+      <div class="specimens column" style="width:100%">
+        <div class="specimen" style="width:100%"><div class="toolrow bordered" style="width:100%"><svg class="i i-14"><use href="#ic-file"/></svg><span class="name">Read</span><span class="file">arch/archKinds.ts</span><span class="right"><svg class="i i-12 ok"><use href="#ic-check"/></svg></span></div><span class="lbl">.toolrow.bordered</span></div>
+        <div class="specimen" style="width:100%"><div class="railitem" style="width:100%"><svg class="i i-14"><use href="#ic-board"/></svg>Architecture</div><span class="lbl">.railitem</span></div>
+        <div class="specimen" style="width:100%"><div class="thread sel" style="width:100%"><span class="dot" style="color:var(--st-active)"></span><span class="tt">Why does checkout call billing twice?</span><span class="ts"><span class="ph">&#8249;time&#8250;</span></span></div><span class="lbl">.thread.sel</span></div>
+        <div class="specimen" style="width:100%"><div class="runrow" style="width:100%"><span class="dot" style="color:var(--st-done)"></span><span class="mid"><span class="ttl">Extract billing module</span><span class="meta"><span class="ph">&#8249;files touched&#8250;</span></span></span><span class="right"><span class="delta"><span class="stat-add">+<span class="ph">&#8249;n&#8250;</span></span> <span class="stat-del">&#8722;<span class="ph">&#8249;n&#8250;</span></span></span><span class="elapsed"><span class="ph">&#8249;elapsed&#8250;</span></span></span></div><span class="lbl">.runrow</span></div>
+        <div class="specimen" style="width:100%"><div class="kv" style="width:100%"><span class="k">Kind</span><span class="v">service</span><span class="t"><span class="prov p-measured">Measured</span></span></div><span class="lbl">.kv</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.5</span><h2>Containers</h2>
+      <span class="tail">panel --r-14 · card --surface-2 + --e1 · pagehead --r-18</span></div>
+    <p class="note"><span class="inline-code">.panel</span> is the documentation container and
+    sits on <span class="inline-code">--surface-1</span>.
+    <span class="inline-code">.stage</span> is the same box on
+    <span class="inline-code">--bg-ground</span> and is the right frame for a specimen of the app
+    itself, because chrome has to be shown on the ground it actually sits on.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="hd"><svg class="i i-14"><use href="#ic-gauge"/></svg><span class="t">Impact</span>
+          <span style="margin-left:auto"><span class="prov p-inferred">Inferred</span></span></div>
+        <div class="bd">
+          <div style="display:flex;align-items:center;gap:var(--sp-10);margin-bottom:var(--sp-10)">
+            <span class="verdict v-spills">Spills</span>
+            <span style="font-size:var(--t-13);color:var(--ink-2)"><span class="ph">&#8249;module&#8250;</span></span>
+          </div>
+          <div style="font-size:var(--t-13);line-height:19px;color:var(--ink-2)">Changing this reaches
+          <span class="ph">&#8249;downstream count&#8250;</span> services the analyzer could trace, and
+          <span class="ph">&#8249;declared count&#8250;</span> more that only a manifest claims.</div>
+          <div style="display:flex;gap:var(--sp-6);margin-top:var(--sp-12)">
+            <button class="btn ghost sm">Show the evidence</button></div>
+        </div>
+      </div>
+      <dl class="specs">
+        <dt>Card surface</dt><dd>--surface-2</dd>
+        <dt>Card radius</dt><dd>--r-14</dd>
+        <dt>Card elevation</dt><dd>--e1</dd>
+        <dt>Header divider</dt><dd>--edge-faint</dd>
+        <dt>Body padding</dt><dd>--sp-12</dd>
+        <dt>Node card floor</dt><dd>--arch-card-min-h</dd>
+      </dl>
+    </div>
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <button class="suggest"><span class="gl"><svg class="i i-18"><use href="#ic-help"/></svg></span>
+        <span class="tx"><b>Read this repository</b>Point at a folder and I will draw what is actually there.</span></button>
+      <div class="empty"><svg class="i i-20" style="color:var(--ink-3)"><use href="#ic-board"/></svg>
+        <div style="font-size:var(--t-13);color:var(--ink-1);font-weight:550">No graph yet</div>
+        <div style="font-size:var(--t-11);color:var(--ink-3)">Open a repository and the board draws itself.</div>
+        <button class="btn sm">Open a repository</button></div>
+    </div>
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="do"><span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm"><div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div></div>
+        <p class="why">The kind is an icon and a neutral mono tag, shown on the ground it really sits on.</p></div>
+      <div class="dont"><span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm"><div class="node n-service" style="min-height:auto"><div class="nd-hd"><span class="verdict v-fits">Service</span></div><div class="nd-t">checkout</div></div></div>
+        <p class="why">A verdict badge spent on a category. Green means passed; a service has not passed anything.</p></div>
+    </div>
+    <p class="caption">The do/don't frame stays neutral. Only the 14px mark and the label carry the hue.</p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.6</span><h2>Transient surfaces</h2>
+      <span class="tail">they differ by elevation and radius, never by colour</span></div>
+    <p class="note">Four of them, and the choice between them is mechanical: a menu is a list of
+    verbs, a tooltip is a name, a popover is a small form, a dialog is a decision that stops the
+    world. Tooltip <span class="inline-code">--e2</span>, menu and popover
+    <span class="inline-code">--e3</span>, dialog <span class="inline-code">--e4</span> over a
+    <span class="inline-code">.scrim</span>.</p>
+    <div class="stage">
+      <div class="specimen">
+        <div class="menu">
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-pen"/></svg>Draw<span class="right">D</span></div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-frame"/></svg>Frame selection</div>
+          <hr>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-download"/></svg>Export the board</div>
+          <div class="menuitem" aria-disabled="true"><svg class="i i-14"><use href="#ic-trash"/></svg>Delete this board</div>
+        </div>
+        <span class="lbl">.menu · .menuitem</span></div>
+      <div class="specimen">
+        <div class="popover">
+          <div class="formfield"><span class="lbl">Rename</span>
+            <input class="input sm" value="checkout" aria-label="Rename"></div>
+          <div style="display:flex;justify-content:flex-end;gap:var(--sp-6);margin-top:var(--sp-12)">
+            <button class="btn sm">Cancel</button><button class="btn sm solid">Rename</button></div>
+        </div>
+        <span class="lbl">.popover</span></div>
+      <div class="specimen"><span class="tooltip">Traced from source</span><span class="lbl">.tooltip</span></div>
+      <div class="specimen">
+        <div class="dialog">
+          <div class="dl-hd"><svg class="i i-14"><use href="#ic-alert"/></svg><span class="t">Write <span class="ph">&#8249;file count&#8250;</span> files?</span>
+            <span class="right"><button class="iconbtn" aria-label="Close"><svg class="i i-14"><use href="#ic-x"/></svg></button></span></div>
+          <div class="dl-bd">These changes touch <span class="ph">&#8249;module list&#8250;</span>. Nothing is written until you accept.</div>
+          <div class="dl-ft"><button class="btn">Review the diff</button><button class="btn solid">Write the files</button></div>
+        </div>
+        <span class="lbl">.dialog</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.7</span><h2>Code and diff</h2>
+      <span class="tail">mono · --t-11 · the diff text stays --ink-1</span></div>
+    <p class="note">Diff is a background wash and a 2px inset gutter. The foreground text of a
+    diff line is never coloured, in any state — a removed line that renders red is
+    indistinguishable from a failed one.</p>
+    <div class="grid g2">
+      <pre class="codeblock">presentKindFor({ kind: 'module' })
+<span class="tok-c">// returns 'module', not 'service'</span></pre>
+      <div class="diffwrap" style="border:1px solid var(--edge);border-radius:var(--r-10);overflow:hidden">
+        <div class="diffline"><span class="ln">18</span><span class="sg"></span><span class="tx">export function presentKindFor(n) {</span></div>
+        <div class="diffline del"><span class="ln">19</span><span class="sg">&#8722;</span><span class="tx">  if (n.kind === 'module') return 'service'</span></div>
+        <div class="diffline add"><span class="ln">19</span><span class="sg">+</span><span class="tx">  if (n.kind === 'module') return 'module'</span></div>
+      </div>
+    </div>
+    <p class="caption">One added line and one removed line, drawn — so <span class="stat-add">+1</span>
+    <span class="stat-del">&#8722;1</span> is a literal a reader can derive, not an invented number.</p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.8</span><h2>The board</h2>
+      <span class="tail">Decision 2 — kind without hue</span></div>
+    <p class="note">Six kinds and not one hue between them. Kind is carried by an icon, a
+    silhouette, a border treatment and a step in the neutral ramp; every pair of kinds differs in
+    at least three of those four. The invariant: every kind stays distinguishable with all colour
+    removed, at every size the silhouette is drawn, <b>from the radii that actually paint</b>.
+    Prove it against the render, never against the token list — a declared radius is scaled by
+    <span class="inline-code">f = min(side / sum of that side's radii)</span> and can be discarded
+    entirely. Hue on a node is reserved for what the node is DOING.</p>
+    <div class="boardfield" style="padding:var(--sp-16)">
+      <div style="display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+        <div class="specimen"><div class="node n-entry"><div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div><div class="nd-ft"><span class="prov p-measured">Measured</span></div></div><span class="lbl">.n-entry</span></div>
+        <div class="specimen"><div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-s">Takes an order and charges it.</div></div><span class="lbl">.n-service</span></div>
+        <div class="specimen"><div class="node n-module"><div class="nd-hd"><svg class="i i-14"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div><div class="nd-t">billing</div><div class="nd-ft"><span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;members&#8250;</span></span></div></div><span class="lbl">.n-module</span></div>
+        <div class="specimen"><div class="node n-store"><div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div><span class="lbl">.n-store</span></div>
+        <div class="specimen"><div class="node n-topic"><div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div><div class="nd-t">order.placed</div></div><span class="lbl">.n-topic</span></div>
+        <div class="specimen"><div class="node n-agent"><div class="nd-hd"><svg class="i i-14"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div><div class="nd-t">refund worker</div></div><span class="lbl">.n-agent</span></div>
+      </div>
+    </div>
+    <p class="caption">A card with one line is one line tall. <span class="inline-code">--arch-card-min-h</span>
+    is a floor, not a height.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="panel">
+        <h3>States</h3>
+        <p class="sub">Selection outranks every other carrier and is louder than the state it replaces.</p>
+        <div class="specimens">
+          <div class="specimen"><div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div><span class="lbl">rest</span></div>
+          <div class="specimen"><div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div><span class="lbl">.sel</span></div>
+          <div class="specimen"><div class="node n-service dim"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">billing</div></div><span class="lbl">.dim</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Containment</h3>
+        <p class="sub">A module wall is <span class="inline-code">--r-18</span> with a
+        <span class="inline-code">--sp-4</span> inset, so its members land on
+        <span class="inline-code">--r-14</span> by arithmetic. Depth stops at three tone steps.</p>
+        <div class="nest">
+          <div class="nest-hd"><svg class="i i-12"><use href="#ic-module"/></svg>billing<span class="right"><span class="ph">&#8249;members&#8250;</span></span></div>
+          <div class="nest-bd">
+            <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">invoices</div></div>
+            <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">ledger</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Edges</h3>
+      <p class="sub">A drawn connector is DATA, not chrome, so it may carry colour. Dash carries
+      the same distinction, which is why the three states survive greyscale.</p>
+      <div class="specimens">
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 160 12" width="160" height="12" aria-hidden="true"><path class="edgeline e-traced" d="M2 6h156"/></svg>
+          <span class="lbl">.e-traced · --viz-baseline</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 160 12" width="160" height="12" aria-hidden="true"><path class="edgeline e-onflow" d="M2 6h156"/></svg>
+          <span class="lbl">.e-onflow · --accent</span></div>
+        <div class="specimen">
+          <svg class="edgespec" viewBox="0 0 160 12" width="160" height="12" aria-hidden="true"><path class="edgeline e-declared" d="M2 6h156"/></svg>
+          <span class="lbl">.e-declared · --unknown</span></div>
+        <div class="specimen"><span class="edgetag">POST /charge</span><span class="lbl">.edgetag</span></div>
+      </div>
+      <p class="caption">A claim the source could not confirm is <span class="inline-code">--unknown</span>.
+      It is never <span class="inline-code">--wont</span>: red means failed or blocked, and a claim
+      nobody could check has not failed at anything.</p>
+    </div>
+
+    <div class="panel" style="margin-top:var(--sp-12)">
+      <h3>Canvas furniture</h3>
+      <div class="specimens">
+        <div class="specimen">
+          <div class="kindlegend">
+            <span class="grp">Kinds</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-service"/></svg>Service</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-module"/></svg>Module</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-database"/></svg>Datastore</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-topic"/></svg>Topic</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-agent"/></svg>Agent</span>
+            <span class="grpsep"></span>
+            <span class="grp">Position</span>
+            <span class="k"><svg class="i i-12"><use href="#ic-entry"/></svg>Entry</span>
+          </div>
+          <span class="lbl">.kindlegend</span></div>
+        <div class="specimen">
+          <div class="zoomcluster">
+            <button class="iconbtn" aria-label="Zoom out"><svg class="i i-14"><use href="#ic-minus"/></svg></button>
+            <span class="pct"><span class="ph">&#8249;zoom&#8250;</span></span>
+            <button class="iconbtn" aria-label="Zoom in"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+            <button class="btn ghost sm">Fit</button>
+          </div>
+          <span class="lbl">.zoomcluster</span></div>
+        <div class="specimen">
+          <div class="marquee" style="width:var(--sp-56);height:var(--sp-32)"></div>
+          <span class="lbl">.marquee</span></div>
+      </div>
+      <hr>
+      <div class="specimens" style="align-items:flex-end">
+        <div class="specimen"><span class="silswatch n-entry"></span><span class="lbl">.n-entry · flag</span></div>
+        <div class="specimen"><span class="silswatch n-service"></span><span class="lbl">.n-service · --r-14</span></div>
+        <div class="specimen"><span class="silswatch n-module"></span><span class="lbl">.n-module · folder</span></div>
+        <div class="specimen"><span class="silswatch n-store"></span><span class="lbl">.n-store · cylinder</span></div>
+        <div class="specimen"><span class="silswatch n-topic"></span><span class="lbl">.n-topic · stadium</span></div>
+        <div class="specimen"><span class="silswatch n-agent"></span><span class="lbl">.n-agent · chamfer</span></div>
+      </div>
+      <p class="caption">Six silhouettes, no labels, no hue — and still six kinds. Each swatch is
+      half a card, at card aspect, because that is the smallest size at which all six outlines
+      still separate. Here the tab is already 6px, the chamfer 8px and the cylinder arcs 7px
+      &mdash; at the floor, not above it. Below this size they go under and the <em>icon</em>
+      takes over as the carrier. Do not read this row as a claim that the outlines
+      survive further out. Border <em>weight</em> does not survive a 1x display at all, where
+      1.5px snaps to 1px: it reinforces, it never carries.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="eyebrow">00.9</span><h2>Icons</h2>
+      <span class="tail">70 symbols · one 1.5px stroke · no emoji</span></div>
+    <p class="note">Colour is inherited, so the same glyph sits in a rail at
+    <span class="inline-code">--ink-3</span>, on a tool row at
+    <span class="inline-code">--fits</span> and inside the send button at
+    <span class="inline-code">--accent-on-solid</span>. Size with
+    <span class="inline-code">.i</span> (16px, the default),
+    <span class="inline-code">.i-12</span>, <span class="inline-code">.i-14</span>,
+    <span class="inline-code">.i-18</span>, <span class="inline-code">.i-20</span> — the stroke
+    does not scale with the box. Give an icon-only control an
+    <span class="inline-code">aria-label</span>.</p>
+    <div class="panel">
+      <div class="specimens">
+        <div class="specimen"><svg class="i i-20"><use href="#ic-entry"/></svg><span class="lbl">ic-entry</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-service"/></svg><span class="lbl">ic-service</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-module"/></svg><span class="lbl">ic-module</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-topic"/></svg><span class="lbl">ic-topic</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-agent"/></svg><span class="lbl">ic-agent</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-flow"/></svg><span class="lbl">ic-flow</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-board"/></svg><span class="lbl">ic-board</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-frame"/></svg><span class="lbl">ic-frame</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-pen"/></svg><span class="lbl">ic-pen</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-cursor"/></svg><span class="lbl">ic-cursor</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-minus"/></svg><span class="lbl">ic-minus</span></div>
+        <div class="specimen"><svg class="i i-20"><use href="#ic-fn"/></svg><span class="lbl">ic-fn</span></div>
+      </div>
+      <p class="caption">The twelve declared Sequence additions. The other 58 are Graphite's, unchanged;
+      their name-to-meaning table is in that book's README §3.</p>
+      <div class="dev"><b>Handback note.</b> Six of the twelve exist because Decision 2 makes the icon
+      the primary carrier of node kind. A kind without its own glyph pushes the difference back onto
+      hue, which is the defect this rebuild exists to remove. Datastore deliberately gets no new
+      drawing: <span class="inline-code">ic-database</span> already means "a database", and a second
+      drawing for one meaning is the other half of the icon-reuse defect.</div>
+    </div>
+  </div>
+
+</section>
+</main>

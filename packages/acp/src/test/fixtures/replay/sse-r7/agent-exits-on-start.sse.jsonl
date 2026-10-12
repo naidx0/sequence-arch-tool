@@ -1,0 +1,2 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:error","error":"ACP agent failed: The agent process exited (code 3): Error: Cannot find module @anthropic-ai/claude-agent-sdk","recovery":{"kind":"retry","cause":"bridgeExit"}}

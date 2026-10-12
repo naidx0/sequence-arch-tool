@@ -1,0 +1,340 @@
+From 232cbbbb2c0622d320bef7b1e5ee84862231cc17 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 15:10:52 -0400
+Subject: [PATCH 17/37] Cloud patch 0006-plan-before-after: port.mjs placed 3
+ hunks; the builder appended to conceptChart.ts and the import hand-added
+ (flagged SEQUENCE_PLAN_BEFORE_AFTER=1)
+
+---
+ packages/analyzer/src/server/askPipeline.ts   |  38 ++++++
+ packages/analyzer/src/server/conceptChart.ts  | 111 ++++++++++++++++++
+ .../analyzer/src/test/ask-tool-loop.test.ts   |  48 ++++++++
+ .../src/test/plan-before-after.test.ts        |  82 +++++++++++++
+ 4 files changed, 279 insertions(+)
+ create mode 100644 packages/analyzer/src/test/plan-before-after.test.ts
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 049ac7bd..edd165d6 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -71,6 +71,7 @@ import {
+   attemptNextPictureCheckIn,
+   buildAnswerFlowChart,
+   buildConceptChart,
++  deriveBeforeAfterChart,
+   deriveCheckIn,
+   deriveNextPictureCheckIn,
+   withPicturePointer,
+@@ -6726,6 +6727,43 @@ ${todoText}${lastToolSectionText}`);
+     }
+   }
+ 
++  /*
++   * PLAN MODE: THE BEFORE/AFTER IS ALREADY IN THE PLAN. Rule 2 of plan mode
++   * makes the model name the files that change, and plan mode refuses
++   * propose_topology, so a plan turn had no way to show its change (the /plan
++   * battery: before/after diagram 0/9). When the plan names files the scan
++   * knows and the model drew nothing, Sequence draws them as they are and as
++   * the plan leaves them. Behind SEQUENCE_PLAN_BEFORE_AFTER=1 until measured.
++   *
++   * It does not take the chart slot (`lastChartThisTurn`): that slot carries a
++   * lesson's focus into the next turn, and turnCarry.reach.test.ts holds every
++   * write to it inside a teach or plot gate. A plan's picture has no focus to
++   * carry.
++   */
++  if (
++    process.env.SEQUENCE_PLAN_BEFORE_AFTER === '1' &&
++    input.permission === 'plan' &&
++    chartsThisTurn === 0 &&
++    !trippedBreaker &&
++    providerCallMs.length > 0
++  ) {
++    const derived = deriveBeforeAfterChart(input.graph ?? undefined, text);
++    if (derived !== undefined) {
++      const floorId = `plan-before-after-${rounds}`;
++      push({ type: 'tool:start', id: floorId, name: 'propose_chart' });
++      chartsThisTurn += 1;
++      push({ type: 'chart:proposal', chart: derived });
++      push({
++        type: 'tool:done',
++        id: floorId,
++        name: 'propose_chart',
++        evidence:
++          `charted ${derived.kind} "${derived.title}" (${derived.items.length} items) — ` +
++          "Sequence drew this from the files the plan names, when the model did not call propose_chart",
++      });
++    }
++  }
++
+   /*
+    * PROSE-DIFF SALVAGE — the edit syntax models already speak.
+    *
+diff --git a/packages/analyzer/src/server/conceptChart.ts b/packages/analyzer/src/server/conceptChart.ts
+index 21255fea..a66f6c33 100644
+--- a/packages/analyzer/src/server/conceptChart.ts
++++ b/packages/analyzer/src/server/conceptChart.ts
+@@ -1026,3 +1026,114 @@ export function withWorkedExample(
+   if (line === undefined) return text;
+   return insertBeforeClosingQuestion(text, line);
+ }
++
++/**
++ * A PLAN'S BEFORE AND AFTER, READ OFF THE PLAN'S OWN FILE LIST.
++ *
++ * The /plan battery drew a before/after diagram in 0 of 9 turns. Plan mode
++ * refuses propose_topology (a pending service on the board is not a plan), and
++ * PLAN_MODE_INSTRUCTIONS rule 2 already makes the model name the files that
++ * change. So the picture is already in the answer: every named path the scan
++ * knows is a box that exists today (Before) and the same box with the plan's
++ * own line about it (After). A path the scan does not know goes in After only,
++ * and only when its line says it is new ("create", "add", "new"); an unknown
++ * path with no such word is a guess, and a guess is not drawn.
++ *
++ * Nothing is drawn unless at least one named file is really in the scan.
++ */
++const PLAN_PATH = /(?:^|[\s`'"(*[])((?:[\w@.-]+\/)*[\w@-][\w@.-]*\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|java|kt|rb|rs|cs|php|swift|sql|ya?ml|json|toml|proto|css|scss|html|vue|svelte|md))(?::\d+)?(?=$|[\s`'"),.:;*\]])/gm;
++const NEW_FILE_WORD = /\b(?:new|create|creates|created|add|adds|added|introduce)\b/i;
++const PLAN_ROWS_PER_COLUMN = 8;
++
++function planLineNote(line: string, path: string): string {
++  const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
++  const base = path.split('/').pop() ?? path;
++  /* A line that opens with the path ("`routes.py` — add a route") drops it: the
++     box already carries the name. Mid-sentence ("Update routes.py to …") it
++     becomes the file's short name, so the sentence still reads. */
++  const note = line
++    .replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '')
++    .replace(/\*\*|[`*]/g, '')
++    .replace(new RegExp(`^\\s*${escaped}(?::\\d+)?[\\s:—–-]*`), '')
++    .replace(new RegExp(`${escaped}(?::\\d+)?`, 'g'), base)
++    .replace(/^[\s:—–-]+|[\s:—–-]+$/g, '')
++    .replace(/\s{2,}/g, ' ')
++    .trim();
++  return note.length > 72 ? `${note.slice(0, 71).trimEnd()}…` : note;
++}
++
++export function deriveBeforeAfterChart(
++  graph: Pick<ArchGraph, 'nodes' | 'edges'> | undefined,
++  planText: string,
++): SeqChart | undefined {
++  if (graph === undefined || planText.trim() === '') return undefined;
++  const nodes = graph.nodes ?? [];
++  const byPath = new Map<string, (typeof nodes)[number]>();
++  for (const n of nodes) if (n.path && !byPath.has(n.path)) byPath.set(n.path, n);
++  const resolve = (p: string) => {
++    const exact = byPath.get(p.replace(/^\.\//, ''));
++    if (exact) return exact;
++    /* A plan often writes `routes.py` or `app/routes.py`; take it only when one file ends that way. */
++    const hits = nodes.filter((n) => n.path && (n.path === p || n.path.endsWith(`/${p}`)));
++    return hits.length === 1 ? hits[0] : undefined;
++  };
++  const byId = new Map(nodes.map((n) => [n.id, n]));
++  const nameOf = (id: string) => byId.get(id)?.label ?? id;
++
++  const seen = new Set<string>();
++  const existing: { node: (typeof nodes)[number]; note: string }[] = [];
++  const added: { path: string; note: string }[] = [];
++  for (const line of planText.split('\n')) {
++    for (const m of line.matchAll(PLAN_PATH)) {
++      const p = m[1]!;
++      const node = resolve(p);
++      const key = node?.id ?? p;
++      if (seen.has(key)) continue;
++      seen.add(key);
++      const note = planLineNote(line, p);
++      if (node) existing.push({ node, note });
++      else if (NEW_FILE_WORD.test(line)) added.push({ path: p, note });
++    }
++  }
++  if (existing.length === 0) return undefined;
++  const kept = existing.slice(0, PLAN_ROWS_PER_COLUMN);
++  const keptNew = added.slice(0, Math.max(0, PLAN_ROWS_PER_COLUMN - kept.length));
++
++  /* Today, in the scan's words: who this file uses and who uses it. */
++  const today = (id: string): string => {
++    const uses = new Set<string>();
++    const usedBy = new Set<string>();
++    for (const e of graph.edges ?? []) {
++      if (e.srcId === id && e.dstId !== id) uses.add(nameOf(e.dstId));
++      if (e.dstId === id && e.srcId !== id) usedBy.add(nameOf(e.srcId));
++    }
++    const list = (s: Set<string>) => [...s].slice(0, 2).join(', ') + (s.size > 2 ? ` +${s.size - 2}` : '');
++    const parts = [uses.size ? `uses ${list(uses)}` : '', usedBy.size ? `used by ${list(usedBy)}` : ''].filter(Boolean);
++    return parts.length > 0 ? parts.join(' · ') : 'no scanned connections';
++  };
++  const base = (p: string) => p.split('/').pop() ?? p;
++
++  const items: SeqChart['items'] = [];
++  kept.forEach(({ node }, i) => {
++    items.push({ id: `before-${i}`, label: base(node.path ?? node.label), nodeId: node.id, group: 'Before', detail: today(node.id) });
++  });
++  kept.forEach(({ node, note }, i) => {
++    items.push({ id: `after-${i}`, label: base(node.path ?? node.label), nodeId: node.id, group: 'After', detail: note || 'changed by this plan', tone: 'accent' });
++  });
++  keptNew.forEach(({ path, note }, i) => {
++    items.push({ id: `new-${i}`, label: base(path), group: 'After', detail: `new file${note ? `: ${note}` : ''}`, tone: 'good' });
++  });
++  const newCount = keptNew.length;
++  const chart = {
++    version: 1 as const,
++    kind: 'before-and-after' as const,
++    title: 'Before and after this plan',
++    caption:
++      `Left: the ${kept.length === 1 ? 'file' : `${kept.length} files`} the plan changes, as the scan sees them today. ` +
++      `Right: what the plan does to each` + (newCount > 0 ? `, and the ${newCount === 1 ? 'new file' : `${newCount} new files`} it adds.` : '.'),
++    items,
++    axes: { columns: ['Before', 'After'] },
++  };
++  const checked = validateChart(chart, new Set(nodes.map((n) => n.id)));
++  return checked.ok ? checked.chart : undefined;
++}
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index 841a82b2..0a76a305 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -5318,6 +5318,54 @@ test('the stop note names what the turn did in plain words, never a tool name',
+   assert.strictEqual(summarizeExecutedTools([]), '');
+ });
+ 
++/* ======================================== plan mode before/after floor ===== */
++
++const PLAN_ANSWER = [
++  'Plan: add an order status endpoint.',
++  '',
++  '1. `orders/app/routes.py` — add a `GET /orders/{id}/status` route.',
++  '2. Update gateway/src/routes/orders.ts to forward the status call.',
++  '3. Verify with the gateway route test.',
++].join('\n');
++
++async function planTurnEvents(permission: 'plan' | 'build', flag: string | undefined) {
++  const repo = shopfrontRepo();
++  const { callProvider } = makeProviderScript([{ text: PLAN_ANSWER }]);
++  const base = await makeAttachedInput(repo, callProvider);
++  const before = process.env.SEQUENCE_PLAN_BEFORE_AFTER;
++  if (flag === undefined) delete process.env.SEQUENCE_PLAN_BEFORE_AFTER;
++  else process.env.SEQUENCE_PLAN_BEFORE_AFTER = flag;
++  try {
++    const events: AskStreamEvent[] = [];
++    await runAskPipeline({ ...base, question: 'Plan an order status endpoint', permission }, (e) => events.push(e));
++    return events;
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_PLAN_BEFORE_AFTER;
++    else process.env.SEQUENCE_PLAN_BEFORE_AFTER = before;
++  }
++}
++
++test('askPipeline plan mode, SEQUENCE_PLAN_BEFORE_AFTER=1: a plan naming scanned files draws its before/after', async () => {
++  const events = await planTurnEvents('plan', '1');
++  const charts = events.filter((e) => e.type === 'chart:proposal') as { chart: { kind: string; items: { label: string; group?: string }[] } }[];
++  assert.strictEqual(charts.length, 1);
++  assert.strictEqual(charts[0]!.chart.kind, 'before-and-after');
++  assert.deepStrictEqual(
++    charts[0]!.chart.items.map((i) => `${i.group}:${i.label}`),
++    ['Before:routes.py', 'Before:orders.ts', 'After:routes.py', 'After:orders.ts'],
++  );
++  const done = events.find((e) => e.type === 'tool:done' && (e as { id?: string }).id?.startsWith('plan-before-after')) as { evidence?: string } | undefined;
++  assert.match(done?.evidence ?? '', /from the files the plan names/);
++});
++
++test('askPipeline plan before/after stays off without the flag, and never fires outside plan mode', async () => {
++  for (const [permission, flag] of [['plan', undefined], ['build', '1']] as const) {
++    const events = await planTurnEvents(permission, flag);
++    const kinds = events.filter((e) => e.type === 'chart:proposal').map((e) => (e as { chart: { kind: string } }).chart.kind);
++    assert.ok(!kinds.includes('before-and-after'), `${permission} with flag ${flag ?? 'unset'} drew a before/after`);
++  }
++});
++
+ /* ============================ the forced round asks for the named surface ===== */
+ 
+ test('drawSurfaceFor: the arch board is asked for the board, whatever else is live', () => {
+diff --git a/packages/analyzer/src/test/plan-before-after.test.ts b/packages/analyzer/src/test/plan-before-after.test.ts
+new file mode 100644
+index 00000000..7d413381
+--- /dev/null
++++ b/packages/analyzer/src/test/plan-before-after.test.ts
+@@ -0,0 +1,82 @@
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import test from 'node:test';
++import { fileURLToPath } from 'node:url';
++
++import { validateChart } from '@sequence/schema';
++
++import { scanRepo } from '../scan.js';
++import { deriveBeforeAfterChart } from '../server/conceptChart.js';
++
++const ANALYZER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
++const SHOPFRONT = path.join(ANALYZER_ROOT, 'test', 'fixtures', 'shopfront');
++
++async function shopfrontGraph() {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-plan-before-after-'));
++  const repo = path.join(dir, 'repo');
++  fs.cpSync(SHOPFRONT, repo, { recursive: true });
++  return scanRepo(repo);
++}
++
++const PLAN = [
++  'Plan: add an order status endpoint.',
++  '',
++  '1. `orders/app/routes.py` — add a `GET /orders/{id}/status` route that reads the order row.',
++  '2. Update gateway/src/routes/orders.ts to forward the status call to orders.',
++  '3. Create `orders/app/status.py` for the status lookup, so routes.py stays thin.',
++  '4. Tidy orders/app/cache.py while we are there.',
++  '5. Verify with `orders/tests/test_status.py` and the gateway route test.',
++].join('\n');
++
++test('a plan that names scanned files gets a two-column before/after of those files', async () => {
++  const graph = await shopfrontGraph();
++  const chart = deriveBeforeAfterChart(graph, PLAN)!;
++  assert.ok(chart, 'expected a chart');
++  assert.equal(chart.kind, 'before-and-after');
++  assert.deepEqual(chart.axes?.columns, ['Before', 'After']);
++  const before = chart.items.filter((i) => i.group === 'Before');
++  const after = chart.items.filter((i) => i.group === 'After');
++  assert.deepEqual(before.map((i) => i.label), ['routes.py', 'orders.ts']);
++  /* Every Before box is a real scanned node, and says what it does today. */
++  const ids = new Set(graph.nodes.map((n) => n.id));
++  for (const item of before) {
++    assert.ok(item.nodeId && ids.has(item.nodeId));
++    assert.match(item.detail!, /uses|used by|no scanned connections/);
++  }
++  /* After keeps the same boxes with the plan's own words, and adds the new file. */
++  assert.deepEqual(after.map((i) => i.label), ['routes.py', 'orders.ts', 'status.py']);
++  assert.match(after[0]!.detail!, /add a GET \/orders\/\{id\}\/status route/);
++  assert.equal(after[1]!.detail, 'Update orders.ts to forward the status call to orders.');
++  assert.equal(after[2]!.nodeId, undefined);
++  assert.equal(after[2]!.tone, 'good');
++  assert.match(after[2]!.detail!, /^new file: /);
++  assert.ok(validateChart(chart, ids).ok);
++});
++
++test('an unknown path is drawn only when its line says it is new', async () => {
++  const graph = await shopfrontGraph();
++  const labels = deriveBeforeAfterChart(graph, PLAN)!.items.map((i) => i.label);
++  /* "Tidy orders/app/cache.py" and "Verify with orders/tests/test_status.py" name files the scan does not have. */
++  assert.ok(!labels.includes('cache.py'));
++  assert.ok(!labels.includes('test_status.py'));
++});
++
++test('nothing is drawn when the plan names no file the scan knows', async () => {
++  const graph = await shopfrontGraph();
++  assert.equal(deriveBeforeAfterChart(graph, 'Create `billing/new_service.py` and wire it up.'), undefined);
++  assert.equal(deriveBeforeAfterChart(graph, 'Refactor the auth layer so it is cleaner.'), undefined);
++  assert.equal(deriveBeforeAfterChart(undefined, PLAN), undefined);
++});
++
++test('a file named twice is drawn once, and a column never runs past eight rows', async () => {
++  const graph = await shopfrontGraph();
++  const twice = deriveBeforeAfterChart(graph, `${PLAN}\n6. Re-check orders/app/routes.py after step 3.`)!;
++  assert.equal(twice.items.filter((i) => i.label === 'routes.py' && i.group === 'Before').length, 1);
++  const files = graph.nodes.filter((n) => n.path && /\.(py|ts|go|java)$/.test(n.path)).slice(0, 12);
++  assert.ok(files.length > 8);
++  const long = deriveBeforeAfterChart(graph, files.map((n, i) => `${i + 1}. Change ${n.path}.`).join('\n'))!;
++  assert.equal(long.items.filter((i) => i.group === 'Before').length, 8);
++  assert.equal(long.items.filter((i) => i.group === 'After').length, 8);
++});
+-- 
+2.51.1.windows.1
+

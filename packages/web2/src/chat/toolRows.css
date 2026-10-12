@@ -1,0 +1,251 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   TOOL CALLS AND THOUGHTS AS QUIET ROWS (round 9)
+   packages/web2/src/chat/toolRows.css
+
+   Jaden: "tool calls: cleaner and nicer", "he doesn't like the current
+   thinking display". A call is one line: its kind's icon (a block spinner
+   while it runs), a quiet verb, what it acted on, how long, a chevron. No box
+   per call; a hover wash and a soft card only when one opens. A folded run of
+   calls keeps a hairline down its left edge so the group reads as one thing.
+   A thought is one calm line, "Thought for 3.2 s", opening onto its text.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.s2 .s2-agcard[data-kind='tool'],
+.s2 .s2-agcard[data-kind='diff'],
+.s2 .s2-agfold,
+.s2 .s2-think {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 10px;
+  overflow: visible;
+}
+.s2 .s2-agcard + .s2-agcard,
+.s2 .s2-agcard + .s2-agfold,
+.s2 .s2-agfold + .s2-agcard,
+.s2 .s2-agfold + .s2-agfold,
+.s2 .s2-think + .s2-agcard,
+.s2 .s2-agcard + .s2-think {
+  margin-top: 0;
+  border-radius: 10px;
+}
+.s2 .s2-agcard[data-kind='tool'] + .s2-agcard[data-kind='tool'],
+.s2 .s2-agcard[data-kind='tool'] + .s2-agfold,
+.s2 .s2-agfold + .s2-agcard[data-kind='tool'] {
+  margin-top: 0;
+}
+/* A turn's rows sit close together, with air before the next block of prose. */
+.s2 .s2-run > .s2-agcard[data-kind='tool'],
+.s2 .s2-run > .s2-agcard[data-kind='diff'],
+.s2 .s2-run > .s2-agfold,
+.s2 .s2-run > .s2-think {
+  margin-block: 1px;
+}
+
+/* the row itself */
+.s2 .s2-agcard[data-kind='tool'] .s2-st-row,
+.s2 .s2-agcard[data-kind='diff'] .s2-st-row,
+.s2 .s2-agfold > .s2-st-row,
+.s2 .s2-think-h {
+  padding: 5px 8px;
+  gap: 8px;
+  border-radius: 10px;
+  font-size: var(--t-12);
+  color: var(--b-ink2);
+  min-height: var(--row-h-thread);
+}
+.s2 .s2-agcard[data-kind='tool'] .s2-st-row:hover,
+.s2 .s2-agcard[data-kind='diff'] .s2-st-row:hover,
+.s2 .s2-agfold > .s2-st-row:hover,
+.s2 .s2-think-h:not(:disabled):hover {
+  background: var(--b-glass);
+  color: var(--b-ink1);
+}
+.s2 .s2-agcard .s2-agmark {
+  width: 16px;
+  height: 16px;
+}
+.r9-kindicon,
+.s2 .s2-agfold .s2-ok {
+  color: var(--b-ink3);
+}
+.s2-spin-slot {
+  display: inline-flex;
+}
+
+/* verb quiet, target readable (mono: paths and commands) */
+.r9-verb {
+  flex: none;
+  color: var(--b-ink3);
+  white-space: pre;
+}
+.s2 .s2-agcard .s2-t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.r9-target {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--t-11-5);
+  color: var(--b-ink2);
+  margin-left: -8px; /* the verb's own space is the gap */
+}
+.s2 .s2-agcard[data-status='running'] .r9-target {
+  color: var(--b-ink1);
+}
+
+/* a settled call says nothing in words; its duration and icon do. A running
+   tool row says it with its spinner, its shimmer and the status bar ("Running
+   a command"): the word stays for screen readers but gives its width back to
+   the command, which was clipped to "@sequence/gate…" in a 400px chat (r11). */
+.s2 .s2-agcard[data-status='done'] .r9-stword,
+.s2 .s2-agcard[data-status='allowed'] .r9-stword,
+.s2 .s2-agcard[data-kind='tool'][data-status='running'] .r9-stword {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.s2 .s2-agcard[data-kind='tool'] .s2-meta,
+.s2 .s2-agcard[data-kind='diff'] .s2-meta,
+.s2 .s2-agfold .s2-meta {
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+  font-variant-numeric: tabular-nums;
+}
+.s2 .s2-agcard[data-status='failed'] .r9-stword,
+.s2 .s2-agcard[data-status='denied'] .r9-stword {
+  color: var(--b-del);
+}
+.s2 .s2-agcard[data-kind='tool'] .s2-st-chev,
+.s2 .s2-agcard[data-kind='diff'] .s2-st-chev,
+.s2 .s2-agfold .s2-st-chev {
+  opacity: 0;
+  transition: opacity var(--dur-1, 120ms) var(--ease, ease);
+}
+.s2 .s2-agcard[data-kind='tool'] .s2-st-row:hover .s2-st-chev,
+.s2 .s2-agcard[data-kind='diff'] .s2-st-row:hover .s2-st-chev,
+.s2 .s2-agfold > .s2-st-row:hover .s2-st-chev,
+.s2 .s2-st-row:focus-visible .s2-st-chev,
+.s2 .s2-agcard[data-open='true'] .s2-st-chev {
+  opacity: 1;
+}
+
+/* an open call: its output in a soft card under the row */
+.s2 .s2-agcard[data-kind='tool'] > .s2-agcard-body,
+.s2 .s2-agcard[data-kind='diff'] > .s2-agcard-body {
+  margin: 2px 0 6px 24px;
+  border: 1px solid var(--b-edge);
+  border-radius: 10px;
+  background: var(--b-s1);
+  overflow: hidden;
+}
+
+/* a folded run: a hairline down its left edge */
+.s2 .s2-agfold > .s2-agfold-body {
+  border-top: 0;
+  margin: 0 0 4px 15px;
+  padding-left: 6px;
+  border-left: 1px solid var(--b-edge);
+}
+.s2 .s2-agfold-body > .s2-agcard,
+.s2 .s2-agfold-body > .s2-agcard + .s2-agcard {
+  border: 0;
+}
+
+/* the thought */
+.s2 .s2-think-h {
+  width: 100%;
+  color: var(--b-ink3);
+}
+.s2 .s2-think-h > .s2-i:first-child {
+  color: var(--b-ink3);
+}
+.s2 .s2-think-h:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.s2 .s2-think-h.live {
+  color: var(--b-ink2);
+}
+.s2 .s2-think-b {
+  margin: 2px 0 6px 15px;
+  padding: 2px 0 2px 14px;
+  border-left: 1px solid var(--b-edge);
+  font-size: var(--t-12);
+  line-height: 19px;
+  color: var(--b-ink3);
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow: auto;
+}
+
+/* ── R10: the work reads as a quiet timeline ──────────────────────────────
+   A finished turn's steps fold into one summary line with the span on the
+   right ("Read 6 files, edited 2, ran 1 command   14s"); opened, the steps
+   hang off a hairline, one line each, their durations on the right. The
+   live step stays last, with its spinner. */
+.s2 .s2-agfold-body {
+  margin-left: 15px;
+  padding-left: 8px;
+  border-left: 1px solid var(--b-edge2, rgba(127, 127, 127, 0.25));
+}
+.s2 .s2-agfold > .s2-st-row .s2-t {
+  flex: 1;
+  color: var(--b-ink2);
+}
+.s2 .s2-agcard[data-kind='tool'] .s2-meta[data-testid='agent-card-duration'],
+.s2 .s2-agcard[data-kind='diff'] .s2-meta[data-testid='agent-card-duration'] {
+  margin-left: auto;
+  min-width: 3.2em;
+  text-align: right;
+}
+.s2 .s2-agcard[data-kind='tool'][data-status='done'] .s2-st-chev,
+.s2 .s2-agcard[data-kind='diff'][data-status='done'] .s2-st-chev {
+  opacity: 0;
+}
+.s2 .s2-agcard[data-kind='tool'][data-status='done'] .s2-st-row:hover .s2-st-chev,
+.s2 .s2-agcard[data-kind='diff'][data-status='done'] .s2-st-row:hover .s2-st-chev {
+  opacity: 1;
+}
+
+/* R10: a fold's summary wraps to two lines instead of cutting itself ("ran 1 c…"). */
+.s2 .s2-agfold > .s2-st-row .s2-t {
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+/* R10: the opened steps hang off a hairline rail, each with a dot on it. */
+.s2 .s2-agfold-body {
+  position: relative;
+}
+.s2 .s2-agfold-body > .s2-agcard,
+.s2 .s2-agfold-body > .s2-subagent,
+.s2 .s2-agfold-body > .agsub {
+  position: relative;
+}
+.s2 .s2-agfold-body > .s2-agcard::before {
+  content: '';
+  position: absolute;
+  left: -13px;
+  top: calc(var(--row-h-thread) / 2);
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge2, var(--b-edge));
+}
+.s2 .s2-agfold-body > .s2-agcard[data-status='failed']::before {
+  border-color: var(--b-del);
+}

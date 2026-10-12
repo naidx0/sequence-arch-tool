@@ -1,0 +1,290 @@
+{
+ "bank1-0/r1": {
+  "score": -11.91,
+  "family": "what does this thing actually do?"
+ },
+ "bank1-1/r1": {
+  "score": -7.652,
+  "family": "Who is this project meant for, beginners or pros?"
+ },
+ "bank1-2/r1": {
+  "score": -9.837,
+  "family": "why would someone build this when there are already tools out there for the same job"
+ },
+ "bank1-3/r1": {
+  "score": -7.626,
+  "family": "in one sentence, what problem does the app solve?"
+ },
+ "bank1-4/r1": {
+  "score": -5.984,
+  "family": "is this worth my time to learn or should i skip it"
+ },
+ "bank1-5/r1": {
+  "score": -6.488,
+  "family": "what do i get at the end if i use this tool?"
+ },
+ "bank1-6/r1": {
+  "score": -11.029,
+  "family": "Can you explain what this project is like I'm a high school student?"
+ },
+ "bank1-7/r1": {
+  "score": -7.025,
+  "family": "I am new here. What is purpose of this program, please?"
+ },
+ "bank1-8/r1": {
+  "score": -6.989,
+  "family": "If I pitched this to my boss, how would I describe the value?"
+ },
+ "bank1-9/r1": {
+  "score": -10.439,
+  "family": "what are the steps a user goes through from start to finish?"
+ },
+ "bank1-10/r1": {
+  "score": -8.583,
+  "family": "does this app replace something people normally pay for?"
+ },
+ "bank1-11/r1": {
+  "score": -7.176,
+  "family": "Why does this project exist? Was there a gap somebody wanted to fill?"
+ },
+ "bank1-12/r1": {
+  "score": -6.858,
+  "family": "who would be the ideal customer for this"
+ },
+ "bank1-13/r1": {
+  "score": -7.076,
+  "family": "is the tool aimed at individuals or at teams?"
+ },
+ "bank1-14/r1": {
+  "score": -6.849,
+  "family": "what kind of person would love this and what kind would hate it?"
+ },
+ "bank1-15/r1": {
+  "score": -5.485,
+  "family": "As an investor, why should I care about this product?"
+ },
+ "bank1-16/r1": {
+  "score": -8.848,
+  "family": "wat is this app for exactly, i dont get it"
+ },
+ "bank1-17/r1": {
+  "score": -6.501,
+  "family": "What's the big selling point compared to doing it by hand?"
+ },
+ "bank1-18/r1": {
+  "score": -8.941,
+  "family": "How would a first-time user get started and what would they see first?"
+ },
+ "bank1-19/r1": {
+  "score": -6.379,
+  "family": "is this a finished product or more of an experiment?"
+ },
+ "bank1-20/r1": {
+  "score": -8.873,
+  "family": "My teacher asked us to summarize what this project does. How would you put it?"
+ },
+ "bank1-21/r1": {
+  "score": -6.108,
+  "family": "Should our team adopt this, or is it overkill for us?"
+ },
+ "bank1-22/r1": {
+  "score": -6.904,
+  "family": "which problem is this solving that other options dont?"
+ },
+ "bank1-23/r1": {
+  "score": -9.901,
+  "family": "Give me the elevator pitch for the app."
+ },
+ "bank1-24/r1": {
+  "score": -10.102,
+  "family": "what are the key features from a user's point of view"
+ },
+ "bank1-25/r1": {
+  "score": -7.084,
+  "family": "Is this for developers only, or can non-technical people use it too?"
+ },
+ "bank1-26/r1": {
+  "score": -6.216,
+  "family": "hi, what is the goal of this software? who uses it daily?"
+ },
+ "bank1-27/r1": {
+  "score": -11.008,
+  "family": "what would i be missing if i just used a competitor instead"
+ },
+ "bank1-28/r1": {
+  "score": -7.375,
+  "family": "How does a typical user benefit from this in their day to day?"
+ },
+ "bank1-29/r1": {
+  "score": -6.007,
+  "family": "why should anyone choose this over the obvious free alternative?"
+ },
+ "bank1-30/r1": {
+  "score": -8.339,
+  "family": "what's the story behind this project, like why was it made"
+ },
+ "bank1-31/r1": {
+  "score": -5.068,
+  "family": "is there a clear audience for this or is it kind of for everyone?"
+ },
+ "bank1-32/r1": {
+  "score": -7.461,
+  "family": "what outcome does this tool promise its users?"
+ },
+ "bank1-33/r1": {
+  "score": -5.46,
+  "family": "Honestly, is this any good? Would you recommend it to a friend?"
+ },
+ "bank1-34/r1": {
+  "score": -8.58,
+  "family": "For somebody non-native like me, can you say simply what this project give to the people?"
+ },
+ "bank1-35/r1": {
+  "score": -7.78,
+  "family": "what's the one thing this app does better than anything else?"
+ },
+ "bank1-0/r2": {
+  "score": -8.285,
+  "family": "what does this thing actually do?"
+ },
+ "bank1-1/r2": {
+  "score": -7.233,
+  "family": "Who is this project meant for, beginners or pros?"
+ },
+ "bank1-2/r2": {
+  "score": -9.573,
+  "family": "why would someone build this when there are already tools out there for the same job"
+ },
+ "bank1-3/r2": {
+  "score": -8.293,
+  "family": "in one sentence, what problem does the app solve?"
+ },
+ "bank1-4/r2": {
+  "score": -8.385,
+  "family": "is this worth my time to learn or should i skip it"
+ },
+ "bank1-5/r2": {
+  "score": -6.088,
+  "family": "what do i get at the end if i use this tool?"
+ },
+ "bank1-6/r2": {
+  "score": -8.114,
+  "family": "Can you explain what this project is like I'm a high school student?"
+ },
+ "bank1-7/r2": {
+  "score": -6.943,
+  "family": "I am new here. What is purpose of this program, please?"
+ },
+ "bank1-8/r2": {
+  "score": -5.563,
+  "family": "If I pitched this to my boss, how would I describe the value?"
+ },
+ "bank1-9/r2": {
+  "score": -7.537,
+  "family": "what are the steps a user goes through from start to finish?"
+ },
+ "bank1-10/r2": {
+  "score": -10.657,
+  "family": "does this app replace something people normally pay for?"
+ },
+ "bank1-11/r2": {
+  "score": -8.161,
+  "family": "Why does this project exist? Was there a gap somebody wanted to fill?"
+ },
+ "bank1-12/r2": {
+  "score": -9.08,
+  "family": "who would be the ideal customer for this"
+ },
+ "bank1-13/r2": {
+  "score": -6.137,
+  "family": "is the tool aimed at individuals or at teams?"
+ },
+ "bank1-14/r2": {
+  "score": -6.048,
+  "family": "what kind of person would love this and what kind would hate it?"
+ },
+ "bank1-15/r2": {
+  "score": -6.067,
+  "family": "As an investor, why should I care about this product?"
+ },
+ "bank1-16/r2": {
+  "score": -8.945,
+  "family": "wat is this app for exactly, i dont get it"
+ },
+ "bank1-17/r2": {
+  "score": -6.017,
+  "family": "What's the big selling point compared to doing it by hand?"
+ },
+ "bank1-18/r2": {
+  "score": -8.068,
+  "family": "How would a first-time user get started and what would they see first?"
+ },
+ "bank1-19/r2": {
+  "score": -6.433,
+  "family": "is this a finished product or more of an experiment?"
+ },
+ "bank1-20/r2": {
+  "score": -8.527,
+  "family": "My teacher asked us to summarize what this project does. How would you put it?"
+ },
+ "bank1-21/r2": {
+  "score": -5.988,
+  "family": "Should our team adopt this, or is it overkill for us?"
+ },
+ "bank1-22/r2": {
+  "score": -7.247,
+  "family": "which problem is this solving that other options dont?"
+ },
+ "bank1-23/r2": {
+  "score": -8.914,
+  "family": "Give me the elevator pitch for the app."
+ },
+ "bank1-24/r2": {
+  "score": -18.052,
+  "family": "what are the key features from a user's point of view"
+ },
+ "bank1-25/r2": {
+  "score": -7.116,
+  "family": "Is this for developers only, or can non-technical people use it too?"
+ },
+ "bank1-26/r2": {
+  "score": -7.382,
+  "family": "hi, what is the goal of this software? who uses it daily?"
+ },
+ "bank1-27/r2": {
+  "score": -7.551,
+  "family": "what would i be missing if i just used a competitor instead"
+ },
+ "bank1-28/r2": {
+  "score": -6.485,
+  "family": "How does a typical user benefit from this in their day to day?"
+ },
+ "bank1-29/r2": {
+  "score": -6.348,
+  "family": "why should anyone choose this over the obvious free alternative?"
+ },
+ "bank1-30/r2": {
+  "score": -11.024,
+  "family": "what's the story behind this project, like why was it made"
+ },
+ "bank1-31/r2": {
+  "score": -7.342,
+  "family": "is there a clear audience for this or is it kind of for everyone?"
+ },
+ "bank1-32/r2": {
+  "score": -7.023,
+  "family": "what outcome does this tool promise its users?"
+ },
+ "bank1-33/r2": {
+  "score": -5.985,
+  "family": "Honestly, is this any good? Would you recommend it to a friend?"
+ },
+ "bank1-34/r2": {
+  "score": -8.54,
+  "family": "For somebody non-native like me, can you say simply what this project give to the people?"
+ },
+ "bank1-35/r2": {
+  "score": -7.754,
+  "family": "what's the one thing this app does better than anything else?"
+ }
+}

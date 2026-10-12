@@ -1,0 +1,58 @@
+From cf03dacd5ee3645f2cf6b3888f65f6cc3d595dcb Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 18:26:09 -0400
+Subject: [PATCH 26/37] Revert "Experiment flag SEQUENCE_TEACH_CHART_FIRST:
+ propose_chart first in the tool menu (off by default)"
+
+This reverts commit 3229caf491ae049f8a8eb58bcfc86624c22d477d.
+---
+ packages/analyzer/src/server/askTools.ts          |  9 +--------
+ packages/analyzer/src/test/chart-lang-dot.test.ts | 15 ---------------
+ 2 files changed, 1 insertion(+), 23 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askTools.ts b/packages/analyzer/src/server/askTools.ts
+index 187fd117..2535cd8e 100644
+--- a/packages/analyzer/src/server/askTools.ts
++++ b/packages/analyzer/src/server/askTools.ts
+@@ -7198,14 +7198,7 @@ export function openaiAskToolDefinitions(
+   supplemental?: OpenAiAskToolSupplemental,
+ ): OpenAiAskToolDefinition[] {
+   const out: OpenAiAskToolDefinition[] = [];
+-  /* EXPERIMENT (SEQUENCE_TEACH_CHART_FIRST=1): propose_chart first in the menu. In
+-     real teach turns MiniCPM5 called it on 3 of 28 turns (sequence-lab log,
+-     2026-09-23); a small model reads a long menu from the top. Off by default. */
+-  const ordered =
+-    process.env.SEQUENCE_TEACH_CHART_FIRST === '1' && names.includes('propose_chart' as AskToolName)
+-      ? ['propose_chart' as AskToolName, ...names.filter((n) => n !== 'propose_chart')]
+-      : names;
+-  for (const name of ordered) {
++  for (const name of names) {
+     const spec = ASK_TOOL_REGISTRY[name];
+     if (!spec) continue;
+     out.push({
+diff --git a/packages/analyzer/src/test/chart-lang-dot.test.ts b/packages/analyzer/src/test/chart-lang-dot.test.ts
+index 3073b7f7..e4652718 100644
+--- a/packages/analyzer/src/test/chart-lang-dot.test.ts
++++ b/packages/analyzer/src/test/chart-lang-dot.test.ts
+@@ -71,18 +71,3 @@ test('the tool the model sees asks for dot only when the flag is set', async ()
+     assert.doesNotMatch(ASK_TOOL_REGISTRY.propose_chart.description, /Graphviz/);
+   });
+ });
+-
+-test('SEQUENCE_TEACH_CHART_FIRST puts propose_chart first in the tool menu, and only then', async () => {
+-  const { openaiAskToolDefinitions } = await import('../server/askTools.js');
+-  const names = ['read_file', 'search_files', 'propose_chart'] as never;
+-  const before = process.env.SEQUENCE_TEACH_CHART_FIRST;
+-  try {
+-    delete process.env.SEQUENCE_TEACH_CHART_FIRST;
+-    assert.deepEqual(openaiAskToolDefinitions(names).map((d) => d.function.name), ['read_file', 'search_files', 'propose_chart']);
+-    process.env.SEQUENCE_TEACH_CHART_FIRST = '1';
+-    assert.deepEqual(openaiAskToolDefinitions(names).map((d) => d.function.name), ['propose_chart', 'read_file', 'search_files']);
+-  } finally {
+-    if (before === undefined) delete process.env.SEQUENCE_TEACH_CHART_FIRST;
+-    else process.env.SEQUENCE_TEACH_CHART_FIRST = before;
+-  }
+-});
+-- 
+2.51.1.windows.1
+

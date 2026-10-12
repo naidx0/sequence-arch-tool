@@ -1,0 +1,302 @@
+[
+  {
+    "repo": "ml-harness",
+    "label": "code",
+    "question": "where is the bearer token checked on the loopback server? i keep getting 401"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "What problem is Sequence trying to solve for a dev team?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "code",
+    "question": "what test checks the tool count against the registry"
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "in sampling.py how does it pick the next character, is it argmax or random?"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "what do the dashed lines mean on the board vs the solid ones, from a users pov"
+  },
+  {
+    "repo": "sequence",
+    "label": "code",
+    "question": "How does the scanner decide an edge is real — which imports, calls, routes and manifest lines does it look at?"
+  },
+  {
+    "repo": "makemore",
+    "label": "product",
+    "question": "what does makemore make more of"
+  },
+  {
+    "repo": "shopfront",
+    "label": "product",
+    "question": "If I were a customer of this shop, what can I actually do, buy things, track shipping?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "so what is this thing actually for? like who would open it"
+  },
+  {
+    "repo": "shopfront",
+    "label": "product",
+    "question": "would a small business use something built like this or is it too complex"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "what's in docker-compose.yml, which containers talk to which"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "code",
+    "question": "Could you walk me through how a chat message goes from the React frontend to the FastAPI engine and back?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "code",
+    "question": "Where does the diagnosis engine load the gates from the yaml ledger, and what stops a gated outcome from being reached without them?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "Where are invoices generated in the code and which data do they read from the orders service?"
+  },
+  {
+    "repo": "sequence",
+    "label": "code",
+    "question": "How does the graph refresh when a file changes on disk — is there a watcher or does it rescan everything?"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "Our team lead asks: is this worth adopting for a 10-person team, and what would we get out of it week to week?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "product",
+    "question": "Does this shop send invoices to customers automatically? From user side I mean."
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "why is there a special dot character at the start and end of every name"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "how does the gateway pass an order to the orders service"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "How does it compare with drawing architecture diagrams by hand in something like Miro or draw.io?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "product",
+    "question": "why is it split into so many little services instead of one app, is that good or overkill"
+  },
+  {
+    "repo": "makemore",
+    "label": "product",
+    "question": "I'm a student learning ML. Is this a good first project to study, and what will I learn from it?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "what is ground-truth.json for and what does it list"
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "where is the smoothing added to the counts and what happens to the loss if I remove it"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "is it safe to use on company code, does anything get sent to the cloud"
+  },
+  {
+    "repo": "sequence",
+    "label": "code",
+    "question": "which function handles the --repo flag when you run pnpm start, and what happens if the path doesnt exist"
+  },
+  {
+    "repo": "sequence",
+    "label": "code",
+    "question": "how are the packages in the pnpm workspace laid out and which one depends on which"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "Hi! I just downloaded Sequence, what do I do first to see my own project in it?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "product",
+    "question": "I'm a product manager, not an engineer. Can you describe in plain words what happens from the moment someone places an order until it arrives?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "Is ML Harness worth it if I already know I want to fine-tune a Llama model?"
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "How does bigram_counts.py build its count table, what are the rows and columns?"
+  },
+  {
+    "repo": "makemore",
+    "label": "product",
+    "question": "How does this compare to just asking ChatGPT to come up with names?"
+  },
+  {
+    "repo": "sequence",
+    "label": "code",
+    "question": "Where does the code keep a proposed edge dashed until the scanner confirms it? What's the data structure for that state?"
+  },
+  {
+    "repo": "makemore",
+    "label": "product",
+    "question": "What do I need installed to try this, and how long does it take to see results?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "code",
+    "question": "what happens in the code when the ollama model returns its answer in reasoning instead of content"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "whats the point of the judge record page, why would anyone want to read failures"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "The installer is unsigned and windows yells at me. Should I trust it, or what's the alternative?"
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "how is names.txt read and turned into integer indices, like the stoi/itos mapping"
+  },
+  {
+    "repo": "makemore",
+    "label": "product",
+    "question": "honestly are the names it spits out any good or are they gibberish"
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "Please explain the one-hot encoding step in the neural net version and why the weight matrix is 27 by 27."
+  },
+  {
+    "repo": "shopfront",
+    "label": "product",
+    "question": "What is shopfront supposed to be, a real store or a demo?"
+  },
+  {
+    "repo": "sequence",
+    "label": "code",
+    "question": "when chat answers a question, how does a tool call get turned into a card with file and line citations?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "When an order ships, how does the shipping service tell notifications about it? Is it an HTTP call or a queue?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "how does inventory get decremented when an order is placed, and is there a race if two orders hit the same item"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "do i need a gpu or an api key to use it at all"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "How is this different from just using Unsloth directly?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "code",
+    "question": "How does the code tag a number as measured vs stated vs inferred vs defaulted?"
+  },
+  {
+    "repo": "makemore",
+    "label": "product",
+    "question": "can I use this to generate names for my fantasy novel characters? how would I do that as a non-programmer"
+  },
+  {
+    "repo": "sequence",
+    "label": "code",
+    "question": "what does start.ps1 do step by step, and why doesnt start.sh work on windows"
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "what does the training loop in nn_bigram.py do each step"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "Which service calls payments, and what happens if the payment call fails halfway?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "Hello, I am new here. What are the steps from opening the app to getting a recommendation, please?"
+  },
+  {
+    "repo": "makemore",
+    "label": "product",
+    "question": "Why are there two approaches here, a counting one and a neural net one? What's the point of having both for a learner?"
+  },
+  {
+    "repo": "sequence",
+    "label": "product",
+    "question": "who is this for, architects? juniors? people onboarding into a big repo?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "My manager wants a one-paragraph summary of what value this tool gives our team. What should I tell her?"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "product",
+    "question": "eli5: why would a tool tell me NOT to train a model"
+  },
+  {
+    "repo": "makemore",
+    "label": "code",
+    "question": "Why does the loss in the neural bigram end up about the same as the counting model? Is that a bug?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "code",
+    "question": "wat is the edge folder doing vs the gateway, both look like they route requests??"
+  },
+  {
+    "repo": "ml-harness",
+    "label": "code",
+    "question": "how are the 93 tools registered and how does one spec turn into both a JSON schema and a button?"
+  },
+  {
+    "repo": "shopfront",
+    "label": "product",
+    "question": "explain like I'm five what the notifications part does for the shopper"
+  }
+]

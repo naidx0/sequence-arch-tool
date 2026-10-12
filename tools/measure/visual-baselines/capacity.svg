@@ -1,0 +1,109 @@
+<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="12">
+  <title>AI feature gateway at 1,000 users</title>
+  <text x="10" y="18" font-size="14" font-weight="600" fill="currentColor">AI feature gateway at 1,000 users</text>
+  <!-- KPI tiles -->
+  <g fill="currentColor" fill-opacity="0.06">
+    <rect x="0" y="34" width="230" height="78" rx="8"/>
+    <rect x="245" y="34" width="230" height="78" rx="8"/>
+    <rect x="490" y="34" width="230" height="78" rx="8"/>
+    <rect x="0" y="124" width="230" height="78" rx="8"/>
+    <rect x="245" y="124" width="230" height="78" rx="8"/>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="11">
+    <text x="14" y="54">Users</text>
+    <text x="259" y="54">Average load</text>
+    <text x="504" y="54">Peak load</text>
+    <text x="14" y="144">Network in / out</text>
+    <text x="259" y="144">Headroom (80% saturation)</text>
+    <text x="259" y="192" fill="#169a68" fill-opacity="1">Model proxy at 65%</text>
+    <text x="259" y="102">40 requests / user / hour</text>
+    <text x="504" y="102">4x average</text>
+    <text x="14" y="192">at peak</text>
+  </g>
+  <g fill="currentColor" font-size="26" font-weight="700">
+    <text x="14" y="84">1,000</text>
+    <text x="259" y="84">11.1</text>
+    <text x="504" y="84">44.4</text>
+    <text x="14" y="174">2.1 / 8.5</text>
+    <text x="259" y="174">1,234</text>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="12">
+    <text x="330" y="84">rps</text>
+    <text x="575" y="84">rps</text>
+    <text x="130" y="174">Mbps</text>
+    <text x="360" y="174">users</text>
+  </g>
+  <!-- load per service -->
+  <text x="0" y="232" font-size="14" font-weight="600" fill="currentColor">Where the load lands</text>
+  <text x="0" y="250" font-size="12" fill="currentColor" fill-opacity="0.65">Peak 44.4 rps against each service's capacity</text>
+  <g fill="currentColor" text-anchor="end">
+    <text x="92" y="283">API gateway</text>
+    <text x="92" y="313">Auth / quota</text>
+    <text x="92" y="343">Cache</text>
+    <text x="92" y="373">Model proxy</text>
+    <text x="92" y="403">Usage events</text>
+  </g>
+  <g fill="currentColor" fill-opacity="0.12">
+    <rect x="100" y="270" width="150" height="18" rx="4"/>
+    <rect x="100" y="300" width="150" height="18" rx="4"/>
+    <rect x="100" y="330" width="150" height="18" rx="4"/>
+    <rect x="100" y="360" width="150" height="18" rx="4"/>
+    <rect x="100" y="390" width="150" height="18" rx="4"/>
+  </g>
+  <g fill="#169a68">
+    <rect x="100" y="270" width="33" height="18" rx="4"/>
+    <rect x="100" y="300" width="17" height="18" rx="4"/>
+    <rect x="100" y="330" width="4" height="18" rx="4"/>
+    <rect x="100" y="360" width="98" height="18" rx="4"/>
+    <rect x="100" y="390" width="44" height="18" rx="4"/>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="11">
+    <text x="258" y="283">44.4 / 200 rps</text>
+    <text x="258" y="313">44.4 / 400 rps</text>
+    <text x="258" y="343">44.4 / 2k rps</text>
+    <text x="258" y="373">31.1 / 48 rps</text>
+    <text x="258" y="403">44.4 / 150 rps</text>
+  </g>
+  <line x1="220" y1="262" x2="220" y2="412" stroke="currentColor" stroke-opacity="0.6" stroke-dasharray="4 3"/>
+  <text x="220" y="425" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity="0.65">80% saturation</text>
+  <!-- forecast -->
+  <text x="380" y="232" font-size="14" font-weight="600" fill="currentColor">Utilisation if usage keeps growing</text>
+  <text x="380" y="250" font-size="12" fill="currentColor" fill-opacity="0.65">Model proxy passes 80% in month 3 (8% growth a month)</text>
+  <g stroke="currentColor" stroke-opacity="0.15">
+    <line x1="410" y1="270" x2="710" y2="270"/>
+    <line x1="410" y1="320" x2="710" y2="320"/>
+    <line x1="410" y1="370" x2="710" y2="370"/>
+    <line x1="410" y1="420" x2="710" y2="420"/>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="11" text-anchor="end">
+    <text x="404" y="424">0</text>
+    <text x="404" y="374">100</text>
+    <text x="404" y="324">200</text>
+    <text x="404" y="274">300</text>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="11" text-anchor="middle">
+    <text x="410" y="438">now</text>
+    <text x="510" y="438">+4m</text>
+    <text x="610" y="438">+8m</text>
+    <text x="710" y="438">+12m</text>
+  </g>
+  <polygon points="410,396 460,390 510,383 560,374 610,364 660,352 710,340 710,300 660,330 610,352 560,367 510,376 460,386 410,396" fill="#2f6fed" fill-opacity="0.15"/>
+  <line x1="410" y1="386" x2="710" y2="386" stroke="#d94a44" stroke-dasharray="5 3"/>
+  <polyline points="410,396 460,388 510,380 560,371 610,358 660,342 710,322" fill="none" stroke="#2f6fed" stroke-width="2" stroke-dasharray="5 4"/>
+  <polyline points="410,410 460,408 510,405 560,402 610,399 660,395 710,391" fill="none" stroke="#d9822b" stroke-width="2" stroke-dasharray="5 4"/>
+  <polyline points="410,414 460,413 510,412 560,411 610,409 660,407 710,405" fill="none" stroke="#1f9d6b" stroke-width="2" stroke-dasharray="5 4"/>
+  <g font-size="11" font-weight="600">
+    <text x="715" y="326" fill="#2f6fed">163%</text>
+    <text x="715" y="395" fill="#d9822b">75%</text>
+    <text x="715" y="409" fill="#1f9d6b">56%</text>
+  </g>
+  <text x="710" y="380" text-anchor="end" font-size="11" fill="#d94a44">80% saturation</text>
+  <g font-size="11" fill="currentColor" fill-opacity="0.65">
+    <rect x="410" y="450" width="12" height="10" rx="2" fill="#2f6fed"/>
+    <text x="427" y="459">Model proxy</text>
+    <rect x="510" y="450" width="12" height="10" rx="2" fill="#d9822b"/>
+    <text x="527" y="459">Usage events</text>
+    <rect x="620" y="450" width="12" height="10" rx="2" fill="#1f9d6b"/>
+    <text x="637" y="459">API gateway</text>
+  </g>
+</svg>

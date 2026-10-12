@@ -1,0 +1,70 @@
+/* The keys help (shell/KeysHelp.tsx). Layout only, existing tokens only:
+   the panel and scrim are the overlay host's own (.v3-overlay-*). */
+.keys-help {
+  width: min(560px, 92vw);
+  font-family: var(--font-ui);
+  color: var(--ink-1);
+}
+.keys-help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-12);
+  margin-bottom: var(--sp-12);
+}
+.keys-help-title {
+  margin: 0;
+  font-size: var(--t-15);
+  line-height: var(--lh-15);
+  font-weight: var(--fw-head);
+}
+.keys-help-close {
+  min-height: var(--target-min);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+.keys-help-close:hover { background: var(--state-hover); }
+.keys-help-group + .keys-help-group { margin-top: var(--sp-16); }
+.keys-help-group-title {
+  margin: 0 0 var(--sp-6);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.keys-help-list { margin: 0; }
+.keys-help-row {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: var(--sp-12);
+  align-items: baseline;
+  padding: var(--sp-4) 0;
+  border-top: var(--w-hair) solid var(--edge-faint);
+}
+.keys-help-row dt, .keys-help-row dd { margin: 0; }
+.keys-help-row dd {
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  color: var(--ink-body);
+}
+.keys-help-when { color: var(--ink-3); }
+.keys-help-kbd {
+  display: inline-block;
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid var(--edge-strong);
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-1);
+  white-space: nowrap;
+}

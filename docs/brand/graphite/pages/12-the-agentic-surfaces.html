@@ -1,0 +1,769 @@
+<section class="page" data-page-num="12" data-page-title="Ask, tools and the agentic run">
+
+  <div class="pagehead">
+    <span class="num">Sheet 12 &middot; The agentic surfaces</span>
+    <h1>Ask, tools and the agentic run</h1>
+    <p class="lede">Chat is the left column of the workspace and it drives the canvas. Everything
+    the assistant knows came from the repo, and everything it did is on the record as a line you
+    can read in one pass. This sheet fixes the four surfaces that record carries: the two message
+    lanes, the tool row, the composer, and the gate at the end of a run.</p>
+    <p class="lede">Two asymmetries do the whole job. <b>The user speaks in a box; the assistant
+    does not.</b> A request is short, so it can afford a bubble inset from the right; an answer
+    carries prose, diffs, cards and paths, so it is plain full-width text with no bubble, no avatar
+    and no role marker. And <b>work is quieter than talk</b>: a tool call is one 26px muted line,
+    never an expanded log. The model shows its work; it does not perform it.</p>
+    <p class="lede">The circular filled send button is the signature element &mdash; 28px,
+    <span class="inline-code">--r-full</span>, <span class="inline-code">--accent-solid</span>, an
+    up arrow inside it. It is round, not a square with soft corners, and on most screens it is the
+    only saturated object present.</p>
+    <p class="lede">Live V3 chrome (Decision 23&ndash;24) keeps that gold voice on a
+    <b>fill-screen</b> macOS glass frame: quiet tabs, a gold thinking HUD while a turn is
+    in flight, and frosted controls that share the book&rsquo;s
+    <span class="inline-code">--glass-*</span> recipe rather than inventing a second one.</p>
+  </div>
+
+  <!-- 12.1 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">12.1</span>
+      <h2>Two lanes, and only one of them is a box</h2>
+      <span class="tail">--col-max 720px &middot; --sp-16 between turns</span>
+    </div>
+
+    <p class="note">
+      A turn has three objects and they nest in one order: the user bubble, then a stack of
+      one-line tool rows, then the assistant's prose and whatever card the work produced. The
+      alternation between an inset grey rectangle and unframed text tells the two speakers apart
+      from across the room, which is exactly what a role label, an avatar or a coloured bar would
+      also have done &mdash; at the cost of an object per message, forever.
+    </p>
+
+    <div class="stage">
+      <div class="scrollx" style="width:100%">
+        <div style="min-width:640px;background:var(--bg-base);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden">
+          <div class="transcript" style="height:auto;overflow:visible">
+            <div class="tcol">
+
+              <div class="userbubble">If I change the auth middleware, what breaks?</div>
+
+              <div>
+                <div class="toolstack">
+                  <div class="toolrow"><svg class="i i-14"><use href="#ic-clock"/></svg><span class="name">Thought for <span class="ph">&#8249;elapsed&#8250;</span></span></div>
+                  <div class="toolrow"><svg class="i i-14"><use href="#ic-board"/></svg><span class="name">Read the attached graph</span><span class="right"><span class="prov p-measured">Measured</span></span></div>
+                  <div class="toolrow"><svg class="i i-14"><use href="#ic-search"/></svg><span class="name">Explored <span class="ph">&#8249;n&#8250;</span> files under <span class="mono" style="color:var(--ink-2)"><span class="ph">&#8249;dir&#8250;</span></span></span></div>
+                  <div class="toolrow"><svg class="i i-14"><use href="#ic-alert"/></svg><span class="name">Computed the blast radius</span><span class="right"><span style="font-size:var(--t-10)"><span class="ph">&#8249;n&#8250;</span> dependents</span></span></div>
+                </div>
+              </div>
+
+              <div class="prose" style="max-width:none">
+                <p>Two callers, and only one of them is yours. <code><span class="ph">&#8249;service&#8250;</span></code> imports the middleware directly and will fail to build; the other reference is a declared route in a manifest the scanner could not confirm against source, so I have left it as a claim rather than counting it.</p>
+                <p>The graph you are looking at is the evidence. I have selected the two nodes and the path between them on the canvas &mdash; the dashed edge is the one I could not confirm.</p>
+              </div>
+
+              <div class="toolrow bordered" style="max-width:340px"><svg class="i i-14"><use href="#ic-flow"/></svg><span class="name">Selected <span class="ph">&#8249;n&#8250;</span> nodes on the board</span><span class="right"><span style="font-size:var(--t-10)">opens the canvas</span><svg class="i i-12"><use href="#ic-chevright"/></svg></span></div>
+
+              <div class="userbubble">Fix it, then verify.</div>
+
+              <div>
+                <div class="toolstack">
+                  <div class="toolrow"><svg class="i i-14"><use href="#ic-clock"/></svg><span class="name">Thought for <span class="ph">&#8249;elapsed&#8250;</span></span></div>
+                  <div class="toolrow"><svg class="i i-14"><use href="#ic-code"/></svg><span class="name">Edited</span><span class="file"><span class="ph">&#8249;file&#8250;</span></span><span class="right"><span class="stat-add">+<span class="ph">&#8249;n&#8250;</span></span><span class="stat-del">&minus;<span class="ph">&#8249;n&#8250;</span></span></span></div>
+                  <div class="toolrow"><svg class="i i-14"><use href="#ic-terminal"/></svg><span class="name">Ran <span class="mono" style="color:var(--ink-2)"><span class="ph">&#8249;command&#8250;</span></span></span><span class="right"><svg class="i i-14 ok"><use href="#ic-check"/></svg></span></div>
+                </div>
+              </div>
+
+              <div class="card" style="max-width:420px">
+                <div class="hd"><svg class="i i-14"><use href="#ic-board"/></svg><span class="t">Verified</span>
+                  <span style="margin-left:auto;display:flex;align-items:center;gap:var(--sp-8)">
+                    <span class="verdict v-fits">Grounded</span>
+                    <button class="iconbtn" aria-label="Expand"><svg class="i i-14"><use href="#ic-chevright"/></svg></button>
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">
+      Count the framed objects: two user bubbles, one bordered tool row that opens something, one
+      collapsed gate card. The assistant's own words are never in a container. That asymmetry is
+      what keeps a long thread from reading as a list of boxes.
+    </p>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <dl class="specs">
+        <dt>Column</dt><dd>--col-max 720px, centred</dd>
+        <dt>Transcript padding</dt><dd>--sp-20 --sp-20 --sp-8</dd>
+        <dt>Between turns</dt><dd>--sp-16</dd>
+        <dt>User bubble</dt><dd>--surface-2 &middot; --r-18 &middot; max-width 82% &middot; right</dd>
+        <dt>User type</dt><dd>--t-14 / --lh-14 / --ink-1</dd>
+        <dt>User padding</dt><dd>--sp-10 --sp-12</dd>
+        <dt>Assistant</dt><dd>.prose &middot; no background, no border, no avatar</dd>
+        <dt>Assistant type</dt><dd>--t-15 / --lh-15 / --ink-1 &middot; 68ch</dd>
+        <dt>Assistant paragraph gap</dt><dd>--sp-10</dd>
+        <dt>Tool stack gap</dt><dd>2px</dd>
+        <dt>Tool stack offset</dt><dd>&minus;--sp-10, so glyphs align with the prose edge</dd>
+      </dl>
+
+      <div class="panel">
+        <h3>Why the assistant gets no marker</h3>
+        <p class="sub">
+          A 2px accent bar down the side of every assistant message would put a gold object next
+          to every paragraph in the thread, and the accent would immediately stop meaning anything
+          except "a message exists". gold is the product's own voice &mdash; send, selection,
+          focus. The send button and the canvas selection ring are the two places it is allowed to
+          be loud, and both lose their only source of contrast the moment the transcript starts
+          spending it. Law 2 kills the role marker before the bubble question is even asked.
+        </p>
+        <p class="sub" style="margin-top:var(--sp-12)">
+          The bubble survives on the user side alone because that is the side whose costs never
+          come due: a request is a sentence, it never holds a diff, a graph or a file list, so the
+          horizontal measure a bubble spends is measure that lane was never going to use.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12.2 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">12.2</span>
+      <h2>The tool row</h2>
+      <span class="tail">26px &middot; --t-12 &middot; --ink-3 &middot; past tense</span>
+    </div>
+
+    <p class="note">
+      Four slots, left to right: the glyph for what kind of work it was, what it did in the past
+      tense, the identifier it did it to, and a right cluster carrying the outcome. Only the first
+      two are compulsory. The verb on a <b>landed</b> row is past tense because by the time the row
+      is a record the call has been made &mdash; and the record contains one line per call, never two.
+    </p>
+
+    <p class="note">
+      <b>Placement is inline.</b> Rows render inside the answer flow &mdash; quiet, indented under
+      the prose they justify, behind a left rule &mdash; not gathered into a detached trail block
+      above or below the answer. A trail block separates the evidence from the sentence it supports;
+      inline, the reader meets each row exactly where the claim it grounds was made. Everything else
+      about the row carries over unchanged: four slots, 26px, and the closed hue ledger of
+      &sect;12.7.
+    </p>
+
+    <p class="note">
+      <b>While a call runs, the row is alive and named.</b> The live row takes the same four-slot
+      chassis but speaks the present progressive &mdash; <i>Searching&nbsp;<span class="ph">&#8249;query&#8250;</span>&hellip;</i>,
+      <i>Reading&nbsp;<span class="ph">&#8249;file&#8250;</span>&hellip;</i>,
+      <i>Planning&hellip;</i> &mdash; with the pulsing-glyph treatment extended across the text as a
+      shimmer. It exists only while the send button shows stop (&sect;12.4), and when the call lands
+      it is <b>replaced</b>, never appended to, by the past-tense row. A static pulse reads dead; a
+      shimmering named status reads like work being done.
+    </p>
+
+    <p class="note">
+      A row is one short clause. A tool whose row cannot be written in one short past-tense clause
+      is a tool doing two things. Anything wider than the row becomes a right-hand affordance that
+      opens the canvas or the index rail &mdash; never an expanded block inside the transcript.
+    </p>
+
+    <div class="stage column">
+      <div class="scrollx" style="width:100%">
+        <div style="min-width:560px;max-width:640px;background:var(--bg-base);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-12)">
+          <div class="toolstack">
+            <div class="toolrow"><svg class="i i-14"><use href="#ic-clock"/></svg><span class="name">Thought for <span class="ph">&#8249;elapsed&#8250;</span></span></div>
+            <div class="toolrow"><svg class="i i-14"><use href="#ic-file"/></svg><span class="name">Read</span><span class="file"><span class="ph">&#8249;file&#8250;</span></span></div>
+            <div class="toolrow"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="name">Followed <span class="ph">&#8249;function&#8250;</span> through <span class="ph">&#8249;n&#8250;</span> hops</span></div>
+          </div>
+          <div class="toolrow bordered" style="margin-top:var(--sp-6)"><svg class="i i-14"><use href="#ic-code"/></svg><span class="name">Edited</span><span class="file"><span class="ph">&#8249;file&#8250;</span></span><span class="right"><span class="stat-add">+<span class="ph">&#8249;n&#8250;</span></span><span class="stat-del">&minus;<span class="ph">&#8249;n&#8250;</span></span><svg class="i i-12"><use href="#ic-chevright"/></svg></span></div>
+          <div class="toolrow bordered" style="margin-top:var(--sp-2)"><svg class="i i-14"><use href="#ic-board"/></svg><span class="name">Checked <span class="ph">&#8249;n&#8250;</span> claimed ids against the graph</span><span class="right"><svg class="i i-14 ok"><use href="#ic-check"/></svg></span></div>
+        </div>
+      </div>
+
+      <div class="grid g2" style="width:100%;margin-top:var(--sp-12)">
+        <dl class="specs">
+          <dt>Placement</dt><dd>inline, in the answer flow &mdash; indented, left rule</dd>
+          <dt>Height</dt><dd>26px</dd>
+          <dt>Radius, bordered</dt><dd>--r-8</dd>
+          <dt>Padding</dt><dd>0 --sp-10</dd>
+          <dt>Gap</dt><dd>--sp-8, and --sp-6 inside .right</dd>
+          <dt>Glyph</dt><dd>.i-14 &middot; 14px &middot; --ink-3</dd>
+          <dt>Verb</dt><dd>--font-sans / --t-12 / --ink-2</dd>
+          <dt>Identifier</dt><dd>--font-mono / --t-11 / --ink-1</dd>
+          <dt>Right cluster</dt><dd>--t-10 / --ink-3</dd>
+          <dt>Gap in a stack</dt><dd>2px</dd>
+          <dt>Bordered surface</dt><dd>--surface-1 + 1px --edge</dd>
+          <dt>Hues permitted</dt><dd>the .ok check only, at --fits</dd>
+        </dl>
+
+        <div style="display:flex;flex-direction:column;gap:var(--sp-8)">
+          <div class="do">
+            <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+            <div class="toolrow bordered"><svg class="i i-14"><use href="#ic-search"/></svg><span class="name">Explored <span class="ph">&#8249;n&#8250;</span> files</span></div>
+            <p class="why">Past tense, and the count is marked as something the engine produced. Codex's register &mdash; a short clause and a quantity &mdash; with the quantity told the truth about where it came from.</p>
+          </div>
+          <div class="dont">
+            <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+            <div class="toolrow bordered"><svg class="i i-14"><use href="#ic-search"/></svg><span class="name">Exploring 2 files&hellip;</span></div>
+            <p class="why">A bare <span class="inline-code">2</span> is indistinguishable from a number someone typed, and a progressive row that survives past landing means the transcript rewrites itself after the fact. The live row may say <i>Exploring&hellip;</i> while it runs &mdash; what it may not do is carry an ungrounded count or outlive the call.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12.3 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">12.3</span>
+      <h2>The vocabulary of work</h2>
+      <span class="tail">four groups &middot; one glyph per kind of work</span>
+    </div>
+
+    <p class="note">
+      These are the events the ask stream actually emits, grouped by what the reader is being told:
+      what was looked at, what was worked out, what was changed, and what was run. A group is not a
+      category for its own sake &mdash; it is the answer to "how much should I care", and the order
+      is cheapest first. Adding a tool to the product means adding a row here. Per &sect;12.2, every
+      row below renders <b>inline in the answer flow</b>, not in a detached trail block.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>Read</h3>
+        <p class="sub">Cheap, read-only, and the reason any later claim can be trusted. Nothing here writes.</p>
+        <div class="toolstack" style="margin-left:0;margin-top:var(--sp-8)">
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-board"/></svg><span class="name">Read the attached graph</span><span class="right"><span class="prov p-measured">Measured</span></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-search"/></svg><span class="name">Searched the repo for <span class="ph">&#8249;query&#8250;</span></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-file"/></svg><span class="name">Read</span><span class="file"><span class="ph">&#8249;file&#8250;</span></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="name">Read <span class="ph">&#8249;function&#8250;</span></span></div>
+        </div>
+        <p class="caption">
+          Reading the graph is the cheapest possible demonstration of the product: what reaches the
+          user came from a scan of their repo, and the tag beside the row says so. Where nothing is
+          attached the row does not appear at all, rather than appearing with a plausible number.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h3>Reason</h3>
+        <p class="sub">The grounded logic engine. Background context the chat references &mdash; never a pop-up suggestion.</p>
+        <div class="toolstack" style="margin-left:0;margin-top:var(--sp-8)">
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-clock"/></svg><span class="name">Thought for <span class="ph">&#8249;elapsed&#8250;</span></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-alert"/></svg><span class="name">Computed the blast radius</span><span class="right"><span style="font-size:var(--t-10)"><span class="ph">&#8249;n&#8250;</span> dependents</span></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-refresh"/></svg><span class="name">Found <span class="ph">&#8249;n&#8250;</span> cycles</span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-module"/></svg><span class="name">Broke down <span class="ph">&#8249;node&#8250;</span></span></div>
+        </div>
+        <p class="caption">
+          <span class="inline-code">ic-alert</span> here is the glyph for a risk calculation, not a
+          verdict about one &mdash; the row is <span class="inline-code">--ink-3</span> like every
+          other. Whether the answer is alarming is the card's job, further down the turn.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h3>Change</h3>
+        <p class="sub">Proposals. Nothing in this group has touched the disk yet &mdash; see 12.5.</p>
+        <div class="toolstack" style="margin-left:0;margin-top:var(--sp-8)">
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-code"/></svg><span class="name">Edited</span><span class="file"><span class="ph">&#8249;file&#8250;</span></span><span class="right"><span class="stat-add">+<span class="ph">&#8249;n&#8250;</span></span><span class="stat-del">&minus;<span class="ph">&#8249;n&#8250;</span></span></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-pen"/></svg><span class="name">Drew <span class="ph">&#8249;n&#8250;</span> nodes on the board</span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-module"/></svg><span class="name">Grouped <span class="ph">&#8249;n&#8250;</span> nodes into a module</span></div>
+        </div>
+        <p class="caption">
+          A change row never carries an outcome tick. The tick belongs to the gate that verified
+          the change, and putting one here would let a proposal wear the result of a step that has
+          not run. The <span class="inline-code">+</span> and <span class="inline-code">&minus;</span>
+          counts are the diff's own arithmetic, which is why they take the diff vocabulary rather
+          than the verdict one.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h3>Run and verify</h3>
+        <p class="sub">The only group that can fail, and therefore the only one that spends a hue.</p>
+        <div class="toolstack" style="margin-left:0;margin-top:var(--sp-8)">
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-run"/></svg><span class="name">Started <span class="ph">&#8249;workflow&#8250;</span></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-terminal"/></svg><span class="name">Ran <span class="mono" style="color:var(--ink-2)"><span class="ph">&#8249;command&#8250;</span></span></span><span class="right"><svg class="i i-14 ok"><use href="#ic-check"/></svg></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-terminal"/></svg><span class="name">Ran <span class="mono" style="color:var(--ink-2)"><span class="ph">&#8249;command&#8250;</span></span></span><span class="right"><span style="font-size:var(--t-10)">exit <span class="ph">&#8249;code&#8250;</span></span><svg class="i i-14" style="color:var(--wont)"><use href="#ic-x"/></svg></span></div>
+          <div class="toolrow"><svg class="i i-14"><use href="#ic-board"/></svg><span class="name">Checked <span class="ph">&#8249;n&#8250;</span> claimed ids against the graph</span><span class="right"><svg class="i i-14 ok"><use href="#ic-check"/></svg></span></div>
+        </div>
+        <p class="caption">
+          Two hues in the whole group, on a 14px glyph each: <span class="inline-code">--fits</span>
+          for a command that returned zero and <span class="inline-code">--wont</span> for one that
+          did not. The exit code stays a placeholder because the row's own tick already says which
+          way it went &mdash; the number is for the reader who wants the detail, not for the verdict.
+        </p>
+      </div>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>The shipped step labels are present-progressive and must be rewritten.</b> The ask stream
+      currently renders "Planning next moves&hellip;", "Searching the repo&hellip;" and "Drafting
+      answer&hellip;" &mdash; a live status line, which is the correct shape while a step is in
+      flight and the wrong shape the instant it lands. The rule is one string per step in each
+      tense. The progressive form belongs to the live row, which exists only while the send button
+      is showing stop (12.4); it is <em>replaced</em> by the past-tense row when the step lands,
+      never appended to, so the record contains one line per call and never two. Decision 7 adds
+      two things to that live row and takes nothing away: it <b>shimmers</b> (the pulse extended
+      across the text, not the glyph alone) and it is <b>named from the actual call</b> &mdash;
+      grounded verbs from the tool in flight, never a generic "Working&hellip;".
+    </div>
+  </div>
+
+  <!-- 12.4 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">12.4</span>
+      <h2>The composer</h2>
+      <span class="tail">--r-18 &middot; --surface-1 &middot; --e2 &rarr; --e3 &middot; the send button is round</span>
+    </div>
+
+    <p class="note">
+      Three zones, and the boundary between the second and the third is the decision worth
+      defending. The field and the control row share one container, one border and one shadow:
+      they are the same object, and everything in the control row changes what the field will
+      send. The mode strip below sits outside that container entirely, unbordered, at
+      <span class="inline-code">--t-10</span>, because it describes the kind of session you are in
+      and is true whether or not you type anything.
+    </p>
+
+    <div class="stage column">
+      <div style="max-width:520px;width:100%">
+        <div class="composer">
+          <div class="field">Ask about this repo &mdash; @ to reference a node, a file or a function</div>
+          <div class="ctrls">
+            <button class="plusbtn" aria-label="Add context and actions"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+            <span class="modelsel"><svg class="i i-12"><use href="#ic-key"/></svg><span class="mono ph">&#8249;your model&#8250;</span><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-chevdown"/></svg></span>
+            <span class="right">
+              <button class="iconbtn" aria-label="Terminal"><svg class="i i-14"><use href="#ic-terminal"/></svg></button>
+              <button class="sendbtn" disabled aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+            </span>
+          </div>
+        </div>
+        <div class="undercomposer">
+          <div class="minitabs">
+            <button aria-selected="true">Work</button><button>Code</button>
+          </div>
+          <span class="branch"><svg class="i i-12"><use href="#ic-board"/></svg>grounded on <span class="ph">&#8249;attached repo&#8250;</span></span>
+        </div>
+      </div>
+
+      <div style="max-width:520px;width:100%;margin-top:var(--sp-16)">
+        <div class="composer focused">
+          <div class="field filled">If I change the auth middleware, what breaks?</div>
+          <div class="ctrls">
+            <button class="plusbtn" aria-label="Add context and actions"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+            <span class="modelsel"><svg class="i i-12"><use href="#ic-key"/></svg><span class="mono ph">&#8249;your model&#8250;</span><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-chevdown"/></svg></span>
+            <span class="right">
+              <button class="iconbtn" aria-label="Terminal"><svg class="i i-14"><use href="#ic-terminal"/></svg></button>
+              <button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <dl class="specs">
+        <dt>Container radius</dt><dd>--r-18</dd>
+        <dt>Container surface</dt><dd>--surface-1, one step above --bg-base</dd>
+        <dt>Container padding</dt><dd>--sp-10 --sp-10 --sp-8</dd>
+        <dt>Border</dt><dd>--w-hair --edge &rarr; --edge-strong focused</dd>
+        <dt>Elevation</dt><dd>--e2 at rest &rarr; --e3 focused</dd>
+        <dt>Field type</dt><dd>--t-14 / --lh-14 / --ink-3</dd>
+        <dt>Field type, filled</dt><dd>--t-14 / --lh-14 / --ink-1</dd>
+        <dt>Field padding</dt><dd>--sp-4 --sp-6 --sp-12</dd>
+        <dt>Control row gap</dt><dd>--sp-6, and --sp-4 inside .right</dd>
+        <dt>Plus button</dt><dd>24px &middot; --r-full &middot; bordered</dd>
+        <dt>Model selector</dt><dd>24px &middot; --r-8 &middot; --t-11 &middot; borderless</dd>
+        <dt>Icon buttons</dt><dd>--icon-btn 26px &middot; --r-8</dd>
+        <dt>Send button</dt><dd>28px &middot; --r-full &middot; --accent-solid &middot; ic-send</dd>
+        <dt>Mode strip</dt><dd>20px &middot; --r-8 &middot; --t-10, outside the border</dd>
+        <dt>Nesting</dt><dd>18 &minus; 10 = 8, so the inner controls are --r-8</dd>
+      </dl>
+
+      <div class="panel">
+        <h3>The placeholder is an instruction, not an invitation</h3>
+        <p class="sub">
+          "Ask about this repo &mdash; @ to reference a node, a file or a function." It names the
+          one affordance a person cannot discover by looking, in the one place they are guaranteed
+          to read, and it says what the assistant is grounded on in the same breath. It claims
+          nothing that does not exist &mdash; a placeholder advertising an affordance the product
+          lacks would be the product lying in its most-read line. Decision 4 (2026-08-24) added
+          slash commands, so the line names <code>/</code> as well: it is precisely an affordance
+          that cannot be discovered by looking. Two markers, and no more without a decision &mdash;
+          this line is worth reading only while it is short enough to be read every time.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-8);margin-top:var(--sp-12)">
+          <div class="do">
+            <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+            <div class="composer" style="box-shadow:var(--e1)"><div class="field">Ask for a follow-up change &mdash; @ to reference a node, a file or a function</div></div>
+            <p class="why">Names @. Changes with context &mdash; a new thread says "Ask about this repo", a live thread says "Ask for a follow-up change".</p>
+          </div>
+          <div class="dont">
+            <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+            <div class="composer" style="box-shadow:var(--e1)"><div class="field">Ask or instruct&hellip;</div></div>
+            <p class="why">The shipped string. Teaches nothing, names nothing, and spends the most valuable line in the product on a shrug.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="panel">
+        <h3>The plus opens the toolbelt, not a file dialog</h3>
+        <p class="sub">
+          One control, one menu, and it is where every action that changes <em>what will be sent</em>
+          lives. The list is mode-specific: Code offers the coding toolbelt, Work offers the
+          planning one. No two items in it render the same glyph.
+        </p>
+        <div class="menu" style="margin-top:var(--sp-12);max-width:280px">
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-module"/></svg>Break it down<span class="right">what is inside</span></div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-alert"/></svg>What breaks<span class="right">blast radius</span></div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-run"/></svg>Start a workflow<span class="right">agent run</span></div>
+          <hr>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-key"/></svg>Models<span class="right">connected</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>@ resolves against the graph, or it resolves against nothing</h3>
+        <p class="sub">
+          The picker offers only targets that exist in the attached repo &mdash; architecture nodes,
+          files and functions, each with the glyph its kind owns on the board. Where nothing
+          matches it says so and offers no free-text fallback, because a reference the engine
+          cannot resolve is the exact thing this product exists to prevent.
+        </p>
+        <div class="menu" style="margin-top:var(--sp-12);max-width:280px">
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-service"/></svg><span class="ph">&#8249;service&#8250;</span><span class="right">node</span></div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-file"/></svg><span class="ph">&#8249;file&#8250;</span><span class="right">file</span></div>
+          <div class="menuitem"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="ph">&#8249;function&#8250;</span><span class="right">function</span></div>
+        </div>
+        <div class="menu" style="margin-top:var(--sp-8);max-width:280px">
+          <div class="menuitem" aria-disabled="true">No grounded matches</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      <b>The send button and its four states.</b> Disabled is a different object, not a faded one:
+      <span class="inline-code">--surface-3</span> with an <span class="inline-code">--ink-4</span>
+      glyph. Never a dimmed accent &mdash; a translucent brand colour reads as "this is nearly
+      available", and an empty composer is not nearly anything. While a run is in flight the same
+      circle becomes stop, so the control that started the work is the control that ends it.
+    </p>
+
+    <div class="panel">
+      <div class="specimens">
+        <div class="specimen">
+          <button class="plusbtn" aria-label="Add context and actions"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+          <span class="lbl">.plusbtn</span>
+        </div>
+        <div class="specimen">
+          <span class="modelsel"><svg class="i i-12"><use href="#ic-key"/></svg><span class="mono ph">&#8249;your model&#8250;</span><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-chevdown"/></svg></span>
+          <span class="lbl">model</span>
+        </div>
+        <div class="specimen">
+          <button class="iconbtn" aria-label="Terminal"><svg class="i i-14"><use href="#ic-terminal"/></svg></button>
+          <span class="lbl">terminal</span>
+        </div>
+        <div class="specimen">
+          <button class="sendbtn" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+          <span class="lbl">.sendbtn &middot; ready</span>
+        </div>
+        <div class="specimen">
+          <button class="sendbtn" disabled aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+          <span class="lbl">empty &rarr; disabled</span>
+        </div>
+        <div class="specimen">
+          <button class="sendbtn" aria-label="Stop"><svg class="i i-14"><use href="#ic-stop"/></svg></button>
+          <span class="lbl">running &rarr; stop</span>
+        </div>
+        <div class="specimen">
+          <button class="sendbtn forcefocus" aria-label="Send"><svg class="i i-14"><use href="#ic-send"/></svg></button>
+          <span class="lbl">focus ring</span>
+        </div>
+      </div>
+      <p class="caption">
+        Four states of one 28px circle, and it is the only saturated object in the specimen tray.
+        The glyph is <span class="inline-code">ic-send</span> &mdash; a bare up arrow, not a paper
+        plane and not a chevron, so the same mark can never be mistaken for "next" or "export".
+      </p>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>The under-composer slot carries grounding, not a branch.</b> Graphite puts the run target
+      and the git branch below the composer, and <span class="inline-code">.branch</span> is the
+      class that holds them. Sequence surfaces no branch indicator, so writing one here would be
+      drawing a feature that does not exist. The slot keeps its geometry &mdash; right-aligned,
+      mono, <span class="inline-code">--t-10</span>, <span class="inline-code">--ink-3</span>
+      &mdash; and carries the thing that is actually true and actually load-bearing: what the
+      assistant is grounded on. The left half is Work / Code, which is real session state.
+    </div>
+  </div>
+
+  <!-- 12.5 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">12.5</span>
+      <h2>The run</h2>
+      <span class="tail">queued &middot; running &middot; done &middot; error &middot; paused</span>
+    </div>
+
+    <p class="note">
+      A workflow is a graph of steps the scheduler walks, and the transcript shows it as run rows
+      rather than as a wall of log output. Five states, each an alias
+      (<span class="inline-code">--st-*</span>) rather than a verdict token, so what a state is
+      worth is decided once. Every state is written out as a word as well as drawn as a dot, and
+      the word carries the hue too: no state in this product is communicated by colour alone.
+    </p>
+
+    <div class="panel">
+      <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        <div class="runrow">
+          <span class="dot hollow" style="color:var(--st-neutral)"></span>
+          <span class="mid"><span class="ttl"><span class="ph">&#8249;step&#8250;</span></span><span class="meta">waiting on <span class="ph">&#8249;step&#8250;</span></span></span>
+          <span class="right"><span class="state" style="color:var(--st-neutral)">Queued</span></span>
+        </div>
+        <div class="runrow">
+          <span class="dot ringed pulse" style="color:var(--st-active)"></span>
+          <span class="mid"><span class="ttl"><span class="ph">&#8249;step&#8250;</span></span><span class="meta">agent step &middot; <span class="ph">&#8249;your model&#8250;</span></span></span>
+          <span class="right"><span class="state" style="color:var(--st-active)">Running</span><span class="elapsed"><span class="ph">&#8249;elapsed&#8250;</span></span></span>
+        </div>
+        <div class="runrow">
+          <span class="dot" style="color:var(--st-stalled)"></span>
+          <span class="mid"><span class="ttl"><span class="ph">&#8249;step&#8250;</span></span><span class="meta">needs you to approve the write</span></span>
+          <span class="right"><span class="state" style="color:var(--st-stalled)">Paused</span></span>
+        </div>
+        <div class="runrow">
+          <span class="dot" style="color:var(--st-done)"></span>
+          <span class="mid"><span class="ttl"><span class="ph">&#8249;step&#8250;</span></span><span class="meta">command step &middot; exit <span class="ph">&#8249;code&#8250;</span></span></span>
+          <span class="right"><span class="state" style="color:var(--st-done)">Done</span><span class="elapsed"><span class="ph">&#8249;elapsed&#8250;</span></span></span>
+        </div>
+        <div class="runrow">
+          <span class="dot" style="color:var(--st-failed)"></span>
+          <span class="mid"><span class="ttl"><span class="ph">&#8249;step&#8250;</span></span><span class="meta"><span class="ph">&#8249;error&#8250;</span></span></span>
+          <span class="right"><span class="state" style="color:var(--st-failed)">Error</span></span>
+        </div>
+      </div>
+      <p class="caption">
+        Five rows, four hues, and the fifth state spends none &mdash; queued is
+        <span class="inline-code">--st-neutral</span>, drawn as a hollow dot, because "not started"
+        is not a claim about anything. Running is the only animated object on the surface, and it
+        pulses rather than spins: a spinner says "wait", a pulse says "still true".
+      </p>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      <b>Nothing reaches the disk without a step you can see and approve.</b> The write step opens
+      as one plain line with icon buttons and a closed disclosure; the file list and the dry run
+      live behind it. The card is dismissible, and dismissing it writes nothing.
+    </p>
+
+    <div class="stage">
+      <div class="card" style="max-width:460px;width:100%">
+        <div class="hd"><svg class="i i-14"><use href="#ic-file"/></svg><span class="t">Write</span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:var(--sp-8)">
+            <span class="prov p-declared">Proposed</span>
+            <button class="iconbtn" aria-label="Dismiss"><svg class="i i-14"><use href="#ic-x"/></svg></button>
+          </span>
+        </div>
+        <div class="bd">
+          <div style="font-size:var(--t-13);line-height:var(--lh-13);color:var(--ink-2)">
+            Would write <span class="ph">&#8249;n&#8250;</span> files under
+            <span class="mono" style="color:var(--ink-1)"><span class="ph">&#8249;dir&#8250;</span></span>.
+            Nothing is overwritten without being named first.
+          </div>
+          <div style="display:flex;gap:var(--sp-6);flex-wrap:wrap;margin-top:var(--sp-12);align-items:center">
+            <button class="btn solid sm">Apply</button>
+            <button class="btn ghost sm"><svg class="i i-12"><use href="#ic-chevright"/></svg>Show details</button>
+            <span style="margin-left:auto;display:flex;gap:var(--sp-2)">
+              <button class="iconbtn" aria-label="Copy"><svg class="i i-14"><use href="#ic-copy"/></svg></button>
+              <button class="iconbtn" aria-label="Open in editor"><svg class="i i-14"><use href="#ic-open"/></svg></button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">
+      One <span class="inline-code">.btn.solid</span> on the card, on the only action that commits
+      something. <b>Show details</b> is closed by default and the dismiss control is an
+      <span class="inline-code">ic-x</span> in the header, not a red button: a destructive or
+      declining action in this design is worded, never reddened.
+    </p>
+  </div>
+
+  <!-- 12.6 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">12.6</span>
+      <h2>The gate</h2>
+      <span class="tail">grounded &middot; rejected &middot; could not run</span>
+    </div>
+
+    <p class="note">
+      A gate is a deterministic verifier, not a second model grading the first. It takes the ids
+      the agent claimed and checks them against the real attached graph; it commits or it rejects,
+      and it never guesses. That is what makes the outcome worth a hue at all &mdash; and it is why
+      there are three outcomes and not two.
+    </p>
+
+    <div class="grid g3">
+
+      <div class="card">
+        <div class="hd"><svg class="i i-14"><use href="#ic-board"/></svg><span class="t">Verify</span>
+          <span style="margin-left:auto"><span class="prov p-measured">Measured</span></span>
+        </div>
+        <div class="bd">
+          <div style="display:flex;align-items:center;gap:var(--sp-8);margin-bottom:var(--sp-10)">
+            <span class="verdict v-fits">Grounded</span>
+          </div>
+          <div style="font-size:var(--t-13);line-height:var(--lh-13);color:var(--ink-2)">
+            Every id the agent claimed resolves in the attached graph, and every proposed edge has
+            both endpoints. <span class="ph">&#8249;n&#8250;</span> ids checked.
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--sp-6);margin-top:var(--sp-12)">
+            <span class="dot" style="color:var(--st-done)"></span>
+            <span class="dot hollow" style="color:var(--st-neutral)"></span>
+            <span class="dot hollow" style="color:var(--st-neutral)"></span>
+            <span style="font-size:var(--t-10);color:var(--ink-3)">passed on attempt 1 of 3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><svg class="i i-14"><use href="#ic-board"/></svg><span class="t">Verify</span>
+          <span style="margin-left:auto"><span class="prov p-measured">Measured</span></span>
+        </div>
+        <div class="bd">
+          <div style="display:flex;align-items:center;gap:var(--sp-8);margin-bottom:var(--sp-10)">
+            <span class="verdict v-wont">Rejected</span>
+          </div>
+          <div style="font-size:var(--t-13);line-height:var(--lh-13);color:var(--ink-2)">
+            The claim names something that is not in your repo. The proposal was not applied and
+            the violations went back to the agent.
+          </div>
+          <pre class="codeblock" style="margin-top:var(--sp-10)">ungrounded node id: &#8249;id&#8250;
+edge src missing: &#8249;id&#8250;</pre>
+          <div style="display:flex;align-items:center;gap:var(--sp-6);margin-top:var(--sp-12)">
+            <span class="dot" style="color:var(--st-failed)"></span>
+            <span class="dot" style="color:var(--st-failed)"></span>
+            <span class="dot" style="color:var(--st-failed)"></span>
+            <span style="font-size:var(--t-10);color:var(--ink-3)">failed 3 of 3 attempts</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><svg class="i i-14"><use href="#ic-board"/></svg><span class="t">Verify</span>
+          <span style="margin-left:auto"><span class="prov p-declared">Declared</span></span>
+        </div>
+        <div class="bd">
+          <div style="display:flex;align-items:center;gap:var(--sp-8);margin-bottom:var(--sp-10)">
+            <span class="verdict v-unknown">Could not run</span>
+          </div>
+          <div style="font-size:var(--t-13);line-height:var(--lh-13);color:var(--ink-2)">
+            No graph is attached, so there is nothing to check the claim against. The step did not
+            fail &mdash; it never had the evidence to start.
+          </div>
+          <div style="display:flex;gap:var(--sp-6);flex-wrap:wrap;margin-top:var(--sp-12)">
+            <button class="btn sm"><svg class="i i-12"><use href="#ic-folder"/></svg>Attach a repo</button>
+            <button class="btn ghost sm"><svg class="i i-12"><use href="#ic-refresh"/></svg>Re-run</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="caption">
+      Three cards, three badges, one chassis. The attempt ledger under the first two is drawn as
+      dots so the count beside it is something the reader can check by looking &mdash; one dot, one
+      attempt. The third card has no ledger because nothing was attempted.
+    </p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div style="display:flex;gap:var(--sp-8);flex-wrap:wrap;align-items:center">
+          <span class="verdict v-unknown">Could not run</span>
+          <span style="font-size:var(--t-11);color:var(--ink-3)">no graph attached</span>
+        </div>
+        <p class="why">A gate that never had its input is <span class="inline-code">--unknown</span> &mdash; not known, and refusing to guess. It comes with the action that would make it runnable.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div style="display:flex;gap:var(--sp-8);flex-wrap:wrap;align-items:center">
+          <span class="verdict v-wont">Failed</span>
+          <span style="font-size:var(--t-11);color:var(--ink-3)">no graph attached</span>
+        </div>
+        <p class="why">Red means the check ran and the answer was no. Painting a missing prerequisite red teaches the reader to distrust every other red on the screen, which is the only defence the product has.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      This is the same ruling the board makes about a connector it could not confirm: a claim the
+      source could never check has not failed at anything. Unverified is
+      <span class="inline-code">--unknown</span> in the transcript and
+      <span class="inline-code">--flow-declared</span> on the canvas, and those two are the same
+      token wearing two names on purpose.
+    </p>
+  </div>
+
+  <!-- 12.7 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">12.7</span>
+      <h2>The hue ledger for this sheet</h2>
+      <span class="tail">eight tokens &middot; six of them chromatic</span>
+    </div>
+
+    <p class="note">
+      Every token that carries colour on these surfaces is listed below with the claim it makes.
+      Nothing outside this table is coloured: not a divider, not a heading, not a border, not a
+      tool row, not a message lane, not the composer's chrome. Render the sheet in greyscale and
+      no state becomes ambiguous, because every one of them is a word before it is a colour.
+    </p>
+
+    <div class="panel">
+      <div class="scrollx">
+        <table class="tk">
+          <thead><tr><th>Token</th><th>Where it appears on these surfaces</th><th>The claim it makes</th></tr></thead>
+          <tbody>
+            <tr><td class="k">--accent-solid</td><td>the send button fill, and nothing else</td><td>the product's own voice &mdash; send, selection, focus</td></tr>
+            <tr><td class="k">--accent</td><td>the focus ring's outer band</td><td>this is where the keyboard is</td></tr>
+            <tr><td class="k">--fits</td><td>a run-row Done, a command that returned zero, the Grounded badge, <span class="inline-code">.stat-add</span></td><td>it ran and it passed</td></tr>
+            <tr><td class="k">--wont</td><td>a run-row Error, a command that did not return zero, the Rejected badge, <span class="inline-code">.stat-del</span></td><td>it ran and it failed</td></tr>
+            <tr><td class="k">--spills</td><td>a run-row Paused</td><td>stalled, and waiting on you</td></tr>
+            <tr><td class="k">--unknown</td><td>the Could-not-run badge, the Declared provenance tag</td><td>not known, and refusing to guess</td></tr>
+            <tr><td class="k">--info</td><td>a run-row Running, the deviation callout's rule</td><td>in flight &mdash; a notice, not a verdict</td></tr>
+            <tr><td class="k">--st-neutral</td><td>a run-row Queued, drawn hollow</td><td>nothing yet; an alias of --ink-3, not a hue at all</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">
+        Eight rows and six actual hues: <span class="inline-code">--unknown</span> and
+        <span class="inline-code">--st-neutral</span> are grey, which is the whole point of both.
+        A greyscale render of this sheet therefore loses six colours and no meaning. Count the
+        coloured objects in &sect;12.1 while you are here: <b>five</b>, in an entire two-turn
+        conversation &mdash; a <span class="inline-code">Measured</span> provenance tag, the
+        <span class="inline-code">.stat-add</span> / <span class="inline-code">.stat-del</span>
+        pair on the edited file, the tick on the command that returned zero, and the
+        <span class="inline-code">Grounded</span> verdict. Four of the five are
+        <span class="inline-code">--fits</span> and the fifth is
+        <span class="inline-code">--wont</span>; every one of them is a claim about whether
+        something ran and what it proved, and not one of them is chrome. That is the budget
+        working &mdash; and the count is written out rather than gestured at, because a sheet whose
+        own literal does not survive being counted has broken law 4 on the page that states it.
+      </p>
+      <p class="caption">
+        The inline fold (&sect;12.2) adds <b>zero</b> rows to this ledger. Indentation, the left
+        rule and the quieter ink of an in-flow row are chrome, and chrome is never coloured; the
+        live row's shimmer animates the same <span class="inline-code">--ink-3</span> the landed
+        row prints at, so a working row and a finished one differ in motion and tense before either
+        differs in colour. A running call earns no hue &mdash; it is not a verdict until it lands.
+      </p>
+    </div>
+  </div>
+
+</section>

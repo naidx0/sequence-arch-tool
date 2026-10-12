@@ -1,0 +1,46 @@
+<svg viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="12">
+  <title>One AI request</title>
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0.5L7.5 4L0 7.5z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="10" y="18" font-size="14" font-weight="600" fill="currentColor">One AI request</text>
+  <!-- actors -->
+  <g fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-opacity="0.3">
+    <rect x="50" y="34" width="120" height="30" rx="6"/>
+    <rect x="230" y="34" width="120" height="30" rx="6"/>
+    <rect x="410" y="34" width="120" height="30" rx="6"/>
+    <rect x="570" y="34" width="120" height="30" rx="6"/>
+  </g>
+  <g fill="currentColor" font-weight="600" text-anchor="middle">
+    <text x="110" y="54">App</text>
+    <text x="290" y="54">Gateway</text>
+    <text x="470" y="54">Cache</text>
+    <text x="630" y="54">Model</text>
+  </g>
+  <g stroke="currentColor" stroke-opacity="0.3" stroke-dasharray="4 4">
+    <line x1="110" y1="64" x2="110" y2="310"/>
+    <line x1="290" y1="64" x2="290" y2="310"/>
+    <line x1="470" y1="64" x2="470" y2="310"/>
+    <line x1="630" y1="64" x2="630" y2="310"/>
+  </g>
+  <g stroke="currentColor" stroke-width="1.4" marker-end="url(#a)">
+    <line x1="110" y1="100" x2="288" y2="100"/>
+    <line x1="290" y1="140" x2="468" y2="140"/>
+    <line x1="290" y1="190" x2="628" y2="190" stroke-dasharray="1.5 3"/>
+    <line x1="630" y1="235" x2="292" y2="235" stroke-dasharray="5 3"/>
+    <line x1="290" y1="280" x2="112" y2="280" stroke-dasharray="5 3"/>
+  </g>
+  <g fill="currentColor" font-size="12">
+    <text x="130" y="93">1. POST /summarise</text>
+    <text x="340" y="133">2. lookup</text>
+    <text x="400" y="183">3. stream prompt</text>
+    <text x="400" y="228">4. tokens</text>
+    <text x="140" y="273">5. 200 + stream</text>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="10.5">
+    <text x="360" y="155">miss</text>
+    <text x="450" y="250">~900 ms</text>
+  </g>
+</svg>

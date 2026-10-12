@@ -1,0 +1,15 @@
+ASCII stage background (round 8, item 7)
+
+Ported from the Bastion site, Jaden's own repository (naidx0/premai), read
+from the local checkout C:/Users/<user>/Projects/premai at 0092b70:
+  components/lab/hero-photo.tsx   the hero's settings (focal points, strength, cell)
+  components/lab/ascii-photo.tsx  the character-mosaic renderer (ported to AsciiStage.tsx,
+                                  less the cursor lens; blur and dim baked into one still draw)
+Licence: the same as that repository (the owner's own code; it carries no
+separate licence file), used here on the owner's instruction.
+
+Images: public/media/photos/hero-day.jpg (light room) and hero-night.jpg (dark
+room) from the same repository, resized from 2400 px to 960 px wide (JPEG
+quality 0.72) for this app: 73,477 and 33,103 bytes. Free-licence stock photos
+(Unsplash License); credits as the site gives them: Brenton Pearce / Unsplash
+(day), Donald Giannatti / Unsplash (night).

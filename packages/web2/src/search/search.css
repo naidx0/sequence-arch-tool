@@ -1,0 +1,105 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   SEARCH
+   packages/web2/src/search/search.css
+
+   An overlay, so it REPLACES the view rather than adding a column — the
+   established shape for an expanded surface, and the one-canvas rule. Every
+   measurement is a token; law 3's rungs are --control-h for a control.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.se-scope {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+
+.se-scope .se-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+.se-scope .se-title { margin: 0; font-size: var(--t-12); line-height: var(--lh-12); font-weight: var(--fw-label); }
+
+.se-scope .se-form {
+  display: flex;
+  gap: var(--sp-8);
+  padding: var(--sp-12);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+}
+
+.se-scope .se-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-family: inherit;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.se-scope .se-glob { flex: 0 1 160px; font-family: var(--font-mono); }
+.se-scope .se-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+.se-scope .se-btn {
+  flex: 0 0 auto;
+  height: var(--control-h);
+  padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  cursor: pointer;
+}
+.se-scope .se-btn:hover:not(:disabled) { border-color: var(--edge-strong); color: var(--ink-1); }
+.se-scope .se-btn:disabled { color: var(--ink-4); border-color: var(--edge-faint); cursor: default; }
+.se-scope .se-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* The three absences, told apart — the activity lane's rule. */
+.se-scope .se-note {
+  margin: var(--sp-12);
+  padding: var(--sp-12);
+  border: var(--w-hair) solid var(--unknown-edge);
+  border-radius: var(--r-8);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.se-scope .se-note-fail { border-color: var(--wont); color: var(--ink-2); }
+
+.se-scope .se-answer { min-height: 0; overflow-y: auto; padding: var(--sp-12); }
+
+/* The engine's own account of what it did, then its own text. */
+.se-scope .se-evidence {
+  margin: 0 0 var(--sp-8);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.se-scope .se-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}

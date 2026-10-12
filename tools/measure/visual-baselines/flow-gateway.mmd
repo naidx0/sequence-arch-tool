@@ -1,0 +1,9 @@
+flowchart LR
+  app([Product app]) -->|HTTPS| gw[AI gateway<br/>auth, routing]
+  gw -->|lookup| cache[(Cache)]
+  gw -->|route| quota[Quota service]
+  gw -->|events| ev[[Usage events]]
+  cache --> prompts[(Prompt store)]
+  quota -->|stream| llm[Model provider]
+  ev --> wh[(Warehouse)]
+  llm --> wh

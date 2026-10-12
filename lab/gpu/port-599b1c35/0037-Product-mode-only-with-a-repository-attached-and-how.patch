@@ -1,0 +1,120 @@
+From d7a847feeabc62bb2981f0106fa2b18a690da949 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 08:48:19 -0400
+Subject: [PATCH 37/37] Product mode only with a repository attached, and 'how
+ it works' alone no longer counts
+
+With product mode on by default, 'what is an llm, break it down ... how it works' (no repo) and 'teach
+me how this works' lost their drawn charts (4 analyzer tests). A product is a repository's product;
+a subject lesson or a bare 'how it works' stays a normal lesson. Analyzer 3113/3113.
+---
+ packages/analyzer/src/server/askPipeline.ts   | 12 +++++++--
+ .../analyzer/src/test/ask-tool-loop.test.ts   |  5 ++++
+ .../src/test/teach-product-mode.test.ts       | 25 ++++++++++++++-----
+ 3 files changed, 34 insertions(+), 8 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 81ea6f98..a1f6290c 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -2472,7 +2472,6 @@ const PRODUCT_QUESTION = new RegExp(
+     String.raw`\bthe (?:actual )?(?:product|app)\b`,
+     String.raw`\bproduct flow\b`,
+     String.raw`\badv\w{0,4}ages?\b`,
+-    String.raw`\bhow (?:does )?(?:it|this|the app) works?\b`,
+     String.raw`\baway from the (?:actual )?(?:files|code)\b`,
+     String.raw`\bis it an? (?:real|product|tool|demo|training|learning)\b`,
+     String.raw`\bexplain (?:it )?like i'?m\b`,
+@@ -2486,8 +2485,17 @@ export function isProductQuestion(question: string): boolean {
+   return !NAMES_CODE.test(question) && PRODUCT_QUESTION.test(question);
+ }
+ 
+-export function teachProductTurn(input: { teach?: boolean; question: string; historyLines?: readonly string[] }): boolean {
++export function teachProductTurn(input: {
++  teach?: boolean;
++  question: string;
++  historyLines?: readonly string[];
++  repoRoot?: string | null;
++  teachContext?: { subjectNotInRepo?: boolean };
++}): boolean {
+   if (process.env.SEQUENCE_TEACH_PRODUCT_MODE === '0' || input.teach !== true) return false;
++  /* A product is a repository's product: with none attached, or a subject that is not the repo
++     ("what is an llm, break it down"), this is a general lesson, not a product question. */
++  if (!input.repoRoot || input.teachContext?.subjectNotInRepo === true) return false;
+   if (NAMES_CODE.test(input.question)) return false;
+   if (isProductQuestion(input.question)) return true;
+   /* Sticky: an earlier question in this conversation was a product question. */
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index 416c1434..97fab2d6 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -7585,6 +7585,9 @@ async function repeatTeachTurn(flag: string | undefined) {
+   const base = await makeAttachedInput(repo, callProvider);
+   const before = process.env.SEQUENCE_TEACH_REPEAT_GUARD;
+   process.env.SEQUENCE_TEACH_REPEAT_GUARD = flag ?? '0';
++  /* The off arm is the behaviour before both flags: product mode off too. */
++  const productBefore = process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++  if (flag === undefined) process.env.SEQUENCE_TEACH_PRODUCT_MODE = '0';
+   try {
+     return await runAskPipeline(
+       {
+@@ -7598,6 +7601,8 @@ async function repeatTeachTurn(flag: string | undefined) {
+   } finally {
+     if (before === undefined) delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
+     else process.env.SEQUENCE_TEACH_REPEAT_GUARD = before;
++    if (productBefore === undefined) delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++    else process.env.SEQUENCE_TEACH_PRODUCT_MODE = productBefore;
+   }
+ }
+ 
+diff --git a/packages/analyzer/src/test/teach-product-mode.test.ts b/packages/analyzer/src/test/teach-product-mode.test.ts
+index d31458d6..1d384585 100644
+--- a/packages/analyzer/src/test/teach-product-mode.test.ts
++++ b/packages/analyzer/src/test/teach-product-mode.test.ts
+@@ -19,10 +19,10 @@ test('product mode is on by default in a teach turn, and =0 turns it off', () =>
+   const before = process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+   try {
+     process.env.SEQUENCE_TEACH_PRODUCT_MODE = '0';
+-    assert.equal(teachProductTurn({ teach: true, question: OWNER[2]! }), false);
++    assert.equal(teachProductTurn({ repoRoot: '/repo', teach: true, question: OWNER[2]! }), false);
+     delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+-    assert.equal(teachProductTurn({ teach: true, question: OWNER[2]! }), true);
+-    assert.equal(teachProductTurn({ teach: false, question: OWNER[2]! }), false);
++    assert.equal(teachProductTurn({ repoRoot: '/repo', teach: true, question: OWNER[2]! }), true);
++    assert.equal(teachProductTurn({ repoRoot: '/repo', teach: false, question: OWNER[2]! }), false);
+   } finally {
+     if (before === undefined) delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+     else process.env.SEQUENCE_TEACH_PRODUCT_MODE = before;
+@@ -69,9 +69,9 @@ test('recogniser v2: wider questions count, a question naming a file does not, a
+   process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
+   try {
+     const history = ['User: who is this for?', 'Assistant: For shop owners.'];
+-    assert.equal(teachProductTurn({ teach: true, question: 'show that on the canvas pls', historyLines: history }), true);
+-    assert.equal(teachProductTurn({ teach: true, question: 'show that on the canvas pls', historyLines: [] }), false);
+-    assert.equal(teachProductTurn({ teach: true, question: 'now open routes.py', historyLines: history }), false);
++    assert.equal(teachProductTurn({ repoRoot: '/repo', teach: true, question: 'show that on the canvas pls', historyLines: history }), true);
++    assert.equal(teachProductTurn({ repoRoot: '/repo', teach: true, question: 'show that on the canvas pls', historyLines: [] }), false);
++    assert.equal(teachProductTurn({ repoRoot: '/repo', teach: true, question: 'now open routes.py', historyLines: history }), false);
+   } finally {
+     if (before === undefined) delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
+     else process.env.SEQUENCE_TEACH_PRODUCT_MODE = before;
+@@ -96,3 +96,16 @@ test('a product answer with numbered steps and no chart gets those steps drawn a
+   assert.ok(chart!.items.every((i) => i.nodeId === undefined));
+   assert.equal(productStepsChart('One sentence, no steps.', 'what is it?'), undefined);
+ });
++
++test('product mode needs a repository: a subject lesson with none is not a product question', () => {
++  const before = process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++  delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++  try {
++    const q = 'what is an llm, break it down for me please';
++    assert.equal(teachProductTurn({ teach: true, question: q, repoRoot: null }), false);
++    assert.equal(teachProductTurn({ teach: true, question: q, repoRoot: '/repo', teachContext: { subjectNotInRepo: true } }), false);
++    assert.equal(teachProductTurn({ teach: true, question: 'what is this app, who is it for?', repoRoot: '/repo' }), true);
++  } finally {
++    if (before !== undefined) process.env.SEQUENCE_TEACH_PRODUCT_MODE = before;
++  }
++});
+-- 
+2.51.1.windows.1
+

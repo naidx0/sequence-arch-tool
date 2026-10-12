@@ -1,0 +1,82 @@
+[
+  {"id": "ml-harness-f1", "repo": "ml-harness", "questions": [
+    "hi, I just got pointed at this project and have no idea what it is. what does it actually do?",
+    "ok still fuzzy. who would sit down and use this, like what kind of person and what problem are they stuck on?",
+    "give me the whole thing in one sentence I could paste into a slack message"
+  ]},
+  {"id": "ml-harness-f2", "repo": "ml-harness", "questions": [
+    "As a manager I need to decide whether my team should adopt this tool. What is it for and why does it exist?",
+    "Walk me through what a user does from the moment they open it until they get an answer, step by step.",
+    "Could you draw that flow as a diagram so I can drop it into a slide?"
+  ]},
+  {"id": "ml-harness-f3", "repo": "ml-harness", "questions": [
+    "eli5 pls. what is this thing",
+    "why would i use this instead of just going straight to fine tuning with some training library",
+    "so is it actually worth it or is it just another layer of stuff in the way"
+  ]},
+  {"id": "ml-harness-f4", "repo": "ml-harness", "questions": [
+    "Hello, I am student in data science, english is not my first language. Please can you explain what the user is receiving at the end when using this product?",
+    "Sorry, I still not understand. The user give what, and the product give back what?",
+    "Only the part where it decide if training is needed or not, please explain more deep this one stage."
+  ]},
+  {"id": "shopfront-f1", "repo": "shopfront", "questions": [
+    "what is this app supposed to be, from a customer's point of view",
+    "what happens when someone buys something here? walk me thru it start to finish",
+    "can u sketch that as a picture, boxes and arrows is fine"
+  ]},
+  {"id": "shopfront-f2", "repo": "shopfront", "questions": [
+    "I'm a teacher putting together a lesson on how online stores work, and a colleague suggested this codebase as an example. Could you tell me what the product is and who it's meant to serve?",
+    "That helps, thank you. I'd like to zoom in on just the payment part. What does the shopper experience at that point, and what happens behind the scenes?",
+    "Lastly, how would you describe the whole thing to thirteen-year-olds in one sentence?"
+  ]},
+  {"id": "shopfront-f3", "repo": "shopfront", "questions": [
+    "Investor here. Tell me what this shop does and why anyone would build it like this.",
+    "How does it stack up against just putting the store on a hosted platform like Shopify?",
+    "Bottom line, is this worth building on or not?"
+  ]},
+  {"id": "shopfront-f4", "repo": "shopfront", "questions": [
+    "so ive been handed this repo on my first day and honestly i dont know if its a real store or a demo or what, and my lead just said 'figure out the product' which isnt super helpful, so like what is it and what does it give the people who use it",
+    "hmm, im still kinda lost on how the pieces relate. like after an order goes in, what does the customer actually get and when?",
+    "ok can you just give me the order journey as a numbered list of steps"
+  ]},
+  {"id": "makemore-f1", "repo": "makemore", "questions": [
+    "What is this project and what does it produce?",
+    "Who is it aimed at? A researcher, a hobbyist, someone learning?",
+    "Compare the simple counting approach here with the small neural network one. Which should a beginner look at first?"
+  ]},
+  {"id": "makemore-f2", "repo": "makemore", "questions": [
+    "explain like im five what this does",
+    "wait so how does it come up with a new name, still dont get it",
+    "draw me the steps from the list of names to a made-up name"
+  ]},
+  {"id": "makemore-f3", "repo": "makemore", "questions": [
+    "why does this exist? there are way better text generators out there",
+    "fine, but what does someone actually walk away with after going through it",
+    "one line: is it worth an afternoon"
+  ]},
+  {"id": "makemore-f4", "repo": "makemore", "questions": [
+    "Good afternoon. I run a small team of analysts and one of them wants to spend time on this. Could you summarise what it is and what the end result looks like for the person running it?",
+    "What are the stages a user goes through, from getting the data to seeing output?",
+    "Please focus on the generating stage only. What happens there, in plain terms?"
+  ]},
+  {"id": "sequence-f1", "repo": "sequence", "questions": [
+    "What problem is this product solving, and for whom?",
+    "I don't get how that's different from just reading the code or asking a normal chatbot about my repo. What's the difference?",
+    "Give me a one-line pitch."
+  ]},
+  {"id": "sequence-f2", "repo": "sequence", "questions": [
+    "hey so what do i get if i install this. like what shows up on my screen",
+    "what are the steps from pointing it at my project to actually getting something useful out",
+    "diagram of that pls"
+  ]},
+  {"id": "sequence-f3", "repo": "sequence", "questions": [
+    "Im a CS student, thesis on software architecture. is this tool usefull for me or is it for companies",
+    "how its compare to the diagram tools where you draw architecture by hand?",
+    "still confused honestly. what is the main thing it does, simply"
+  ]},
+  {"id": "sequence-f4", "repo": "sequence", "questions": [
+    "Blunt question: why should anyone care about this over the dozen other AI code tools?",
+    "Take me through the scanning stage alone. What does the user see happen there and what comes out of it?",
+    "Is it worth it for a five-person startup? Yes or no and why."
+  ]}
+]

@@ -1,0 +1,506 @@
+{
+  "dry": true,
+  "model": "granite42-hermes",
+  "wallOn": 20,
+  "wallOff": 37,
+  "providerCalls": 44,
+  "summary": {
+    "n": 20,
+    "on": 4,
+    "off": 4,
+    "retrieval": {
+      "n": 14,
+      "on": 2,
+      "off": 2
+    },
+    "reasoned": {
+      "n": 6,
+      "on": 2,
+      "off": 2
+    },
+    "coverageSaturated": true,
+    "verdict": "not-earning-it"
+  },
+  "rows": [
+    {
+      "id": "pa-01",
+      "kind": "retrieval",
+      "question": "Which file defines build_counts?",
+      "reference": "bigram_counts.py defines build_counts.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 12,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": true,
+      "offCorrect": true
+    },
+    {
+      "id": "pa-02",
+      "kind": "retrieval",
+      "question": "What does build_counts return?",
+      "reference": "Three values: the counts matrix, stoi (character to index) and itos (index to character).",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 2,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-03",
+      "kind": "retrieval",
+      "question": "Which files import build_counts?",
+      "reference": "Both nn_bigram.py and sampling.py import it from bigram_counts.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": true,
+      "offCorrect": true
+    },
+    {
+      "id": "pa-04",
+      "kind": "retrieval",
+      "question": "What index does the '.' boundary character get in stoi?",
+      "reference": "0 — stoi['.'] is set to 0 after the letters are numbered from 1.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 2,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-05",
+      "kind": "retrieval",
+      "question": "What is the default learning rate in train()?",
+      "reference": "5.0",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 4,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-06",
+      "kind": "retrieval",
+      "question": "How many training steps does train() take by default?",
+      "reference": "200",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-07",
+      "kind": "retrieval",
+      "question": "What random seed does train() use by default?",
+      "reference": "42",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-08",
+      "kind": "retrieval",
+      "question": "Which function draws a name from the counts, and in which file?",
+      "reference": "sample_name, in sampling.py.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 2,
+      "offMs": 2,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-09",
+      "kind": "retrieval",
+      "question": "When does sample_name stop generating characters?",
+      "reference": "When the sampled index is stoi['.'] — the boundary marker — at which point it returns the name built so far.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-10",
+      "kind": "retrieval",
+      "question": "What loss does train() minimise?",
+      "reference": "The negative log likelihood, averaged over all character pairs.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-11",
+      "kind": "retrieval",
+      "question": "How does train() compute the logits for a character?",
+      "reference": "The logits are just the row W[ix] — a one-hot input selects a row, so no matrix multiply is needed.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-12",
+      "kind": "retrieval",
+      "question": "How does the code turn a row of counts into probabilities?",
+      "reference": "row_to_probs divides each count by the row sum.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-13",
+      "kind": "retrieval",
+      "question": "How is each of the three scripts meant to be run?",
+      "reference": "Each defines main() and calls it under `if __name__ == '__main__':`, so each runs as a standalone script.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 0,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-14",
+      "kind": "retrieval",
+      "question": "Which character marks both the start and the end of a name?",
+      "reference": "'.' — the same marker plays both roles.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 0,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-15",
+      "kind": "reasoned",
+      "question": "Which third-party machine-learning libraries does this project depend on?",
+      "reference": "None. The only imports are the standard library modules math and random — there is no numpy, no torch, nothing third-party.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-16",
+      "kind": "reasoned",
+      "question": "Does this project have a test suite?",
+      "reference": "No. There are no test files and no test framework — the three scripts print their results when run.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-17",
+      "kind": "reasoned",
+      "question": "Does nn_bigram.py use the sampling code?",
+      "reference": "No. nn_bigram.py imports only build_counts from bigram_counts; it never imports sampling.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 2,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": true,
+      "offCorrect": true
+    },
+    {
+      "id": "pa-18",
+      "kind": "reasoned",
+      "question": "Which of the three modules can be run without the other two?",
+      "reference": "bigram_counts.py — it imports nothing from the project, while nn_bigram.py and sampling.py both depend on it.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 0,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": true,
+      "offCorrect": true
+    },
+    {
+      "id": "pa-19",
+      "kind": "reasoned",
+      "question": "How big is the counts matrix that build_counts returns for the names.txt in this repo?",
+      "reference": "20 by 20. n is len(stoi), derived from the data: the shipped names.txt uses 19 distinct characters plus the '.' marker. The docstring's 27x27 describes the full makemore dataset, not this one.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 2,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    },
+    {
+      "id": "pa-20",
+      "kind": "reasoned",
+      "question": "What stops row_to_probs from dividing by zero on a row of all zeros?",
+      "reference": "`total = sum(row) or 1` — when the row sums to zero, `or 1` substitutes 1, so the division is safe and every probability comes out 0.",
+      "onText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "offText": "build_counts lives in bigram_counts.py and returns the counts matrix with stoi and itos.",
+      "onMs": 1,
+      "offMs": 1,
+      "onCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "offCoverage": {
+        "edgesSeen": 2,
+        "edgesTotal": 2,
+        "packagesMissed": [],
+        "full": true
+      },
+      "onCorrect": false,
+      "offCorrect": false
+    }
+  ]
+}
