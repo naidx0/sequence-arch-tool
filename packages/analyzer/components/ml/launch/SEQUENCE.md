@@ -1,0 +1,1 @@
+These skills work inside a clone of github.com/whitecircle/halo. If the project is not a Halo checkout, ask the user before cloning it (pinned commit 41da0838). Halo ships under Apache-2.0 with White Circle's supplemental terms (LICENSE in this folder): local training is unrestricted; offering training to third parties as a service has revenue-based terms.

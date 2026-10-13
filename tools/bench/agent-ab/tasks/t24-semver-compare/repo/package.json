@@ -1,0 +1,6 @@
+{
+  "name": "t24-semver-compare",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

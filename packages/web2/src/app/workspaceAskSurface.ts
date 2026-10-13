@@ -49,7 +49,7 @@ export function askSurfaceFromWorkspace(
   if (surface === 'files') {
     return { id: 'editor', title: 'Files' };
   }
-  return { id: 'task-board', title: 'Whiteboard' };
+  return { id: 'task-board', title: 'Spaces' };
 }
 
 export function askSurfaceFromChrome(args: {

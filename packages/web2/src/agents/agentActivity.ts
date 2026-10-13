@@ -14,6 +14,7 @@
 
 import type { TodoItem } from '../state/types';
 import type { AgentRun, AgentRunsState, RunLimits } from './agentRuns';
+import { contextRun, runContext } from './contextMeter';
 
 export interface AgentActivity {
   agentRef: string;
@@ -72,8 +73,11 @@ export function agentActivity(state: AgentRunsState, sessionId: string | null): 
     .filter((i) => i.kind === 'tool' && !!i.subagent)
     .map((i) => (i.kind === 'tool' ? { id: i.id, label: i.subagent!, running: i.status === 'running' } : null))
     .filter((x): x is { id: string; label: string; running: boolean } => x !== null);
-  /* Usage and limits are the conversation's: the latest run that reported them. */
-  const usage = [...mine].reverse().find((r) => r.usage)?.usage ?? null;
+  /* Usage is this chat's newest run's window fill, clamped to the window (contextMeter.ts: the one reading the status bar and
+     the Agents pane share), never an older run's. Limits are the conversation's: the latest run that reported them. */
+  const ctxRun = contextRun(state.runs, sessionId, agentRef);
+  const ctx = runContext(ctxRun);
+  const usage = ctxRun?.usage && ctx.used !== null ? { ...ctxRun.usage, used: ctx.used } : null;
   const limits = [...mine].reverse().find((r) => r.limits)?.limits ?? null;
   return { agentRef, latest, running: latest?.status === 'running', todos, subagents, usage, limits, doing: agentDoing(latest) };
 }

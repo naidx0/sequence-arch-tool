@@ -727,3 +727,24 @@
 .ag-dock .ag-scope > .ag-body {
   padding-inline: calc(var(--ag-gut) + 8px);
 }
+
+/* 0.1.8: a step that names a file. The folders give way in the middle of the label, the file name stays whole (full path on the title). */
+.ag-scope .ag-name.is-path {
+  display: flex;
+  min-width: 0;
+  text-overflow: clip;
+}
+.ag-scope .ag-name-head {
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ag-scope .ag-name-tail {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

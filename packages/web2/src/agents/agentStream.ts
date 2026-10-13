@@ -15,6 +15,7 @@
 
 import { emptyTree, foldEvent } from './agentTree.js';
 import type { AgentEvent, AgentNode } from './agentTypes.js';
+import { onWorkspaceSwitched } from '../sessions/workspaceEvents';
 export type { AgentEvent, AgentNode, AgentNodeKind, AgentNodeStatus, BoardHit } from './agentTypes.js';
 
 export const AGENT_STREAM_URL = '/api/agent-events';
@@ -34,6 +35,8 @@ export interface AgentStore {
   /** Fold one wire event in. Exposed so tests (and a replay) drive the same path. */
   apply(ev: AgentEvent): void;
   focus(id: string | null): void;
+  /** Open the stream again (the page moved to another workspace). A no-op with no subscriber. */
+  reconnect(): void;
 }
 
 export interface EventSourceLike {
@@ -110,12 +113,38 @@ export function createAgentStore(open?: (url: string) => EventSourceLike | null)
       focusId = id;
       emit([]);
     },
+    reconnect() {
+      if (!source || listeners.size === 0) return;
+      source.close();
+      source = null;
+      connected = false;
+      const fresh = opener(AGENT_STREAM_URL);
+      if (!fresh) return;
+      source = fresh;
+      fresh.onmessage = (m) => {
+        try {
+          store.apply(JSON.parse(m.data) as AgentEvent);
+        } catch {
+          /* dropped, as above */
+        }
+      };
+      fresh.onopen = () => {
+        connected = true;
+        emit([]);
+      };
+      fresh.onerror = () => {
+        connected = false;
+        emit([]);
+      };
+      emit([]);
+    },
   };
   return store;
 }
 
 /** The page's one store. */
 export const agentStore: AgentStore = createAgentStore();
+onWorkspaceSwitched(() => agentStore.reconnect());
 
 /** Oldest first; id breaks a tie so the order is stable. */
 const byStart = (a: AgentNode, b: AgentNode): number => a.startedAt - b.startedAt || (a.id < b.id ? -1 : 1);

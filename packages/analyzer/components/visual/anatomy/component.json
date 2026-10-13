@@ -1,0 +1,24 @@
+{
+  "id": "visual/anatomy",
+  "group": "visual",
+  "label": "Anatomy",
+  "summary": "Build crafted, highly detailed, interactive isometric SVG figures that explain a technical idea as a real physical object (a test rig, a...",
+  "triggers": [
+    "isometric illustration",
+    "technical diagram",
+    "explain with an svg figure",
+    "interactive explainer",
+    "isometric svg"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "wheresryan22/anatomy",
+    "commit": "689dcf966e63d92be10a5d593c6e19e10acd4422",
+    "path": ""
+  },
+  "url": "https://github.com/wheresryan22/anatomy/tree/689dcf966e63d92be10a5d593c6e19e10acd4422/",
+  "externalRefs": [
+    "shots/lines.png"
+  ]
+}

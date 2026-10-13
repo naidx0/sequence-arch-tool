@@ -143,3 +143,9 @@ test('an empty user store means no provider, and a populated one is still found'
     await found.close();
   }
 });
+
+test('the preload gives a find_files host a short idle exit, so none outlives the run that started it', () => {
+  /* Unset, a host started by any test lives 15 minutes, detached, holding that test's temp repo. */
+  const idle = Number(process.env.SEQUENCE_FIND_FILES_HOST_IDLE_MS);
+  assert.ok(Number.isFinite(idle) && idle > 0 && idle <= 10_000, `idle ms was ${process.env.SEQUENCE_FIND_FILES_HOST_IDLE_MS}`);
+});

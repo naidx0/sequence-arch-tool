@@ -14,7 +14,7 @@
  * rot a release behind.
  */
 export const PUBLIC_REPO = 'https://github.com/naidx0/sequence-arch-tool';
-export const VERSION = '0.1.6';
+export const VERSION = '0.1.7';
 export const RELEASE_TAG = `v${VERSION}`;
 export const RELEASE_URL = `${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
 
@@ -27,7 +27,7 @@ export const RELEASE_URL = `${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
  * '0.1.4', update the sizes below from the published assets, and set
  * `NEXT_BUILDS_PUBLISHED` to true. Nothing else on the page needs to change.
  */
-export const NEXT_VERSION = '0.1.6';
+export const NEXT_VERSION = '0.1.7';
 export const NEXT_BUILDS_PUBLISHED = (VERSION as string) === NEXT_VERSION;
 
 /** Short notes for the release, in the order a person meets them. */
@@ -75,7 +75,7 @@ export type Installer = {
 };
 
 /**
- * 0.1.6 sizes from `gh release view v0.1.6` (2026-10-11), decimal megabytes.
+ * 0.1.7 sizes from `gh release view v0.1.7` (2026-10-12), decimal megabytes.
  * The Intel Mac files are on the release but not offered (owner, 2026-10-10).
  */
 export const INSTALLERS: Installer[] = [

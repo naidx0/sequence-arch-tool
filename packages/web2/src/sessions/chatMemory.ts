@@ -14,6 +14,8 @@
    PURE. Turns in, wire shape out, and back.
    ══════════════════════════════════════════════════════════════════════════ */
 
+import type { SeqChart } from '@sequence/schema';
+import type { WbItem } from '../whiteboard/whiteboardModel';
 import type {
   AssistantTurn,
   Coverage,
@@ -34,6 +36,9 @@ export interface ChatMemoryTurnV2 extends ChatMemoryTurnV1 {
   work?: WorkRow[];
   evidence?: TurnEvidence;
   coverage?: Coverage | null;
+  /** Charts the turn drew (`chart:proposal`), so the inline cards survive a reload. */
+  charts?: SeqChart[];
+  boardMarks?: WbItem[];
 }
 
 export type ChatMemoryTurn = ChatMemoryTurnV1 | ChatMemoryTurnV2;
@@ -68,6 +73,8 @@ export function toChatMemory(sessionId: string, turns: readonly Turn[]): ChatMem
           work: t.work,
           evidence: t.evidence,
           coverage: t.coverage,
+          ...(t.charts && t.charts.length > 0 ? { charts: t.charts } : {}),
+          ...(t.boardMarks && t.boardMarks.length > 0 ? { boardMarks: t.boardMarks } : {}),
         };
       }),
   };
@@ -77,7 +84,7 @@ function turnWorthPersisting(t: Turn): boolean {
   if (typeof t.text !== 'string') return false;
   if (t.text.trim() !== '') return true;
   if (t.role !== 'assistant') return false;
-  return (t.work?.length ?? 0) > 0 || (t.evidence?.tools?.length ?? 0) > 0;
+  return (t.work?.length ?? 0) > 0 || (t.evidence?.tools?.length ?? 0) > 0 || (t.charts?.length ?? 0) > 0;
 }
 
 /**
@@ -108,7 +115,8 @@ export function fromChatMemory(raw: unknown): Turn[] {
         ? parseEvidence((turn as ChatMemoryTurnV2).evidence)
         : emptyEvidence();
     const hasGrounded =
-      role === 'assistant' && (work.length > 0 || evidence.tools.length > 0);
+      role === 'assistant' &&
+      (work.length > 0 || evidence.tools.length > 0 || (version === 2 && objects<SeqChart>((turn as ChatMemoryTurnV2).charts).length > 0));
     if (text.trim() === '' && !hasGrounded) continue;
 
     const parsed = Date.parse(String((turn as { at?: unknown }).at ?? ''));
@@ -132,6 +140,8 @@ export function fromChatMemory(raw: unknown): Turn[] {
     }
 
     const coverage = version === 2 ? parseCoverage((turn as ChatMemoryTurnV2).coverage) : null;
+    const charts = version === 2 ? objects<SeqChart>((turn as ChatMemoryTurnV2).charts) : [];
+    const boardMarks = version === 2 ? objects<WbItem>((turn as ChatMemoryTurnV2).boardMarks).filter(validBoardMark) : [];
 
     out.push({
       id,
@@ -142,6 +152,8 @@ export function fromChatMemory(raw: unknown): Turn[] {
       /* A persisted turn carries no work list: the memory format predates it,
          and an empty list is the honest restoration — never a fabricated one. */
       todos: [],
+      ...(charts.length > 0 ? { charts } : {}),
+      ...(boardMarks.length > 0 ? { boardMarks } : {}),
       effect: { kind: 'answer' },
       coverage,
       evidence,
@@ -161,6 +173,34 @@ export function fromChatMemory(raw: unknown): Turn[] {
 
 export function worthPersisting(turns: readonly Turn[]): boolean {
   return turns.some((t) => turnWorthPersisting(t));
+}
+
+const num = (n: unknown): boolean => typeof n === 'number' && Number.isFinite(n);
+const pt = (p: unknown): boolean => !!p && typeof p === 'object' && num((p as { x: unknown }).x) && num((p as { y: unknown }).y);
+
+/** A stored board mark the sketch can draw; anything else is skipped, never thrown on. */
+export function validBoardMark(raw: unknown): raw is WbItem {
+  const m = raw as Record<string, unknown>;
+  if (typeof m.id !== 'string') return false;
+  switch (m.kind) {
+    case 'shape':
+      return pt(m.from) && pt(m.to) && ['rect', 'ellipse', 'diamond', 'line', 'arrow'].includes(String(m.shape));
+    case 'stroke':
+      return Array.isArray(m.points) && m.points.every(pt);
+    case 'text':
+      return pt(m.at) && typeof m.text === 'string';
+    case 'noderef':
+      return pt(m.at) && typeof m.label === 'string';
+    case 'artifact':
+      return pt(m.at) && !!m.size && num((m.size as { w: unknown }).w) && num((m.size as { h: unknown }).h);
+    default:
+      return false;
+  }
+}
+
+/** The objects of a stored array, nothing else; the viewers refuse what they cannot draw. */
+function objects<T>(raw: unknown): T[] {
+  return Array.isArray(raw) ? (raw.filter((x) => x !== null && typeof x === 'object') as T[]) : [];
 }
 
 function emptyEvidence(): TurnEvidence {

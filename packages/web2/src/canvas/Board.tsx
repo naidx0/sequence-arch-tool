@@ -348,7 +348,7 @@ export interface BoardProps {
    */
   drawing?: boolean;
   onToggleDrawing?: () => void;
-  onStroke?: (points: { x: number; y: number }[]) => void;
+  onStroke?: (points: { x: number; y: number }[], timing?: StrokeTiming) => void;
   /**
    * ROUND 8 — THE DRAWING LAYER (canvas/boards/ArchDraw.tsx). Rendered in
    * flow space (inside the camera), handed the box every card is drawn at
@@ -2245,17 +2245,24 @@ function BoardInner({
  *            viewport coordinates; converting those to board/ELK space would
  *            break connect under zoom/pan.
  */
+/** Pen-down and pen-up on one clock, so a multi-stroke box can be grouped by its rests. */
+export interface StrokeTiming {
+  t0: number;
+  t1: number;
+}
+
 function StrokeLayer({
   onStroke,
   passive = false,
 }: {
-  onStroke: (points: { x: number; y: number }[]) => void;
+  onStroke: (points: { x: number; y: number }[], timing?: StrokeTiming) => void;
   /** Space is held: the layer lets the pointer through to pan (C.5). */
   passive?: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const clientPoints = useRef<{ x: number; y: number }[]>([]);
   const drawingRef = useRef(false);
+  const downAt = useRef(0);
   /* State, not a ref: React re-renders the LOCAL path as the pointer moves.
      The ref keeps CLIENT points for the recogniser / hit-test. */
   const [draft, setDraft] = useState<{ x: number; y: number }[]>([]);
@@ -2273,6 +2280,7 @@ function StrokeLayer({
       data-passive={passive ? 'true' : undefined}
       onPointerDown={(e) => {
         drawingRef.current = true;
+        downAt.current = e.timeStamp;
         clientPoints.current = [{ x: e.clientX, y: e.clientY }];
         setDraft([localOf(e)]);
         (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
@@ -2291,7 +2299,7 @@ function StrokeLayer({
         setDraft([]);
         /* A stroke of one point is a click, not a gesture. Handing it to the
            recogniser would spend a round trip to be told it is a scribble. */
-        if (stroke.length > 1) onStroke(stroke);
+        if (stroke.length > 1) onStroke(stroke, { t0: downAt.current, t1: e.timeStamp });
       }}
       onPointerCancel={() => {
         /* A cancelled pointer must not leave ink on the board with no stroke

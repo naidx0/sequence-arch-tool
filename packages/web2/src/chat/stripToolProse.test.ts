@@ -64,7 +64,7 @@ describe('stripToolProse', () => {
   it('names board/canvas tools for the card title', () => {
     expect(toolCardTitle('propose_topology')).toBe('Drawing architecture board');
     expect(toolCardTitle('propose_chart')).toBe('Drawing a chart');
-    expect(toolCardTitle('board.add_card')).toBe('Drawing on Whiteboard');
+    expect(toolCardTitle('board.add_card')).toBe('Drawing on Spaces');
     expect(toolCardTitle('canvas.write_mermaid')).toBe('Drawing on AI Canvas');
   });
 

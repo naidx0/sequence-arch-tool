@@ -57,3 +57,52 @@ export function coverageSentence(coverage: Coverage | null): string | null {
 
   return `${head} — ${missed.length} ${noun} contributed nothing: ${list}`;
 }
+
+/** What the coverage line of an agent run needs from the scanned repo: its root and its services. */
+export interface GraphFacts {
+  repoRoot?: string | null;
+  services: { id: string; label: string; path: string }[];
+}
+
+/** The services of an attached (or stale) repo, or null when there is none. */
+export function graphFactsOf(repo: { phase: string; repo?: { root?: string; graph?: { nodes?: readonly unknown[] } } }): GraphFacts | null {
+  if (repo.phase !== 'attached' && repo.phase !== 'stale') return null;
+  const nodes = (repo.repo?.graph?.nodes ?? []) as { id?: string; kind?: string; label?: string; path?: string }[];
+  const services = nodes
+    .filter((n) => n.kind === 'service' && typeof n.id === 'string' && typeof n.path === 'string' && n.path !== '' && n.path !== '.')
+    .map((n) => ({ id: n.id as string, label: n.label || (n.id as string), path: n.path as string }));
+  return { repoRoot: repo.repo?.root ?? null, services };
+}
+
+const slash = (p: string): string => p.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '');
+
+/**
+ * THE COVERAGE LINE OF AN AGENT RUN: which services the run's Read, search and map calls touched. Computed from what the
+ * agent actually opened (the run's `readPaths`), against the scanned services. Nothing for a run that is not finished, read
+ * nothing (an old record has no paths), or has no graph to count against.
+ */
+export function coverageFromRun(run: { status: string; readPaths?: readonly string[] }, graph: GraphFacts | null): string | null {
+  if (run.status !== 'done' || !run.readPaths?.length || !graph || graph.services.length === 0) return null;
+  const root = graph.repoRoot ? slash(graph.repoRoot).toLowerCase() : null;
+  const seen = new Set<string>();
+  for (const raw of run.readPaths) {
+    if (raw.startsWith('svc:')) {
+      if (graph.services.some((s) => s.id === raw)) seen.add(raw);
+      continue;
+    }
+    let p = slash(raw);
+    if (root && p.toLowerCase().startsWith(`${root}/`)) p = p.slice(root.length + 1);
+    let best: { id: string; len: number } | null = null;
+    for (const s of graph.services) {
+      const sp = slash(s.path);
+      if ((p === sp || p.startsWith(`${sp}/`)) && (!best || sp.length > best.len)) best = { id: s.id, len: sp.length };
+    }
+    if (best) seen.add(best.id);
+  }
+  const read = graph.services.filter((s) => seen.has(s.id));
+  const missed = graph.services.filter((s) => !seen.has(s.id));
+  if (read.length === 0) return null;
+  if (missed.length === 0) return `drew on all ${graph.services.length} services`;
+  const names = (xs: typeof read, limit: number): string => (xs.length > limit ? `${xs.slice(0, limit).map((x) => x.label).join(', ')}, and ${xs.length - limit} more` : xs.map((x) => x.label).join(', '));
+  return `drew on ${read.length} of ${graph.services.length} services (${names(read, NAMED_LIMIT)}), did not read ${names(missed, NAMED_LIMIT)}`;
+}

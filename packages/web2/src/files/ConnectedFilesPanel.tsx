@@ -148,10 +148,25 @@ import type { FileTreeOps } from './fileOpsModel';
 import { useAppState, useStore } from '../state';
 
 import { previewKind } from './previewKind';
+import { FilesFind } from './FilesFind';
 import { FilesPanel } from './FilesPanel';
 import type { FileAction, FileLoad, FilesView } from './FilesPanel';
 import { agentRuns } from '../agents/agentRuns';
-import { agentEditingPaths, asFileStatus, toRepoPath } from './filesModel';
+import { getBranchChanges } from '../git/gitCalls';
+import type { BranchChangesResponse } from '../git/gitClient';
+import { BranchSwitcher } from '../git/BranchSwitcher';
+import { requestDiffBoard } from '../git/openDiff';
+import { requestHostCommand } from '../app/hostCommands';
+import { useCanvasOptional } from '../canvas/canvasChannel';
+import { FlowPanel } from '../rail/FlowPanel';
+import { buildFunctionIndex, flowForFunction } from '../rail/railModel';
+import type { FlowTrace } from '../rail/railModel';
+import type { FunctionIndex } from '../state/types';
+import { SymbolsUiContext } from './symbolsUi';
+import type { SymbolEntry, SymbolsUi } from './symbolsUi';
+import { BranchUiContext } from './branchUi';
+import type { FilesScope } from './branchUi';
+import { agentEditingPaths, asFileStatus, branchRenames, branchStatusMap, toRepoPath } from './filesModel';
 import type { FileStatus, RepoPath } from './filesModel';
 
 /**
@@ -239,6 +254,10 @@ export function ConnectedFilesPanel({ fetchImpl, onClose }: ConnectedFilesPanelP
   const [treeLoad, setTreeLoad] = useState<TreeLoad>({ state: 'loading' });
   const [branch, setBranch] = useState<string | null>(null);
   const [status, setStatus] = useState<ReadonlyMap<RepoPath, FileStatus> | null>(null);
+  /* THIS BRANCH (E1/E2): what the branch changed against its base. `null` is
+     "not served or not asked", and then the toggle is not drawn at all. */
+  const [scope, setScope] = useState<FilesScope>('worktree');
+  const [branchChanges, setBranchChanges] = useState<BranchChangesResponse | null>(null);
   /* Bumped after a write, because the file the reader just saved is dirty now
      and the tree must say so. A poll would re-read a repository that changes a
      few times an hour; keying on the act that changes it is the rail's rule
@@ -250,6 +269,8 @@ export function ConnectedFilesPanel({ fetchImpl, onClose }: ConnectedFilesPanelP
   const [selected, setSelected] = useState<RepoPath | null>(null);
   const [expanded, setExpanded] = useState<ReadonlySet<RepoPath>>(() => new Set<RepoPath>());
   const [query, setQuery] = useState('');
+  /* The project search that opened the current file: the editor's own find starts on it. */
+  const [findSeed, setFindSeed] = useState<{ text: string; nonce: number } | null>(null);
   /* Preview first (round 7, B8): a file with a rendered form opens rendered;
      one without falls back to its code (FilesPanel resolves the mode). */
   const [view, setView] = useState<FilesView>('preview');
@@ -350,6 +371,135 @@ export function ConnectedFilesPanel({ fetchImpl, onClose }: ConnectedFilesPanelP
     return () => controller.abort();
   }, [client, repoKey, statusNonce]);
 
+  useEffect(() => {
+    if (repo === null) {
+      setBranchChanges(null);
+      return undefined;
+    }
+    const controller = new AbortController();
+    void (async () => {
+      const answer = await getBranchChanges(undefined, doFetch, controller.signal);
+      if (controller.signal.aborted) return;
+      setBranchChanges(answer.outcome === 'ok' ? answer.body : null);
+    })();
+    return () => controller.abort();
+  }, [doFetch, repoKey, statusNonce, branch]);
+  const shownStatus = useMemo(
+    () => (scope === 'branch' && branchChanges !== null ? branchStatusMap(branchChanges.files, status) : status),
+    [scope, branchChanges, status],
+  );
+  /* ── functions under a file (I6) ───────────────────────────────────────
+     The store's index first; else GET /api/functions once. A refusal is silence:
+     no index, no function rows, today's tree. */
+  const canvasChannel = useCanvasOptional();
+  const [fetchedFns, setFetchedFns] = useState<FunctionIndex | null>(null);
+  const fnIndex = repo?.functions ?? fetchedFns;
+  /* The index belongs to one scan of one repository: a rescan or a switch reads it again. */
+  useEffect(() => {
+    setFetchedFns(null);
+    setTrace(null);
+    setUntracedId(null);
+  }, [repoKey]);
+  useEffect(() => {
+    if (repo === null || fnIndex !== null) return undefined;
+    const controller = new AbortController();
+    void (async () => {
+      const answer = await client.functions(controller.signal);
+      if (controller.signal.aborted || answer.outcome !== 'ok') return;
+      /* A 200 that is not a function graph is no index (never a throw in this effect). */
+      const g = (answer.body as { functionGraph?: { nodes?: unknown; edges?: unknown } } | null)?.functionGraph;
+      if (!g || !Array.isArray(g.nodes) || !Array.isArray(g.edges)) return;
+      setFetchedFns(buildFunctionIndex({ functionGraph: answer.body.functionGraph, warnings: [] }));
+    })();
+    return () => controller.abort();
+  }, [client, repo, fnIndex]);
+  const [symbolsOpen, setSymbolsOpen] = useState<ReadonlySet<string>>(() => new Set());
+  const [trace, setTrace] = useState<FlowTrace | null>(null);
+  const [untracedId, setUntracedId] = useState<string | null>(null);
+  const symbolsByFile = useMemo(() => {
+    const map = new Map<string, readonly SymbolEntry[]>();
+    if (fnIndex === null) return map;
+    for (const [file, ids] of Object.entries(fnIndex.byFile)) {
+      const entries: SymbolEntry[] = [];
+      for (const id of ids) {
+        const node = fnIndex.byId[id];
+        /* Boundary nodes (service, datastore, topic) are not functions in a file. */
+        if (node && (node.kind === undefined || node.kind === 'function')) entries.push({ id, name: node.name, line: node.startLine });
+      }
+      if (entries.length > 0) map.set(file, entries);
+    }
+    return map;
+  }, [fnIndex]);
+  const playbackNow = canvasChannel && canvasChannel.canvas.view.state === 'S3' ? canvasChannel.canvas.view.playback : null;
+  const symbolsUi = useMemo<SymbolsUi | null>(() => {
+    if (symbolsByFile.size === 0) return null;
+    return {
+      byFile: symbolsByFile,
+      open: symbolsOpen,
+      onToggle: (path) =>
+        setSymbolsOpen((prev) => {
+          const next = new Set(prev);
+          if (!next.delete(path)) next.add(path);
+          return next;
+        }),
+      onPlay: (id) => {
+        if (!repo || !canvasChannel) return;
+        const next = flowForFunction(id, fnIndex, repo.graph);
+        if (!next.traced) {
+          /* Sheet 11.6: a function whose calls stay inside its file does not play. */
+          setTrace(null);
+          setUntracedId(id);
+          /* ...and a flow that was playing stops: the board must not keep lighting another function's path. */
+          if (playbackNow) canvasChannel.dispatch({ type: 'canvas/flow-clear' });
+          return;
+        }
+        setUntracedId(null);
+        setTrace(next);
+        canvasChannel.dispatch({ type: 'canvas/flow', playback: { functionId: id, hops: next.hops, cursor: 0, playing: true } });
+        /* The board is where it plays: put it on stage. */
+        requestHostCommand('canvas.board');
+      },
+      playingId: playbackNow?.functionId ?? null,
+      untracedId,
+      footer:
+        repo && canvasChannel && (trace !== null || playbackNow !== null) ? (
+          <FlowPanel
+            trace={trace}
+            playback={playbackNow}
+            graph={repo.graph}
+            onPlaybackChange={(n) => canvasChannel.dispatch({ type: 'canvas/flow-cursor', cursor: n.cursor, playing: n.playing })}
+            onClear={() => {
+              setTrace(null);
+              canvasChannel.dispatch({ type: 'canvas/flow-clear' });
+            }}
+          />
+        ) : undefined,
+    };
+  }, [symbolsByFile, symbolsOpen, repo, canvasChannel, fnIndex, trace, untracedId, playbackNow]);
+
+  const branchUi = useMemo(
+    () => ({
+      showScope: branchChanges !== null,
+      scope,
+      onScope: setScope,
+      renamedFrom: scope === 'branch' && branchChanges !== null ? branchRenames(branchChanges.files) : undefined,
+      changed: branchChanges?.files.length ?? 0,
+      base: branchChanges?.base ?? 'main',
+      onViewDiff: requestDiffBoard,
+      /* Drawn only when /api/git/branches answers; renders nothing otherwise. */
+      switcher: (
+        <BranchSwitcher
+          fetchImpl={doFetch}
+          onSwitched={() => {
+            setStatusNonce((n) => n + 1);
+            setTreeNonce((n) => n + 1);
+          }}
+        />
+      ),
+    }),
+    [branchChanges, scope, doFetch],
+  );
+
   /* A different repository is a different tree, a different selection and a
      different set of unsaved edits. Carrying any of them across would put one
      repository's draft over another repository's file. */
@@ -419,11 +569,11 @@ export function ConnectedFilesPanel({ fetchImpl, onClose }: ConnectedFilesPanelP
   const paths = useMemo(() => {
     const listed = tree === null ? graphFilePaths(repo?.graph.nodes) : treeFilePaths(tree);
     const changed: string[] = [];
-    if (status !== null) for (const path of status.keys()) changed.push(path);
+    if (shownStatus !== null) for (const path of shownStatus.keys()) changed.push(path);
     /* Concatenated, never merged by hand: `buildFileTree` dedupes, and a file
        created since the tree was read is in status and in nothing else. */
     return [...listed, ...changed];
-  }, [tree, repo, status]);
+  }, [tree, repo, shownStatus]);
 
 
   /* ── organising the tree (round 9, ask 20) ───────────────────────────────
@@ -687,6 +837,17 @@ export function ConnectedFilesPanel({ fetchImpl, onClose }: ConnectedFilesPanelP
       </div>
       )}
 
+      {repo === null && tree === null ? null : (
+        <FilesFind
+          fetchImpl={doFetch}
+          onOpen={(path, line, text) => {
+            store.dispatch({ type: 'files/open', path, line });
+            /* Tied to THIS open: a later files/open (a chat path link) carries a new nonce and so no query. */
+            setFindSeed({ text, nonce: store.getState().session.filesFocus?.nonce ?? -1 });
+          }}
+        />
+      )}
+
       {repo === null && tree === null ? (
         /* NO REPOSITORY AND NO WORKSPACE TREE YET: waiting on /api/tree, refused,
            or read (an empty folder). The line sits on the header's text edge. */
@@ -724,11 +885,16 @@ export function ConnectedFilesPanel({ fetchImpl, onClose }: ConnectedFilesPanelP
               chat&apos;s worktree. Moving, renaming and deleting are disabled in a worktree chat.
             </p>
           ) : null}
+          <SymbolsUiContext.Provider value={symbolsUi}>
+          <BranchUiContext.Provider value={branchUi}>
           <FilesPanel
+            focusLine={filesFocus?.path === selected ? filesFocus.line : undefined}
+            focusKey={filesFocus?.nonce}
+            findSeed={filesFocus?.path === selected && findSeed !== null && findSeed.nonce === filesFocus.nonce ? findSeed.text : undefined}
             paths={paths}
             emptyDirs={emptyDirs}
             ops={worktreeChat ? undefined : fileOps}
-            status={status}
+            status={shownStatus}
             progress={progress}
             branch={branch}
             repoName={repo === null ? 'workspace' : repo.repoName}
@@ -789,6 +955,8 @@ export function ConnectedFilesPanel({ fetchImpl, onClose }: ConnectedFilesPanelP
             actions={actions}
             onAction={onAction}
           />
+          </BranchUiContext.Provider>
+          </SymbolsUiContext.Provider>
         </div>
       )}
     </div>

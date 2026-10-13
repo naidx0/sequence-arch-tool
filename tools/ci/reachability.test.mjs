@@ -66,6 +66,7 @@ const ASK_EVENT_CONTRACT = path.join(ROOT, 'packages', 'api-types', 'src', 'ask.
 const ASK_EVENT_PRODUCERS = [
   path.join(ROOT, 'packages', 'analyzer', 'src', 'server', 'askPipeline.ts'),
   path.join(ROOT, 'packages', 'analyzer', 'src', 'server', 'askTools.ts'),
+  path.join(ROOT, 'packages', 'analyzer', 'src', 'components', 'inject.ts'),
   path.join(ROOT, 'packages', 'analyzer', 'src', 'server', 'repoServer.ts'),
 ];
 const ASK_EVENT_CONSUMER = path.join(SRC, 'state', 'store.ts');

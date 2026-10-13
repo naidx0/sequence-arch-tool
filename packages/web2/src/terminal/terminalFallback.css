@@ -1,0 +1,16 @@
+/* G4: the calm fallback over a blank or failed terminal. terminal.css is retired (its rules live in v3/v3.css), so this is its own file. */
+.terminal-pane-fallback {
+  position: absolute;
+  inset: 2.4em 0 auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-6);
+  padding: var(--sp-12) var(--sp-16);
+  font-size: var(--t-13);
+  pointer-events: none;
+}
+.terminal-pane-fallback > * { pointer-events: auto; }
+.terminal-pane-fallback-t { color: var(--b-ink1, var(--ink-1)); }
+.terminal-pane-fallback-s { color: var(--b-ink3, var(--ink-3)); overflow-wrap: anywhere; }
+.terminal-pane { position: relative; }

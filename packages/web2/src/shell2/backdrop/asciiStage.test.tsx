@@ -40,6 +40,13 @@ describe('the backdrop follows the room', () => {
     expect(el.getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('the other room is made ahead of a switch only after the boot window, not inside it', () => {
+    const code = src('AsciiStage.tsx');
+    const delay = Number(/const AHEAD_DELAY_MS = (\d+)/.exec(code)?.[1]);
+    expect(delay).toBeGreaterThanOrEqual(3000);
+    expect(code).toMatch(/window\.setTimeout\(\(\) => \{\s*idleCb = /);
+  });
+
   it('the port names its source and licence, and has no pointer lens', () => {
     const code = src('AsciiStage.tsx');
     expect(code).toMatch(/premai/);

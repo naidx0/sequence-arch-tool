@@ -32,6 +32,7 @@ export type SettingsSectionId =
   | 'autonomy'
   | 'permissions'
   | 'skills'
+  | 'components'
   | 'mcp';
 
 /** The tabs. */
@@ -67,6 +68,7 @@ const SECTION_TAB: Record<SettingsSectionId, SettingsTab> = {
   hooks: 'safety',
   workspace: 'workspace',
   skills: 'skills',
+  components: 'skills',
   mcp: 'workspace',
 };
 

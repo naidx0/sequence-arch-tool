@@ -107,6 +107,7 @@ export function fromSavedRun(raw: unknown, sessionId: string): AgentRun | null {
     turnUsage: usageOf(r.usage),
     /* The ask ledger's report, saved with the turn: "Not done" survives a relaunch. */
     ...(ledgerOf(r.askLedger) ? { askLedger: ledgerOf(r.askLedger) } : {}),
+    ...(Array.isArray(r.readPaths) && r.readPaths.some((x) => typeof x === 'string') ? { readPaths: r.readPaths.filter((x): x is string => typeof x === 'string') } : {}),
     restored: true,
     ...(handoff ? { handoff } : {}),
     ...(stopped ? { stopped: true } : {}),

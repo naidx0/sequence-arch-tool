@@ -2740,6 +2740,8 @@ function pushSkillBody(L: string[], compose?: AskComposition): void {
 export function parseAskHistoryTurns(raw: unknown): {
   role: string;
   text: string;
+  /** The agent that said it, for an assistant turn carried over from Claude or Codex. */
+  agent?: string;
   work?: string[];
   evidence?: {
     filesRead?: string[];
@@ -2751,6 +2753,7 @@ export function parseAskHistoryTurns(raw: unknown): {
   const out: {
     role: string;
     text: string;
+    agent?: string;
     work?: string[];
     evidence?: {
       filesRead?: string[];
@@ -2765,6 +2768,8 @@ export function parseAskHistoryTurns(raw: unknown): {
     if ((role !== 'user' && role !== 'assistant') || typeof text !== 'string') continue;
     const turn: (typeof out)[number] = { role, text };
     if (role === 'assistant') {
+      const agentRaw = (item as { agent?: unknown }).agent;
+      if (typeof agentRaw === 'string' && /^[A-Za-z0-9 _.-]{1,40}$/.test(agentRaw.trim())) turn.agent = agentRaw.trim();
       const workRaw = (item as { work?: unknown }).work;
       if (Array.isArray(workRaw)) {
         const work = workRaw.filter((w): w is string => typeof w === 'string' && w.trim().length > 0);
@@ -2836,9 +2841,15 @@ export function askHistoryBudget(contextWindow?: number | null): { userChars: nu
 type HistoryTurn = {
   role: string;
   text: string;
+  agent?: string;
   work?: readonly string[];
   evidence?: { filesRead?: readonly string[]; tools?: readonly string[]; proposals?: readonly string[] };
 };
+
+/** "Assistant", or "Assistant (Claude said)" for a reply carried over from an agent. */
+function assistantWho(t: { agent?: string }): string {
+  return t.agent ? `Assistant (${t.agent.charAt(0).toUpperCase()}${t.agent.slice(1)} said)` : 'Assistant';
+}
 
 /** B3.1 — grounded prior work/evidence, not product chrome. Capped by count so a hostile client cannot dump an unbounded ledger. */
 function historyEvidenceLines(t: HistoryTurn): string[] {
@@ -2909,12 +2920,12 @@ function renderLocalHistory(sliced: readonly HistoryTurn[], header: string, wind
       userShare -= line.length + 1;
       continue;
     }
-    const room = Math.min(perAssistant, asstShare - 'Assistant: '.length - MARK.length - 1);
+    const room = Math.min(perAssistant, asstShare - `${assistantWho(t)}: `.length - MARK.length - 1);
     if (room < 40) {
       trimmedOut += 1;
       continue;
     }
-    const lines = [`Assistant: ${raw.length <= room ? raw : `${raw.slice(0, room)}${MARK}`}`];
+    const lines = [`${assistantWho(t)}: ${raw.length <= room ? raw : `${raw.slice(0, room)}${MARK}`}`];
     asstShare -= lines[0]!.length + 1;
     for (const ev of historyEvidenceLines(t)) {
       if (ev.length + 1 <= asstShare) {
@@ -2941,6 +2952,7 @@ export function renderAskHistorySection(
   turns: readonly {
     role: string;
     text: string;
+    agent?: string;
     work?: readonly string[];
     evidence?: {
       filesRead?: readonly string[];
@@ -2981,7 +2993,7 @@ export function renderAskHistorySection(
     userBudget = Math.max(0, userBudget - n);
   }
   for (const [i, t] of sliced.entries()) {
-    const who = t.role === 'user' ? 'User' : 'Assistant';
+    const who = t.role === 'user' ? 'User' : assistantWho(t);
     const raw = t.text.trim();
     const limit = t.role === 'user' ? Math.max(budget.userFloor, userKeep.get(i) ?? 0) : budget.assistantChars;
     if (limit === 0) {

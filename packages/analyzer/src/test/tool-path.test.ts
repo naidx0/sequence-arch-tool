@@ -5,17 +5,21 @@ import { describe, test } from 'node:test';
 
 import { forgetResolvedTools, launchTool, projectRootOf, resolveTool } from '../server/toolPath.js';
 import { createChatWorktree } from '../server/chatWorktree.js';
+import { makeNativeShim } from './helpers/nativeShim.js';
 import { repo, temp } from './t3Helpers.js';
 
+/** A real executable on every OS (a .cmd is not one; helpers/nativeShim.ts). */
 const exe = (dir: string, name: string): void => {
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, process.platform === 'win32' ? `${name}.cmd` : name), '#!/bin/sh\n', { mode: 0o755 });
+  const noop = path.join(dir, `${name}.noop.mjs`);
+  fs.writeFileSync(noop, '');
+  makeNativeShim(dir, name, noop);
 };
 
 describe('tool lookup', () => {
   test('a tool that was missing is found once it is installed (a miss is not remembered)', () => {
     const dir = temp('seq-tp-');
-    const env = { ...process.env, PATH: dir, PATHEXT: '.CMD' };
+    const env = { ...process.env, PATH: dir, PATHEXT: '.EXE' };
     forgetResolvedTools();
     assert.strictEqual(resolveTool('zz-tool-xyz', [], env).ok, false);
     exe(dir, 'zz-tool-xyz');
@@ -31,7 +35,7 @@ describe('tool lookup', () => {
     assert.deepStrictEqual([plain.command, plain.args, plain.verbatim], ['/usr/bin/gh', ['pr'], false]);
   });
 
-  test('a git inside the repository is refused for a worktree, because the repository root is refused too', { skip: process.platform === 'win32' }, async () => {
+  test('a git inside the repository is refused for a worktree, because the repository root is refused too', async () => {
     const dir = repo();
     const dataDir = temp('seq-tp-data-');
     const made = await createChatWorktree(dir, { dataDir, title: 'x' });

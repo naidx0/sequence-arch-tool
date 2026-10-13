@@ -216,6 +216,8 @@
 
 /* ── the reasoning slider: Faster … Smarter, a dotted track, a sliding pill, "Recommended" under its dot ── */
 .s2-rt {
+  /* 0.1.8 F1: the thumb and the blue glide between stops in 180 ms (ease-out) and follow the pointer while it drags.
+     The space between the white thumb and the blue's edge, top, bottom and right, is 5 px: (28 - 18) / 2. */
   position: relative;
   margin: var(--sp-2) var(--sp-10) var(--sp-8);
   font-size: var(--t-11);
@@ -259,8 +261,9 @@
   top: 0;
   bottom: 0;
   left: -14px;
-  /* To the dot's centre, then past it by the thumb's radius (9px) and 3px of padding: the thumb sits INSIDE the blue. */
-  width: calc(var(--rt-x) * 100% + 14px + 12px);
+  /* To the dot's centre, then past it by the thumb's radius (9px) and the same 5px the thumb has above and below:
+     the white thumb sits INSIDE the blue with an even margin all round. */
+  width: calc(var(--rt-x) * 100% + 14px + 9px + 5px);
   border-radius: var(--r-full);
   background: var(--accent-solid);
   pointer-events: none;
@@ -269,7 +272,7 @@
   width: 0;
 }
 .s2-rt[data-ready='true'] .s2-rt-fill {
-  transition: width var(--s2-switch-dur) var(--s2-switch-ease);
+  transition: width 180ms ease-out;
 }
 .s2-rt-dot::before {
   content: '';
@@ -299,7 +302,7 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--b-ink1) 22%, transparent), 0 1px 3px color-mix(in srgb, black 35%, transparent);
 }
 .s2-rt[data-ready='true'] .s2-rt-thumb {
-  transition: left var(--s2-switch-dur) var(--s2-switch-ease);
+  transition: left 180ms ease-out;
 }
 .s2-rt-thumb.is-unset {
   opacity: 0.6;
@@ -393,6 +396,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .s2-rt[data-ready='true'] .s2-rt-thumb,
+  .s2-rt[data-ready='true'] .s2-rt-fill,
   .s2-rt-thumb,
   .s2-rt-fill,
   .s2-rt-dot,

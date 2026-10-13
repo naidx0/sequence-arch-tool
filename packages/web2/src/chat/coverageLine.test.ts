@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { coverageSentence } from './coverageLine';
+import { coverageFromRun, coverageSentence } from './coverageLine';
 
 /**
  * THE CUT, NAMED — in words, beside the answer.
@@ -81,5 +81,35 @@ describe('coverageSentence', () => {
       coverageSentence({ edgesSeen: 0, edgesTotal: 0, packagesSeen: [], packagesMissed: [] }),
     ).toBeNull();
     expect(coverageSentence(null)).toBeNull();
+  });
+});
+
+describe('coverageFromRun', () => {
+  const graph = {
+    repoRoot: 'C:\\work\\shop',
+    services: [
+      { id: 'svc:orders', label: 'Orders', path: 'orders' },
+      { id: 'svc:billing', label: 'Billing', path: 'billing' },
+      { id: 'svc:web', label: 'Web', path: 'web' },
+    ],
+  };
+
+  it('names the services a finished run read and the ones it did not', () => {
+    const s = coverageFromRun({ status: 'done', readPaths: ['orders/a.ts', 'orders/b.ts'] }, graph);
+    expect(s).toBe('drew on 1 of 3 services (Orders), did not read Billing, Web');
+  });
+
+  it('maps absolute paths from a live run through the repo root, and svc: ids from the map tool', () => {
+    const s = coverageFromRun({ status: 'done', readPaths: ['C:\\work\\shop\\billing\\x.ts', 'svc:web'] }, graph);
+    expect(s).toBe('drew on 2 of 3 services (Billing, Web), did not read Orders');
+  });
+
+  it('says all of them when none was left out, and shows nothing for a run with no reads, an unfinished run, or no graph', () => {
+    expect(coverageFromRun({ status: 'done', readPaths: ['orders/a', 'billing/a', 'web/a'] }, graph)).toBe('drew on all 3 services');
+    expect(coverageFromRun({ status: 'done' }, graph)).toBeNull();
+    expect(coverageFromRun({ status: 'done', readPaths: [] }, graph)).toBeNull();
+    expect(coverageFromRun({ status: 'running', readPaths: ['orders/a'] }, graph)).toBeNull();
+    expect(coverageFromRun({ status: 'done', readPaths: ['orders/a'] }, null)).toBeNull();
+    expect(coverageFromRun({ status: 'done', readPaths: ['orders/a'] }, { services: [] })).toBeNull();
   });
 });

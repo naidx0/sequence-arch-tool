@@ -1,0 +1,6 @@
+{
+  "name": "t20-lru-evict",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

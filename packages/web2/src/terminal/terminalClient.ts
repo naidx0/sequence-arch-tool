@@ -105,7 +105,9 @@ export function connectTerminal(
     ws.addEventListener('error', () => {
       if (!settled) {
         settled = true;
-        reject(new Error('terminal WebSocket failed to open'));
+        /* A browser hides the handshake's HTTP status, so none is attached here; a transport that does know it
+           (tests, a native client) can set `status` and the pane will not retry a 403 / 429. */
+        reject(Object.assign(new Error('terminal WebSocket failed to open'), { status: undefined as number | undefined }));
         return;
       }
       handlers.onError?.('terminal WebSocket error');

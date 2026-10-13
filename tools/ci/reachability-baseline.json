@@ -62,6 +62,11 @@
       "reason": "The only caller of listAttachments. Singular upload, retrieval and ask-time reads all continue without it; this is HTTP listing nobody lists."
     },
     {
+      "route": "/api/services",
+      "verdict": "PREFIX",
+      "reason": "The authorization guard for the service routes (the exact name and the sub-path prefix); the handler is the prefix row below."
+    },
+    {
       "route": "/api/board",
       "verdict": "GAP",
       "reason": "The Sequence-native Task Board document, complete and served, with no surface reading or writing it."
@@ -110,6 +115,11 @@
       "route": "/api/github/repos",
       "verdict": "GAP",
       "reason": "Repositories for a GitHub account picker that was never drawn."
+    },
+    {
+      "route": "/api/goal-tick",
+      "verdict": "BY DESIGN",
+      "reason": "Called by the Sequence MCP `goal` tool inside the agent session of a goal run on Claude or Codex (packages/mcp goalTools.ts), never by the web client. It is the one writer of that run's plan, and answers only with the per-run key the app put in that session's environment."
     },
     {
       "route": "/api/snapshots/turn",
@@ -225,6 +235,11 @@
       "route": "/api/file-op",
       "verdict": "DEAD",
       "reason": "The earlier Files-rail mutation route, superseded by POST /api/file/op, which every Files gesture now posts to (reviewClient.ts, ConnectedFilesPanel.tsx). Only analyzer tests and a stale intercept in shell2/ownerSeat.e2e.mjs name it."
+    },
+    {
+      "route": "/api/skills/",
+      "verdict": "PREFIX",
+      "reason": "The skill-slug family (DELETE /api/skills/:slug, POST /api/skills/:slug/reveal). The client reaches it through settingsClient.ts SKILLS_ROUTE as a template head, `${SKILLS_ROUTE}/${slug}`, which the literal-only client scan cannot see; the exact /api/skills list is referenced by name."
     }
   ],
   "vocabulary": {
@@ -273,6 +288,7 @@
       "comment/cancel",
       "comment/open",
       "comment/sent",
+      "component/offer-status",
       "composer/access",
       "composer/ask-surface",
       "composer/attachment-add",
@@ -311,6 +327,7 @@
       "file/stage",
       "file/toggle",
       "files/focus-clear",
+      "files/open",
       "git/committed",
       "git/failed",
       "git/loading",
@@ -361,10 +378,14 @@
       "wb/add",
       "wb/clear",
       "wb/delete",
+      "wb/group",
       "wb/move",
       "wb/replace",
       "wb/resize",
-      "wb/text"
+      "wb/scene-key",
+      "wb/style",
+      "wb/text",
+      "workspace/switch"
     ],
     "streamEvents": [
       "advisor",
@@ -373,6 +394,9 @@
       "canvas:story",
       "chart:proposal",
       "command:log",
+      "component:offer",
+      "component:skipped",
+      "component:used",
       "delta",
       "edit:proposal",
       "error",
@@ -437,11 +461,13 @@
       "exact /api/checkpoint/plan",
       "exact /api/checkpoint/restore",
       "exact /api/checkpoints",
+      "exact /api/components",
       "exact /api/ddl",
       "exact /api/design-suggest",
       "exact /api/detach",
       "exact /api/drawings",
       "exact /api/explain",
+      "exact /api/export",
       "exact /api/fanout",
       "exact /api/file",
       "exact /api/file-op",
@@ -449,18 +475,23 @@
       "exact /api/functions",
       "exact /api/generate",
       "exact /api/git/branch",
+      "exact /api/git/branch-changes",
       "exact /api/git/branch-files",
+      "exact /api/git/branches",
       "exact /api/git/churn",
       "exact /api/git/commit",
       "exact /api/git/diff",
       "exact /api/git/discard",
+      "exact /api/git/events",
       "exact /api/git/revisions",
       "exact /api/git/status",
+      "exact /api/git/switch",
       "exact /api/git/worktree",
       "exact /api/git/worktrees",
       "exact /api/github",
       "exact /api/github/clone",
       "exact /api/github/repos",
+      "exact /api/goal-tick",
       "exact /api/harness",
       "exact /api/harness/distill-skills",
       "exact /api/harness/refine",
@@ -476,6 +507,8 @@
       "exact /api/mcp/call",
       "exact /api/mcp/tools",
       "exact /api/me",
+      "exact /api/media",
+      "exact /api/memory/summary",
       "exact /api/net-fetch",
       "exact /api/permissions",
       "exact /api/plugins",
@@ -491,9 +524,11 @@
       "exact /api/research",
       "exact /api/scan",
       "exact /api/search",
+      "exact /api/services",
       "exact /api/sessions",
       "exact /api/sessions/active",
       "exact /api/sessions/move",
+      "exact /api/sessions/search",
       "exact /api/skills",
       "exact /api/snapshots",
       "exact /api/snapshots/diff",
@@ -509,6 +544,7 @@
       "exact /api/stream-body",
       "exact /api/trajectory",
       "exact /api/tree",
+      "exact /api/ui-prefs",
       "exact /api/usage",
       "exact /api/workflows",
       "exact /api/workspace",
@@ -517,6 +553,7 @@
       "prefix /api/app/",
       "prefix /api/ask/",
       "prefix /api/boards/",
+      "prefix /api/components/",
       "prefix /api/drawings/",
       "prefix /api/fanout/",
       "prefix /api/github/",
@@ -527,7 +564,9 @@
       "prefix /api/onboarding/skills/",
       "prefix /api/program/",
       "prefix /api/program/runs/",
+      "prefix /api/services/",
       "prefix /api/sessions/",
+      "prefix /api/skills/",
       "prefix /api/snapshots/",
       "prefix /api/trajectory/",
       "prefix /api/workflows/"

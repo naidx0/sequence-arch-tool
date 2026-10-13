@@ -2177,7 +2177,7 @@
   padding: var(--sp-8);
   border: var(--w-hair) solid var(--glass-ctl-edge);
   border-radius: var(--r-18);
-  background: color-mix(in srgb, var(--board-card) 94%, transparent);
+  background: var(--board-card);
   box-shadow: var(--e3);
   animation: bmenu-in 160ms var(--ease);
 }

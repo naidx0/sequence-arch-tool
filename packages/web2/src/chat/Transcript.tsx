@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type {
   FileEditProposal,
@@ -11,6 +11,10 @@ import type {
 import { deriveAskLiveStatus } from './askLiveStatus';
 import { formatAskMetricsDiagnosis } from './askMetricsLine';
 import { Icon } from './Icon';
+
+/* The inline charts and board sketches load the first time a turn has one (like the visual kit). */
+const ChartTurnCard = lazy(() => import('./ChartTurnCard'));
+const BoardTurnCard = lazy(() => import('./BoardTurnCard'));
 import { EditsLedger } from './EditsLedger';
 import { PhaseCard } from './PhaseCard';
 import { createElement } from 'react';
@@ -549,6 +553,20 @@ function Item({
        * line, because what it points at is the lesson's other half rather than
        * a step on the way to it.
        */
+      if (item.chart) {
+        return (
+          <Suspense fallback={null}>
+            <ChartTurnCard chart={item.chart} onOpen={target === null ? undefined : () => onOpen?.(target, item.turnId)} />
+          </Suspense>
+        );
+      }
+      if (item.board) {
+        return (
+          <Suspense fallback={null}>
+            <BoardTurnCard items={item.board} onOpen={target === null ? undefined : () => onOpen?.(target, item.turnId)} />
+          </Suspense>
+        );
+      }
       if (item.row.from === 'chart:proposal') {
         return (
           <button
@@ -558,7 +576,7 @@ function Item({
             onClick={target === null ? undefined : () => onOpen?.(target, item.turnId)}
           >
             <Icon name="chart" />
-            <span>Drew a chart for this — open the AI Canvas</span>
+            <span>Drew a chart for this. Open on surface</span>
           </button>
         );
       }

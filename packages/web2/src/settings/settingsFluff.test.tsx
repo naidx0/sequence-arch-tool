@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AgentMapSetting } from './AgentMapSetting';
 import { AskLedgerSetting } from './AskLedgerSetting';
+import { ComponentsSetting } from './ComponentsSetting';
 import { WhiteboardSetting } from './WhiteboardSetting';
 
 beforeEach(() => localStorage.clear());
@@ -30,7 +31,7 @@ describe('settings hints are one short line', () => {
   });
 
   it('rendered rows keep to the limit too, and the detail moved into a tooltip', () => {
-    for (const C of [WhiteboardSetting, AskLedgerSetting, AgentMapSetting]) {
+    for (const C of [WhiteboardSetting, AskLedgerSetting, AgentMapSetting, ComponentsSetting]) {
       const { container, unmount } = render(<C />);
       const subs = [...container.querySelectorAll('.sb-row-sub')];
       expect(subs.length).toBeGreaterThan(0);

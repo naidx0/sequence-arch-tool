@@ -325,7 +325,9 @@ export type SlashSource =
    * S2b: the CLI's own command or skill, sent to the agent as typed
    * (`/review 12`, codex's `$release-notes`).
    */
-  | { kind: 'agent'; text: string };
+  | { kind: 'agent'; text: string }
+  /** `/components`: the picker, or `on` / `off` (docs/requests/components-ui-contract.md). */
+  | { kind: 'components' };
 
 /**
  * WHICH SHELF A COMMAND SITS ON (owner, 2026-09-19, with a reference shot of
@@ -396,6 +398,8 @@ export function slashCommands(
     goal?: boolean;
     /** `board: true` adds `/draw`. See `fromBoard` below for why it is gated. */
     board?: boolean;
+    /** `components: true` adds `/components`, only once the Components route has answered. */
+    components?: boolean;
     /**
      * The skills this workspace has on disk (`GET /api/skills`). Passed in
      * rather than fetched, for the same reason `modes` is: this module stays
@@ -430,6 +434,9 @@ export function slashCommands(
           source: { kind: 'board' },
         },
       ]
+    : [];
+  const fromComponents: SlashCommand[] = options.components
+    ? [{ name: 'components', label: 'Components', hint: 'list | on | off | auto | approve | manual | <id>', icon: 'skill' as IconName, source: { kind: 'components' } }]
     : [];
   const fromGoal: SlashCommand[] = options.goal
     ? [
@@ -476,7 +483,7 @@ export function slashCommands(
   }));
   /* `/draw` sits beside `/goal` — both are verbs the workspace can carry out,
      and both are absent on a surface that could not carry them out. */
-  return [...fromSkills, ...fromGoal, ...fromBoard, ...fromTools, ...fromModes];
+  return [...fromSkills, ...fromGoal, ...fromBoard, ...fromComponents, ...fromTools, ...fromModes];
 }
 
 /**

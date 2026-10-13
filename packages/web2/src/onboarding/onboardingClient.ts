@@ -85,6 +85,8 @@ export interface FoundSkill {
   folder: boolean;
   slug: string;
   bytes: number;
+  /** Which tool's place it came from (the server sets it). */
+  source?: 'claude' | 'codex' | 'cursor' | 'project';
 }
 
 export interface SkillsFound {
@@ -145,6 +147,9 @@ export interface OnboardingClient {
   /** Round 7 (A4): start the bridge install (only ever on a person's click), and read its progress. */
   installBridge?(provider: string): Promise<Answer<BridgeInstallStatus>>;
   bridgeStatus?(provider: string): Promise<Answer<BridgeInstallStatus>>;
+  /** Claims-audit 4.2: install the agent's own CLI with the vendor's native installer (only ever on a click), and read its progress. */
+  installCli?(provider: string): Promise<Answer<BridgeInstallStatus>>;
+  cliStatus?(provider: string): Promise<Answer<BridgeInstallStatus>>;
   /** Skills import: look (read-only) for skill and instruction files named by `text`, then import the confirmed paths. */
   skillsFind?(text: string): Promise<Answer<SkillsFound>>;
   skillsImport?(text: string, selected: string[]): Promise<Answer<SkillsImported>>;
@@ -193,6 +198,12 @@ export function createOnboardingClient(fetchImpl: typeof fetch = (...a) => fetch
       } catch (e) {
         return { ok: false, message: e instanceof Error ? e.message : 'the server could not be reached' };
       }
+    },
+    async installCli(provider) {
+      return postJson<BridgeInstallStatus>(fetchImpl, BRIDGE_ROUTE, { provider, kind: 'cli' });
+    },
+    async cliStatus(provider) {
+      return getJson<BridgeInstallStatus>(fetchImpl, `${BRIDGE_ROUTE}?provider=${encodeURIComponent(provider)}&kind=cli`);
     },
     async bridgeStatus(provider) {
       return getJson<BridgeInstallStatus>(fetchImpl, `${BRIDGE_ROUTE}?provider=${encodeURIComponent(provider)}`);

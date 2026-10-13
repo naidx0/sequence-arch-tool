@@ -43,3 +43,10 @@ test('every unexpected server exit flushes the stderr tail, and respawn clears i
   assert.match(main, /onRespawned: \(\) => \{\n\s+serverStderrTail\.length = 0;/);
   assert.match(main, /pushTail\(serverStderrTail,/);
 });
+
+test('Restart to update is its own shell action: it logs, then quits so the waiting update helper can swap', () => {
+  assert.match(main, /case 'restart-for-update':\n\s+mainLog\.write\('restart-for-update'\);\n\s+app\.quit\(\);/);
+  assert.match(main, /\| 'restart-for-update'/);
+  const preload = fs.readFileSync(path.join(ROOT, 'src', 'preload.ts'), 'utf8');
+  assert.match(preload, /\| 'restart-for-update'/, 'the preload mirror lists it, or the page cannot name it');
+});

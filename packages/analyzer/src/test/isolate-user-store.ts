@@ -132,6 +132,21 @@ if (process.platform === 'win32') {
   }) as typeof fs.rmSync;
 }
 
+/*
+ * AND THE SHARED find_files HOST MUST NOT OUTLIVE THE TEST THAT STARTED IT.
+ *
+ * Any test that reaches `find_files` (an ask, the MCP server, createRepoServer's
+ * ask tools) makes the first client spawn `--find-files-host <repo>`: a DETACHED
+ * process that serves the index until no client has connected for
+ * FIND_FILES_HOST_IDLE_MS, 15 minutes by default. The test's temp repo and
+ * user store sit under this run's root, so the host (a) leaked, about 14 alive
+ * at once after a gate run, and (b) held the root, so the exit hook above
+ * failed with EPERM ("could not remove ...sequence-run-*"). Two test files set
+ * a short idle themselves; every other one inherited 15 minutes. Set for the
+ * whole run, unless a caller deliberately chose a value.
+ */
+if (!process.env.SEQUENCE_FIND_FILES_HOST_IDLE_MS) process.env.SEQUENCE_FIND_FILES_HOST_IDLE_MS = '3000';
+
 const ENTRY = process.argv[1] ?? '';
 const IS_DEPENDENCY_WORKER = /[\\/]node_modules[\\/]/.test(ENTRY);
 

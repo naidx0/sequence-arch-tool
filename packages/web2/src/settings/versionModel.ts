@@ -24,7 +24,7 @@ export function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(n >= 100 * 1024 * 1024 ? 0 : 1)} MB`;
 }
 
-export type UpdateAction = { kind: 'update'; label: string } | { kind: 'release'; label: string; href: string } | { kind: 'check'; label: string } | { kind: 'none' };
+export type UpdateAction = { kind: 'restart'; label: string } | { kind: 'update'; label: string } | { kind: 'release'; label: string; href: string } | { kind: 'check'; label: string } | { kind: 'none' };
 
 export interface UpdateView {
   /** The row's title. */
@@ -39,6 +39,20 @@ export interface UpdateView {
   error: string | null;
   /** What to do to finish, after the installer has been started. */
   howto: string | null;
+  /** How the download went: differential or full, in the server's numbers. Null when the server says nothing. */
+  detail?: string | null;
+}
+
+/** "Differential: 12 MB downloaded of 180 MB, reused 168 MB" or "Full download". The server's numbers only. */
+export function downloadDetail(j: Pick<InstallJob, 'mode' | 'downloaded' | 'fullSize' | 'reused' | 'fallbackReason'>): string | null {
+  if (j.mode === 'differential') {
+    const got = typeof j.downloaded === 'number' ? `${formatBytes(j.downloaded)} downloaded` : 'Downloading only what changed';
+    const of = typeof j.fullSize === 'number' && j.fullSize > 0 ? ` of ${formatBytes(j.fullSize)}` : '';
+    const reused = typeof j.reused === 'number' && j.reused > 0 ? `, reused ${formatBytes(j.reused)}` : '';
+    return `Differential update: ${got}${of}${reused}`;
+  }
+  if (j.mode === 'full') return j.fallbackReason ? `Full download (${j.fallbackReason})` : 'Full download';
+  return null;
 }
 
 const BUSY = new Set(['downloading', 'verifying', 'launching']);
@@ -80,6 +94,19 @@ export function describeUpdate(check: UpdateCheck | null, job: InstallJob | null
       busy: true,
       error: null,
       howto: null,
+      detail: downloadDetail(j),
+    };
+  }
+  if (j.state === 'launched' && j.installMode === 'in-place') {
+    return {
+      title: `Version ${j.version ?? check?.latest?.version ?? ''} is ready`.trim(),
+      sub: 'It installs when Sequence quits. Quit and reopen Sequence to finish, or keep working and it installs the next time you quit.',
+      action: { kind: 'restart', label: 'Restart now' },
+      progress: null,
+      busy: false,
+      error: null,
+      howto: j.howto,
+      detail: downloadDetail(j),
     };
   }
   if (j.state === 'launched') {
@@ -103,7 +130,9 @@ export function describeUpdate(check: UpdateCheck | null, job: InstallJob | null
     return {
       title: `Version ${v} is available`,
       sub:
-        check.desktop === false
+        check.manual
+          ? `You have v${check.current}. ${check.manual}`
+          : check.desktop === false
           ? `You have v${check.current}. This copy of Sequence is not the installed app (it runs from source or the command line), so it does not update itself. Open the release page.`
           : `You have v${check.current}. This release has no installer we can check for this computer. Open its page to download one.`,
       action: { kind: 'release', label: 'Open release page', href: releaseHref(check.latest.htmlUrl) },
@@ -126,7 +155,7 @@ export function describeUpdate(check: UpdateCheck | null, job: InstallJob | null
     };
   }
   const upToDate = check.latest !== null && !check.newer;
-  const stamp = check.checkedAt ? `Last checked ${new Date(check.checkedAt).toLocaleDateString()}` : 'Not checked yet';
+  const stamp = check.checkDisabled ? `Automatic checks are off. Showing what was found ${check.checkedAt ? new Date(check.checkedAt).toLocaleDateString() : 'earlier'}` : check.checkedAt ? `Last checked ${new Date(check.checkedAt).toLocaleDateString()}` : 'Not checked yet';
   return {
     title: upToDate ? "You're up to date" : 'Updates',
     sub: check.offline

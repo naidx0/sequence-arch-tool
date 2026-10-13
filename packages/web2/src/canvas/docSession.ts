@@ -33,6 +33,7 @@
 import type { SeqDiagramV1 } from '@sequence/schema';
 
 import { type DocEdit, docEdit } from './docEdit.js';
+import { rebaseNote, rebaseWithDrawn } from './promoteDrawn.js';
 
 export interface DocSession {
   /** Null until a repo is attached — the store has no document before that. */
@@ -129,7 +130,18 @@ export function docSessionReduce(session: DocSession, action: DocSessionAction):
 
     case 'doc/rebase': {
       if (session.pendingBase === null) return session;
-      return adopt(session.pendingBase, session.forSessionId);
+      /* Drawn connections do not vanish on a rescan: the ones the scan now proves
+         are the scanned edges, and the rest stay as dashed claims. */
+      const base = session.doc === null ? null : rebaseWithDrawn(session.doc, session.pendingBase);
+      const adopted = adopt(base?.doc ?? session.pendingBase, session.forSessionId);
+      if (base === null) return adopted;
+      return {
+        ...adopted,
+        /* The kept claims ARE unsaved edits: at zero, the next rescan would adopt
+           outright and sweep them away. */
+        edits: base.kept.length,
+        lastNote: rebaseNote(base.promoted.length, base.kept.length, base.dropped.length),
+      };
     }
 
     case 'doc/reset':

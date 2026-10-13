@@ -69,6 +69,8 @@ export function fakeBoardsServer() {
     if (rest.length === 1 && method === 'DELETE') {
       boards = boards.filter((b) => b.id !== id);
       items.delete(id);
+      /* The real route emits on a delete, and the tab answers it by re-reading the board it was showing. */
+      queueMicrotask(() => FakeEventSource.fire({ type: 'boards', id }));
       return reply(200, { ok: true });
     }
     if (rest[1] === 'ops' && method === 'POST') {

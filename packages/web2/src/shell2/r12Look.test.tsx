@@ -180,7 +180,7 @@ describe('the mode icon and the agent icon are one box (A4, A5)', () => {
     const current = trigger.getAttribute('data-mode')!;
     fireEvent.click(trigger);
     const rows = [...document.querySelectorAll('[data-testid^="s2-quickmode-"][data-mode]')];
-    expect(rows.length).toBe(3);
+    expect(rows.map((r) => r.getAttribute('data-mode'))).toHaveLength(4); // Plan, Smart, Full auto, Teach (0.1.8)
     expect(rows.filter((r) => r.classList.contains('is-on')).map((r) => r.getAttribute('data-mode'))).toEqual([current]);
   });
 });

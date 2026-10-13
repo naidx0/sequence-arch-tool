@@ -42,12 +42,19 @@ import { fieldDots } from '../canvas/fieldDots';
 import { whiteboardBounds } from './whiteboardModel';
 import { layoutAgentBoard, paintedDoc, type EdgeLabelPlace } from './agentLayout';
 import { logBoardEdit } from './boardEditLog';
-import { SNAP_PREF_EVENT, readSnapMode } from './snapPreference';
+import { hostedSvg } from './svgItem';
+import { VideoBody } from './videoItem';
+import { itemBox } from '../canvas/boards/boardsModel';
+import { copyText, downloadText, sceneFilename, sceneRemotionSource } from './exportScene';
+import { clampTime, formatTime, poseTransform, safeDuration, scenePoses, type Pose } from './scene';
+import { WB_COLORS, WB_COLOR_LABEL, paint, type WbColor } from './palette';
+import { SNAP_PREF_EVENT, readGridEnabled, readSnapMode, writeGridEnabled } from './snapPreference';
 import { SNAP_WORDS, boxAt, shapeFromOffer } from './snapShape';
 import type { SnapOffer, SnapSession } from './snapSession';
 import {
   EMPTY_WHITEBOARD,
   STICKY_H,
+  SVG_MIN,
   STICKY_W,
   WB_UNDO_DEPTH,
   readWhiteboard,
@@ -56,7 +63,10 @@ import {
   whiteboardKey,
   writeWhiteboard,
   type Point,
+  type WbScene,
+  type WbShape,
   type WbStroke,
+  svgSourceOf,
   type WhiteboardDoc,
   type WhiteboardEdit,
   type WbItem,
@@ -208,7 +218,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 function itemOrigin(item: WbItem): Point {
-  if (item.kind === 'text' || item.kind === 'noderef' || item.kind === 'artifact') {
+  if (item.kind === 'text' || item.kind === 'noderef' || item.kind === 'artifact' || item.kind === 'svg' || item.kind === 'scene' || item.kind === 'video') {
     return { ...item.at };
   }
   if (item.kind === 'shape') return { ...item.from };
@@ -282,11 +292,31 @@ export function Whiteboard({
   /* A Shift-marquee that touched several marks selects them together (for Ask;
      a press on one mark is a single selection again and clears this). */
   const [group, setGroup] = useState<string[]>([]);
+  /* The pen: new marks are drawn in this colour (ink is the default and is stored as no colour). */
+  const [penColor, setPenColor] = useState<WbColor>('ink');
+  /* New marks take the pen: a shape or stroke by `stroke`, a text by `color` (the backend's board-item fields). */
+  const penStyle = penColor === 'ink' ? {} : { stroke: penColor };
+  const penText = penColor === 'ink' ? {} : { color: penColor };
   const setSelected = (id: string | null) => {
     setSelectedRaw(id);
     setGroup([]);
   };
   const [dragFrom, setDragFrom] = useState<Point | null>(null);
+  /* A hosted svg being resized from its corner handle: the pointer's start and the frame it started from, then the size so far. */
+  const [resizing, setResizing] = useState<{ id: string; from: Point; w: number; h: number } | null>(null);
+  const [resizeTo, setResizeTo] = useState<{ w: number; h: number } | null>(null);
+  /* SCENES: the playhead of each scene (ms), which one is playing, which one a drag writes keyframes into, the
+     scrubber being dragged, and the last export note. A paused scene at 0 is the board as drawn. */
+  const [sceneT, setSceneT] = useState<Record<string, number>>({});
+  const [playing, setPlaying] = useState<string | null>(null);
+  const [armed, setArmed] = useState<string | null>(null);
+  const [scrubbing, setScrubbing] = useState<{ id: string; x0: number; w: number } | null>(null);
+  const [sceneNote, setSceneNote] = useState<{ id: string; text: string } | null>(null);
+  const sceneTRef = useRef(sceneT);
+  sceneTRef.current = sceneT;
+  const itemsRef = useRef<readonly WbItem[]>([]);
+  const selectedItem = selected !== null ? doc.items.find((i) => i.id === selected) : undefined;
+  const selectedGroup = selectedItem?.group ?? null;
   const [dragBy, setDragBy] = useState<Point | null>(null);
 
   /*
@@ -661,10 +691,13 @@ export function Whiteboard({
     },
     [],
   );
+  /* The dotted ground: off until the person turns it on in More (read at mount, followed through the pref event). */
+  const [gridOn, setGridOn] = useState(() => readGridEnabled());
   /* A switch changed in Settings reaches an open board without a reload. */
   useEffect(() => {
     const onPref = () => {
       if (readSnapMode() === 'off') setOffers([]);
+      setGridOn(readGridEnabled());
     };
     window.addEventListener(SNAP_PREF_EVENT, onPref);
     return () => window.removeEventListener(SNAP_PREF_EVENT, onPref);
@@ -691,8 +724,82 @@ export function Whiteboard({
     }
   }, [undo, boardId]);
 
+  /* ── SCENES ─────────────────────────────────────────────────────────────
+     Play and pause one scene's playhead, copy or save its Remotion composition, and add a new stage. The clock is a
+     requestAnimationFrame loop that runs only while a scene plays and stops at its end. */
+  const toggleScene = (sc: WbScene) => {
+    setArmed(sc.id);
+    if (playing === sc.id) {
+      setPlaying(null);
+      return;
+    }
+    if ((sceneT[sc.id] ?? 0) >= safeDuration(sc.duration)) setSceneT((m) => ({ ...m, [sc.id]: 0 }));
+    setPlaying(sc.id);
+  };
+  const exportScene = async (sc: WbScene, how: 'copy' | 'save') => {
+    const text = sceneRemotionSource(sc, doc.items);
+    if (how === 'save') {
+      downloadText(sceneFilename(sc), text);
+      setSceneNote({ id: sc.id, text: `Saved ${sceneFilename(sc)}` });
+    } else {
+      setSceneNote({ id: sc.id, text: (await copyText(text)) ? 'Copied Remotion composition' : 'Could not copy' });
+    }
+  };
+  const addScene = () => {
+    const at = boardPoint(view, { x: 60, y: 90 });
+    const id = freshId('sc');
+    apply({ type: 'wb/add', item: { kind: 'scene', id, at, w: 480, h: 300, duration: 4000, keyframes: [] } });
+    setSelectedRaw(id);
+    setArmed(id);
+  };
+  useEffect(() => {
+    if (!playing || typeof requestAnimationFrame !== 'function') return undefined;
+    let last = performance.now();
+    let at = sceneTRef.current[playing] ?? 0;
+    let raf = 0;
+    const tick = (now: number) => {
+      const sc = itemsRef.current.find((i) => i.id === playing);
+      if (!sc || sc.kind !== 'scene') {
+        setPlaying(null);
+        return;
+      }
+      /* The playhead is accumulated here, not read back from state: frames can arrive faster than React renders. */
+      at += now - last;
+      const t = at;
+      last = now;
+      if (t >= safeDuration(sc.duration)) {
+        setSceneT((m) => ({ ...m, [playing]: safeDuration(sc.duration) }));
+        setPlaying(null);
+        return;
+      }
+      setSceneT((m) => ({ ...m, [playing]: t }));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing]);
+
+  /* GROUP: a multi-selection (Shift-marquee) becomes one diagram, moved and selected together; Ungroup takes the selected mark's group apart. */
+  const groupSelection = () => {
+    if (group.length < 2) return;
+    /* freshId, not nextId: the counter restarts at 1 on every load and would reuse a saved group's id (g1, g2, ...). */
+    apply({ type: 'wb/group', ids: group, group: freshId('g') });
+  };
+  const ungroupSelection = () => {
+    const g = selectedItem?.group;
+    if (g === undefined) return;
+    apply({ type: 'wb/group', ids: doc.items.filter((i) => i.group === g).map((i) => i.id), group: null });
+    setGroup([]);
+  };
+
   const onBoardKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (isEditableTarget(event.target)) return;
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'g') {
+      event.preventDefault();
+      if (event.shiftKey) ungroupSelection();
+      else groupSelection();
+      return;
+    }
     if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'z') {
       event.preventDefault();
       undoWithLog();
@@ -790,6 +897,18 @@ export function Whiteboard({
       return;
     }
 
+    if (scrubbing) {
+      const sc = doc.items.find((i) => i.id === scrubbing.id);
+      if (sc?.kind === 'scene') setSceneT((m) => ({ ...m, [sc.id]: clampTime(((pointOf(event).x - scrubbing.x0) / scrubbing.w) * safeDuration(sc.duration), safeDuration(sc.duration)) }));
+      return;
+    }
+
+    if (resizing) {
+      const at = pointOf(event);
+      setResizeTo({ w: Math.max(SVG_MIN, resizing.w + at.x - resizing.from.x), h: Math.max(SVG_MIN, resizing.h + at.y - resizing.from.y) });
+      return;
+    }
+
     if (dragFrom) {
       const at = pointOf(event);
       setDragBy({ x: at.x - dragFrom.x, y: at.y - dragFrom.y });
@@ -824,6 +943,19 @@ export function Whiteboard({
       return;
     }
 
+    if (scrubbing) {
+      setScrubbing(null);
+      return;
+    }
+
+    if (resizing) {
+      const to = resizeTo;
+      setResizing(null);
+      setResizeTo(null);
+      if (to) apply({ type: 'wb/resize', id: resizing.id, w: to.w, h: to.h });
+      return;
+    }
+
     if (dragFrom) {
       const by = dragBy;
       setDragFrom(null);
@@ -831,7 +963,21 @@ export function Whiteboard({
       /* A zero delta reaches `whiteboardEdit`, which returns the same document
          for it, so no undo frame is pushed. Guarding here as well would put
          one rule in two places. */
-      if (selected && by && (by.x !== 0 || by.y !== 0)) {
+      const armedScene = armed ? doc.items.find((i) => i.id === armed) : undefined;
+      const heldItem = selected ? doc.items.find((i) => i.id === selected) : undefined;
+      if (selected && by && (by.x !== 0 || by.y !== 0) && armedScene?.kind === 'scene' && heldItem && heldItem.kind !== 'scene' && (sceneT[armedScene.id] ?? 0) > 0) {
+        /* A DRAG WHILE A SCENE IS ARMED AND ITS PLAYHEAD IS PAST 0 WRITES A KEYFRAME there, at where the item now is, rather
+           than moving the item itself: the item keeps its place on the board and the scene says where it goes. */
+        const box = itemBox(heldItem);
+        const pose = poses.get(heldItem.id);
+        if (box) {
+          apply({
+            type: 'wb/scene-key',
+            id: armedScene.id,
+            key: { t: Math.round(sceneT[armedScene.id] ?? 0), target: heldItem.id, x: Math.round(box.x + (pose?.dx ?? 0) + by.x), y: Math.round(box.y + (pose?.dy ?? 0) + by.y) },
+          });
+        }
+      } else if (selected && by && (by.x !== 0 || by.y !== 0)) {
         const item = doc.items.find((i) => i.id === selected);
         const ghostAt = item ? itemOrigin(item) : null;
         apply({ type: 'wb/move', id: selected, dx: by.x, dy: by.y });
@@ -861,7 +1007,7 @@ export function Whiteboard({
          would convert a sketch into something that looks like a finding. */
       const stroke = strokeFrom(freshId('s'), points);
       if (stroke) {
-        apply({ type: 'wb/add', item: stroke });
+        apply({ type: 'wb/add', item: { ...stroke, ...penStyle } });
         const lastT = points[points.length - 1]?.t ?? 0;
         const t0 = penDownAt.current;
         if (readSnapMode() !== 'off') {
@@ -879,7 +1025,7 @@ export function Whiteboard({
       const id = nextId('t');
       apply({
         type: 'wb/add',
-        item: { kind: 'text', id, at: from, text: 'Note' },
+        item: { kind: 'text', id, at: from, text: 'Note', ...penText },
       });
       setEditing({ id, text: 'Note' });
       return;
@@ -891,7 +1037,7 @@ export function Whiteboard({
       const id = nextId('n');
       apply({
         type: 'wb/add',
-        item: { kind: 'text', sticky: true, id, at: from, text: '', w: STICKY_W, h: STICKY_H },
+        item: { kind: 'text', sticky: true, id, at: from, text: '', w: STICKY_W, h: STICKY_H, ...penText },
       });
       setEditing({ id, text: '' });
       return;
@@ -922,7 +1068,7 @@ export function Whiteboard({
     if (Math.abs(to.x - from.x) < 3 && Math.abs(to.y - from.y) < 3) return;
     apply({
       type: 'wb/add',
-      item: { kind: 'shape', id: nextId('r'), shape: tool, from, to },
+      item: { kind: 'shape', id: nextId('r'), shape: tool, from, to, ...penStyle },
     });
   };
 
@@ -1018,7 +1164,21 @@ export function Whiteboard({
   const agentIdSet = useMemo(() => new Set((agentItems ?? []).map((i) => i.id)), [agentItems]);
   /* What is PAINTED: the stored marks, their boxes grown to their words, notes wrapped and kept off boxes, connector
      labels placed clear of every box (agentLayout.ts). The stored document is never rewritten by it. */
-  const composed = useMemo(() => layoutAgentBoard(resolveItems(doc.items).items, agentIdSet), [doc.items, agentIdSet]);
+  /* THE SCENES' POSES at their playheads: where, how big, how opaque each keyframed item is NOW, and the colour or words
+     it has taken. The colours and words are applied before the board lays itself out, so a label that changes is wrapped
+     like any other; the move and scale are an SVG transform on the item (WbItemView). */
+  itemsRef.current = doc.items;
+  const poses = useMemo(() => {
+    const out = new Map<string, Pose>();
+    const real = doc.items.filter((i) => i.kind !== 'scene');
+    for (const sc of doc.items) {
+      if (sc.kind !== 'scene') continue;
+      for (const [id, pose] of scenePoses(real, sc, sceneT[sc.id] ?? 0)) out.set(id, pose);
+    }
+    return out;
+  }, [doc.items, sceneT]);
+  const styledItems = useMemo(() => (poses.size === 0 ? doc.items : doc.items.map((i) => withPose(i, poses.get(i.id)))), [doc.items, poses]);
+  const composed = useMemo(() => layoutAgentBoard(resolveItems(styledItems).items, agentIdSet), [styledItems, agentIdSet]);
   const painted = useMemo(() => paintedDoc(composed), [composed]);
   const shownItems = composed.items;
 
@@ -1198,7 +1358,7 @@ export function Whiteboard({
           className="wb-tools"
           data-testid="wb-tools"
           role="toolbar"
-          aria-label="Whiteboard tools"
+          aria-label="Spaces tools"
           ref={pillRef}
           style={pillLeft === null ? undefined : { marginLeft: pillLeft, marginRight: 'auto' }}
         >
@@ -1237,6 +1397,21 @@ export function Whiteboard({
             tools={annotateTools}
             current={tool}
             onPick={setTool}
+          />
+          <WbColorMenu
+            color={penColor}
+            /* Fill is offered for what the store keeps a fill on: a shape. A sticky's `fill` is dropped by the text kind. */
+            fillable={selectedItem?.kind !== 'text'}
+            canTint={selectedItem !== undefined && selectedItem.kind === 'shape'}
+            tinted={selectedItem?.fill !== undefined && selectedItem.fill !== 'none'}
+            onPick={(c) => {
+              setPenColor(c);
+              if (selected) apply({ type: 'wb/style', id: selected, stroke: c });
+            }}
+            onTint={() => {
+              if (!selected || !selectedItem) return;
+              apply({ type: 'wb/style', id: selected, fill: selectedItem.fill && selectedItem.fill !== 'none' ? null : 'surface' });
+            }}
           />
           <button
             type="button"
@@ -1300,13 +1475,18 @@ export function Whiteboard({
                     ['undo', 'Undo', 'undo', past.length === 0, undo, 'wb-fold'],
                     ['fit', 'Fit to drawing', 'fit', doc.items.length === 0, fit, 'wb-fold'],
                     ['reset', 'Reset view', 'reset', view.x === 0 && view.y === 0 && view.zoom === 1, resetView, ''],
+                    ['group', 'Group', 'group', group.length < 2, groupSelection, ''],
+                    ['ungroup', 'Ungroup', 'group', selectedItem?.group === undefined, ungroupSelection, ''],
+                    ['scene', 'Add scene', 'scene', false, addScene, ''],
+                    ['grid', 'Show grid', 'grid', false, () => writeGridEnabled(!gridOn), ''],
                     ['clear', 'Clear board', 'trash', doc.items.length === 0, clearBoard, ''],
                   ] as const
                 ).map(([id, text, icon, off, run, fold]) => (
                   <button
                     key={id}
                     type="button"
-                    role="menuitem"
+                    role={id === 'grid' ? 'menuitemcheckbox' : 'menuitem'}
+                    aria-checked={id === 'grid' ? gridOn : undefined}
                     className={`wb-menuitem${fold ? ` ${fold}` : ''}${id === 'clear' ? ' wb-menuitem-danger' : ''}`}
                     data-testid={`wb-more-${id}`}
                     disabled={off}
@@ -1351,6 +1531,7 @@ export function Whiteboard({
         className="wb-canvas"
         data-testid="wb-canvas"
         data-tool={tool}
+        data-grid={gridOn ? 'true' : 'false'}
         data-space-pan={spaceHeld ? 'true' : undefined}
         data-panning={panFrom ? 'true' : undefined}
         /* The field moves with the camera, exactly as the architecture board's does. */
@@ -1388,14 +1569,45 @@ export function Whiteboard({
           .map((item) => (
           <WbItemView
             key={item.id}
-            item={item}
+            item={resizing?.id === item.id && resizeTo && item.kind === 'svg' ? { ...item, w: resizeTo.w, h: resizeTo.h } : item}
+            pose={poses.get(item.id)}
+            sceneUi={
+              item.kind === 'scene'
+                ? {
+                    t: sceneT[item.id] ?? 0,
+                    playing: playing === item.id,
+                    armed: armed === item.id,
+                    note: sceneNote?.id === item.id ? sceneNote.text : null,
+                    onToggle: () => toggleScene(item),
+                    onScrubStart: (event, x0, w) => {
+                      event.stopPropagation();
+                      (event.currentTarget as Element & { setPointerCapture?: (id: number) => void }).setPointerCapture?.(event.pointerId);
+                      setPlaying(null);
+                      setArmed(item.id);
+                      setScrubbing({ id: item.id, x0, w });
+                      setSceneT((m) => ({ ...m, [item.id]: clampTime(((pointOf(event).x - x0) / w) * safeDuration(item.duration), safeDuration(item.duration)) }));
+                    },
+                    onExport: (how) => void exportScene(item, how),
+                  }
+                : undefined
+            }
+            onResizeStart={
+              tool === 'select' && item.kind === 'svg' && item.id === selected
+                ? (event) => {
+                    event.stopPropagation();
+                    (event.currentTarget as Element & { setPointerCapture?: (id: number) => void }).setPointerCapture?.(event.pointerId);
+                    setResizing({ id: item.id, from: pointOf(event), w: item.w, h: item.h });
+                    setResizeTo(null);
+                  }
+                : undefined
+            }
             boxLabel={composed.labels.get(item.id)}
             edgeLabel={composed.edgeLabels.get(item.id)}
             noteLines={composed.noteLines.get(item.id)}
             arrival={arrivals.get(item.id)}
             newestBatch={arrivalBatch.current}
             selected={item.id === selected || group.includes(item.id)}
-            offset={item.id === selected ? dragBy : null}
+            offset={item.id === selected || (selectedGroup !== null && item.group === selectedGroup) ? dragBy : null}
             renderArtifact={renderArtifact}
             onResizeArtifact={resizeArtifact}
             onPress={
@@ -1413,6 +1625,9 @@ export function Whiteboard({
                       event.pointerId,
                     );
                     setSelected(item.id);
+                    if (item.kind === 'scene') setArmed(item.id);
+                    /* A mark in a group is selected, and will be dragged, with the rest of its diagram. */
+                    if (item.group) setGroup(shownItems.filter((o) => o.group === item.group).map((o) => o.id));
                     setDragFrom(pointOf(event));
                     setDragBy({ x: 0, y: 0 });
                   }
@@ -1913,6 +2128,81 @@ function WbToolMenu({
   );
 }
 
+/** The pen colour: a swatch trigger and the palette's names, in the same menu rows as the shape and text menus. */
+function WbColorMenu({
+  color,
+  fillable,
+  canTint,
+  tinted,
+  onPick,
+  onTint,
+}: {
+  color: WbColor;
+  fillable: boolean;
+  canTint: boolean;
+  tinted: boolean;
+  onPick: (color: WbColor) => void;
+  onTint: () => void;
+}) {
+  const { open, setOpen, wrap, trigger, close, onKeyDown } = useMenu();
+  return (
+    <span className="wb-menuwrap" data-testid="wb-color" ref={wrap} onKeyDown={onKeyDown}>
+      <button
+        type="button"
+        className="wb-tool wb-tool-menu"
+        data-testid="wb-color-trigger"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Colour"
+        title={`Colour: ${WB_COLOR_LABEL[color]}`}
+        ref={trigger}
+        onClick={() => setOpen((was) => !was)}
+      >
+        <span className="wb-swatch" data-color={color} aria-hidden="true" />
+        <WbIcon name="caret" className="wb-caret" />
+      </button>
+      {open ? (
+        <div className="wb-menu" role="menu" data-testid="wb-color-menu">
+          {WB_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="menuitemradio"
+              className="wb-menuitem"
+              data-testid={`wb-color-${c}`}
+              aria-checked={color === c}
+              onClick={() => {
+                onPick(c);
+                close();
+              }}
+            >
+              <span className="wb-swatch" data-color={c} aria-hidden="true" />
+              <span>{WB_COLOR_LABEL[c]}</span>
+            </button>
+          ))}
+          {fillable ? (
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            className="wb-menuitem"
+            data-testid="wb-color-tint"
+            aria-checked={tinted}
+            disabled={!canTint}
+            onClick={() => {
+              onTint();
+              close();
+            }}
+          >
+            <span className="wb-swatch" data-color={color} data-tint="true" aria-hidden="true" />
+            <span>Fill</span>
+          </button>
+          ) : null}
+        </div>
+      ) : null}
+    </span>
+  );
+}
+
 /**
  * The two barbs at the far end, in board units.
  *
@@ -1962,13 +2252,15 @@ export function itemBounds(item: WbItem): { x: number; y: number; w: number; h: 
       return { x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
     }
     case 'shape': {
-      const x = Math.min(item.from.x, item.to.x);
-      const y = Math.min(item.from.y, item.to.y);
+      const xs = [item.from.x, item.to.x, ...(item.points ?? []).map((p) => p.x)];
+      const ys = [item.from.y, item.to.y, ...(item.points ?? []).map((p) => p.y)];
+      const x = Math.min(...xs);
+      const y = Math.min(...ys);
       return {
         x,
         y,
-        w: Math.max(1, Math.abs(item.to.x - item.from.x)),
-        h: Math.max(1, Math.abs(item.to.y - item.from.y)),
+        w: Math.max(1, Math.max(...xs) - x),
+        h: Math.max(1, Math.max(...ys) - y),
       };
     }
     case 'text':
@@ -1978,6 +2270,10 @@ export function itemBounds(item: WbItem): { x: number; y: number; w: number; h: 
       return { x: item.at.x - 4, y: item.at.y - 14, w: 80, h: 20 };
     case 'artifact':
       return { x: item.at.x, y: item.at.y, w: item.size.w, h: item.size.h };
+    case 'svg':
+    case 'scene':
+    case 'video':
+      return { x: item.at.x, y: item.at.y, w: item.w, h: item.h };
   }
 }
 
@@ -2111,6 +2407,244 @@ export function planArrival(items: readonly WbItem[], batch: number): Map<string
   return plan;
 }
 
+const FRAME_BAND = 36;
+
+/** What the player on a scene needs from the board. */
+interface SceneUi {
+  t: number;
+  playing: boolean;
+  armed: boolean;
+  note: string | null;
+  onToggle: () => void;
+  onScrubStart: (event: React.PointerEvent, trackX: number, trackW: number) => void;
+  onExport: (how: 'copy' | 'save') => void;
+}
+
+/** The colours and words a scene has given an item at its playhead, laid over the item as stored. */
+function withPose(item: WbItem, pose: Pose | undefined): WbItem {
+  if (!pose || (pose.stroke === undefined && pose.fill === undefined && pose.text === undefined)) return item;
+  const next = { ...item } as Record<string, unknown>;
+  if (pose.stroke !== undefined) {
+    if (item.kind === 'text') next.color = pose.stroke;
+    else next.stroke = pose.stroke;
+  }
+  if (pose.fill !== undefined) next.fill = pose.fill;
+  if (pose.text !== undefined) {
+    if (item.kind === 'text') next.text = pose.text;
+    else if (item.kind === 'shape') next.label = pose.text;
+  }
+  return next as unknown as WbItem;
+}
+
+const BAR_H = 32;
+const BTN_W = 44;
+
+/**
+ * THE SCENE ON THE BOARD: a dashed stage frame with its title, and under it the player: play and pause, a scrubber with
+ * a tick for each keyframe and the playhead, the time, and the two exports. Buttons are SVG groups with a role and a
+ * name; none is a new look (the board's own pill colours, whiteboard.css).
+ */
+function SceneStageView({ item, ui, selected }: { item: WbScene; ui: SceneUi; selected: boolean }) {
+  const barY = item.at.y + item.h + 10;
+  const trackX = item.at.x + 40;
+  const timeW = 84;
+  const trackW = Math.max(40, item.w - 40 - timeW - BTN_W * 2 - 16);
+  const frac = Math.min(1, Math.max(0, ui.t / safeDuration(item.duration)));
+  const stop = (e: React.PointerEvent) => e.stopPropagation();
+  const press = (run: () => void) => ({
+    role: 'button' as const,
+    tabIndex: 0,
+    onPointerDown: stop,
+    onClick: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      run();
+    },
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        run();
+      }
+    },
+  });
+  const exportX = trackX + trackW + timeW + 8;
+  return (
+    <g
+      data-testid="wb-scene"
+      data-playing={ui.playing ? 'true' : 'false'}
+      data-armed={ui.armed ? 'true' : 'false'}
+      data-t={Math.round(ui.t)}
+    >
+      <rect
+        className="wb-scene-frame"
+        data-testid="wb-item"
+        data-kind="scene"
+        data-selected={selected ? 'true' : 'false'}
+        x={item.at.x}
+        y={item.at.y}
+        width={item.w}
+        height={item.h}
+        rx={10}
+      />
+      <rect className="wb-hit" x={item.at.x} y={item.at.y} width={item.w} height={FRAME_BAND} fill="transparent" />
+      <text className="wb-scene-title" x={item.at.x + 14} y={item.at.y + FRAME_BAND / 2} dominantBaseline="central">
+        {item.title ?? 'Scene'}
+      </text>
+      <g className="wb-scene-bar">
+        <rect className="wb-scene-bar-back" x={item.at.x} y={barY} width={item.w} height={BAR_H} rx={8} />
+        <g data-testid="wb-scene-play" aria-label={ui.playing ? 'Pause' : 'Play'} {...press(ui.onToggle)}>
+          <rect className="wb-scene-btn" x={item.at.x + 4} y={barY + 4} width={28} height={BAR_H - 8} rx={6} />
+          {ui.playing ? (
+            <path className="wb-scene-glyph" d={`M${item.at.x + 13},${barY + 11} v10 M${item.at.x + 22},${barY + 11} v10`} />
+          ) : (
+            <polygon className="wb-scene-glyph wb-scene-glyph-fill" points={`${item.at.x + 13},${barY + 10} ${item.at.x + 23},${barY + 16} ${item.at.x + 13},${barY + 22}`} />
+          )}
+        </g>
+        <g data-testid="wb-scene-track" onPointerDown={(e) => ui.onScrubStart(e, trackX, trackW)}>
+          <rect className="wb-scene-track" x={trackX} y={barY + BAR_H / 2 - 3} width={trackW} height={6} rx={3} />
+          <rect className="wb-scene-progress" x={trackX} y={barY + BAR_H / 2 - 3} width={trackW * frac} height={6} rx={3} />
+          {item.keyframes.map((k, i) => (
+            <line
+              key={`${k.target}:${k.t}:${i}`}
+              className="wb-scene-tick"
+              data-testid="wb-scene-tick"
+              data-t={k.t}
+              x1={trackX + (Math.min(k.t, safeDuration(item.duration)) / safeDuration(item.duration)) * trackW}
+              x2={trackX + (Math.min(k.t, safeDuration(item.duration)) / safeDuration(item.duration)) * trackW}
+              y1={barY + 6}
+              y2={barY + BAR_H - 6}
+            />
+          ))}
+          <circle className="wb-scene-head" data-testid="wb-scene-head" cx={trackX + trackW * frac} cy={barY + BAR_H / 2} r={6} />
+          <rect x={trackX} y={barY} width={trackW} height={BAR_H} fill="transparent" />
+        </g>
+        <text className="wb-scene-time" data-testid="wb-scene-time" x={trackX + trackW + 10} y={barY + BAR_H / 2} dominantBaseline="central">
+          {formatTime(ui.t)} / {formatTime(safeDuration(item.duration))}
+        </text>
+        <g data-testid="wb-scene-copy" aria-label="Export as Remotion: copy the composition" {...press(() => ui.onExport('copy'))}>
+          <rect className="wb-scene-btn" x={exportX} y={barY + 4} width={BTN_W} height={BAR_H - 8} rx={6} />
+          <text className="wb-scene-btn-t" x={exportX + BTN_W / 2} y={barY + BAR_H / 2} textAnchor="middle" dominantBaseline="central">
+            Copy
+          </text>
+        </g>
+        <g data-testid="wb-scene-save" aria-label="Export as Remotion: save as a .tsx file" {...press(() => ui.onExport('save'))}>
+          <rect className="wb-scene-btn" x={exportX + BTN_W + 4} y={barY + 4} width={BTN_W} height={BAR_H - 8} rx={6} />
+          <text className="wb-scene-btn-t" x={exportX + BTN_W + 4 + BTN_W / 2} y={barY + BAR_H / 2} textAnchor="middle" dominantBaseline="central">
+            Save
+          </text>
+        </g>
+      </g>
+      {ui.note ? (
+        <text className="wb-scene-note" data-testid="wb-scene-note" x={item.at.x} y={barY + BAR_H + 16}>
+          {ui.note}
+        </text>
+      ) : null}
+    </g>
+  );
+}
+
+/** A text's own look: an own-theme hex colour, and its size (sm 12, md 14, lg 17). */
+function textStyle(item: Extract<WbItem, { kind: 'text' }>): CSSProperties | undefined {
+  const hex = paint(item.color, item.ownTheme, false).hex;
+  const style: CSSProperties = {};
+  if (hex) style.fill = hex;
+  if (item.fontSize) style.fontSize = FONT_PX[item.fontSize];
+  return Object.keys(style).length > 0 ? style : undefined;
+}
+
+function stickyStyle(item: Extract<WbItem, { kind: 'text' }>): CSSProperties | undefined {
+  const hex = paint(item.color, item.ownTheme, false).hex;
+  const style: CSSProperties = {};
+  if (hex) style.borderColor = hex;
+  if (item.fontSize) style.fontSize = FONT_PX[item.fontSize];
+  return Object.keys(style).length > 0 ? style : undefined;
+}
+const FONT_PX = { sm: 12, md: 14, lg: 17 } as const;
+const fontPx = (size: 'sm' | 'md' | 'lg' | undefined, fallback: number): number => (size ? FONT_PX[size] : fallback);
+
+/**
+ * How a shape or stroke LOOKS, from the item's own fields (the backend's board-item contract): a named colour is the
+ * data attribute the stylesheet maps to a token, an own-theme hex is an inline style, and width, dash and fill ride
+ * beside them. Nothing here is css from the item: names are checked against the palette, a hex against a plain-hex test.
+ */
+export function shapeLook(item: WbShape | WbStroke): {
+  'data-color': string | undefined;
+  'data-fill': string | undefined;
+  style: CSSProperties | undefined;
+} {
+  const line = paint(item.stroke ?? item.color, item.ownTheme, false);
+  const fill = paint(item.fill, item.ownTheme, true);
+  const style: CSSProperties = {};
+  if (line.hex) style.stroke = line.hex;
+  if (fill.hex) style.fill = fill.hex;
+  if (item.kind === 'shape') {
+    if (item.strokeWidth !== undefined && item.strokeWidth >= 1 && item.strokeWidth <= 8) style.strokeWidth = item.strokeWidth;
+    if (item.dash === 'dashed') style.strokeDasharray = '6 4';
+    if (item.dash === 'dotted') {
+      style.strokeDasharray = '1.5 4';
+      style.strokeLinecap = 'round';
+    }
+  }
+  return { 'data-color': line.name, 'data-fill': fill.name, style: Object.keys(style).length > 0 ? style : undefined };
+}
+
+/** The end of a line, a path or an arrow: an arrow head, a dot, a bar, or nothing. `from` only gives the direction. */
+function LineHead({
+  kind,
+  from,
+  to,
+  common,
+  arrival,
+}: {
+  kind: 'none' | 'arrow' | 'dot' | 'bar';
+  from: Point;
+  to: Point;
+  common: Record<string, unknown>;
+  arrival: boolean;
+}) {
+  if (kind === 'none') return null;
+  const base = common as { className: string };
+  if (kind === 'arrow') {
+    const d = arrowHead(from, to);
+    return d ? <path {...(common as object)} className={`${base.className}${arrival ? ' wb-arrive-head' : ''}`} d={d} /> : null;
+  }
+  if (kind === 'dot') return <circle {...(common as object)} className={`${base.className} wb-head-fill`} data-head="dot" cx={to.x} cy={to.y} r={4} />;
+  const len = Math.hypot(to.x - from.x, to.y - from.y);
+  if (len === 0) return null;
+  const px = -(to.y - from.y) / len;
+  const py = (to.x - from.x) / len;
+  return <line {...(common as object)} className={base.className} data-head="bar" x1={to.x + px * 7} y1={to.y + py * 7} x2={to.x - px * 7} y2={to.y - py * 7} />;
+}
+
+/** A shape label, where `labelPos` puts it (centre by default): inside for centre, beside the box for the rest. */
+function ShapeLabel({ item, x, y, w, h }: { item: WbShape; x: number; y: number; w: number; h: number }) {
+  const pos = item.labelPos ?? 'center';
+  const at =
+    pos === 'top'
+      ? { x: x + w / 2, y: y - 10, anchor: 'middle' }
+      : pos === 'bottom'
+        ? { x: x + w / 2, y: y + h + 16, anchor: 'middle' }
+        : pos === 'left'
+          ? { x: x - 10, y: y + h / 2, anchor: 'end' }
+          : pos === 'right'
+            ? { x: x + w + 10, y: y + h / 2, anchor: 'start' }
+            : { x: x + w / 2, y: y + h / 2, anchor: 'middle' };
+  return (
+    <text
+      className="wb-shape-label"
+      data-testid="wb-shape-label"
+      data-pos={pos}
+      x={at.x}
+      y={at.y}
+      textAnchor={at.anchor as 'start' | 'middle' | 'end'}
+      dominantBaseline="central"
+      style={{ fontSize: fontPx(item.fontSize, 13) }}
+    >
+      {item.label}
+    </text>
+  );
+}
+
 /**
  * ONE MARK, in three layers, each owning one thing:
  *   outer   the drag translate (an SVG attribute) and the pointer handlers;
@@ -2122,7 +2656,10 @@ export function planArrival(items: readonly WbItem[], batch: number): Map<string
  * arrival would freeze and then jump.
  */
 function WbItemView(props: Parameters<typeof WbItemBody>[0]) {
-  const { arrival, newestBatch = 0, offset = null, onPress, onEdit, onErase } = props;
+  const { arrival, newestBatch = 0, offset = null, onPress, onEdit, onErase, pose } = props;
+  /* A scene's pose (move, scale, fade) and a drag in progress are both transforms of the same group, drag first. */
+  const move = offset ? `translate(${offset.x},${offset.y})` : undefined;
+  const transform = [move, pose ? poseTransform(pose) : undefined].filter(Boolean).join(' ') || undefined;
   const body = <WbItemBody {...props} />;
   const arriveClass = arrival
     ? `wb-arrive ${arrival.draws ? 'wb-arrive-line' : 'wb-arrive-box'}${
@@ -2132,7 +2669,8 @@ function WbItemView(props: Parameters<typeof WbItemBody>[0]) {
   return (
     <g
       data-item-id={props.item.id}
-      transform={offset ? `translate(${offset.x},${offset.y})` : undefined}
+      transform={transform}
+      opacity={pose && pose.opacity < 1 ? pose.opacity : undefined}
       onPointerDown={onPress}
       onDoubleClick={onEdit}
       onClick={onErase}
@@ -2158,8 +2696,16 @@ function WbItemBody({
   onErase,
   renderArtifact,
   onResizeArtifact,
+  onResizeStart,
+  sceneUi,
 }: {
   item: WbItem;
+  /** Where the scenes have taken this item (scene.ts). The transform is applied by WbItemView; here only for the type. */
+  pose?: Pose | undefined;
+  /** Supplied for a scene item: its playhead and the player's handlers. */
+  sceneUi?: SceneUi | undefined;
+  /** Supplied only for the selected hosted svg under the select tool: the corner handle starts a resize. */
+  onResizeStart?: (event: React.PointerEvent) => void;
   /** What is drawn inside this shape, wrapped to it (`composeBoxes`). */
   boxLabel?: WbBoxLabel;
   /** Where this connector's label is drawn, clear of the boxes (agentLayout.ts). */
@@ -2212,24 +2758,56 @@ function WbItemBody({
             fill="transparent"
           />
         ) : null}
-        <path {...common} pathLength={arrival ? 1 : undefined} d={toPath(item.points)} />
+        <path {...common} {...shapeLook(item)} pathLength={arrival ? 1 : undefined} d={toPath(item.points)} />
       </g>
     );
   }
 
   if (item.kind === 'shape') {
-    const x = Math.min(item.from.x, item.to.x);
-    const y = Math.min(item.from.y, item.to.y);
-    const w = Math.abs(item.to.x - item.from.x);
-    const h = Math.abs(item.to.y - item.from.y);
+    const xs = [item.from.x, item.to.x, ...(item.points ?? []).map((p) => p.x)];
+    const ys = [item.from.y, item.to.y, ...(item.points ?? []).map((p) => p.y)];
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    const w = Math.max(...xs) - x;
+    const h = Math.max(...ys) - y;
     const label = boxLabel ? <BoxLabel x={x} y={y} w={w} h={h} label={boxLabel} /> : null;
     const boxed = boxLabel !== undefined || item.id.endsWith(':box');
+    const look = shapeLook(item);
+    const own = { ...common, ...look };
+    /* The words of a shape the box composer does not wrap (diamond, path): at the spot labelPos names. */
+    const words =
+      !boxLabel && item.label && item.shape !== 'line' && item.shape !== 'arrow' && item.shape !== 'frame' ? (
+        <ShapeLabel item={item} x={x} y={y} w={w} h={h} />
+      ) : null;
     if (item.shape === 'rect') {
       return (
         <g {...groupProps}>
           {halo}
-          <rect {...common} className={`${common.className}${boxed ? ' wb-box' : ''}`} x={x} y={y} width={w} height={h} rx={8} />
+          <rect {...own} className={`${common.className}${boxed ? ' wb-box' : ''}`} x={x} y={y} width={w} height={h} rx={8} />
           {label}
+        </g>
+      );
+    }
+    if (item.shape === 'frame') {
+      /* A FRAME groups what lies inside it: an outline, no fill unless asked, and a 36px title band with its label. */
+      return (
+        <g {...groupProps}>
+          {halo}
+          <rect {...own} className={`${common.className} wb-frame`} data-shape="frame" x={x} y={y} width={w} height={h} rx={10} />
+          <line {...own} className={`${common.className} wb-frame-band`} x1={x} y1={y + FRAME_BAND} x2={x + w} y2={y + FRAME_BAND} />
+          {item.label ? (
+            <text
+              className="wb-shape-label"
+              data-testid="wb-frame-title"
+              data-color={own['data-color']}
+              x={x + 14}
+              y={y + FRAME_BAND / 2}
+              dominantBaseline="central"
+              style={{ fontSize: fontPx(item.fontSize, 14) }}
+            >
+              {item.label}
+            </text>
+          ) : null}
         </g>
       );
     }
@@ -2237,7 +2815,7 @@ function WbItemBody({
       return (
         <g {...groupProps}>
           {halo}
-          <ellipse {...common} className={`${common.className}${boxed ? ' wb-box' : ''}`} cx={x + w / 2} cy={y + h / 2} rx={w / 2} ry={h / 2} />
+          <ellipse {...own} className={`${common.className}${boxed ? ' wb-box' : ''}`} cx={x + w / 2} cy={y + h / 2} rx={w / 2} ry={h / 2} />
           {label}
         </g>
       );
@@ -2246,30 +2824,33 @@ function WbItemBody({
       return (
         <g {...groupProps}>
           {halo}
-          <polygon {...common} points={diamondPoints(x, y, w, h)} strokeLinejoin="round" />
-          {label}
+          <polygon {...own} points={diamondPoints(x, y, w, h)} strokeLinejoin="round" />
+          {words}
         </g>
       );
     }
-    /* An arrow is the line plus a head, drawn as one polyline so the two can
-       never disagree about where the mark ends. */
+    /* A path is a polyline through its points; a line and an arrow are one segment. All three take heads at their ends. */
+    const trail: Point[] = item.shape === 'path' && item.points && item.points.length >= 2 ? item.points : [item.from, item.to];
+    const startHead = item.arrowStart ?? 'none';
+    const endHead = item.arrowEnd ?? (item.shape === 'arrow' ? 'arrow' : 'none');
+    const tip = trail[trail.length - 1]!;
+    const before = trail[trail.length - 2]!;
+    const first = trail[0]!;
+    const after = trail[1]!;
     return (
       <g {...groupProps}>
         {halo}
         {hit ? (
           <rect className="wb-hit" x={hit.x - 4} y={hit.y - 4} width={hit.w + 8} height={hit.h + 8} fill="transparent" />
         ) : null}
-        <line
-          {...common}
-          pathLength={arrival ? 1 : undefined}
-          x1={item.from.x}
-          y1={item.from.y}
-          x2={item.to.x}
-          y2={item.to.y}
-        />
-        {item.shape === 'arrow' ? (
-          <path {...common} className={`${common.className}${arrival ? ' wb-arrive-head' : ''}`} d={arrowHead(item.from, item.to)} />
-        ) : null}
+        {item.shape === 'path' ? (
+          <polyline {...own} pathLength={arrival ? 1 : undefined} points={trail.map((p) => `${p.x},${p.y}`).join(' ')} />
+        ) : (
+          <line {...own} pathLength={arrival ? 1 : undefined} x1={item.from.x} y1={item.from.y} x2={item.to.x} y2={item.to.y} />
+        )}
+        <LineHead kind={endHead} from={before} to={tip} common={own} arrival={arrival !== undefined} />
+        <LineHead kind={startHead} from={after} to={first} common={own} arrival={false} />
+        {words}
         {edgeLabel ? (
           /* ON A BACKING, CLEAR OF THE BOXES: the words never sit on a border or across the line. */
           <g className="wb-edge-label" data-testid="wb-edge-label">
@@ -2309,6 +2890,9 @@ function WbItemBody({
             data-testid="wb-item"
             data-kind="sticky"
             data-by={item.by ?? 'person'}
+            data-color={paint(item.color, item.ownTheme, false).name}
+            data-fill={paint(item.fill, item.ownTheme, true).name}
+            style={stickyStyle(item)}
             data-selected={selected ? 'true' : 'false'}
           >
             {item.by === 'agent' ? <span className="wb-sticky-by">Agent</span> : null}
@@ -2323,7 +2907,14 @@ function WbItemBody({
     return (
       <g {...groupProps}>
         {halo}
-        <text {...common} className={`wb-text${onErase ? ' wb-erasable' : ''}`} x={item.at.x} y={item.at.y}>
+        <text
+          {...common}
+          className={`wb-text${onErase ? ' wb-erasable' : ''}`}
+          data-color={paint(item.color, item.ownTheme, false).name}
+          style={textStyle(item)}
+          x={item.at.x}
+          y={item.at.y}
+        >
           {noteLines || item.text.includes('\n')
             ? (noteLines ?? item.text.split('\n')).map((line, i) => (
                 <tspan key={i} x={item.at.x} dy={i === 0 ? 0 : WB_BOX_LINE}>
@@ -2332,6 +2923,71 @@ function WbItemBody({
               ))
             : item.text}
         </text>
+      </g>
+    );
+  }
+
+  if (item.kind === 'scene' && sceneUi) {
+    return (
+      <g {...groupProps}>
+        {halo}
+        <SceneStageView item={item} ui={sceneUi} selected={selected} />
+      </g>
+    );
+  }
+
+  if (item.kind === 'scene') return null;
+
+  if (item.kind === 'video') {
+    return (
+      <g {...groupProps}>
+        {halo}
+        <rect className="wb-hit" x={item.at.x} y={item.at.y} width={item.w} height={item.h} fill="transparent" />
+        <foreignObject x={item.at.x} y={item.at.y} width={item.w} height={item.h} data-testid="wb-item" data-kind="video" data-selected={selected ? 'true' : 'false'}>
+          <VideoBody src={item.src} poster={item.poster} label={item.label} w={item.w} h={item.h} />
+        </foreignObject>
+      </g>
+    );
+  }
+
+  if (item.kind === 'svg') {
+    const drawn = hostedSvg(svgSourceOf(item), item.at, { w: item.w, h: item.h });
+    return (
+      <g {...groupProps} data-testid="wb-svg-host">
+        {halo}
+        <rect className="wb-hit" x={item.at.x} y={item.at.y} width={item.w} height={item.h} fill="transparent" />
+        {drawn.ok ? (
+          <g
+            className={`wb-svg${onErase ? ' wb-erasable' : ''}`}
+            data-testid="wb-item"
+            data-kind="svg"
+            data-by={item.by ?? 'person'}
+            data-selected={selected ? 'true' : 'false'}
+            dangerouslySetInnerHTML={{ __html: drawn.html }}
+          />
+        ) : (
+          <g className="wb-svg wb-svg-bad" data-testid="wb-item" data-kind="svg" data-selected={selected ? 'true' : 'false'}>
+            <rect x={item.at.x} y={item.at.y} width={item.w} height={item.h} rx={8} />
+            <text x={item.at.x + 12} y={item.at.y + 22}>This svg could not be drawn</text>
+          </g>
+        )}
+        {item.label ? (
+          <text className="wb-svg-label" data-testid="wb-svg-label" x={item.at.x} y={item.at.y + item.h + 14}>
+            {item.label}
+          </text>
+        ) : null}
+        {onResizeStart ? (
+          <rect
+            className="wb-resize-handle"
+            data-testid="wb-resize"
+            x={item.at.x + item.w - 6}
+            y={item.at.y + item.h - 6}
+            width={12}
+            height={12}
+            rx={3}
+            onPointerDown={onResizeStart}
+          />
+        ) : null}
       </g>
     );
   }

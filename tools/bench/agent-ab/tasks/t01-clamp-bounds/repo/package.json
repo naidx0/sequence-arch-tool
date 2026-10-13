@@ -1,0 +1,6 @@
+{
+  "name": "t01-clamp-bounds",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

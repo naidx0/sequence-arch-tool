@@ -42,6 +42,9 @@ export type WbGlyph =
   | 'reset'
   | 'trash'
   | 'more'
+  | 'grid'
+  | 'group'
+  | 'scene'
   | 'caret';
 
 /** A stroked polyline (`l`), a stroked closed polygon (`g`), a stroked rect or ellipse, or a FILLED rect (`f`). */
@@ -97,6 +100,12 @@ export const WB_GLYPHS: Record<WbGlyph, readonly WbPrim[]> = {
     { l: [9.5, 7.5, 9.5, 10.5] },
   ],
   more: [{ f: [3, 7, 2, 2, 1] }, { f: [7, 7, 2, 2, 1] }, { f: [11, 7, 2, 2, 1] }],
+  /* A stage with a play triangle: Add scene in More. */
+  scene: [{ r: [2.5, 3.5, 11, 9, 1.5] }, { g: [6.5, 6, 6.5, 10, 10, 8] }],
+  /* A frame round a smaller one: Group and Ungroup in More. */
+  group: [{ r: [2.5, 2.5, 11, 11, 1.5] }, { r: [5.5, 5.5, 5, 5, 1] }],
+  /* The dotted ground, nine dots: the Show grid row in More. */
+  grid: [3, 7, 11].flatMap((y) => [3, 7, 11].map((x) => ({ f: [x, y, 2, 2, 1] as const }))),
   /* The chevron on a menu trigger, on its own 10px grid. */
   caret: [{ l: [2.5, 3.5, 5, 5.5, 7.5, 3.5] }],
 };

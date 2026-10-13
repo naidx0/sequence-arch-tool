@@ -23,7 +23,10 @@ describe('status bar priority: state and model, then the workspace, the branch l
     expect(shrink(branch)).toBeGreaterThan(shrink(ws));
     expect(shrink(branch)).toBeGreaterThan(shrink(state));
     expect(ws).toMatch(/min-width:\s*calc\((1[2-9]|[2-9]\d)ch/);
-    expect(state).toMatch(/min-width:\s*\d+ch/);
+    /* 0.1.8: the state's word keeps its whole text up to 20ch ("Waiting on you", "Running a subagent"), never cut mid-word. */
+    expect(state).toMatch(/flex:\s*0 0 auto/);
+    expect(state).toMatch(/max-width:\s*(1[89]|[2-9]\d)ch/);
+    expect(state).not.toMatch(/min\(max-content/);
   });
   it('a branch narrower than the faded minimum is hidden with its divider, never drawn as a stub', () => {
     const hide = lastRule(shell2, ".s2-status[data-nobranch] > .s2-sb-x:has([data-testid='s2-status-branch']),\n.s2-status[data-nobranch] > .s2-vb:has(+ .s2-sb-x [data-testid='s2-status-branch'])");

@@ -65,7 +65,7 @@ describe('the tab strip model', () => {
 describe('the surface bar, rendered', () => {
   it('closes a surface on middle-click', () => {
     const { container } = render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Whiteboard$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }));
     expect(container.querySelector('.s2-pane[data-surface-pane="whiteboard"]')).toBeTruthy();
     const pill = container.querySelector('[data-tab-id="whiteboard"]') as HTMLElement;
     fireEvent(pill, new MouseEvent('auxclick', { bubbles: true, button: 1 }));

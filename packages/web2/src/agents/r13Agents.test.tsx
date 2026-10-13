@@ -40,21 +40,20 @@ describe('A1: the Workflows head is the title, then both buttons as one unit', (
   });
 });
 
-describe('A2/N1/N2: two tabs (Tree, Workflows) with distinct glyphs, no Timeline tab, and the head never stacks', () => {
+describe('A2/N1/N2: three tabs (Tree, Timeline, Workflows) with distinct glyphs, and the head never stacks', () => {
   it('each tab keeps its aria-label and title; the glyphs differ', () => {
     render(<AgentsSurface />);
-    const ds = (['tree', 'workflows'] as const).map((v) => {
+    const ds = (['tree', 'timeline', 'workflows'] as const).map((v) => {
       const b = screen.getByTestId(`agents-surface-tab-${v}`);
       expect(b.getAttribute('aria-label')).toBeTruthy();
       expect(b.getAttribute('title')).toBeTruthy();
       return b.querySelector('svg')!.innerHTML;
     });
-    expect(new Set(ds).size).toBe(2);
-    expect(screen.queryByTestId('agents-surface-tab-timeline')).toBeNull();
+    expect(new Set(ds).size).toBe(3);
     /* N1: the tree is a list-tree (lines, no boxes); Workflows is the board glyph upside down (one box over two). */
     expect(ds[0]).not.toContain('<rect');
-    expect(ds[1]!.match(/<rect/g)).toHaveLength(3);
-    expect(ds[1]).toMatch(/<rect x="5.5" y="1.8"[\s\S]*<rect x="1.5" y="10.6"/);
+    expect(ds[2]!.match(/<rect/g)).toHaveLength(3);
+    expect(ds[2]).toMatch(/<rect x="5.5" y="1.8"[\s\S]*<rect x="1.5" y="10.6"/);
   });
   it('the head is one nowrap row', () => {
     const css = read('agents/agentsSurface.css');

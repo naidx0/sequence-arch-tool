@@ -160,6 +160,10 @@ test('with a project attached the launch also carries --mcp-config, both paths i
     assert.equal(r.status, 200);
     assert.ok(r.json.mcpConfigFile, 'a project gives the board server');
     assert.ok(String(r.json.mcpConfigFile).includes(' '), 'the board config path holds a space');
+    /* The Claude terminal launch asks this app about components, and carries the person's mode. */
+    const launchEnv = (JSON.parse(fs.readFileSync(String(r.json.mcpConfigFile), 'utf8')) as { mcpServers: { sequence: { env: Record<string, string> } } }).mcpServers.sequence.env;
+    assert.equal(launchEnv.SEQUENCE_COMPONENTS_URL, `http://127.0.0.1:${port}`);
+    assert.equal(launchEnv.SEQUENCE_COMPONENTS_MODE, 'approve');
     const ran = await runSocket(`ws://127.0.0.1:${port}/api/terminal?launch=${encodeURIComponent(String(r.json.launchId))}`);
     assert.ok('output' in ran, `launch refused: ${JSON.stringify(ran)}`);
     const out = ran.output.replace(/\r/g, '');

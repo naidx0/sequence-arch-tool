@@ -25,6 +25,26 @@ interface AcpUpdate {
   entries?: unknown;
 }
 
+interface PathUpdate extends AcpUpdate {
+  locations?: unknown;
+}
+
+/** The paths a read, search or map call names (the server keeps the same list: analyzer agentReadPaths.ts). Absolute as the agent gave them. */
+function readPathsOfUpdate(u: PathUpdate, tool: RunTool | null): string[] {
+  const kind = typeof u.kind === 'string' ? u.kind : (tool?.toolKind ?? '');
+  const title = typeof u.title === 'string' ? u.title : (tool?.title ?? '');
+  if (kind !== 'read' && kind !== 'search' && !/(^|[._\s])map\b/i.test(title) && !/find_files/i.test(title)) return [];
+  const out: string[] = [];
+  if (Array.isArray(u.locations)) for (const l of u.locations) if (l && typeof (l as { path?: unknown }).path === 'string') out.push((l as { path: string }).path);
+  const i = u.rawInput && typeof u.rawInput === 'object' ? (u.rawInput as Record<string, unknown>) : null;
+  if (i) {
+    for (const k of ['file_path', 'path']) if (typeof i[k] === 'string') out.push(i[k] as string);
+    if (Array.isArray(i.paths)) for (const p of i.paths) if (typeof p === 'string') out.push(p);
+    if (typeof i.focus === 'string' && i.focus.startsWith('svc:') && /map/i.test(title)) out.push(i.focus);
+  }
+  return out.filter((p) => p && p !== '.');
+}
+
 function updateOf(e: Extract<RunNodeEvent, { type: 'acp:update' }>): AcpUpdate | null {
   const n = e.update as { update?: unknown } | null;
   if (!n || typeof n !== 'object') return null;
@@ -203,7 +223,9 @@ export function foldRunEvent(run: AgentRun, e: RunNodeEvent, now: number): Agent
               parentId: parentOf(u) ?? was?.parentId ?? null,
             };
           });
-          return { ...run, items };
+          const paths = readPathsOfUpdate(u, items.find((i): i is RunTool => i.kind === 'tool' && i.id === id) ?? null);
+          const readPaths = paths.length ? [...new Set([...(run.readPaths ?? []), ...paths])].slice(0, 400) : run.readPaths;
+          return readPaths ? { ...run, items, readPaths } : { ...run, items };
         }
         case 'plan': {
           const entries = Array.isArray(u.entries)

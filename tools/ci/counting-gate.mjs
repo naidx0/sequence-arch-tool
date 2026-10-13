@@ -238,12 +238,28 @@ for (const pkgDir of packageDirs) {
    */
   const reachable = new Set(files.map((f) => slash(path.join(pkgDir, f))));
   const onDisk = [];
+  /* A package.json that declares a `name` is a package of its own; a nameless one (a bare {"type":"module"} marker
+     next to loose tests) is not, and its tests are still this package's to glob. */
+  const declaresPackageName = (file) => {
+    try {
+      return typeof JSON.parse(fs.readFileSync(file, 'utf8')).name === 'string';
+    } catch {
+      return false;
+    }
+  };
   const walkTests = (dir) => {
     if (!fs.existsSync(dir)) return;
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const f = path.join(dir, e.name);
-      if (e.isDirectory()) walkTests(f);
-      else if (e.name.endsWith('.test.js')) onDisk.push(slash(f));
+      if (e.isDirectory()) {
+        /* A directory with its own package.json is another package's tree (a
+           fixture repository such as tools/bench/agent-ab/tasks/<id>/repo), not a
+           test this package declared and forgot to glob. Its tests are run by
+           whatever drives that fixture, and reporting them here exits 2 on a
+           tree where nothing is unreachable. node_modules is never ours. */
+        if (e.name === 'node_modules' || declaresPackageName(path.join(f, 'package.json'))) continue;
+        walkTests(f);
+      } else if (e.name.endsWith('.test.js')) onDisk.push(slash(f));
     }
   };
   /*
@@ -318,7 +334,43 @@ for (const pkgDir of packageDirs) {
      * FINDING the files.
      */
     const absFiles = files.map((f) => path.resolve(pkgDir, f));
-    for await (const ev of run({ files: absFiles, cwd: pkgDir, execArgv: decl.execArgv, concurrency: 4, ...(decl.timeout ? { timeout: decl.timeout, forceExit: true } : {}) })) {
+    /*
+     * NO `forceExit`, AND A STALL WATCHDOG INSTEAD.
+     *
+     * `forceExit: true` makes node hand every file's child process
+     * `--test-force-exit`, so each child calls process.exit() the moment its
+     * tests finish, with whatever handles are still open (a server's keep-alive
+     * socket, a worker). On Windows with Node 24 that intermittently aborts the
+     * child in libuv ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING),
+     * src/win/async.c, line 76"), the file's wrapper event is a fail with no
+     * message, and the gate reported "the FILE failed (import or top-level
+     * throw)" for green files, a different handful each run. Measured: the same
+     * file, same flags, 0 of 15 aborts without --test-force-exit and 6 of 15 with.
+     *
+     * What forceExit was added for stays covered: a hung test is failed by
+     * `timeout`, but its child (live interval, open socket) never exits, so the
+     * run would wait forever. A run that has produced no event for the timeout
+     * plus a grace period is aborted (which kills the children) and counted as a
+     * failure.
+     */
+    const stallMs = decl.timeout ? decl.timeout + 20_000 : 0;
+    const ac = new AbortController();
+    let stallTimer = null;
+    let stalled = false;
+    const arm = () => {
+      if (!stallMs) return;
+      if (stallTimer) clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => {
+        stalled = true;
+        ac.abort();
+      }, stallMs);
+    };
+    arm();
+    try {
+    for await (const ev of run({ files: absFiles, cwd: pkgDir, execArgv: decl.execArgv, concurrency: 4, signal: ac.signal, ...(decl.timeout ? { timeout: decl.timeout } : {}) })) {
+      /* Only a test starting or finishing is progress. Output and diagnostics are not: a hung test that logs
+         from a timer would otherwise re-arm this forever and hold the push. */
+      if (ev.type === 'test:start' || ev.type === 'test:pass' || ev.type === 'test:fail') arm();
       if (ev.type !== 'test:pass' && ev.type !== 'test:fail') continue;
       const d = ev.data;
       if (!d.file) continue;
@@ -334,8 +386,19 @@ for (const pkgDir of packageDirs) {
       if (ev.type === 'test:pass') pass += 1;
       else {
         fail += 1;
-        if (failures.length < 5) failures.push(`${path.basename(d.file)}: ${d.name}`);
+        /* The reason, not only the name: a failure seen once under load is otherwise unreproducible. */
+        const why = String(d.details?.error?.message ?? d.details?.error ?? '').split(String.fromCharCode(10))[0].slice(0, 300);
+        if (failures.length < 12) failures.push(`${path.basename(d.file)}: ${d.name}${why ? ` -- ${why}` : ''}`);
       }
+    }
+    } catch (e) {
+      if (!stalled) throw e;
+    } finally {
+      if (stallTimer) clearTimeout(stallTimer);
+    }
+    if (stalled) {
+      fail += 1;
+      failures.push(`the run produced no event for ${stallMs} ms and was aborted (a hung test whose process never exits)`);
     }
     for (const f of sawWrapper) if (!sawTest.has(f)) emptyFiles.push(path.basename(f));
   }

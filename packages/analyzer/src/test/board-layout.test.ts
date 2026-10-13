@@ -40,8 +40,8 @@ const AGENTIC_LOOP: Call[] = [
 ];
 
 /** What the client holds after the stream: removals applied, then appends, in order. */
-function runTurn(calls: Call[], withLayout: boolean): BoardItem[] {
-  const known: BoardKnown = { nodeIds: [], items: [], ...(withLayout ? { turn: newBoardTurn() } : {}) };
+function runTurn(calls: Call[], withLayout: boolean, flowTopDown = false): BoardItem[] {
+  const known: BoardKnown = { nodeIds: [], items: [], ...(withLayout ? { turn: newBoardTurn() } : {}), ...(flowTopDown ? { flowTopDown: true } : {}) };
   let wire: BoardItem[] = [];
   for (const [name, args] of calls) {
     const r = executeBoardTool(name, args, known);
@@ -340,5 +340,31 @@ describe('fix round: free space, the cap, parallel edges, cross-turn connectors'
       (Math.abs(end.x - prompt.x) < 1.5 || Math.abs(end.x - (prompt.x + prompt.w)) < 1.5 || Math.abs(end.y - prompt.y) < 1.5 || Math.abs(end.y - (prompt.y + prompt.h)) < 1.5) &&
       end.x >= prompt.x - 1.5 && end.x <= prompt.x + prompt.w + 1.5 && end.y >= prompt.y - 1.5 && end.y <= prompt.y + prompt.h + 1.5;
     assert.ok(onEdge, `ends at ${JSON.stringify(end)}, box is ${JSON.stringify(prompt)}`);
+  });
+});
+
+describe('short flows top to bottom (claims-audit 1.6, V05): a setting that defaults to the current layout', () => {
+  const THREE_STEP: Call[] = [
+    ['board.add_note', { id: 'a', text: 'Ask', at: { x: 0, y: 0 } }],
+    ['board.add_note', { id: 'b', text: 'Plan', at: { x: 0, y: 0 } }],
+    ['board.add_note', { id: 'c', text: 'Answer', at: { x: 0, y: 0 } }],
+    ['board.connect', { id: 'x', fromId: 'a', toId: 'b' }],
+    ['board.connect', { id: 'y', fromId: 'b', toId: 'c' }],
+  ];
+
+  it('default (setting off): a 3-step flow still runs left to right, on one row', () => {
+    const boxes = boxesOf(runTurn(THREE_STEP, true));
+    const [a, b, c] = ['a', 'b', 'c'].map((k) => boxes.get(k)!);
+    assert.equal(a!.y, b!.y);
+    assert.equal(b!.y, c!.y);
+    assert.ok(a!.x < b!.x && b!.x < c!.x);
+  });
+
+  it('setting on: the same 3-step flow runs top to bottom, in one column', () => {
+    const boxes = boxesOf(runTurn(THREE_STEP, true, true));
+    const [a, b, c] = ['a', 'b', 'c'].map((k) => boxes.get(k)!);
+    assert.ok(a!.y < b!.y && b!.y < c!.y, 'each step sits below the one before');
+    const mid = (r: { x: number; w: number }) => r.x + r.w / 2;
+    assert.ok(Math.abs(mid(a!) - mid(b!)) < 1 && Math.abs(mid(b!) - mid(c!)) < 1, 'one column');
   });
 });

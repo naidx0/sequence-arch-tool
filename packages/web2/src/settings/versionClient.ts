@@ -18,11 +18,15 @@ export interface VersionInfo {
 }
 
 export interface UpdateCheck {
+  /** Automatic checks are off: this is the cached answer, and only Check now asks GitHub. */
+  checkDisabled?: boolean;
   current: string;
   latest: { version: string; tag: string; name: string; htmlUrl: string; publishedAt: string | null; /** The release's own notes (markdown). Absent from an older server. */ notes?: string } | null;
   newer: boolean;
   asset: { name: string; size: number } | null;
   installable: boolean;
+  /** A deb install is updated by the package manager: the words saying how. Absent from an older server. */
+  manual?: string | null;
   /** The installed desktop app; only it updates by installer. Absent from an older server. */
   desktop?: boolean;
   checkedAt: number | null;
@@ -39,6 +43,17 @@ export interface InstallJob {
   error: string | null;
   howto: string | null;
   file: string | null;
+  /** 'in-place' finishes when the app quits; 'dmg' opens an installer. Absent on a server that predates it. */
+  installMode?: 'in-place' | 'dmg';
+  /** Whether the download reuses the installed files (differential) or is the whole installer (full). */
+  mode?: 'differential' | 'full';
+  /** Bytes fetched so far (differential), of `fullSize`, the whole installer. */
+  downloaded?: number;
+  fullSize?: number;
+  /** Bytes reused from the installed copy. */
+  reused?: number;
+  /** Why a differential update fell back to a full one. */
+  fallbackReason?: string | null;
 }
 
 export interface UpdateSnapshot {
@@ -58,6 +73,9 @@ export interface VersionClient {
   /** Start the install of `version`, the one the button showed; the server refuses any other. */
   install(version: string): Promise<InstallJob | null>;
   releases(): Promise<ReleaseNote[]>;
+  /** The automatic update check switch (agent-settings updates.check); absent in older fakes. */
+  updateCheck?(): Promise<boolean | null>;
+  setUpdateCheck?(on: boolean): Promise<boolean | null>;
 }
 
 export function createVersionClient(fetchImpl: typeof fetch = (...a) => fetch(...a)): VersionClient {
@@ -75,6 +93,14 @@ export function createVersionClient(fetchImpl: typeof fetch = (...a) => fetch(..
     update: (force = false) => json<UpdateSnapshot>(`/api/app/update${force ? '?force=1' : ''}`),
     install: async (version: string) =>
       (await json<{ install: InstallJob }>('/api/app/update/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ version }) }))?.install ?? null,
+    updateCheck: async () => {
+      const v = await json<{ updates?: { check?: boolean } }>('/api/agent-settings');
+      return typeof v?.updates?.check === 'boolean' ? v.updates.check : v ? true : null;
+    },
+    setUpdateCheck: async (on: boolean) => {
+      const v = await json<{ updates?: { check?: boolean } }>('/api/agent-settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ updates: { check: on } }) });
+      return typeof v?.updates?.check === 'boolean' ? v.updates.check : null;
+    },
     releases: async () => (await json<{ notes: ReleaseNote[] }>('/api/app/releases'))?.notes ?? [],
   };
 }

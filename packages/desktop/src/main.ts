@@ -1,4 +1,5 @@
 import { allowFrameNavigation } from './frameNavigation';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
@@ -11,12 +12,15 @@ import {
   ipcMain,
   Notification,
   nativeImage,
+  session,
   shell,
   type MenuItemConstructorOptions,
   type WebContents,
 } from 'electron';
 import { ATTENTION_CHANNEL, AttentionController, type AttentionRequest } from './attention';
 import { MainLog, pushTail } from './mainLog';
+import { systemProxyEnv } from './proxyEnv';
+import { launchPendingUpdate, registerUpdateOnQuit } from './updateHandoff';
 import { decideRendererRecovery } from './rendererRecovery';
 import { ServerController } from './server-control';
 import { claimSingleInstance, showOrCreate, stopWithin } from './singleInstance';
@@ -159,6 +163,9 @@ function serverPaths(): { cliPath: string; webDist: string } {
 
 const { cliPath, webDist } = serverPaths();
 
+/* Merged into the server child's environment: the system proxy is added to it before the first start (bootstrap). */
+const serverEnv: NodeJS.ProcessEnv = { ELECTRON_RUN_AS_NODE: '1', SEQUENCE_APP_VERSION: appVersion(), SEQUENCE_COMPILE_CACHE: path.join(app.getPath('userData'), 'server-v8-cache') };
+
 const controller = new ServerController({
   cliPath,
   webDist,
@@ -168,7 +175,7 @@ const controller = new ServerController({
   /* The server's V8 code cache lives with the app's own data, per user, and
      survives updates only as long as the bundle is the same (the entry keys it
      by bundle size, mtime and Node version). */
-  env: { ELECTRON_RUN_AS_NODE: '1', SEQUENCE_APP_VERSION: appVersion(), SEQUENCE_COMPILE_CACHE: path.join(app.getPath('userData'), 'server-v8-cache') },
+  env: serverEnv,
   onLog: (line) => {
     console.log(line);
     if (line.startsWith('[server:err] ')) {
@@ -313,7 +320,14 @@ function createWindow(): void {
      * change nobody asked for on a platform this has never been run on.
      */
     ...(process.platform === 'darwin'
-      ? { titleBarStyle: 'hiddenInset' as const }
+      ? {
+          titleBarStyle: 'hiddenInset' as const,
+          /* 0.1.8 C1 (owner: the red, yellow and green lights "are kind of blending in with the actual Sequence
+             title ... a little bit of buffer space at the top"). x 18 / y 14: 14 px of window above the lights, and
+             the web shell leaves their row clear: the sidebar's title row sits below it (--mac-lights-row) and a
+             folded sidebar's chat header keeps 78 px to their right (--mac-lights-w), both in shell2.css. */
+          trafficLightPosition: { x: 18, y: 14 },
+        }
       : { frame: false }),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -612,22 +626,22 @@ async function attachWithRetry(dir: string): Promise<string | null> {
         Window/About surfaces were for.
 
      3. THE EDIT MENU. Undo / redo / cut / copy / paste / select-all are NOT
-        reimplemented, deliberately. Those menu items are `role`s that map onto
-        Chromium's own editing commands, and Chromium applies them to a focused
-        text field from the keystroke itself with no menu in the chain. Removing
-        the menu removes the menu items, not the behaviour: Ctrl/Cmd+Z, +X, +C,
-        +V and +A keep editing text in the composer exactly as before. There is
-        therefore nothing for the Settings pane to offer here, and offering a
-        row that merely re-fires a chord the field already handles would be a
-        control that claims to do something it does not.
+        reimplemented, deliberately. On Windows and Linux Chromium applies them
+        to a focused text field from the keystroke itself with no menu in the
+        chain, so removing the menu removes only the menu items. That is NOT
+        true on macOS: there Electron routes Cmd+Z/X/C/V/A through the Edit
+        menu's key equivalents, so with no Edit menu they do nothing anywhere
+        in the app. The mac template therefore carries `editMenu` (below); the
+        Windows/Linux path stays menu-less.
 
    macOS keeps a MINIMAL app-menu-only template rather than a null menu. On mac
    the menu bar belongs to the OS, not to our window: with `setApplicationMenu(null)`
    the system bar still draws, but with no Quit, no Hide and no Services, so
    Cmd+Q stops working at the OS level in a way the renderer cannot fix — the
    `before-input-event` route below never sees a keystroke aimed at the system
-   bar. One `{ role: 'appMenu' }` restores exactly that and adds no File / Edit /
-   View / Window / Help bar, which is what the ask is about. Windows and Linux —
+   bar. `{ role: 'appMenu' }` restores exactly that, and `{ role: 'editMenu' }` is
+   what makes Cmd+C / V / X / A / Z work at all on mac. The File / View / Window /
+   Help bar the ask was about stays gone. Windows and Linux —
    where the ask was made and where the bar is drawn inside our own window — get
    no menu at all, plus `autoHideMenuBar` as a belt-and-braces second line.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -656,6 +670,7 @@ export type ShellAction =
   | 'toggle-fullscreen'
   | 'open-help'
   | 'quit'
+  | 'restart-for-update'
   | 'info'
   | 'window-minimize'
   | 'window-maximize-toggle'
@@ -834,6 +849,12 @@ async function runShellAction(action: ShellAction): Promise<unknown> {
     case 'quit':
       app.quit();
       return null;
+    /* The update is on disk and a helper is waiting for this process to exit (mac in-place swap, Windows portable
+       zip): quit so it can finish and open the new version. Its own name so the log says why the app went. */
+    case 'restart-for-update':
+      mainLog.write('restart-for-update');
+      app.quit();
+      return null;
     case 'info':
       return {
         appVersion: appVersion(),
@@ -870,7 +891,7 @@ function buildMenu(): void {
     Menu.setApplicationMenu(null);
     return;
   }
-  const template: MenuItemConstructorOptions[] = [{ role: 'appMenu' }];
+  const template: MenuItemConstructorOptions[] = [{ role: 'appMenu' }, { role: 'editMenu' }];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
@@ -1096,6 +1117,16 @@ async function bootstrap(): Promise<void> {
        free degrades to a fresh one rather than failing the launch. */
     const wanted = rememberedPort();
     if (wanted !== undefined && (await portIsFree(wanted))) controller.usePort(wanted);
+    /* The system proxy (Windows registry, macOS scutil) becomes HTTPS_PROXY for the server and everything it starts, unless
+       the person set one: the Claude bridge download, the agent CLIs and the update check all read it. Before the spawn. */
+    Object.assign(
+      serverEnv,
+      await systemProxyEnv({
+        run: (cmd, args) => new Promise<string>((resolve, reject) => execFile(cmd, args, { windowsHide: true, timeout: 5000, encoding: 'utf8' }, (e, out) => (e ? reject(e) : resolve(out)))),
+        resolveProxy: (url) => session.defaultSession.resolveProxy(url),
+        log: (line) => mainLog.write('system-proxy', line),
+      }),
+    );
     const status = await controller.start(lastRepoDir() ?? undefined);
     mark('serverUp');
     rememberPort(status.port);
@@ -1169,7 +1200,33 @@ app.on('before-quit', (event) => {
   /* Bounded: a teardown that hangs must not leave a windowless Sequence
      holding the profile, which made the next launch wait about 6 s. */
   void stopWithin(() => controller.stop(), 5000).then((how) => {
+    /* A stop that timed out may leave the server still holding files: the update is not run then; it stays for the next quit. */
     if (how === 'timeout') app.exit(0);
     else app.quit();
   });
+});
+
+/**
+ * Start the update the server left behind (installer, portable copy, mac or AppImage swap) now that the server is
+ * stopped. It cannot be started by the server: the server's whole process tree is ended on quit. Main vets the request
+ * and builds every command itself (updateHandoff.ts). Vetting can take a moment (SHASUMS256.txt, the zip's manifest), so
+ * the quit waits for it, at most 20 s, then goes on.
+ */
+registerUpdateOnQuit(app, {
+  firstInstance,
+  smoke: SMOKE,
+  run: () =>
+    launchPendingUpdate(
+      {
+        userDir: userStoreDir(),
+        platform: process.platform,
+        arch: process.arch,
+        currentVersion: appVersion(),
+        execPath: process.execPath,
+        pid: process.pid,
+        systemRoot: process.env.SystemRoot,
+        appImage: process.env.APPIMAGE,
+      },
+      { log: (line) => mainLog.write('update-handoff', line) },
+    ).catch((e: Error) => mainLog.write('update-handoff', `error: ${e.message}`)),
 });

@@ -67,6 +67,8 @@ export interface PromptQueue {
   reload(key: string): void;
 }
 
+import { prefStorage } from '../boot/prefStorage';
+
 /** Where a queue keeps its items between launches (localStorage's shape; `length` / `key` let it be scanned). */
 export interface QueueStorage {
   getItem(key: string): string | null;
@@ -207,7 +209,7 @@ function defaultId(): () => string {
 
 function pageStorage(): QueueStorage | null {
   try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
+    return typeof localStorage === 'undefined' ? null : prefStorage;
   } catch {
     return null;
   }

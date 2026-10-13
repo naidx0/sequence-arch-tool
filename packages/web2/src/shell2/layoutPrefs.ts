@@ -11,6 +11,7 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 import { useSyncExternalStore } from 'react';
+import { prefStorage } from '../boot/prefStorage';
 
 export const SIDEBAR_KEY = 'v3.railCollapsed';
 export const CHAT_W_KEY = 'v3.chatW';
@@ -87,7 +88,7 @@ function read(key: string): string | null {
 
 function write(key: string, value: string): void {
   try {
-    localStorage.setItem(key, value);
+    prefStorage.setItem(key, value);
   } catch {
     /* the layout still follows for this session */
   }
@@ -281,7 +282,7 @@ export function readFocusLarge(): boolean {
 }
 export function setFocusLarge(on: boolean): void {
   try {
-    localStorage.setItem(FOCUS_LARGE_KEY, on ? '1' : '0');
+    prefStorage.setItem(FOCUS_LARGE_KEY, on ? '1' : '0');
     focusFallback = null;
   } catch {
     focusFallback = on;
@@ -325,9 +326,17 @@ function subscribe(fn: () => void): () => void {
   return () => listeners.delete(fn);
 }
 
+/** Tell every reader of the sidebar flag and the open-large flag to read storage again (after a restore from the server). */
+export function refreshLayoutPrefs(): void {
+  fallback = null;
+  focusFallback = null;
+  for (const fn of listeners) fn();
+  for (const fn of focusListeners) fn();
+}
+
 export function setSidebarCollapsed(on: boolean): void {
   try {
-    localStorage.setItem(SIDEBAR_KEY, on ? '1' : '0');
+    prefStorage.setItem(SIDEBAR_KEY, on ? '1' : '0');
   } catch {
     fallback = on;
   }

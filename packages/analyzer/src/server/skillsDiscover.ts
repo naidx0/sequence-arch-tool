@@ -44,6 +44,8 @@ export interface SkillCandidate {
   /** The folder name `.sequence/skills/<slug>` it will get. */
   slug: string;
   bytes: number;
+  /** Which tool's place it came from, by where it sits. */
+  source: 'claude' | 'codex' | 'cursor' | 'project';
 }
 
 export interface FindAnswer {
@@ -110,7 +112,34 @@ export function expandTyped(raw: string, d: DiscoverEnv): string | null {
 const looksLikePath = (s: string) => /^(~|\.{1,2}[\\/]|[\\/]|[A-Za-z]:[\\/]|\$|%)/.test(s) || /[\\/]/.test(s) || MARKDOWN.test(s);
 
 export function defaultPlaces(): string[] {
-  return ['~/.claude/skills', '~/.codex/skills', 'AGENTS.md', 'CLAUDE.md'];
+  return ['~/.claude/skills', '~/.codex/skills', '~/.cursor/rules', '.cursor/rules', 'AGENTS.md', 'CLAUDE.md'];
+}
+
+/**
+ * A Cursor rule (`.mdc`: optional front matter with description, globs, alwaysApply, then the rule text)
+ * as one skill. The description comes from the front matter; globs stay as a "When to use" line, since a
+ * rule scoped by file pattern has no one-to-one skill field. Null when the rule has no text.
+ */
+export function cursorRuleToSkill(text: string, name: string): { slug: string; skillMd: string } | null {
+  const src = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  const m = /^---\n([\s\S]*?)\n---[ \t]*(?:\n|$)/.exec(src);
+  const head = new Map<string, string>();
+  if (m) {
+    for (const line of m[1]!.split('\n')) {
+      const kv = /^([A-Za-z]+)\s*:\s*(.*)$/.exec(line.trim());
+      if (kv) head.set(kv[1]!.toLowerCase(), kv[2]!.trim().replace(/^["']|["']$/g, ''));
+    }
+  }
+  const body = (m ? src.slice(m[0].length) : src).trim();
+  if (body === '') return null;
+  const slug = slugOf(name);
+  const description = (head.get('description') ?? '').replace(/\s+/g, ' ').trim() || `Cursor rule ${slug}`;
+  const globs = head.get('globs') ?? '';
+  const when: string[] = [];
+  if (head.get('alwaysapply') === 'true') when.push('This rule is always applied in Cursor.');
+  if (globs !== '') when.push(`Applies to files matching: ${globs}`);
+  const skillMd = ['---', `name: ${slug}`, `description: ${description.replace(/"/g, "'")}`, '---', '', ...(when.length ? ['## When to use', '', ...when, ''] : []), body, ''].join('\n');
+  return { slug, skillMd };
 }
 
 /** Known words -> places. Order is the order shown. */
@@ -252,6 +281,7 @@ export function discover(text: string, d: DiscoverEnv): FindAnswer {
       continue;
     }
     const shown = show(abs, d.home);
+    if (looked.includes(shown)) continue;
     looked.push(shown);
     const before = found.size;
     const st = lst(abs);
@@ -284,7 +314,8 @@ export function discover(text: string, d: DiscoverEnv): FindAnswer {
     let slug = stem;
     for (let n = 2; used.has(slug); n++) slug = `${stem.slice(0, 54)}-${n}`;
     used.add(slug);
-    return { path: c.path, shown: c.shown, kind: c.kind, folder: c.isDir, slug, bytes: c.bytes };
+    const source: SkillCandidate['source'] = /(^|\/)\.claude(\/|$)/.test(c.shown) ? 'claude' : /(^|\/)\.codex(\/|$)/.test(c.shown) ? 'codex' : /(^|\/)\.cursor(\/|$)/.test(c.shown) ? 'cursor' : 'project';
+    return { path: c.path, shown: c.shown, kind: c.kind, folder: c.isDir, slug, bytes: c.bytes, source };
   });
   return { mode: r.mode, looked, unknown, candidates, truncated, skipped, notes };
 }
@@ -324,7 +355,13 @@ function filesFor(c: SkillCandidate): { path: string; content: string }[] | { er
       return out;
     }
     const t = read(c.path);
-    return t === null ? { error: `${c.shown} is not a text file` } : [{ path: `${c.slug}/SKILL.md`, content: t }];
+    if (t === null) return { error: `${c.shown} is not a text file` };
+    if (/\.mdc$/i.test(c.path)) {
+      const skill = cursorRuleToSkill(t, c.slug);
+      if (!skill) return { error: `${c.shown} is an empty Cursor rule` };
+      return [{ path: `${c.slug}/SKILL.md`, content: skill.skillMd }];
+    }
+    return [{ path: `${c.slug}/SKILL.md`, content: t }];
   } catch (e) {
     return { error: `${c.shown}: ${(e as Error).message}` };
   }

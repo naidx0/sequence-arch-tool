@@ -243,16 +243,16 @@ describe('the send payload', () => {
     expect(sent[0]!.surface).toBeUndefined();
   });
 
-  it('names Whiteboard via task-board wire id with Whiteboard title', async () => {
+  it('names Whiteboard via task-board wire id with Spaces title', async () => {
     const { sent, transport } = capturing();
     const store = attachedStore();
     store.dispatch({
       type: 'composer/ask-surface',
-      surface: { id: 'task-board', title: 'Whiteboard' },
+      surface: { id: 'task-board', title: 'Spaces' },
     });
     send(store, transport, 'explain this drawing');
     await vi.waitFor(() => expect(sent).toHaveLength(1));
-    expect(sent[0]!.surface).toEqual({ id: 'task-board', title: 'Whiteboard' });
+    expect(sent[0]!.surface).toEqual({ id: 'task-board', title: 'Spaces' });
   });
 
   it('still sends the question and the grounded chips', () => {

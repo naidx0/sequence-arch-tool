@@ -149,7 +149,43 @@ export {
   type BoardMeta,
   type BoardOp,
   type BoardsIndex,
+  type BSvg,
+  type BVideo,
+  type BScene,
+  type SceneKeyframe,
+  type ItemStyle,
+  MEDIA_EXTS,
+  POSTER_EXTS,
+  SCENE_CAPS,
+  SCENE_EASINGS,
+  checkMediaPath,
 } from './boards/boardStore.js';
+export { NODE_CARD_W, SIZES as DRAW_SIZES, STYLE_KEYS, boardBounds, buildItem, composeOps, edgePoint, styleOf, type DrawOp as CoreDrawOp } from './boards/compose.js';
+export { renderItemsSvg, selectItems, type RenderResult } from './boards/boardRender.js';
+export { renderWorkflowSvg, workflowItems } from './boards/workflowRender.js';
+export { findService, planServiceFlow, writeServiceFlow, type FlowAudience, type ServiceFlowPlan, type WrittenFlow } from './boards/serviceFlow.js';
+export * from './boards/boardPalette.js';
+export { SVG_MAX_BYTES, SvgError, sanitizeSvg, type SanitizedSvg } from './boards/svgSanitize.js';
+export {
+  WEB_MAX_BYTES,
+  WEB_OUTPUT_CAP,
+  checkPublicUrl,
+  htmlToMarkdown,
+  isPrivateAddress,
+  parseExaText,
+  readWebEnabled,
+  sliceForContinuation,
+  truncationNote,
+  webFetch,
+  webSearch,
+  type WebFetchOptions,
+  type WebFetchResult,
+  type WebFormat,
+  type WebSearchHit,
+  type WebSearchResult,
+} from './server/netFetch.js';
+export { wrapUntrustedLines, neutralizeUntrusted } from './llm/untrusted.js';
+export { userStoreDir } from './server/store.js';
 export {
   WORKFLOW_CAPS,
   WorkflowError,
@@ -177,3 +213,7 @@ export {
   saveDrawing,
   type Drawing,
 } from './drawings/drawingStore.js';
+export { bundledCatalogRoot, loadCatalog, loadMergedCatalog, readComponentBody, readComponentFile, readComponentPreamble, userCatalogRoot } from './components/catalog.js';
+export type { Catalog, ComponentEntry, ComponentGroup } from './components/catalog.js';
+export { matchComponents } from './components/match.js';
+export { MAX_COMPONENT_BODY_CHARS, componentBlock } from './components/inject.js';

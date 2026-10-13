@@ -136,6 +136,9 @@ export function drawMosaic(canvas: HTMLCanvasElement, img: HTMLImageElement, the
   return true;
 }
 
+/** How long after the first draw the other room is made ahead of a switch: past the boot window. */
+const AHEAD_DELAY_MS = 4000;
+
 /**
  * The backdrop: a still canvas filling its parent. `behind-chat` is blurred
  * and dimmed further (no surface open, the chat centred over it).
@@ -163,6 +166,7 @@ export function AsciiStage({ mode }: { mode: BackdropMode }) {
     let live = true;
     let timer = 0;
     let idle = 0;
+    let idleCb = 0;
     let lastKey = '';
     const other = theme === 'light' ? 'dark' : 'light';
     const photo = (room: 'light' | 'dark'): Promise<HTMLImageElement> =>
@@ -216,7 +220,12 @@ export function AsciiStage({ mode }: { mode: BackdropMode }) {
         const ahead = () => {
           if (live) void mosaic(other).catch(() => {});
         };
-        idle = typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(ahead, { timeout: 2500 }) : window.setTimeout(ahead, 1200);
+        /* Not inside the boot window: the other room's photo is a request nothing on the first frame needs, so it waits
+           AHEAD_DELAY_MS first (a theme switch before then draws it on demand). */
+        idle = window.setTimeout(() => {
+          idleCb = typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(ahead, { timeout: 2500 }) : 0;
+          if (!idleCb) ahead();
+        }, AHEAD_DELAY_MS);
       } catch {
         if (live) setDrawn(false);
       }
@@ -236,10 +245,8 @@ export function AsciiStage({ mode }: { mode: BackdropMode }) {
     return () => {
       live = false;
       window.clearTimeout(timer);
-      if (idle) {
-        if (typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idle);
-        window.clearTimeout(idle);
-      }
+      if (idle) window.clearTimeout(idle);
+      if (idleCb && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleCb);
       ro?.disconnect();
     };
   }, [theme, mode]);

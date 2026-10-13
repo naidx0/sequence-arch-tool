@@ -7,6 +7,8 @@ import {
 } from './phaseCardModel';
 import { stripToolProse } from './stripToolProse';
 import type { AskMetrics } from '@sequence/api-types';
+import type { SeqChart } from '@sequence/schema';
+import type { WbItem } from '../whiteboard/whiteboardModel';
 import type {
   AssistantTurn,
   FileEditProposal,
@@ -78,7 +80,16 @@ export type TranscriptItem =
    * Present only when the turn declared one, which is a minority of turns.
    */
   | { key: string; kind: 'todos'; turnId: TurnId; items: TodoItem[]; streaming: boolean }
-  | { key: string; kind: 'opens'; turnId: TurnId; row: WorkRow }
+  | {
+      key: string;
+      kind: 'opens';
+      turnId: TurnId;
+      row: WorkRow;
+      /** A `chart:proposal` row's chart, drawn inline (ChartTurnCard); absent on a turn restored before charts were kept. */
+      chart?: SeqChart;
+      /** The first `board:item` row carries the turn's marks for the inline preview (BoardTurnCard). */
+      board?: WbItem[];
+    }
   | { key: string; kind: 'ending'; turnId: TurnId; reason: EndingReason; text: string }
   /**
    * WHAT THE ANSWER DID NOT READ — its own item, not a decoration on the prose.
@@ -330,9 +341,23 @@ function pushAssistant(
    * than the row becomes a right-hand affordance that opens the canvas or the
    * index rail — never an expanded block inside the transcript".
    */
+  let chartAt = 0;
+  let boardShown = false;
   for (const row of turn.work) {
     if (row.opens === null) continue;
-    items.push({ key: `${turn.id}:o:${row.id}`, kind: 'opens', turnId: turn.id, row });
+    const chart = row.from === 'chart:proposal' ? turn.charts?.[chartAt++] : undefined;
+    /* One board card per turn, on its first board row; the later rows of the same drawing add nothing a card does not show. */
+    const hasBoard = row.from === 'board:item' && (turn.boardMarks?.length ?? 0) > 0;
+    if (hasBoard && boardShown) continue;
+    if (hasBoard) boardShown = true;
+    items.push({
+      key: `${turn.id}:o:${row.id}`,
+      kind: 'opens',
+      turnId: turn.id,
+      row,
+      ...(chart ? { chart } : {}),
+      ...(hasBoard ? { board: turn.boardMarks } : {}),
+    });
   }
 
   const ending = endingFor(turn);

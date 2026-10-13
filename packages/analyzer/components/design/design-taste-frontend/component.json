@@ -1,0 +1,25 @@
+{
+  "id": "design/design-taste-frontend",
+  "group": "design",
+  "label": "Design Taste Frontend",
+  "summary": "Anti-slop frontend skill for landing pages, portfolios, and redesigns.",
+  "triggers": [
+    "landing page design",
+    "frontend design taste",
+    "redesign a page",
+    "portfolio site",
+    "anti-slop frontend"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "Leonxlnx/taste-skill",
+    "commit": "d237dd399d57524945c0c81327da5da19f7a468d",
+    "path": "skills/taste-skill"
+  },
+  "url": "https://github.com/Leonxlnx/taste-skill/tree/d237dd399d57524945c0c81327da5da19f7a468d/skills/taste-skill",
+  "externalRefs": [
+    "feature/bento-grid--material.md"
+  ]
+}

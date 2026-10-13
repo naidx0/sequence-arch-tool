@@ -49,14 +49,14 @@ async function connect(opts: CreateServerOptions): Promise<{ client: Client; clo
 
 const tokens = (v: unknown): number => Math.ceil(JSON.stringify(v).length / 4);
 
-test('core: the smallest read/draw/workflow/find contract within 2.87k listing tokens (round 13 added edit_workflow, about 350; find_files about 195); all keeps every tool', async (t) => {
+test('core: the smallest read/draw/workflow/find/web/components contract within 3.32k listing tokens (draw carries styling, svg and compose; web_fetch + web_search 220; components under 150); all keeps every tool', async (t) => {
   const core = await connect({ tools: 'core', repo: SHOPFRONT });
   const all = await connect({ repo: SHOPFRONT });
   try {
     const { tools } = await core.client.listTools();
     assert.deepEqual(tools.map((t) => t.name).sort(), [...CORE_TOOLS].sort());
-    assert.deepEqual(tools.map(t => t.name).sort(), ['map', 'who_calls', 'impact', 'architecture_changed', 'list_boards', 'create_board', 'draw', 'edit_workflow', 'drawings', 'visual', 'find_files'].sort());
-    assert.ok(tokens(tools) <= 2870, `core listing is ${tokens(tools)} tokens`);
+    assert.deepEqual(tools.map(t => t.name).sort(), ['map', 'who_calls', 'impact', 'architecture_changed', 'list_boards', 'create_board', 'draw', 'edit_workflow', 'drawings', 'visual', 'find_files', 'web_fetch', 'web_search', 'components'].sort());
+    assert.ok(tokens(tools) <= 3320, `core listing is ${tokens(tools)} tokens`);
     const writes = new Set(['create_board', 'draw', 'edit_workflow', 'visual']);
     for (const tool of tools) assert.equal(tool.annotations?.readOnlyHint, !writes.has(tool.name), tool.name);
     assert.match(core.client.getInstructions()!, /create_board.*draw/s);
@@ -140,6 +140,8 @@ async function gitRepoWithGraph(): Promise<{ dir: string; repo: string; sha: str
   return { dir, repo, sha: git(['rev-parse', 'HEAD']), git };
 }
 
+const AGE = '(?:under a minute|\\d+ min) old';
+
 async function spawnedCall(repo: string, tool: string, args: Record<string, unknown>): Promise<{ content: { type: string; text?: string }[] }> {
   const transport = new StdioClientTransport({ command: process.execPath, args: [SERVER_JS], env: { ...process.env, SEQUENCE_REPO: repo, SEQUENCE_MCP_TOOLS: 'core' } as Record<string, string>, stderr: 'ignore' });
   const client = new Client({ name: 's2a-fresh', version: '0.0.0' });
@@ -155,9 +157,10 @@ test("every answer says how old its graph is: the spawned server's map ends with
   const r = await gitRepoWithGraph();
   try {
     const map = await spawnedCall(r.repo, 'map', { budget: 400 });
-    assert.equal(map.content.at(-1)!.text, `graph at ${r.sha.slice(0, 7)}, under a minute old`);
+    /* The graph is seconds old on an idle machine; on a loaded one the spawn can take over a minute and the age reads "N min". Still proves: this commit, an age in words, as the last line. */
+    assert.match(map.content.at(-1)!.text!, new RegExp(`^graph at ${r.sha.slice(0, 7)}, ${AGE}$`));
     const impact = await spawnedCall(r.repo, 'impact', { node: 'payments' });
-    assert.equal(JSON.parse(impact.content[0]!.text!).freshness, `graph at ${r.sha.slice(0, 7)}, under a minute old`);
+    assert.match(JSON.parse(impact.content[0]!.text!).freshness, new RegExp(`^graph at ${r.sha.slice(0, 7)}, ${AGE}$`));
   } finally {
     fs.rmSync(r.dir, { recursive: true, force: true });
   }
@@ -171,7 +174,7 @@ test('a worktree with no graph of its own answers from its base\'s graph and say
     assert.equal(fs.existsSync(path.join(wt, '.sequence')), false);
     const map = await spawnedCall(wt, 'map', { budget: 400 });
     assert.match(map.content[0]!.text!, /^# map /);
-    assert.equal(map.content.at(-1)!.text, `graph from base ${r.sha.slice(0, 7)}, under a minute old (this worktree has no graph of its own)`);
+    assert.match(map.content.at(-1)!.text!, new RegExp(`^graph from base ${r.sha.slice(0, 7)}, ${AGE} \\(this worktree has no graph of its own\\)$`));
     assert.equal(fs.existsSync(path.join(wt, '.sequence')), false, 'the worktree was not scanned');
   } finally {
     try {

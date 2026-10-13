@@ -34,6 +34,8 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 /** What the app currently knows, narrowed to what these sections need. */
+import { memoryDetail, type MemorySummary } from './memorySummary';
+
 export interface SettingsFacts {
   /** The attached repository's name, or null. */
   repoName: string | null;
@@ -43,6 +45,8 @@ export interface SettingsFacts {
   sessionCount: number | null;
   /** Whether chat memory is reachable. Null means not asked yet. */
   memoryAvailable: boolean | null;
+  /** What persists across chats (GET /api/memory/summary); absent or null when not loaded. */
+  memory?: MemorySummary | null;
   /** Nodes and edges in the current graph — the context that grounds a turn. */
   graphNodes: number;
   graphEdges: number;
@@ -195,15 +199,16 @@ export function settingsSections(facts: SettingsFacts): SettingsSection[] {
     {
       id: 'memory',
       title: 'Memory',
-      purpose: 'What the assistant carries between turns (clear via a new session in Sessions).',
+      purpose: 'What carries between turns and chats. A new session in Sessions clears the transcript, not the repo notes or the finder’s learning.',
       state:
         facts.memoryAvailable === null
           ? { kind: 'waiting', detail: 'The server has not answered yet.' }
           : facts.memoryAvailable
             ? {
                 kind: 'ready',
-                detail:
-                  'Chat memory holds this session’s transcript on disk. This panel does not clear it — start a new session from Sessions.',
+                detail: facts.memory
+                  ? memoryDetail(facts.memory)
+                  : 'Chat memory holds this session’s transcript on disk. This panel does not clear it — start a new session from Sessions.',
               }
             : {
                 kind: 'waiting',

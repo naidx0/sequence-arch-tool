@@ -15,6 +15,8 @@
 
 import type http from 'node:http';
 import { isOriginAllowed } from './terminal.js';
+import { automaticUpdateCheckAllowed } from './askAgentMap.js';
+import { userStoreDir } from './store.js';
 import { UpdateService, defaultUserDir, readReleaseNotes, readVersionInfo } from './appUpdate.js';
 
 export interface AppRouteContext {
@@ -24,6 +26,8 @@ export interface AppRouteContext {
   method: string;
   authOn: boolean;
   service?: UpdateService;
+  /** Whether an automatic (not forced) check may reach GitHub; defaults to the `updates.check` setting and SEQUENCE_NO_UPDATE_CHECK. */
+  autoCheck?: () => boolean;
 }
 
 let shared: UpdateService | null = null;
@@ -66,7 +70,15 @@ export async function handleAppRoute(ctx: AppRouteContext): Promise<boolean> {
     return true;
   }
   if (route === '/api/app/update') {
-    const check = await service.check(url.searchParams.get('force') === '1');
+    const force = url.searchParams.get('force') === '1';
+    /* The Version section refreshes by itself when it opens. With the switch off that must not reach the network:
+       the cached answer comes back marked checkDisabled. Only "Check now" (force=1) fetches. */
+    const allowed = ctx.autoCheck ?? (() => automaticUpdateCheckAllowed(userStoreDir()));
+    if (!force && !allowed()) {
+      send(res, 200, { check: { ...service.cachedCheck(), checkDisabled: true }, checkDisabled: true, install: service.status() });
+      return true;
+    }
+    const check = await service.check(force);
     send(res, 200, { check, install: service.status() });
     return true;
   }

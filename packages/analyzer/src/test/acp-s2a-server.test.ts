@@ -112,7 +112,13 @@ test('board-mcp-map (not run live): the turn\'s thread carries Sequence\'s board
     assert.match(args[0]!.split(path.sep).join('/'), /packages\/mcp\/dist\/server\.js$/);
     assert.ok(fs.existsSync(args[0]!), 'the entry exists');
     /* Lane components: the visual tool saves drawings in the project, under this chat. */
-    assert.deepStrictEqual(config['mcp_servers.sequence.env'], { SEQUENCE_REPO: r.repo, SEQUENCE_MCP_TOOLS: 'core', SEQUENCE_DRAWINGS_ROOT: r.repo, SEQUENCE_CHAT: r.s.chatId });
+    /* The app's address and this chat's thread key are how `components load` asks the app (approve mode raises a card there). */
+    const { SEQUENCE_COMPONENTS_URL: appUrl, SEQUENCE_COMPONENTS_KEY: threadKey, SEQUENCE_COMPONENTS_MODE: mode, ...baseEnv } = config['mcp_servers.sequence.env'] as Record<string, string>;
+    assert.match(appUrl!, /^http:\/\/127\.0\.0\.1:\d+$/);
+    assert.equal(threadKey, `chat::${r.s.chatId}::codex`);
+    assert.equal(mode, 'approve', 'the mode the person set travels with the session');
+    assert.equal(mode, 'approve', 'the mode the person set travels with the session');
+    assert.deepStrictEqual(baseEnv, { SEQUENCE_REPO: r.repo, SEQUENCE_MCP_TOOLS: 'core', SEQUENCE_DRAWINGS_ROOT: r.repo, SEQUENCE_CHAT: r.s.chatId });
     const call = updatesOf(events, 'tool_call')[0]!;
     assert.deepStrictEqual([call.title, call.kind], ['sequence.map', 'read']);
     const done = updatesOf(events, 'tool_call_update')[0]!;
@@ -239,7 +245,11 @@ test('the Agents panel\'s Claude gets the board too: --mcp-config names the serv
     assert.strictEqual(body.command, `claude --settings "${body.settingsFile}" --mcp-config "${body.mcpConfigFile}"`);
     assert.deepStrictEqual((JSON.parse(fs.readFileSync(body.settingsFile, 'utf8')) as Json).permissions, { allow: ['mcp__sequence__*'] });
     const mcp = (JSON.parse(fs.readFileSync(body.mcpConfigFile, 'utf8')) as { mcpServers: { sequence: Json } }).mcpServers.sequence;
-    assert.deepStrictEqual(mcp.env, { SEQUENCE_REPO: r.repo, SEQUENCE_MCP_TOOLS: 'core' });
+    /* The Claude terminal launch asks this app about components and carries the person's mode. */
+    const { SEQUENCE_COMPONENTS_URL: claudeAppUrl, SEQUENCE_COMPONENTS_MODE: claudeMode, ...claudeEnv } = mcp.env as Record<string, string>;
+    assert.match(claudeAppUrl!, /^http:\/\/127\.0\.0\.1:\d+$/);
+    assert.equal(claudeMode, 'approve');
+    assert.deepStrictEqual(claudeEnv, { SEQUENCE_REPO: r.repo, SEQUENCE_MCP_TOOLS: 'core' });
     assert.notStrictEqual(path.resolve(body.settingsFile), path.resolve(os.homedir(), '.claude', 'settings.json'));
   } finally {
     if (dir) fs.rmSync(dir, { recursive: true, force: true });

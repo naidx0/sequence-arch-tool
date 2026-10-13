@@ -9,11 +9,66 @@
 
 import type { BoardWireItem } from '@sequence/api-types';
 
-import type { WbItem, WhiteboardDoc } from '../whiteboard/whiteboardModel';
+import { sanitizeSvg } from '../chat/svgSanitize';
+import { sanitizeScene } from '../whiteboard/scene';
+import { IMAGE_EXT, cleanMediaPath } from '../whiteboard/videoItem';
+import type { WbItem, WbScene, WhiteboardDoc } from '../whiteboard/whiteboardModel';
 import { EMPTY_WHITEBOARD, whiteboardEdit } from '../whiteboard/whiteboardModel';
 
+/**
+ * A wire item of a kind this build may not have in its types yet (the backend adds svg, scene and video to
+ * `BoardWireItem`): read loosely, every field checked before it is used.
+ */
+type LooseWire = { kind: string; id: string } & Record<string, unknown>;
+
+const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const at = (v: unknown): { x: number; y: number } | null => {
+  const p = v as { x?: unknown; y?: unknown } | null;
+  return p && num(p.x) && num(p.y) ? { x: p.x, y: p.y } : null;
+};
+const side = (n: number) => Math.min(8192, Math.max(1, n));
+
+/** The whiteboard item for a wire svg, scene or video, made safe; null when it is not usable (it then falls back like any unknown kind). */
+function loosewireToWbItem(raw: LooseWire): WbItem | null {
+  const pos = at(raw.at);
+  if (!pos || typeof raw.id !== 'string') return null;
+  if (raw.kind === 'svg') {
+    if (typeof raw.svg !== 'string' || raw.svg.length > 120_000 || !num(raw.w) || !num(raw.h)) return null;
+    const clean = sanitizeSvg(raw.svg);
+    if (!clean.ok) return null;
+    return { kind: 'svg', id: raw.id, by: 'agent', at: pos, w: side(raw.w), h: side(raw.h), svg: clean.svg, ...(typeof raw.label === 'string' ? { label: raw.label } : {}) };
+  }
+  if (raw.kind === 'scene') {
+    if (!num(raw.w) || !num(raw.h) || !num(raw.duration)) return null;
+    return sanitizeScene({
+      kind: 'scene',
+      id: raw.id,
+      by: 'agent',
+      at: pos,
+      w: raw.w,
+      h: raw.h,
+      duration: raw.duration,
+      keyframes: raw.keyframes,
+      ...(raw.easing !== undefined ? { easing: raw.easing } : {}),
+      ...(raw.fps !== undefined ? { fps: raw.fps } : {}),
+      ...(typeof raw.title === 'string' ? { title: raw.title } : {}),
+    } as unknown as WbScene);
+  }
+  if (raw.kind === 'video') {
+    const src = cleanMediaPath(raw.src);
+    if (src === null || !num(raw.w) || !num(raw.h)) return null;
+    const poster = raw.poster === undefined ? null : cleanMediaPath(raw.poster, IMAGE_EXT);
+    return { kind: 'video', id: raw.id, by: 'agent', at: pos, w: side(raw.w), h: side(raw.h), src, ...(poster ? { poster } : {}), ...(typeof raw.label === 'string' ? { label: raw.label } : {}) };
+  }
+  return null;
+}
+
 /** Everything on the board wire is the agent's: it says so on the mark (`by`), which the board stores and a reload keeps. */
-export function boardWireToWbItem(item: BoardWireItem): WbItem {
+export function boardWireToWbItem(wire: BoardWireItem | LooseWire): WbItem {
+  const loose = loosewireToWbItem(wire as LooseWire);
+  if (loose) return loose;
+  /* svg, scene and video were handled loosely above, so what is left is text, shape or a node reference. */
+  const item = wire as Exclude<BoardWireItem, { kind: 'svg' | 'scene' | 'video' }>;
   if (item.kind === 'text') {
     return { kind: 'text', id: item.id, by: 'agent', at: { ...item.at }, text: item.text };
   }
@@ -32,8 +87,8 @@ export function boardWireToWbItem(item: BoardWireItem): WbItem {
     id: item.id,
     by: 'agent',
     at: { ...item.at },
-    nodeId: item.nodeId,
-    label: item.label,
+    nodeId: String(item.nodeId ?? item.id),
+    label: String(item.label ?? item.id),
     ...(item.path ? { path: item.path } : {}),
     ...(item.lines ? { lines: { ...item.lines } } : {}),
     ...(item.excerpt ? { excerpt: item.excerpt } : {}),
@@ -65,6 +120,15 @@ export function blurryBoardSummary(doc: WhiteboardDoc, limit = 40): string {
       const ref =
         i.ref.type === 'chart' ? `chart#${i.ref.index}` : `block:${i.ref.blockId}`;
       return `- artifact ${ref} @(${Math.round(i.at.x)},${Math.round(i.at.y)}) ${Math.round(i.size.w)}x${Math.round(i.size.h)} id=${i.id}`;
+    }
+    if (i.kind === 'video') {
+      return `- video ${i.src} ${Math.round(i.w)}x${Math.round(i.h)} id=${i.id}`;
+    }
+    if (i.kind === 'scene') {
+      return `- scene ${Math.round(i.w)}x${Math.round(i.h)} ${i.duration}ms keyframes=${i.keyframes.length} id=${i.id}`;
+    }
+    if (i.kind === 'svg') {
+      return `- svg @(${Math.round(i.at.x)},${Math.round(i.at.y)}) ${Math.round(i.w)}x${Math.round(i.h)} id=${i.id}`;
     }
     return `- stroke id=${i.id} pts=${i.points.length}`;
   });

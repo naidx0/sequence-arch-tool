@@ -10,11 +10,11 @@
    (AgentsDock) stays as it was.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import { formatElapsed } from '../chat/workRowModel';
 import { AsciiSpinner } from '../shell2/AsciiSpinner';
-import { useSessionsIfAny } from '../state/connect';
+import { useActiveSessionIdIfAny, useSessionsIfAny } from '../state/connect';
 import { agentRuns } from './agentRuns';
 import { subscribeAgentsViewRequest, takeAgentsViewRequest, type AgentsSurfaceView } from './agentsSection';
 import { buildAgentsOverview, knownStart, spanMs, type OverviewChat, type OverviewStatus } from './agentsOverview';
@@ -51,6 +51,13 @@ function TabGlyph({ view }: { view: AgentsSurfaceView }) {
       </svg>
     );
   }
+  if (view === 'timeline') {
+    return (
+      <svg {...common}>
+        <path d="M2 4h6M5 8h8M3 12h5.5" />
+      </svg>
+    );
+  }
   return (
     <svg {...common}>
       <path d="M2 3.2h5M3.5 3.2v9.6M3.5 8h2.8M3.5 12.8h2.8M8.6 8h5.4M8.6 12.8h5.4" />
@@ -58,7 +65,10 @@ function TabGlyph({ view }: { view: AgentsSurfaceView }) {
   );
 }
 
-const TAB_WORD: Record<'tree' | 'workflows', string> = { tree: 'Tree', workflows: 'Workflows' };
+const TAB_WORD: Record<'tree' | 'timeline' | 'workflows', string> = { tree: 'Tree', timeline: 'Timeline', workflows: 'Workflows' };
+
+/* Jaden 0.1.8: a chat lists its last five prompts; "Show 5 more" reveals five per click. */
+export const PROMPT_PAGE = 5;
 
 const tok = (n: number | null): string => (n === null ? '—' : formatTokens(n));
 
@@ -120,8 +130,11 @@ function Twist({ open, onToggle, label }: { open: boolean; onToggle: () => void;
   );
 }
 
-function TreeView({ chats, now }: { chats: readonly OverviewChat[]; now: number }) {
+function TreeView({ chats, now, timeline = false }: { chats: readonly OverviewChat[]; now: number; timeline?: boolean }) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  /* How many of each chat's newest prompts are listed (windowed here, in the render layer; the overview keeps every run). */
+  const [limit, setLimit] = useState<Readonly<Record<string, number>>>({});
+  const isOpen = (k: string) => timeline || open.has(k);
   const flip = (k: string) =>
     setOpen((cur) => {
       const n = new Set(cur);
@@ -133,40 +146,56 @@ function TreeView({ chats, now }: { chats: readonly OverviewChat[]; now: number 
       {chats.map((c) => {
         const from = knownStart(c.startedAt) ? c.startedAt : now;
         const to = c.endedAt ?? now;
+        const cap = limit[c.sessionId] ?? PROMPT_PAGE;
+        /* A prompt still running is always listed, even when it is older than the newest five. */
+        const older = c.runs.slice(0, Math.max(0, c.runs.length - cap));
+        const pinned = older.filter((r) => r.status === 'running');
+        const hidden = older.length - pinned.length;
+        const runs = older.length > 0 ? [...pinned, ...c.runs.slice(c.runs.length - cap)] : c.runs;
+        const step = Math.min(PROMPT_PAGE, hidden);
         return (
           <li key={c.sessionId} className="ags-chat" data-testid="agents-surface-chat" data-state={c.status}>
             <div className="ags-row ags-row-chat">
-              <Twist open={open.has(`c${c.sessionId}`)} onToggle={() => flip(`c${c.sessionId}`)} label={c.title} />
+              <Twist open={isOpen(`c${c.sessionId}`)} onToggle={() => flip(`c${c.sessionId}`)} label={c.title} />
               <Mark status={c.status} />
               <Label text={c.title} status={c.status} />
               <span className="ags-meta" data-testid="agents-surface-chat-tokens" title={c.processed === null ? 'The agent reported no usage for this chat' : `Output tokens generated in this chat. Input processed across ${c.reported} turn${c.reported === 1 ? '' : 's'}: ${formatTokens(c.processed - (c.output ?? 0))} (every turn re-sends the context, mostly from cache)`}>{c.output === null ? '—' : `${tok(c.output)} out`}</span>
               <Time start={c.startedAt} end={c.endedAt} now={now} />
             </div>
-            {open.has(`c${c.sessionId}`) ? <Detail start={c.startedAt} end={c.endedAt} from={from} to={to} now={now} status={c.status} extra={`${c.runs.length} turn${c.runs.length === 1 ? '' : 's'}`} /> : null}
+            {isOpen(`c${c.sessionId}`) ? <Detail start={c.startedAt} end={c.endedAt} from={from} to={to} now={now} status={c.status} extra={`${c.runs.length} turn${c.runs.length === 1 ? '' : 's'}`} /> : null}
             <ul className="ags-kids">
-              {c.runs.map((r) => (
+              {hidden > 0 ? (
+                <li className="ags-more-row">
+                  <button type="button" className="ags-more" data-testid="agents-surface-more" title={`${hidden} earlier prompt${hidden === 1 ? '' : 's'} in this chat`} onClick={() => setLimit((cur) => ({ ...cur, [c.sessionId]: cap + PROMPT_PAGE }))}>
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="m4 6 4 4 4-4" /></svg>
+                    <span className="ags-more-t">Show {step} more</span>
+                    <span className="ags-more-n">{hidden} remain{hidden === 1 ? 's' : ''}</span>
+                  </button>
+                </li>
+              ) : null}
+              {runs.map((r) => (
                 <li key={r.id} data-testid="agents-surface-run" data-state={r.status}>
                   <div className="ags-row">
-                    <Twist open={open.has(`r${r.id}`)} onToggle={() => flip(`r${r.id}`)} label={r.label} />
+                    <Twist open={isOpen(`r${r.id}`)} onToggle={() => flip(`r${r.id}`)} label={r.label} />
                     <Mark status={r.status} />
                     <Label text={r.label} status={r.status} />
                     <span className="ags-meta" title={r.context === null ? 'The agent reported no usage for this turn' : `Output tokens generated this turn. Context sent: ${formatTokens(r.context)}`}>{r.output === null ? '—' : `${tok(r.output)} out`}</span>
                     <Time start={r.startedAt} end={r.endedAt} now={now} />
                   </div>
-                  {open.has(`r${r.id}`) ? <Detail start={r.startedAt} end={r.endedAt} from={from} to={to} now={now} status={r.status} extra={r.subagents.length ? `${r.subagents.length} subagent${r.subagents.length === 1 ? '' : 's'}` : undefined} /> : null}
+                  {isOpen(`r${r.id}`) ? <Detail start={r.startedAt} end={r.endedAt} from={from} to={to} now={now} status={r.status} extra={r.subagents.length ? `${r.subagents.length} subagent${r.subagents.length === 1 ? '' : 's'}` : undefined} /> : null}
                   {r.subagents.length ? (
                     <ul className="ags-kids">
                       {r.subagents.map((s) => (
                         <li key={s.toolId} data-testid="agents-surface-subagent" data-state={s.status}>
                           <div className="ags-row">
-                            <Twist open={open.has(`s${s.toolId}`)} onToggle={() => flip(`s${s.toolId}`)} label={s.name} />
+                            <Twist open={isOpen(`s${s.toolId}`)} onToggle={() => flip(`s${s.toolId}`)} label={s.name} />
                             <Mark status={s.status} />
                             <Label text={s.name} status={s.status} />
                             {s.description ? <span className="ags-desc" title={s.description}>{s.description}</span> : null}
                             <span className="ags-meta">{s.steps} step{s.steps === 1 ? '' : 's'}</span>
                             <Time start={s.startedAt} end={s.endedAt} now={now} />
                           </div>
-                          {open.has(`s${s.toolId}`) ? <Detail start={s.startedAt} end={s.endedAt} from={from} to={to} now={now} status={s.status} /> : null}
+                          {isOpen(`s${s.toolId}`) ? <Detail start={s.startedAt} end={s.endedAt} from={from} to={to} now={now} status={s.status} /> : null}
                         </li>
                       ))}
                     </ul>
@@ -184,21 +213,28 @@ function TreeView({ chats, now }: { chats: readonly OverviewChat[]; now: number 
 export function AgentsSurface({ initialView = 'tree' }: { initialView?: AgentsSurfaceView }) {
   const runsState = useSyncExternalStore(agentRuns.subscribe, agentRuns.get, agentRuns.get);
   const sessions = useSessionsIfAny();
-  const fold = (v: AgentsSurfaceView): 'tree' | 'workflows' => (v === 'workflows' ? 'workflows' : 'tree');
-  const [view, setView] = useState<'tree' | 'workflows'>(() => fold(takeAgentsViewRequest() ?? initialView));
+  const [view, setView] = useState<AgentsSurfaceView>(() => takeAgentsViewRequest() ?? initialView);
+  /* The requested view can change after mount (a palette door, a re-render with another prop): follow it, both ways. */
+  const seenInitial = useRef(initialView);
+  useEffect(() => {
+    if (seenInitial.current === initialView) return;
+    seenInitial.current = initialView;
+    setView(initialView);
+  }, [initialView]);
+  const activeId = useActiveSessionIdIfAny();
   useEffect(
     () =>
       subscribeAgentsViewRequest(() => {
         const asked = takeAgentsViewRequest();
-        if (asked) setView(fold(asked));
+        if (asked) setView(asked);
       }),
     [],
   );
   const running = runsState.runs.some((r) => r.status === 'running');
   const now = useNow(running);
   const overview = useMemo(
-    () => buildAgentsOverview(runsState.runs, sessions.map((s) => ({ id: s.id, title: (s as { title?: string | null }).title ?? null })), now),
-    [runsState.runs, sessions, now],
+    () => buildAgentsOverview(runsState.runs, sessions.map((s) => ({ id: s.id, title: (s as { title?: string | null }).title ?? null })), now, { agents: runsState.agents ?? {}, activeSessionId: activeId }),
+    [runsState.runs, runsState.agents, sessions, activeId, now],
   );
   return (
     <section className="ags" data-testid="agents-surface" aria-label="Agents">
@@ -211,7 +247,7 @@ export function AgentsSurface({ initialView = 'tree' }: { initialView?: AgentsSu
           title={
             overview.totalProcessed === null
               ? 'Usage: the agents reported none yet'
-              : `Context: size of the newest turn's input, cache included. Output: tokens generated across every chat. Input processed across ${overview.reportedTurns} turn${overview.reportedTurns === 1 ? '' : 's'}: ${formatTokens(overview.totalProcessed - (overview.totalOutput ?? 0))} (every turn re-sends the whole context, mostly from cache, so this is not a count of new work)`
+              : `Context: how full the open chat's window is, as its current agent last reported it (not a total). Output: tokens generated across every chat. Input processed across ${overview.reportedTurns} turn${overview.reportedTurns === 1 ? '' : 's'}: ${formatTokens(overview.totalProcessed - (overview.totalOutput ?? 0))} (every turn re-sends the whole context, mostly from cache, so this is not a count of new work)`
           }
         >
           <span>Context</span>
@@ -220,7 +256,7 @@ export function AgentsSurface({ initialView = 'tree' }: { initialView?: AgentsSu
           <span className="ags-total-num" data-testid="agents-surface-output">{tok(overview.totalOutput)}</span>
         </p>
         <div className="ags-seg" role="tablist" aria-label="Agents view">
-          {(['tree', 'workflows'] as const).map((v) => (
+          {(['tree', 'timeline', 'workflows'] as const).map((v) => (
             <button key={v} type="button" role="tab" className="ags-seg-btn" aria-selected={view === v} aria-label={TAB_WORD[v]} title={TAB_WORD[v]} data-testid={`agents-surface-tab-${v}`} onClick={() => setView(v)}>
               <TabGlyph view={v} />
               <span className="ags-seg-t">{TAB_WORD[v]}</span>
@@ -235,7 +271,7 @@ export function AgentsSurface({ initialView = 'tree' }: { initialView?: AgentsSu
       ) : overview.chats.length === 0 ? (
         <p className="ags-empty" data-testid="agents-surface-empty">No agent has run yet. Ask one in the chat and its runs and subagents appear here.</p>
       ) : (
-        <TreeView chats={overview.chats} now={now} />
+        <TreeView chats={overview.chats} now={now} timeline={view === 'timeline'} />
       )}
       </div>
     </section>

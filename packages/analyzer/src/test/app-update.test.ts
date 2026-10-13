@@ -14,6 +14,7 @@ import {
   isAllowedUrl,
   isReleaseDownloadUrl,
   launchInstaller,
+  type LaunchDeps,
   parseRelease,
   parseShasums,
   pickAsset,
@@ -28,6 +29,11 @@ import {
 import { handleAppRoute } from '../server/appUpdateRoutes.js';
 import { createRepoServer } from '../server/repoServer.js';
 import { loadAuthConfig } from '../server/auth.js';
+import { clearHandoff, readHandoff, writeHandoff, type Handoff } from '../server/update/handoff.js';
+import { filesToDelete, listFiles, readManifest, safeRelative, unmanagedFiles } from '../server/update/portableUpdate.js';
+import { installKind } from '../server/update/winInstall.js';
+import { fileURLToPath } from 'node:url';
+import { linuxInstallKind, stageAppImage } from '../server/update/linuxInstall.js';
 
 /* G7: version compare, asset choice per OS, checksum verify (good and tampered), offline, the day's cache,
    the host allowlist, and "never run what did not verify". The network is a fake: nothing here leaves the machine. */
@@ -646,7 +652,7 @@ test('install (M4): the idle timer fires in a process that has nothing else to k
     const job = await s.install();
     console.log('SETTLED', job.state);
   `;
-  const out = execFileSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8', timeout: 15_000 });
+  const out = execFileSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8', timeout: 15_000, windowsHide: true });
   assert.match(out, /SETTLED failed/);
 });
 
@@ -747,4 +753,224 @@ test('M5: a copy that is not the installed desktop app is never offered the inst
   assert.match(job.error ?? '', /not the installed app/);
   assert.equal(launched.length, 0);
   assert.ok(!fake.urls.some((u) => u.includes('/download/')), 'nothing was downloaded');
+});
+
+/* P5a: Windows updates without the wizard. */
+
+test('pickAsset: a portable Windows install is offered the -win.zip, an NSIS one the Setup .exe', () => {
+  assert.equal(pickAsset(ASSETS, 'win32', 'x64', 'portable')?.name, 'Sequence-0.1.5-win.zip');
+  assert.equal(pickAsset(ASSETS, 'win32', 'x64', 'nsis')?.name, 'Sequence.Setup.0.1.5.exe');
+  assert.equal(pickAsset(ASSETS, 'win32', 'x64')?.name, 'Sequence.Setup.0.1.5.exe', 'nsis is the default');
+  assert.equal(pickAsset(ASSETS.filter((a) => !/-win\.zip$/.test(a.name)), 'win32', 'x64', 'portable'), null, 'no zip, nothing to offer a portable install');
+  assert.equal(pickAsset(ASSETS, 'darwin', 'arm64', 'portable')?.name, 'Sequence-0.1.5-arm64.dmg', 'kind is a Windows notion');
+});
+
+const sha256Of = (s: string): string => createHash('sha256').update(s).digest('hex');
+
+test('launchInstaller: NSIS is queued as a request (kind, version, asset, staged path only) and never started by the server', async () => {
+  const dir = tmp('seq-nsis-');
+  const exe = path.join(dir, 'Sequence Setup 0.1.5.exe');
+  fs.writeFileSync(exe, 'installer bytes');
+  const queued: Handoff[] = [];
+  const started: string[] = [];
+  const howto = await launchInstaller(exe, 'win32', { kind: 'nsis', version: '0.1.5', asset: 'Sequence.Setup.0.1.5.exe', queue: (h) => void queued.push(h), start: async (c) => void started.push(c) });
+  assert.deepEqual(started, [], 'the server starts nothing: its process tree is killed on quit');
+  assert.equal(queued.length, 1);
+  assert.deepEqual(Object.keys(queued[0]!).sort(), ['asset', 'createdAt', 'kind', 'staged', 'v', 'version'], 'a request carries no command, argument, environment or hash: main derives them');
+  assert.equal(queued[0]!.kind, 'nsis');
+  assert.equal(queued[0]!.staged, exe);
+  assert.equal(queued[0]!.asset, 'Sequence.Setup.0.1.5.exe');
+  assert.equal(queued[0]!.version, '0.1.5');
+  assert.match(howto, /^Restart Sequence to finish/);
+});
+
+test('launchInstaller: with a user dir the request is a file the desktop reads, and a missing installer rejects', async () => {
+  const user = tmp('seq-user-');
+  const exe = path.join(user, 'S.exe');
+  fs.writeFileSync(exe, 'x');
+  await launchInstaller(exe, 'win32', { kind: 'nsis', version: '0.1.5', asset: 'S.exe', userDir: user });
+  const h = readHandoff(user);
+  assert.equal(h?.kind, 'nsis');
+  assert.equal(h?.v, 2);
+  await assert.rejects(launchInstaller(path.join(user, 'gone.exe'), 'win32', { kind: 'nsis', userDir: user }));
+});
+
+/** An app folder as the build ships it (with its manifest). */
+function portableFixture(opts: { extra?: string; noManifest?: boolean } = {}) {
+  const root = tmp('seq-port-');
+  const app = path.join(root, 'A B', 'Sequence');
+  const oldFiles = ['Sequence.exe', 'resources/app.asar', 'locales/en.pak', 'old-only.dll'];
+  for (const f of oldFiles) {
+    fs.mkdirSync(path.dirname(path.join(app, f)), { recursive: true });
+    fs.writeFileSync(path.join(app, f), 'old');
+  }
+  if (!opts.noManifest) fs.writeFileSync(path.join(app, 'app-manifest.json'), JSON.stringify({ v: 1, files: oldFiles }));
+  if (opts.extra) fs.writeFileSync(path.join(app, opts.extra), 'mine');
+  const snapshot = (): string => JSON.stringify(listFiles(app).sort().map((f) => [f, fs.readFileSync(path.join(app, f), 'utf8')]));
+  return { root, app, snapshot, zip: path.join(root, 'Sequence-0.1.5-win.zip') };
+}
+
+test('portable update: the server checks the folder, queues the zip as a request, and touches nothing', async () => {
+  const f = portableFixture();
+  fs.writeFileSync(f.zip, 'zip');
+  const queued: Handoff[] = [];
+  const before = f.snapshot();
+  const howto = await launchInstaller(f.zip, 'win32', { kind: 'portable', version: '0.1.5', asset: 'Sequence-0.1.5-win.zip', appDir: f.app, queue: (h) => void queued.push(h) });
+  assert.match(howto, /^The update is ready/);
+  assert.equal(f.snapshot(), before, 'the app folder is read, never written');
+  assert.equal(queued.length, 1);
+  assert.deepEqual({ kind: queued[0]!.kind, staged: queued[0]!.staged, asset: queued[0]!.asset }, { kind: 'portable', staged: f.zip, asset: 'Sequence-0.1.5-win.zip' });
+});
+
+test('portable update: a folder with a file that is not Sequence\'s, or with no manifest, is NOT updated in place', async () => {
+  for (const [label, opts, why] of [
+    ['extra file', { extra: 'my-notes.txt' }, /my-notes\.txt/],
+    ['no manifest', { noManifest: true }, /app-manifest\.json/],
+  ] as const) {
+    const f = portableFixture(opts);
+    const queued: Handoff[] = [];
+    const before = f.snapshot();
+    const howto = await launchInstaller(f.zip, 'win32', { kind: 'portable', appDir: f.app, queue: (h) => void queued.push(h) });
+    assert.match(howto, why, label);
+    assert.match(howto, /Unpack Sequence-0\.1\.5-win\.zip into a new folder yourself/, label);
+    assert.deepEqual(queued, [], `${label}: nothing is queued`);
+    assert.equal(f.snapshot(), before, `${label}: the folder is untouched`);
+  }
+});
+
+test('manifest helpers: unmanagedFiles, filesToDelete and safeRelative', () => {
+  const f = portableFixture({ extra: 'x.txt' });
+  assert.deepEqual(unmanagedFiles(f.app, readManifest(f.app)!), ['x.txt']);
+  assert.deepEqual(filesToDelete(['a', 'b/c', 'D.txt'], ['a', 'd.TXT']), ['b/c'], 'case-insensitive, like Windows');
+  assert.deepEqual(filesToDelete(['../escape', 'ok'], []), ['ok'], 'a path that climbs out is never deleted');
+  for (const bad of ['', '..', 'a/../b', '/abs', 'C:\\x', 'C:x', 'a:stream', '\\\\unc\\x']) assert.equal(safeRelative(bad), false, bad);
+  assert.equal(safeRelative('resources/app.asar'), true);
+});
+
+test('a portable install is queued for main after the zip is verified, and the job offers the restart', { timeout: 20_000 }, async () => {
+  const f = portableFixture();
+  const bytes = Buffer.from('zipbytes'.repeat(20));
+  const base = 'https://github.com/naidx0/sequence-arch-tool/releases/download/v0.1.5/';
+  const name = 'Sequence-0.1.5-win.zip';
+  const rel = { tag_name: 'v0.1.5', assets: [{ name, browser_download_url: base + name, size: bytes.length }, { name: 'SHASUMS256.txt', browser_download_url: base + 'SHASUMS256.txt', size: 10 }] };
+  const res = (b: Buffer, over: Record<string, unknown> = {}) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => rel, text: async () => '', body: new Response(new Uint8Array(b)).body, ...over });
+  const sums = sha256Of(bytes.toString()) + '  ' + name + '\n';
+  const fetchImpl = (async (u: string) => (u.startsWith('https://api.github.com/') ? res(Buffer.alloc(0)) : u.endsWith('SHASUMS256.txt') ? res(Buffer.from(sums), { text: async () => sums }) : res(bytes))) as unknown as FetchLike;
+  const user = path.join(f.root, 'user');
+  const s = new UpdateService({
+    fetchImpl, now: () => 1, userDir: user, platform: 'win32', arch: 'x64', current: () => '0.1.4', desktop: () => true, signingKey: null,
+    installKind: () => 'portable',
+    win: { pid: () => 7, appDir: f.app, exeName: 'Sequence.exe' },
+  });
+  const check = await s.check(true);
+  assert.equal(check.asset?.name, name, 'the portable install is offered the zip');
+  assert.equal(check.installable, true);
+  const job = await s.install();
+  assert.equal(job.state, 'launched', job.error ?? '');
+  assert.equal(job.installMode, 'in-place', 'it finishes when the app quits');
+  const h = readHandoff(user);
+  assert.equal(h?.kind, 'portable');
+  assert.equal(h?.version, '0.1.5');
+  assert.equal(h?.asset, name);
+  assert.ok(h?.staged && h.staged.startsWith(path.join(user, 'updates')), 'the staged zip sits in the updates folder');
+});
+
+test('a handoff for a version that is already running is dropped, a newer one is kept', () => {
+  const user = tmp('seq-stale-');
+  writeHandoff(user, { v: 2, kind: 'nsis', version: '0.1.5', asset: 'a.exe', createdAt: 1 });
+  new UpdateService({ userDir: user, platform: 'win32', current: () => '0.1.5', desktop: () => true }).cachedCheck();
+  assert.equal(readHandoff(user), null, 'the update finished: do not run it again at the next quit');
+  writeHandoff(user, { v: 2, kind: 'nsis', version: '0.1.6', asset: 'a.exe', createdAt: 1 });
+  new UpdateService({ userDir: user, platform: 'win32', current: () => '0.1.5', desktop: () => true }).cachedCheck();
+  assert.equal(readHandoff(user)?.version, '0.1.6');
+});
+
+test('the server never starts an installer or a swap helper itself (they would die in the quit tree kill)', () => {
+  const src = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'server', 'appUpdate.ts'), 'utf8');
+  assert.doesNotMatch(src, /startSwapHelper/);
+  assert.doesNotMatch(src, /run\(file|run\('\/bin\/sh'|run\(h\.cmd/);
+  assert.match(src, /run\('open', \[file\]\)/, 'only the harmless open/xdg-open fallbacks remain');
+});
+
+test('installKind: the per-user default folder or an Uninstall Sequence.exe is NSIS; anything else is portable', () => {
+  const env = { LOCALAPPDATA: 'C:\\Users\\A B\\AppData\\Local' };
+  const none = (): boolean => false;
+  assert.equal(installKind('C:\\Users\\A B\\AppData\\Local\\Programs\\sequence\\Sequence.exe', env, none), 'nsis');
+  assert.equal(installKind('c:/users/a b/appdata/local/programs/Sequence/Sequence.exe', env, none), 'nsis', 'case and slashes do not matter');
+  assert.equal(installKind('D:\\Apps\\Sequence\\Sequence.exe', env, none), 'portable');
+  assert.equal(installKind('D:\\Apps\\Sequence\\Sequence.exe', env, (p) => p === 'd:\\apps\\sequence\\Uninstall Sequence.exe'), 'nsis', 'the uninstaller marks an NSIS install');
+  assert.equal(installKind('D:\\Apps\\Sequence\\Sequence.exe', { ...env, SEQUENCE_INSTALL_KIND: 'nsis' }, none), 'nsis', 'the desktop can say which');
+  assert.equal(installKind('D:\\Apps\\Sequence\\Sequence.exe', { SEQUENCE_INSTALL_KIND: 'bogus' }, none), 'portable');
+});
+
+/* P5b: Linux. */
+
+test('linuxInstallKind: APPIMAGE means AppImage, /opt/Sequence means deb, anything else is neither', () => {
+  assert.equal(linuxInstallKind('/tmp/.mount_x/sequence', { APPIMAGE: '/home/a/Apps/Sequence.AppImage' }), 'appimage');
+  assert.equal(linuxInstallKind('/opt/Sequence/sequence', {}), 'deb');
+  assert.equal(linuxInstallKind('/opt/Sequence/sequence', { APPIMAGE: 'relative.AppImage' }), 'deb', 'a relative APPIMAGE is not trusted');
+  assert.equal(linuxInstallKind('/opt/SequenceX/sequence', {}), 'other');
+  assert.equal(linuxInstallKind('/usr/bin/node', {}), 'other');
+});
+
+test('pickAsset on Linux: the AppImage by default, the deb for a deb install', () => {
+  assert.equal(pickAsset(ASSETS, 'linux', 'x64')?.name, 'Sequence-0.1.5.AppImage');
+  assert.equal(pickAsset(ASSETS, 'linux', 'x64', 'appimage')?.name, 'Sequence-0.1.5.AppImage');
+  assert.equal(pickAsset(ASSETS, 'linux', 'x64', 'deb')?.name, 'Sequence-0.1.5-amd64.deb');
+  assert.equal(pickAsset(ASSETS.filter((a) => !/\.deb$/.test(a.name)), 'linux', 'x64', 'deb'), null);
+});
+
+test('stageAppImage copies beside the target as .<name>.update-<pid> (same folder, executable); an unwritable folder throws', () => {
+  const root = tmp('seq-ai-');
+  const target = path.join(root, 'My Apps', 'Sequence.AppImage');
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, 'old');
+  const dl = path.join(root, 'dl.AppImage');
+  fs.writeFileSync(dl, 'new');
+  const h = stageAppImage({ pid: 99, file: dl, target });
+  assert.equal(h.staged, path.join(path.dirname(target), '.Sequence.AppImage.update-99'), 'the name main derives from $APPIMAGE and its own pid');
+  assert.equal(fs.readFileSync(h.staged, 'utf8'), 'new');
+  assert.equal(fs.readFileSync(target, 'utf8'), 'old', 'the running file is untouched until the helper runs');
+  assert.throws(() => stageAppImage({ pid: 1, file: dl, target: path.join(root, 'nope', 'S.AppImage') }));
+});
+
+test('launchInstaller on Linux: an AppImage swap is queued as a request (never started here); an unwritable folder gets the manual path', async () => {
+  const root = tmp('seq-ai2-');
+  const target = path.join(root, 'S.AppImage');
+  fs.writeFileSync(target, 'old');
+  const dl = path.join(root, 'dl.AppImage');
+  fs.writeFileSync(dl, 'new');
+  const queued: Handoff[] = [];
+  const started: string[][] = [];
+  const start = async (cmd: string, args: string[]): Promise<void> => void started.push([cmd, ...args]);
+  const howto = await launchInstaller(dl, 'linux', { linuxKind: 'appimage', appImage: target, pid: () => 5, start, version: '0.1.5', asset: 'Sequence-0.1.5.AppImage', queue: (h) => void queued.push(h) });
+  assert.match(howto, /^Restart Sequence/);
+  assert.deepEqual(started, [], 'nothing is started by the server');
+  assert.equal(queued.length, 1);
+  assert.equal(queued[0]!.kind, 'appimage-swap');
+  assert.equal(queued[0]!.asset, 'Sequence-0.1.5.AppImage');
+  assert.equal(fs.readFileSync(path.join(root, '.S.AppImage.update-5'), 'utf8'), 'new');
+  queued.length = 0;
+  const manual = await launchInstaller(dl, 'linux', { linuxKind: 'appimage', appImage: path.join(root, 'missing', 'S.AppImage'), pid: () => 5, start, queue: (h) => void queued.push(h) });
+  assert.match(manual, /Saved and made runnable/);
+  assert.deepEqual(queued, []);
+  assert.equal(started[0]![0], 'xdg-open');
+});
+
+test('a deb install is not one-click: installable is false, the words say to run sudo apt install, and install() downloads nothing', async () => {
+  const bytes = Buffer.from('x'.repeat(50));
+  const gh = fakeGithub(bytes);
+  const s = new UpdateService({
+    fetchImpl: gh.fetchImpl,
+    now: () => 1, userDir: tmp('seq-upd-'), platform: 'linux', arch: 'x64', current: () => '0.1.4', desktop: () => true, linuxKind: () => 'deb',
+  });
+  const check = await s.check(true);
+  assert.equal(check.newer, true);
+  assert.equal(check.installable, false);
+  assert.equal(check.asset?.name.endsWith('.deb'), true);
+  assert.match(check.manual ?? '', /sudo apt install \.\/.*\.deb/);
+  const job = await s.install();
+  assert.equal(job.state, 'failed');
+  assert.match(job.error ?? '', /sudo apt install \.\/.*\.deb/);
+  assert.ok(!gh.urls.some((u) => /\.deb$/.test(u)), 'the .deb was never downloaded');
 });

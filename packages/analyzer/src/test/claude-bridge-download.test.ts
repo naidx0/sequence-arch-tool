@@ -268,11 +268,10 @@ const runCheck = async (o: { args?: string[]; entry?: string }): Promise<Check> 
 
 function assertClaudeEnv(r: Check): void {
   assert.ok(r.ok, `${r.problems.join('; ')} ${r.stderr}`);
-  if (process.platform === 'win32') return; /* the Windows fake is a copy of node.exe: it cannot dump an environment */
   assert.ok(r.claudeEnv, 'the bridge spawned the (fake) claude for session/new');
   /* the bridge was started WITH ELECTRON_RUN_AS_NODE=1; the claude it runs must not see it */
   assert.equal(r.claudeEnv.ELECTRON_RUN_AS_NODE, undefined);
-  assert.equal(path.basename(r.claudeEnv.CLAUDE_CODE_EXECUTABLE ?? ''), 'claude');
+  assert.match(path.basename(r.claudeEnv.CLAUDE_CODE_EXECUTABLE ?? ''), /^claude(\.exe)?$/);
 }
 
 test('launcher + the bridge: finds claude by itself, sets CLAUDE_CODE_EXECUTABLE, and ELECTRON_RUN_AS_NODE does not reach claude', async () => {

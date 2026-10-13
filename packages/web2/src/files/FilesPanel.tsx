@@ -45,8 +45,8 @@
    `--t-12`. "Airy is a defect."
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
+import { Suspense, cloneElement, isValidElement, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from 'react';
 
 import { highlight, languageOf } from '../review/syntax';
 
@@ -65,6 +65,7 @@ import { DiffView } from './DiffView';
 import { DIFF_LINE_CAP, buildFileTree, filterFileTree, statusTone } from './filesModel';
 import type { FileStatus, FileTone, RepoPath } from './filesModel';
 import { AsciiSpinner } from '../shell2/AsciiSpinner';
+import { ScopeToggle, useBranchUi } from './branchUi';
 
 /**
  * WHAT THE RIGHT SIDE IS SHOWING. Three, not two, because "type into it" is a
@@ -115,6 +116,11 @@ export interface FileAction {
 }
 
 export interface FilesPanelProps {
+  /** A line to reveal in the editor (a `path:12` followed from the chat). */
+  focusLine?: number;
+  focusKey?: number;
+  /** A project search that led here: the editor's find opens seeded with it. */
+  findSeed?: string;
   /** Every repo-relative path the tree should hold. */
   paths: readonly string[];
   /** Folders with no files in them yet (just created, or empty on disk). */
@@ -230,6 +236,9 @@ function readStoredTreeWidth(): number {
 }
 
 export function FilesPanel({
+  focusLine,
+  focusKey,
+  findSeed,
   paths,
   emptyDirs,
   ops,
@@ -372,6 +381,7 @@ export function FilesPanel({
   const fileSet = useMemo(() => new Set<string>(paths), [paths]);
   const selectedFile = selected !== null && fileSet.has(selected) ? selected : null;
   const filtered = useMemo(() => filterFileTree(tree, query), [tree, query]);
+  const branchUi = useBranchUi();
 
   /* In a narrow pane, opening a file puts the tree away so the file has the
      pane; widening the pane brings back a tree that was put away this way. */
@@ -461,6 +471,7 @@ export function FilesPanel({
     >
       <div className="files-side" ref={sideRef} aria-hidden={treeOpen ? undefined : true}>
         <div className="files-top">
+          {branchUi ? <ScopeToggle ui={branchUi} /> : null}
           <label className="files-fieldwrap">
             <span className="files-fieldicon" aria-hidden="true">
               <FilesIcon name="search" size={14} />
@@ -667,6 +678,9 @@ export function FilesPanel({
               path={selectedFile}
               actions={actions}
               onAction={onAction}
+              line={focusLine}
+              lineKey={focusKey}
+              findSeed={findSeed}
             />
           ) : (
             <CodeLoad load={content} path={selectedFile} />
@@ -720,6 +734,7 @@ function Header({
   const parts = path === null ? [] : path.split('/');
   const full = path === null ? (repoName ?? '') : repoName ? `${repoName}/${path}` : path;
   const lead = repoName ? [repoName] : [];
+  const branchUi = useBranchUi();
 
   return (
     <div className="files-hd" data-testid={FILES.header} data-tone={tone ?? undefined}>
@@ -783,11 +798,20 @@ function Header({
         <span className={`files-hd-status${tone === null ? '' : ` files-tone-${tone}`}`}>{status}</span>
       ) : null}
       {dirty ? <span className="files-hd-status files-tone-progress">unsaved</span> : null}
-      {branch === null ? null : (
-        <span className="files-hd-branch" data-testid={FILES.branch} title={`Diffs are against ${branch}`}>
-          {branch}
-        </span>
-      )}
+      {(() => {
+        const chip =
+          branch === null ? null : (
+            <span className="files-hd-branch" data-testid={FILES.branch} title={`Diffs are against ${branch}`}>
+              {branch}
+            </span>
+          );
+        /* The switcher stands in for the chip when the engine serves branches. */
+        return isValidElement(branchUi?.switcher) ? (
+          <span className="files-hd-branchslot">{cloneElement(branchUi.switcher as ReactElement<{ fallback?: ReactNode }>, { fallback: chip })}</span>
+        ) : (
+          chip
+        );
+      })()}
     </div>
   );
 }
@@ -952,7 +976,13 @@ function EditView({
   path,
   actions,
   onAction,
+  line,
+  lineKey,
+  findSeed,
 }: {
+  line?: number;
+  lineKey?: number;
+  findSeed?: string;
   load: FileLoad;
   draft: string | null;
   onDraft: ((text: string) => void) | undefined;
@@ -977,6 +1007,10 @@ function EditView({
         onSave={save && onAction ? () => onAction('save', path) : undefined}
         canSave={save ? save.disabled !== true : false}
         onDiscard={discard && onAction ? () => onAction('discard', path) : undefined}
+        revealLine={line}
+        revealKey={lineKey}
+        findSeed={findSeed}
+        findKey={lineKey}
       />
       </Suspense>
     </div>

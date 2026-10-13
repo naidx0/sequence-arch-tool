@@ -1,7 +1,7 @@
 {
   "name": "sequence",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Interactive infinite-canvas map of your system architecture, inferred from static code alone",
   "license": "MIT",
   "engines": {

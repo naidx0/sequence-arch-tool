@@ -55,7 +55,7 @@ export interface ReviewClient {
   diff(
     path: string,
     signal?: AbortSignal,
-    scope?: { kind: 'worktree' | 'staged' } | { kind: 'commit'; rev: string } | { kind: 'branch'; base: string },
+    scope?: { kind: 'worktree' | 'staged' | 'unstaged' } | { kind: 'commit'; rev: string } | { kind: 'branch'; base: string },
   ): Promise<WireResult<GetGitDiffResponse>>;
   /** PUT /api/file → `{ok, path}`. A whole-file replace, not a patch. */
   writeFile(path: string, content: string): Promise<WireResult<PutFileResponse>>;

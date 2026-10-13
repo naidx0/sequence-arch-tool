@@ -1,0 +1,22 @@
+{
+  "id": "design/oklch-skill",
+  "group": "design",
+  "label": "Oklch Skill",
+  "summary": "OKLCH color space for web projects.",
+  "triggers": [
+    "oklch color",
+    "oklch palette",
+    "perceptual color",
+    "color conversion",
+    "gamut and tailwind colors"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/oklch-skill",
+    "commit": "0e81f040e16d48fcc61d3e1b7ea548542371321f",
+    "path": "skills/oklch-skill"
+  },
+  "url": "https://github.com/jakubkrehel/oklch-skill/tree/0e81f040e16d48fcc61d3e1b7ea548542371321f/skills/oklch-skill"
+}

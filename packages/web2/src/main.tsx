@@ -60,6 +60,11 @@ createRoot(host).render(
    the shell before V3Chat reads it loses what was typed (static-shell test). */
 window.setTimeout(() => document.getElementById('static-shell')?.remove(), 5000);
 
+/* PREFERENCES COPIED TO THE SERVER (claims U41, U49, U60-U63): one GET once the first frame is painted, so a new
+   origin (a changed port) gets its theme, picks, held queue and layout back. Loaded and started 4 s after the first
+   frame: a restore only fills keys this origin lacks, so it need not race the boot window (perf ratchet). */
+requestAnimationFrame(() => window.setTimeout(() => void import('./boot/prefsMirror').then((m) => m.startPrefsMirror()), 4000));
+
 const splash = document.getElementById('boot-splash');
 if (splash) {
   const remove = () => splash.remove();

@@ -25,7 +25,7 @@ export const ASK_TRAILER_TAG = 'asks';
 export const ASK_LEDGER_INSTRUCTION = [
   '',
   '',
-  '[Added by the app, not typed by the person; do not mention it.]',
+  '[Sequence added this instruction; the person did not type it.]',
   'If the message above contains several separate requests, end your reply with one final line, and nothing after it:',
   '<asks>1 <request in your own words>: done; 2 <request>: not done: <reason></asks>',
   'listing every request. For a single request, write no such line.',

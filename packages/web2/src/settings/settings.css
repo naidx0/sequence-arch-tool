@@ -1287,3 +1287,46 @@
 
 .settings-scope .sb-agent-acts { display: flex; gap: var(--sp-6); margin-top: var(--sp-4); }
 .settings-scope .sb-agent-term { display: block; height: 200px; overflow: hidden; margin-top: var(--sp-6); border: 1px solid var(--b-edge); border-radius: 6px; }
+
+/* ── SKILLS (0.1.8): one condensed row per skill, its actions on hover or focus ─────────────────────────────────────── */
+.settings-scope .sb-skill {
+  flex-wrap: nowrap;
+  gap: var(--sp-12);
+  min-height: 0;
+  padding: var(--sp-6) var(--sp-8);
+  border-radius: var(--r-8);
+}
+.settings-scope .sb-skill:hover,
+.settings-scope .sb-skill:focus-within {
+  background: color-mix(in srgb, var(--ink-1) 5%, transparent);
+}
+.settings-scope .sb-skill-txt {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.settings-scope .sb-skill-name { flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-scope .sb-skill-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.settings-scope .sb-skill-act {
+  flex: none;
+  display: inline-flex;
+  gap: var(--sp-6);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.settings-scope .sb-skill:hover .sb-skill-act,
+.settings-scope .sb-skill:focus-within .sb-skill-act { opacity: 1; }
+@media (hover: none) { .settings-scope .sb-skill-act { opacity: 1; } }
+.settings-scope .sb-skill-act .sb-pill { height: var(--row-h-tool); padding: 0 var(--sp-10); font-size: var(--t-12); }
+.settings-scope .sb-skill-act .sb-pill[data-armed='true'] { color: var(--spills); border-color: var(--spills); }

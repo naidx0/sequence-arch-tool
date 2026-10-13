@@ -1,3 +1,4 @@
+import { makeNativeShim } from './helpers/nativeShim.js';
 import assert from 'node:assert';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -236,7 +237,7 @@ describe('PR flow', () => {
     }
   });
 
-  test('gh is run from an absolute path: one found on PATH works, one that sits inside the project is refused', { skip: process.platform === 'win32' }, async () => {
+  test('gh is run from an absolute path: one found on PATH works, one that sits inside the project is refused', async () => {
     const { dir, bare } = repoWithBareRemote();
     const store = temp('seq-pr-store-');
     const saved = process.env.PATH;
@@ -248,11 +249,14 @@ describe('PR flow', () => {
       const wt = readSessionWorktree(dir, chat)!;
       fs.writeFileSync(path.join(wt.path, 'a.ts'), 'x\n');
       const log = path.join(temp('seq-pr-ghlog-'), 'ran');
-      const script = `#!/bin/sh\necho ran >> ${JSON.stringify(log)}\necho https://github.com/example/repo/pull/9\n`;
+      /* a real executable on every OS (a .cmd is not one: see helpers/nativeShim.ts) */
+      const ghScript = path.join(temp('seq-pr-ghscript-'), 'gh.mjs');
+      fs.writeFileSync(ghScript, `import fs from 'node:fs';\nfs.appendFileSync(${JSON.stringify(log)}, 'ran;');\nconsole.log('https://github.com/example/repo/pull/9');\n`);
+      const plantGh = (d: string): void => void makeNativeShim(d, 'gh', ghScript);
 
       const planted = path.join(wt.path, 'bin');
       fs.mkdirSync(planted);
-      fs.writeFileSync(path.join(planted, 'gh'), script, { mode: 0o755 });
+      plantGh(planted);
       delete process.env.SEQUENCE_GH;
       process.env.PATH = `${planted}${path.delimiter}${saved}`;
       forgetResolvedTools();
@@ -263,7 +267,7 @@ describe('PR flow', () => {
       assert.ok(!fs.existsSync(log), 'the planted gh never ran');
       assert.ok(git(bare, ['branch', '--list', wt.branch]).trim(), 'the branch was still pushed');
 
-      fs.writeFileSync(path.join(wt.path, 'gh'), script, { mode: 0o755 });
+      plantGh(wt.path);
       process.env.PATH = `.${path.delimiter}${saved}`;
       forgetResolvedTools();
       const cwdOnly = await call(base, `/api/sessions/${chat}/pr`, {});
@@ -271,7 +275,7 @@ describe('PR flow', () => {
       assert.notStrictEqual(cwdOnly.status, 200);
 
       const good = temp('seq-pr-goodbin-');
-      fs.writeFileSync(path.join(good, 'gh'), script, { mode: 0o755 });
+      plantGh(good);
       process.env.PATH = `${good}${path.delimiter}${saved}`;
       forgetResolvedTools();
       const ok = await call(base, `/api/sessions/${chat}/pr`, {});

@@ -5,6 +5,8 @@
  * "waiting" once the routes answer — ConnectedSettings used to hardcode null.
  */
 
+import type { MemorySummary } from './memorySummary';
+
 export interface WorkspaceCountFacts {
   recentCount: number;
   sessionCount: number | null;
@@ -18,6 +20,8 @@ export interface WorkspaceCountFacts {
   pluginAskWired: boolean | null;
   /** MCP server count from GET /api/mcp; null when not fetched. */
   mcpServerCount: number | null;
+  /** What persists across chats, from GET /api/memory/summary; null when not fetched. */
+  memory: MemorySummary | null;
 }
 
 export type CountWire<T> =
@@ -35,14 +39,17 @@ export async function loadWorkspaceCountFacts(args: {
     CountWire<{ ok: boolean; plugins: unknown[]; error?: string; askWired: boolean }>
   >;
   mcp?: () => Promise<CountWire<{ document: { servers: Record<string, unknown> } }>>;
+  /** GET /api/memory/summary */
+  memorySummary?: () => Promise<CountWire<MemorySummary>>;
 }): Promise<WorkspaceCountFacts> {
-  const [recent, sessions, memory, hooks, plugins, mcp] = await Promise.all([
+  const [recent, sessions, memory, hooks, plugins, mcp, memSummary] = await Promise.all([
     args.recent(),
     args.sessions(),
     args.memory(),
     args.hooks(),
     args.plugins ? args.plugins() : Promise.resolve({ outcome: 'unreachable' as const }),
     args.mcp ? args.mcp() : Promise.resolve({ outcome: 'unreachable' as const }),
+    args.memorySummary ? args.memorySummary() : Promise.resolve({ outcome: 'unreachable' as const }),
   ]);
 
   let pluginCount: number | null = null;
@@ -73,5 +80,6 @@ export async function loadWorkspaceCountFacts(args: {
     pluginError,
     pluginAskWired,
     mcpServerCount,
+    memory: memSummary.outcome === 'ok' ? memSummary.body : null,
   };
 }

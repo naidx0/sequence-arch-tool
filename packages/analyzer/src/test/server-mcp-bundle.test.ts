@@ -65,7 +65,7 @@ test('the one-file bundle starts beside the analyzer\'s node_modules, lists the 
     await bundleMcp(entry);
     const r = await checkMcpBundle({ entry, repo });
     assert.equal(r.ok, true, `${r.problems.join('; ')}\n${r.stderr.slice(-1500)}`);
-    assert.deepEqual(r.tools, ['architecture_changed', 'create_board', 'draw', 'drawings', 'edit_workflow', 'find_files', 'impact', 'list_boards', 'map', 'visual', 'who_calls']);
+    assert.deepEqual(r.tools, ['architecture_changed', 'components', 'create_board', 'draw', 'drawings', 'edit_workflow', 'find_files', 'impact', 'list_boards', 'map', 'visual', 'web_fetch', 'web_search', 'who_calls']);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
     fs.rmSync(repo, { recursive: true, force: true });

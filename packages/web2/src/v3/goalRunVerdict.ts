@@ -137,6 +137,7 @@ export function goalRunTone(reason: GoalRunStopReason | undefined): GoalRunTone 
     case 'provider_failed':
     case 'the_model_stopped_answering':
     case 'the_model_only_narrated':
+    case 'no_progress':
     case 'turn_failed':
     case 'audited_fail':
       return 'failed';

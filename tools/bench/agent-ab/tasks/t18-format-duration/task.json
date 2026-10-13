@@ -1,0 +1,23 @@
+{
+  "id": "t18-format-duration",
+  "prompt": "formatDuration(seconds) should return \"Hh Mm Ss\" omitting zero leading units: 3661 -> \"1h 1m 1s\", 61 -> \"1m 1s\", 5 -> \"5s\", 0 -> \"0s\". Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "formatDuration"
+    ]
+  }
+}

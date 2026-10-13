@@ -20,6 +20,7 @@
    synchronously, so the chat shows it the moment it is asked for.
    ══════════════════════════════════════════════════════════════════════════ */
 
+import { prefStorage } from '../boot/prefStorage';
 import { readSavedPicks, stateFromSaved, writeSavedPicks } from './chatConfig';
 import type { AskLedgerResult } from '@sequence/schema';
 import type { CappedBody } from '../chat/cappedBody';
@@ -117,6 +118,8 @@ export interface RunNote {
 export type RunItem = RunMessage | RunTool | RunPlan | RunApprovalRef | RunThought | RunQuestionRef | RunNote;
 
 export interface AgentRun {
+  /** The workspace the run belongs to (a repo root, or 'home'). Chat ids are only unique inside one workspace. Absent until the page has switched workspaces in place. */
+  ws?: string;
   /** Server transcript id, used to avoid rendering restored prose beside the live run twice. */
   transcriptId?: string;
   /** The server's id for this turn (what Edit from here names); absent until the turn reached the server. */
@@ -133,6 +136,8 @@ export interface AgentRun {
   endedWithoutAnswer?: boolean;
   operation?: 'prompt' | 'compact';
   stopReason?: string;
+  /** Repo files and folders the run's Read, search and map calls named (`svc:` ids from the map tool); the coverage line is computed from them. Absent when it read nothing. */
+  readPaths?: string[];
   /** The ask ledger (t3gap/asks): the asks of a multi-ask message and the ones the agent's closing line left open. */
   askLedger?: AskLedgerResult | null;
   /** The run was sent with the ask ledger on: only then is a closing line cut from its text. */
@@ -354,6 +359,14 @@ export interface AgentRunStore {
    */
   hydrate(sessionId: string, runs: AgentRun[]): void;
   /**
+   * The page moved to another workspace without reloading (sessions/workspaceSwitch.ts). Runs of every workspace are
+   * kept and keep streaming, but `get()` shows only the current one's, so two workspaces' chats can never meet by id.
+   * `from` is the workspace being left: runs not yet stamped belong to it.
+   */
+  setWorkspace(key: string, from?: string): void;
+  /** Take the chat picks now in storage (restored from the server after a port change) under the ones already on the page. */
+  adoptSavedPicks(): void;
+  /**
    * Follow a chat turn the server is running that this page did not start
    * (reloaded mid-turn, or another workspace opened): its run becomes live and
    * streams again (GET /api/acp/attach). A turn this page is already streaming
@@ -393,6 +406,11 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
   const savePicks = (): void => {
     if (opts.picks) writeSavedPicks(opts.picks, state);
   };
+  /* The workspace the page is in, once it has switched in place; null until then (every run is visible). */
+  let wsKey: string | null = null;
+  /* A run of the workspace being shown. Every write that looks runs up by chat id goes through this, so a chat id that
+     two workspaces share can never reach across. */
+  const mineOf = (r: AgentRun): boolean => wsKey === null || r.ws === undefined || r.ws === wsKey;
   const listeners = new Set<() => void>();
   let host: ChatHost | null = null;
   let seq = 0;
@@ -414,13 +432,30 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
     if (next === state.runs[at]) return;
     const runs = state.runs.slice();
     runs[at] = next;
-    state = { ...state, runs, tokensBySession: tokenTotalsForState(state, runs) };
+    state = { ...state, runs, tokensBySession: tokenTotalsForState(state, runs.filter(mineOf)) };
     emit();
   };
   const find = (id: string): AgentRun | undefined => state.runs.find((r) => r.id === id);
+  const stamp = (): { ws?: string } => (wsKey === null ? {} : { ws: wsKey });
+  let view: { of: AgentRunsState; ws: string; out: AgentRunsState } | null = null;
+  const visible = (): AgentRunsState => {
+    if (wsKey === null) return state;
+    if (view && view.of === state && view.ws === wsKey) return view.out;
+    const ws = wsKey;
+    const out: AgentRunsState = { ...state, runs: state.runs.filter((r) => r.ws === undefined || r.ws === ws) };
+    view = { of: state, ws, out };
+    return out;
+  };
 
   const store: AgentRunStore = {
-    get: () => state,
+    get: () => visible(),
+    setWorkspace(key, from) {
+      if (from !== undefined && wsKey === null) state = { ...state, runs: state.runs.map((r) => (r.ws === undefined ? { ...r, ws: from } : r)) };
+      if (wsKey === key) return;
+      wsKey = key;
+      state = { ...state, tokensBySession: tokenTotalsForState(state, state.runs.filter(mineOf)) };
+      emit();
+    },
     subscribe(fn) {
       listeners.add(fn);
       return () => listeners.delete(fn);
@@ -479,10 +514,11 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
         approvals: [],
         error: null,
         lastEventAt: clock(), stalled: null, waiting: null,
+        ...stamp(),
       };
       /* An earlier run of this chat that answered may still hold its stream (the bridge keeps the prompt open): a new send ends it. */
       if (run.sessionId && !run.nodeId) {
-        for (const r of state.runs) if (r.sessionId === run.sessionId && !r.nodeId && r.status === 'done' && r.answered) void import('./agentRunner').then((m) => m.stopRun(r.id)).catch((err) => console.warn('stop failed', err));
+        for (const r of state.runs) if (mineOf(r) && r.sessionId === run.sessionId && !r.nodeId && r.status === 'done' && r.answered) void import('./agentRunner').then((m) => m.stopRun(r.id)).catch((err) => console.warn('stop failed', err));
       }
       /* S2b: the chat talks to this agent from now on (the runner names it when it had to look one up). */
       const sid = run.sessionId;
@@ -506,11 +542,17 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
       });
       void import('./agentRunner').then((m) => m.stopRun(runId)).catch((err) => console.warn('stop failed', err));
     },
+    adoptSavedPicks() {
+      if (!opts.picks) return;
+      const saved = stateFromSaved(readSavedPicks(opts.picks));
+      state = { ...state, agents: { ...saved.agents, ...state.agents }, chatConfig: { ...saved.chatConfig, ...state.chatConfig } };
+      emit();
+    },
     hydrate(sessionId, saved) {
       const have = new Set(state.runs.map((r) => r.id));
       /* A turn this page is streaming is not drawn a second time from its saved record. */
       const live = new Set(state.runs.map((r) => r.turnId).filter(Boolean));
-      const runs = saved.filter((r) => !have.has(r.id) && !(r.turnId && live.has(r.turnId))).map((r) => ({ ...r, sessionId, restored: true }));
+      const runs = saved.filter((r) => !have.has(r.id) && !(r.turnId && live.has(r.turnId))).map((r) => ({ ...r, sessionId, restored: true, ...stamp() }));
       if (runs.length === 0) return;
       const last = runs[runs.length - 1]!;
       const agents = last.agentRef && !state.agents?.[sessionId] ? { agents: { ...state.agents, [sessionId]: last.agentRef } } : {};
@@ -547,6 +589,7 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
         lastEventAt: clock(),
         stalled: null,
         waiting: null,
+        ...stamp(),
       };
       const runs = state.runs.slice();
       if (at === -1) runs.push(run);
@@ -557,14 +600,14 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
       void import('./agentRunner').then((m) => m.followTurn({ store, update, find, defaultFetch }, id, turn.turnId, f)).catch((err) => console.warn('follow failed', err));
     },
     truncateFrom(runId) {
-      const at = state.runs.find((r) => r.id === runId);
+      const at = state.runs.find((r) => r.id === runId && mineOf(r));
       if (!at || !at.sessionId || at.status === 'running') return null;
-      const mine = state.runs.filter((r) => r.sessionId === at.sessionId);
+      const mine = state.runs.filter((r) => mineOf(r) && r.sessionId === at.sessionId);
       const index = mine.findIndex((r) => r.id === runId);
       if (mine.slice(index).some((r) => r.status === 'running')) return null;
       const gone = new Set(mine.slice(index).map((r) => r.id));
       const runs = state.runs.filter((r) => !gone.has(r.id));
-      state = { ...state, runs, tokensBySession: tokenTotalsForState(state, runs) };
+      state = { ...state, runs, tokensBySession: tokenTotalsForState(state, runs.filter(mineOf)) };
       emit();
       return { sessionId: at.sessionId, keep: index, removed: mine.slice(index) };
     },
@@ -574,9 +617,9 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
       const have = new Set(state.runs.map((r) => r.id));
       const add = back.filter((r) => !have.has(r.id));
       if (add.length === 0) return;
-      const at = state.runs.reduce((n, r, i) => (r.sessionId === first.sessionId ? i : n), -1);
+      const at = state.runs.reduce((n, r, i) => (mineOf(r) && r.sessionId === first.sessionId ? i : n), -1);
       const runs = at < 0 ? [...state.runs, ...add] : [...state.runs.slice(0, at + 1), ...add, ...state.runs.slice(at + 1)];
-      state = { ...state, runs, tokensBySession: tokenTotalsForState(state, runs) };
+      state = { ...state, runs, tokensBySession: tokenTotalsForState(state, runs.filter(mineOf)) };
       emit();
     },
     async answer(runId, requestId, decision, f = defaultFetch) {
@@ -590,7 +633,7 @@ export function createAgentRunStore(opts: { clock?: () => number; fetch?: Fetch;
 }
 
 /** The page's one run store. */
-export const agentRuns: AgentRunStore = createAgentRunStore({ picks: typeof localStorage === 'undefined' ? null : localStorage });
+export const agentRuns: AgentRunStore = createAgentRunStore({ picks: typeof localStorage === 'undefined' ? null : prefStorage });
 
 /** A chat turn the server is running now (GET /api/acp/live). */
 export interface LiveTurn {

@@ -14,10 +14,10 @@ describe('askSurfaceFromWorkspace', () => {
     });
   });
 
-  it('names Whiteboard; wire id stays task-board (server copy is honest)', () => {
+  it('names Spaces; wire id stays task-board (server copy is honest)', () => {
     expect(askSurfaceFromWorkspace('whiteboard')).toEqual({
       id: 'task-board',
-      title: 'Whiteboard',
+      title: 'Spaces',
     });
   });
 
@@ -46,7 +46,7 @@ describe('askSurfaceFromChrome — overlays win (owner deictic bug)', () => {
   it('falls through to workspace when overlay is review/help/null', () => {
     expect(askSurfaceFromChrome({ workspace: 'whiteboard', overlayKind: 'review' })).toEqual({
       id: 'task-board',
-      title: 'Whiteboard',
+      title: 'Spaces',
     });
     expect(askSurfaceFromChrome({ workspace: 'chat', overlayKind: null })).toBeNull();
   });

@@ -1,0 +1,23 @@
+{
+  "id": "design/impeccable",
+  "group": "design",
+  "label": "Impeccable",
+  "summary": "Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate,...",
+  "triggers": [
+    "critique the design",
+    "audit the ui",
+    "polish the ui",
+    "harden the interface",
+    "animate the interface",
+    "redesign this page"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "Apache-2.0",
+  "source": {
+    "repo": "pbakaus/impeccable",
+    "commit": "919dbeba520df760a157fe635be62faae88d58da",
+    "path": "plugin/skills/impeccable"
+  },
+  "url": "https://github.com/pbakaus/impeccable/tree/919dbeba520df760a157fe635be62faae88d58da/plugin/skills/impeccable"
+}

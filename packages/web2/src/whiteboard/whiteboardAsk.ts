@@ -111,7 +111,7 @@ export function askFromWhiteboard(doc: WhiteboardDoc, note: string): WbAskReques
   if (asked !== '') lines.push(asked, '');
 
   if (doc.items.length > 0) {
-    lines.push('This is from a whiteboard sketch, not from the scan — nothing on it is evidence.');
+    lines.push('This is from a Space sketch, not from the scan — nothing on it is evidence.');
     lines.push('');
   }
 

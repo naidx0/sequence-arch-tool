@@ -164,6 +164,18 @@ if (!fs.existsSync(path.join(ANALYZER_OUT, 'dist', 'cli.js'))) {
 if (!fs.existsSync(path.join(ANALYZER_OUT, 'node_modules'))) {
   fail('deploy did not produce a node_modules in the analyzer bundle — the child process would have no deps.');
 }
+/* Bundled components (packages/analyzer/components) are data the server reads at
+   runtime via bundledCatalogRoot(); a deploy that drops them ships an empty catalog. */
+if (!fs.existsSync(path.join(ANALYZER_OUT, 'components', 'groups.json'))) {
+  fail(`deploy did not carry packages/analyzer/components into ${ANALYZER_OUT} — the app would ship no components.`);
+}
+/* A four-part release (v0.1.7.1) writes its build number to packages/analyzer/app-build.json
+   (release.yml). It is untracked, so copy it explicitly; absent means build 0. */
+const APP_BUILD = path.join(REPO_ROOT, 'packages', 'analyzer', 'app-build.json');
+if (fs.existsSync(APP_BUILD)) {
+  fs.copyFileSync(APP_BUILD, path.join(ANALYZER_OUT, 'app-build.json'));
+  log(`copied app-build.json (${fs.readFileSync(APP_BUILD, 'utf8').trim()})`);
+}
 
 // 3b. THE BUNDLE MUST BOOT FROM OUTSIDE THE REPOSITORY, WITH EVERY LINK
 //     FLATTENED. This is the shape the installer ships and the shape the smoke

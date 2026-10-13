@@ -46,9 +46,8 @@ import { setHostCommandHandler } from '../app/hostCommands';
 /* The Agents dock loads when it is opened, not at boot (perf ratchet). */
 const AgentsDock = lazy(() => import('../agents/AgentsDock'));
 import { KeysHost } from '../shell/KeysHost';
-import { openCommandPalette } from '../shell/paletteEvent';
+import { requestFilesFindFocus } from '../files/filesFindFocus';
 import { SHELL_COMMANDS, type ShellCommand } from '../shell/shellModel';
-import { paletteHint } from '../shell/shortcuts';
 import { LateBoot } from '../shell/LateBoot';
 import { WindowControls } from '../shell/WindowControls';
 import { markCut } from './softEdge';
@@ -64,7 +63,7 @@ import { SessionPanel } from './SessionPanel';
 import { SessionRail } from './SessionRail';
 import { StatusBar, type StatusBarAlign } from './StatusBar';
 import { useStatusBar } from './statusBarPref';
-import { applyOrder, moveTo, readOrder, slotAt, writeOrder } from './surfaceOrder';
+import { applyOrder, moveTo, readOrder, slotAt, sortByTitle, writeOrder } from './surfaceOrder';
 import { useReviewDock } from './reviewDockStore';
 import { useMenuKeys } from './menuKeys';
 import {
@@ -184,7 +183,7 @@ const CHROME_TAB_BLURB: Partial<Record<ChromeTabId, string>> = {
 };
 
 /** B's order: the board first. */
-const BASE_STRIP: readonly ChromeTabId[] = [...LIVE_PILLS].sort((a, b) => Number(b === 'architecture') - Number(a === 'architecture'));
+const BASE_STRIP: readonly ChromeTabId[] = sortByTitle(LIVE_PILLS, (id) => CHROME_TAB_DEFS[id].label);
 
 function readTabs(): ChromeTabState {
   try {
@@ -198,9 +197,13 @@ function readTabs(): ChromeTabState {
   }
 }
 
-/** Open (or focus) a surface; one more than `max` on the stage retires the oldest other. */
+/** Open (or focus) a surface; one more than `max` on the stage retires the least recently focused other (it stays a pill). */
 export function openOnStage(state: ChromeTabState, id: ChromeTabId, max: number = STAGE_MAX): ChromeTabState {
   let next = activateTab(state, id);
+  /* `tabs` doubles as the recency list here (the panes' order on the stage comes from the strip, not from it): the
+     surface just focused goes last, so the front of the list is the one nobody has touched longest. */
+  const at = next.tabs.findIndex((t) => t.id === id);
+  if (at >= 0 && at < next.tabs.length - 1) next = { ...next, tabs: [...next.tabs.filter((t) => t.id !== id), next.tabs[at]!] };
   const open = LIVE_PILLS.filter((p) => isVisible(next, p));
   if (open.length > max) {
     const order = next.tabs.map((t) => t.id).filter((t) => open.includes(t) && t !== id);
@@ -223,7 +226,7 @@ export function fitStage(state: ChromeTabState, max: number): ChromeTabState {
 /** Close a surface; the chat column is always there, so nothing falls back to it. */
 export function closeOnStage(state: ChromeTabState, id: ChromeTabId): ChromeTabState {
   const next = minimizeTab(state, id);
-  const other = LIVE_PILLS.find((p) => p !== id && isVisible(next, p));
+  const other = BASE_STRIP.find((p) => p !== id && isVisible(next, p));
   return { ...next, active: other ?? 'chat' };
 }
 
@@ -301,12 +304,31 @@ type NarrowView = 'chat' | 'stage' | 'agents';
 
 /* The doors the palette alone used to hold, now also in the chat's more menu (round 11): same rows, same words. */
 const CHAT_MENU_DOORS: readonly { id: string; icon: S2IconName; note: string }[] = [
-  { id: 'overlay.search', icon: 'search', note: 'Find text in the project' },
-  { id: 'overlay.review', icon: 'diffi', note: 'See what changed, file by file' },
-  { id: 'overlay.rewind', icon: 'undo', note: 'Undo what a turn changed' },
   { id: 'overlay.help', icon: 'spark', note: 'Keys and what you can do' },
 ];
+/* 0.1.8 G8 (owner: the three dots at the top of the chat should be "the quick icons to click": undo, working tree, find).
+   They sit in the chat header as icon buttons; the menu keeps only what is left. Order is the reading order of the
+   work: take back, see what changed, look something up. */
+const CHAT_QUICK: readonly { id: string; icon: S2IconName; label: string; note: string }[] = [
+  { id: 'overlay.rewind', icon: 'undo', label: 'Undo', note: 'Undo what a turn changed' },
+  { id: 'overlay.review', icon: 'diffi', label: 'Working tree', note: 'See what changed, file by file' },
+  { id: 'overlay.search', icon: 'search', label: 'Find in files', note: 'Find text in the project' },
+];
 const doorOf = (id: string): ShellCommand | undefined => SHELL_COMMANDS.find((c) => c.id === id);
+
+/**
+ * THE MOUNT POINT FOR THE BRANCH SWITCHER (0.1.8). Today it draws the branch as static text, exactly as before. The
+ * BranchSwitcher component (git/BranchSwitcher.tsx, built on another branch) replaces the body of this function, or the
+ * one `<BranchSwitcherMount>` line in the crumb, in a single edit; nothing else in the bar needs to change.
+ */
+function BranchSwitcherMount({ branch }: { branch: string }) {
+  return (
+    <span className="s2-branch s2-crumb-b" title={`Branch ${branch}`} data-testid="s2-branch-mount">
+      <S2Icon name="branch" small />
+      <span className="s2-branch-l">{branch}</span>
+    </span>
+  );
+}
 
 /** One resize hairline: a separator a pointer drags and the arrow keys step. */
 function Sizer({
@@ -487,6 +509,10 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
       if (id === 'rail.focus') {
         setSidebarCollapsed(false);
         setPeek(true);
+        return;
+      }
+      if (id === 'whiteboard.close') {
+        setTabs((prev) => closeOnStage(prev, 'whiteboard'));
         return;
       }
       const map: Record<string, ChromeTabId> = {
@@ -736,7 +762,11 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
 
   const review = useReviewDock();
   const [reviewFull, setReviewFull] = useState(false);
-  const open = LIVE_PILLS.filter((id) => isVisible(tabs, id));
+  /* 0.1.8 C3: the open panes read left to right in the strip's own order (the surface names, or the reader's saved drag
+     order), never in the order they were opened or in a fixed list. */
+  const [order, setOrder] = useState<string[] | null>(readOrder);
+  const strip = applyOrder(BASE_STRIP, order);
+  const open = strip.filter((id) => isVisible(tabs, id));
   /* The review takes one of the stage's two places: beside the focused surface. */
   const withReview = review ? (open.includes(tabs.active as ChromeTabId) ? [tabs.active as ChromeTabId] : open.slice(0, 1)) : open;
   const shown = review && reviewFull ? [] : full && withReview.includes(full) ? [full] : withReview;
@@ -853,8 +883,6 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
   /* Round 0.1.5 (G2): the bar has two drags, told apart by whether it overflows. Overflowing, a drag scrolls it (and
      the wheel does). Fitting, there is nothing to scroll, so a drag on a name moves that name: the order is the reader's
      and is remembered. */
-  const [order, setOrder] = useState<string[] | null>(readOrder);
-  const strip = applyOrder(BASE_STRIP, order);
   const stripRef = useRef(strip);
   stripRef.current = strip;
   const [liftId, setLiftId] = useState<ChromeTabId | null>(null);
@@ -1392,6 +1420,35 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
               <span className="shimmer-text">Working</span>
             </span>
           ) : null}
+          <span className="s2-chat-quick" role="group" aria-label="Quick actions">
+          {CHAT_QUICK.map((q) => {
+            const cmd = doorOf(q.id);
+            if (!cmd?.overlay) return null;
+            return (
+              <button
+                key={q.id}
+                type="button"
+                className="s2-ibtn s2-g"
+                aria-label={q.label}
+                title={`${q.label}: ${q.note}`}
+                data-testid={`s2-chat-quick-${q.id}`}
+                onClick={() => {
+                  if (q.id === 'overlay.search') {
+                    /* G9: Find in files lives in the Files space now: open it and focus its find field. */
+                    setTabs((prev) => openOnStage(prev, 'files', stageMaxRef.current));
+                    setFull(null);
+                    setView('stage');
+                    requestFilesFindFocus();
+                    return;
+                  }
+                  store.dispatch({ type: 'shell/overlay', overlay: cmd.overlay! });
+                }}
+              >
+                <S2Icon name={q.icon} />
+              </button>
+            );
+          })}
+          </span>
           <span className="s2-anchor">
             <button
               type="button"
@@ -1452,22 +1509,6 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
                   </span>
                   {agentsOpen ? <S2Icon name="check" small /> : null}
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="s2-mi"
-                  data-testid="s2-chat-menu-commands"
-                  onClick={() => {
-                    setChatMenu(false);
-                    openCommandPalette();
-                  }}
-                >
-                  <S2Icon name="bolt" />
-                  <span className="s2-mi-d">
-                    All commands
-                    <span>{paletteHint()}</span>
-                  </span>
-                </button>
               </div>
             ) : null}
           </span>
@@ -1520,10 +1561,7 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
               {branch ? (
                 <>
                   <span className="s2-crumb-sep" aria-hidden="true">/</span>
-                  <span className="s2-branch s2-crumb-b" title={`Branch ${branch}`}>
-                    <S2Icon name="branch" small />
-                    <span className="s2-branch-l">{branch}</span>
-                  </span>
+                  <BranchSwitcherMount branch={branch} />
                 </>
               ) : null}
             </span>

@@ -1,0 +1,6 @@
+{
+  "name": "t16-group-by",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

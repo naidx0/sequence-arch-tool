@@ -13,6 +13,8 @@
  *       starts the documented global npm install of the provider's bridge
  *       (Claude Code: claude-agent-acp). Only on a person's click.
  *   GET  /api/onboarding/install-adapter?provider=claude -> the same, as it runs
+ *   POST /api/onboarding/install-adapter { provider, kind: 'cli' }   (claims-audit 4.2)
+ *       runs the vendor's own native CLI installer (cliInstall.ts); GET ...&kind=cli polls it.
  *
  * All three are refused in hosted (auth-on) mode and for any non-local caller, with
  * the same gate as `/api/acp/*`: they describe the machine the server runs on
@@ -27,6 +29,7 @@ import { defaultProviderProbe, type ProviderProbe } from './providerProbe.js';
 import { discoverRepos } from './repoDiscovery.js';
 import { readSetupInventory } from './setupImport.js';
 import { createAdapterInstaller, type AdapterInstaller } from './adapterInstall.js';
+import { defaultCliInstaller, type CliInstaller } from './cliInstall.js';
 import { activeUsageLimit } from './agentLimits.js';
 import type { ProvidersResponse } from './providerProbe.js';
 
@@ -44,6 +47,8 @@ export interface OnboardingContext {
   probe?: ProviderProbe;
   /** Test seam; defaults to the process-wide installer. */
   installer?: AdapterInstaller;
+  /** Test seam; defaults to the process-wide CLI installer (kind: 'cli'). */
+  cliInstaller?: CliInstaller;
   /** The user store that remembers a spent usage limit (agentLimits.ts). */
   limitsStoreDir?: string;
   /** Test seam: the clock a remembered limit is read against. */
@@ -115,8 +120,10 @@ export async function handleOnboardingRoute(ctx: OnboardingContext): Promise<boo
   }
   if (install) {
     const installer = ctx.installer ?? defaultAdapterInstaller;
+    const cliInstaller = ctx.cliInstaller ?? defaultCliInstaller;
     if (method === 'GET') {
-      const st = installer.status(url.searchParams.get('provider') ?? '');
+      const which = url.searchParams.get('kind') === 'cli' ? cliInstaller : installer;
+      const st = which.status(url.searchParams.get('provider') ?? '');
       send(res, 200, st ?? { state: 'idle' });
       return true;
     }
@@ -125,14 +132,20 @@ export async function handleOnboardingRoute(ctx: OnboardingContext): Promise<boo
       return true;
     }
     let provider = '';
+    let kind = '';
     try {
-      const body = (await readJson(req)) as { provider?: unknown };
+      const body = (await readJson(req)) as { provider?: unknown; kind?: unknown };
       provider = typeof body?.provider === 'string' ? body.provider : '';
+      kind = typeof body?.kind === 'string' ? body.kind : '';
     } catch (e) {
       send(res, 400, { error: `invalid JSON body: ${(e as Error).message}` });
       return true;
     }
-    const out = installer.start(provider);
+    if (kind !== '' && kind !== 'cli' && kind !== 'bridge') {
+      send(res, 400, { error: `unsupported install kind: ${kind}` });
+      return true;
+    }
+    const out = (kind === 'cli' ? cliInstaller : installer).start(provider);
     if (!out.ok) send(res, out.status, { error: out.error });
     else send(res, 202, out.status);
     return true;

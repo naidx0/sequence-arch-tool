@@ -21,6 +21,8 @@ const panes = () => [...document.querySelectorAll<HTMLElement>('.s2-pane[data-su
 const flex = () => panes().map((p) => Number(p.style.flex.split(' ')[0]));
 const ids = () => panes().map((p) => p.getAttribute('data-surface-pane'));
 const big = () => ids()[flex().indexOf(Math.max(...flex()))];
+const filesShare = () => flex()[ids().indexOf('files')]!;
+const boardShare = () => flex()[ids().indexOf('architecture')]!;
 
 beforeEach(() => {
   localStorage.clear();
@@ -64,7 +66,7 @@ describe('the stage with "Open new surfaces large"', () => {
   it('off: Files opens beside the board half and half (the existing behaviour, the negative control)', () => {
     render(<V3App appStore={freshStore()} />);
     fireEvent.click(screen.getByTestId('s2-tab-files'));
-    expect(ids()).toEqual(['files', 'architecture']);
+    expect(ids()).toEqual(['architecture', 'files']); // 0.1.8 C3: title order
     expect(flex()).toEqual([0.5, 0.5]);
   });
 
@@ -72,10 +74,10 @@ describe('the stage with "Open new surfaces large"', () => {
     setFocusLarge(true);
     render(<V3App appStore={freshStore()} />);
     fireEvent.click(screen.getByTestId('s2-tab-files'));
-    expect(ids()).toEqual(['files', 'architecture']);
-    expect(flex()[0]).toBeCloseTo(0.75, 6);
-    expect(flex()[1]).toBeCloseTo(0.25, 6);
-    expect(screen.getByRole('separator', { name: 'Resize split' }).getAttribute('aria-valuenow')).toBe('75');
+    expect(ids()).toEqual(['architecture', 'files']); // 0.1.8 C3: title order
+    expect(filesShare()).toBeCloseTo(0.75, 6);
+    expect(boardShare()).toBeCloseTo(0.25, 6);
+    expect(screen.getByRole('separator', { name: 'Resize split' }).getAttribute('aria-valuenow')).toBe('25') /* the left pane is now the board */;
   });
 
   it('on: opening another makes it the large one, and clicking back to an open name does too', () => {
@@ -94,12 +96,12 @@ describe('the stage with "Open new surfaces large"', () => {
     setFocusLarge(true);
     render(<V3App appStore={freshStore()} />);
     fireEvent.click(screen.getByTestId('s2-tab-files'));
-    expect(flex()[0]).toBeCloseTo(0.75, 6);
+    expect(filesShare()).toBeCloseTo(0.75, 6);
     act(() => {
-      fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize split' }), { key: 'ArrowLeft' });
+      fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize split' }), { key: 'ArrowRight' });
     });
-    /* The next lock frame left of 75 (Files is the left pane): two thirds. The reader's size, not the 75% rule's. */
-    expect(flex()[0]).toBeCloseTo(2 / 3, 3);
+    /* The next lock frame right of 25 (the board is the left pane, so Files shrinks): two thirds. The reader's size, not the 75% rule's. */
+    expect(filesShare()).toBeCloseTo(2 / 3, 3);
     fireEvent.click(screen.getByTestId('s2-tab-whiteboard'));
     expect(big()).toBe('whiteboard');
   });
@@ -108,7 +110,7 @@ describe('the stage with "Open new surfaces large"', () => {
     setFocusLarge(true);
     render(<V3App appStore={freshStore()} />);
     fireEvent.click(screen.getByTestId('s2-tab-files'));
-    expect(flex()[0]).toBeCloseTo(0.75, 6);
+    expect(filesShare()).toBeCloseTo(0.75, 6);
     expect(localStorage.getItem(FOCUS_LARGE_KEY)).toBe('1');
     act(() => setFocusLarge(false));
     expect(flex()).toEqual([0.5, 0.5]);
@@ -142,9 +144,9 @@ describe('a divider is only a divider once it moves (review B4 1 and 2)', () => 
     fireEvent.click(screen.getByTestId('s2-tab-files'));
     const divider = screen.getByRole('separator', { name: 'Resize split' });
     press(divider, 0);
-    expect(flex()[0]).toBeCloseTo(0.75, 6);
+    expect(filesShare()).toBeCloseTo(0.75, 6);
     press(divider, 2);
-    expect(flex()[0]).toBeCloseTo(0.75, 6);
+    expect(filesShare()).toBeCloseTo(0.75, 6);
   });
 
   it('a real drag keeps the sized layout, and a reload shows it (and the large surface) again', () => {
@@ -152,12 +154,12 @@ describe('a divider is only a divider once it moves (review B4 1 and 2)', () => 
     stageWide();
     const first = render(<V3App appStore={freshStore()} />);
     fireEvent.click(screen.getByTestId('s2-tab-files'));
-    press(screen.getByRole('separator', { name: 'Resize split' }), 0, 300);
-    const dragged = flex()[0]!;
+    press(screen.getByRole('separator', { name: 'Resize split' }), 0, 700);
+    const dragged = filesShare()!;
     expect(dragged).toBeLessThan(0.7);
     first.unmount();
     render(<V3App appStore={freshStore()} />);
-    expect(flex()[0]).toBeCloseTo(dragged, 3);
+    expect(filesShare()).toBeCloseTo(dragged, 3);
     expect(JSON.parse(localStorage.getItem('s2.openLarge.state') ?? '{}').manual).toBe(true);
   });
 

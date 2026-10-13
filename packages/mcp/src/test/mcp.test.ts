@@ -58,6 +58,8 @@ test('lists every Sequence tool, and each one describes itself', async () => {
       // What a change did to the SHAPE of the system, at the service level.
       'architecture_changed',
       'classify_repo',
+      // Bundled skill packs, offered on demand (componentTools.ts).
+      'components',
       // The claim no other tool here can make: how much of the repository an
       // answer built from this scan actually saw.
       'coverage',
@@ -89,6 +91,9 @@ test('lists every Sequence tool, and each one describes itself', async () => {
       'validate_diagram',
       // Lane components: the ready kit of charts and diagrams.
       'visual',
+      // The keyless web plugin (web.enabled): a page as markdown, and search.
+      'web_fetch',
+      'web_search',
       'whiteboard',
       // v3.2 (P6): the targeted query. scan_repo returns the WHOLE graph — ~1.1 MB on
       // the Sequence monorepo — so an agent with one question had to ingest a whole

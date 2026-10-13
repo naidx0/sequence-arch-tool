@@ -1,0 +1,6 @@
+{
+  "name": "t23-query-string",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

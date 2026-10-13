@@ -71,7 +71,7 @@ export interface GitCommitResult {
   error?: string;
 }
 
-interface GitProcResult {
+export interface GitProcResult {
   code: number | null;
   signal: NodeJS.Signals | null;
   stdout: string;
@@ -85,14 +85,18 @@ interface GitProcResult {
  * timeout SIGKILLs the child so a hostile repo (huge diff, slow hook) cannot
  * pin the server.
  */
-function runGit(repoRoot: string, args: string[]): Promise<GitProcResult> {
+export function runGit(
+  repoRoot: string,
+  args: string[],
+  extraEnv?: Record<string, string>,
+): Promise<GitProcResult> {
   return new Promise((resolve) => {
     let child: childProcess.ChildProcess;
     try {
       child = childProcess.spawn('git', args, {
         cwd: repoRoot,
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+        env: { ...process.env, GIT_TERMINAL_PROMPT: '0', ...(extraEnv ?? {}) },
         windowsHide: true,
       });
     } catch (e) {
@@ -249,10 +253,12 @@ export type GitDiffScope =
   | { kind: 'worktree' }
   /** The index alone — `git diff --cached`. */
   | { kind: 'staged' }
+  /** The working tree against the index — `git diff`. Staged changes are NOT in it. */
+  | { kind: 'unstaged' }
   /** One commit against its parent. */
   | { kind: 'commit'; rev: string }
-  /** A branch against where it diverged — `git diff <merge-base>...HEAD`. */
-  | { kind: 'branch'; base: string };
+  /** A branch against where it diverged, working tree included — `git diff <merge-base>`. `base` defaults to the repo's default branch. */
+  | { kind: 'branch'; base?: string };
 
 /**
  * Resolve a caller-supplied revision to a SHA before it reaches a git argv.
@@ -267,7 +273,7 @@ export type GitDiffScope =
  * value too, but relying on that means relying on git's argument parsing to
  * protect a call we are about to make into git.
  */
-async function resolveCommit(repoRoot: string, rev: string, what: string): Promise<string> {
+export async function resolveCommit(repoRoot: string, rev: string, what: string): Promise<string> {
   if (typeof rev !== 'string' || rev.trim() === '') {
     throw new GitWorkspaceError(400, `${what} must be a non-empty string`);
   }
@@ -279,6 +285,23 @@ async function resolveCommit(repoRoot: string, rev: string, what: string): Promi
     throw new GitWorkspaceError(400, `cannot resolve ${what} ${JSON.stringify(rev)}`);
   }
   return r.stdout.trim();
+}
+
+/**
+ * The repo's default branch: what `origin/HEAD` points at, else `main`, else
+ * `master`. Returns a ref NAME that resolved at call time; when none of them
+ * exist it returns `HEAD` (so "branch vs base" is an empty diff, not an error).
+ */
+export async function defaultBaseRef(repoRoot: string): Promise<string> {
+  const sym = await runGit(repoRoot, ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD']);
+  const candidates: string[] = [];
+  if (sym.code === 0 && sym.stdout.trim() !== '') candidates.push(sym.stdout.trim());
+  candidates.push('main', 'master');
+  for (const c of candidates) {
+    const r = await runGit(repoRoot, ['rev-parse', '--verify', '--quiet', `${c}^{commit}`]);
+    if (r.code === 0 && r.stdout.trim() !== '') return c;
+  }
+  return 'HEAD';
 }
 
 export async function gitDiff(
@@ -322,20 +345,46 @@ export async function gitDiff(
     args = hasParent
       ? ['diff', '--no-color', `${sha}^`, sha, '--', relPosix]
       : ['diff-tree', '-p', '--root', '--no-color', sha, '--', relPosix];
+  } else if (scope.kind === 'unstaged') {
+    /* Index -> working tree. `git diff HEAD` (the worktree scope) folds staged
+       changes in; this is the split the Review pane's "Unstaged" always meant. */
+    args = ['diff', '--no-color', '--', relPosix];
   } else if (scope.kind === 'branch') {
-    const baseSha = await resolveCommit(repoRoot, scope.base, 'base');
+    const baseRef = scope.base !== undefined && scope.base !== '' ? scope.base : await defaultBaseRef(repoRoot);
+    const baseSha = await resolveCommit(repoRoot, baseRef, 'base');
     if (!head) throw new GitWorkspaceError(400, 'this repository has no commits to compare');
     /*
-     * THREE DOTS, NOT TWO. `base...HEAD` diffs against the MERGE BASE, so a
-     * branch's review does not fill up with changes that landed on the base
-     * after the branch was cut — which is the difference between "what I did"
-     * and "what has happened since I started".
+     * MERGE BASE -> WORKING TREE. The base's tip is deliberately not the left
+     * side: that would fill a branch review with everything that landed on the
+     * base after the branch was cut ("what I did" vs "what has happened since
+     * I started"). The right side is the working tree, not HEAD, so the diff a
+     * file shows here agrees with the +/- counts of /api/git/branch-changes.
      */
-    args = ['diff', '--no-color', `${baseSha}...HEAD`, '--', relPosix];
+    const mb = await runGit(repoRoot, ['merge-base', baseSha, 'HEAD']);
+    const mergeBase = mb.code === 0 ? mb.stdout.trim() : '';
+    args = ['diff', '--no-color', mergeBase || baseSha, '--', relPosix];
   } else {
     args = head
       ? ['diff', '--no-color', 'HEAD', '--', relPosix]
       : ['diff', '--no-color', '--', relPosix];
+  }
+
+  /*
+   * AN UNTRACKED FILE HAS NO DIFF IN ANY OF THESE SCOPES: `git diff` ignores
+   * what it does not track, so the pane showed an empty diff for a brand-new
+   * file. Ask git for the all-added form with `--no-index` against the null
+   * device (exit 1 means "differs", which is the point, not a failure).
+   */
+  if (scope.kind === 'worktree' || scope.kind === 'unstaged' || scope.kind === 'branch') {
+    const tracked = await runGit(repoRoot, ['ls-files', '--error-unmatch', '--', relPosix]);
+    if (tracked.code !== 0) {
+      const others = await runGit(repoRoot, ['ls-files', '--others', '--exclude-standard', '--', relPosix]);
+      if (others.stdout.trim() !== '') {
+        const nul = process.platform === 'win32' ? 'NUL' : '/dev/null';
+        const ni = await runGit(repoRoot, ['diff', '--no-index', '--no-color', '--', nul, relPosix]);
+        if (ni.code === 0 || ni.code === 1) return { path: relPosix, diff: ni.stdout };
+      }
+    }
   }
 
   const r = await runGit(repoRoot, args);

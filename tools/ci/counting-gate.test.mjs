@@ -122,6 +122,38 @@ test('case 2: a built test file no glob reaches is named as unreached', () => {
   }
 });
 
+test('case 2b: a test file inside a nested package (a fixture repository) is not called unreached', () => {
+  /* tools/bench/agent-ab/tasks/<id>/repo/test/mod.test.js is another package's tree; case 2 above is the
+     negative control: the same file with no package.json around it IS named. */
+  const root = repo({
+    'test/real.test.js': REAL,
+    'test/fixrepo/package.json': '{"name":"inner","version":"1.0.0"}',
+    'test/fixrepo/test/inner.test.js': REAL,
+  });
+  try {
+    const { code, out } = run(root);
+    assert.doesNotMatch(out, /NO GLOB REACHES IT/, out);
+    assert.strictEqual(code, 0, out);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('case 2c: a package.json WITHOUT a name does not hide the tests beside it (negative control for 2b)', () => {
+  const root = repo({
+    'test/real.test.js': REAL,
+    'test/loose/package.json': '{"type":"module"}',
+    'test/loose/hidden.test.js': REAL,
+  });
+  try {
+    const { code, out } = run(root);
+    assert.match(out, /hidden.test.js/, out);
+    assert.strictEqual(code, 2, out);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 /* ── case 3: the ran-against-discovered line on a healthy tree ───────────── */
 
 test('case 3: a healthy tree prints both numbers and exits 0', () => {
@@ -242,6 +274,23 @@ test('a declared --test-timeout ends a hanging test instead of holding the gate'
     assert.ok(Date.now() - t0 < 60000, 'the gate returned instead of waiting forever');
     assert.strictEqual(code, 1, out);
     assert.match(out, /discovered files\s+2/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a hung test that keeps LOGGING still fails the gate within ~30 s (output is not progress)', () => {
+  /* The stall watchdog re-armed on every event, output included, so a hang that logs from a timer held the push forever. */
+  const NOISY = "import test from 'node:test';\ntest('hangs noisily', () => new Promise(() => { setInterval(() => console.log('still going'), 200); }));\n";
+  const root = repo(
+    { 'test/hang.test.js': NOISY, 'test/real.test.js': REAL },
+    { name: 'fixture', version: '1.0.0', scripts: { test: 'node --test --test-timeout=1500 test/*.test.js' } },
+  );
+  try {
+    const t0 = Date.now();
+    const { code, out } = run(root);
+    assert.ok(Date.now() - t0 < 30000, 'the gate returned instead of waiting forever');
+    assert.notStrictEqual(code, 0, out);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

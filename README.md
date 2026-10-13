@@ -5,14 +5,28 @@
 It reads a repository into a live architecture graph with static analysis — no model involved —
 and puts that graph beside a chat that answers from it. Every solid edge on the board traces to
 a real import, call, route or manifest line. Anything drawn or proposed stays dashed until the
-scanner finds it in code. The whole thing runs on your machine; nothing leaves it unless you
-connect a key.
+scanner finds it in code. The whole thing runs on your machine. Your code leaves it only for a
+model or agent you connect: an API key, a local server, or a Claude Code or Codex sign-in. Without
+one, the only network calls are a daily update check to GitHub (turn it off with
+the `updates.check` setting (a Settings switch is coming in the UX update) or `SEQUENCE_NO_UPDATE_CHECK=1`; either stops every automatic request, and only Check now still asks) and, the first time Claude is used,
+the bridge download from npm.
 
 <p align="center">
-  <a href="site/public/demo/v014/tour.mp4"><img src="site/public/demo/v014/tour.jpg" width="880" alt="Sequence 0.1.4: the chat beside the architecture map and the whiteboard. Opens the tour video." /></a>
+  <a href="site/public/demo/v014/tour.mp4"><img src="site/public/demo/v014/tour.jpg" width="880" alt="A tour recorded on 0.1.4: the chat beside the architecture map and the whiteboard. Opens the tour video." /></a>
 </p>
 
-## What's new in 0.1.4
+## What's new in 0.1.8
+
+- Components: 38 ready-made skills ship in the app and load at run time as tools, not by default. Three modes (auto, approval cards, off), `/components` and the + next to the chat box.
+- Spaces replaces the whiteboard, and agents can draw with colours, lines, frames, SVG, scenes and video.
+- Free web search and fetch for Claude, Codex and Sequence's own model, with no key.
+- Mac: partial updates (the first update after a dmg install downloads the full zip once), and Cmd+C and Cmd+V work.
+- Switching branches rescans the architecture board; files show status for the current branch.
+- `/goal` on Claude and Codex, and a coverage line under agent answers.
+
+The full list is in [docs/releases/v0.1.8.md](docs/releases/v0.1.8.md).
+
+## A tour (clips recorded on 0.1.4)
 
 <table>
   <tr>
@@ -31,18 +45,18 @@ connect a key.
 
 Each picture links to its clip. The clips use a sample shop repository; the app and scan are real, model answers are scripted replies. The run history and token figures in the Agents clip are illustrative.
 
-Also new: a reasoning slider, a one-line terminal prompt, drawings and chart cards inline in chat,
+Also in 0.1.4: a reasoning slider, a one-line terminal prompt, drawings and chart cards inline in chat,
 Claude setting itself up the first time it is used, restart and continue, importing old Claude Code
 and Codex chats, several agents at once with compare and merge, and opening a pull request from a
 worktree chat.
 
 ## Download
 
-The current version is 0.1.4. Installers are on the
-[v0.1.4 release page](https://github.com/naidx0/sequence-arch-tool/releases/tag/v0.1.4). Free, no account.
+The current version is 0.1.8. Installers are on the
+[v0.1.8 release page](https://github.com/naidx0/sequence-arch-tool/releases/tag/v0.1.8). Free, no account.
 
-- **Windows**: `Sequence Setup 0.1.4.exe` (installer) or `Sequence-0.1.4-win.zip` (portable).
-- **macOS**: a `.dmg` or a `.zip`, for Apple silicon and for Intel.
+- **Windows**: `Sequence Setup 0.1.8.exe` (installer) or `Sequence-0.1.8-win.zip` (portable).
+- **macOS**: Apple silicon (`-arm64.dmg` / `-arm64-mac.zip`). Intel builds are on the release page but are not tested on every release.
 - **Linux**: an AppImage or a deb.
 
 `SHASUMS256.txt` on the same page lists the SHA-256 of every file.
@@ -85,10 +99,10 @@ Chat stays on the left. The other panes open beside it and snap to clean splits.
 
 | Pane | What it does |
 |---|---|
-| **Chat** | Asks are answered from the scanned graph with tools; every tool call is a card, every answer cites file and line or says what was not read. A model chip names the model, a ring shows how much of the context window the last turn used. `/goal <text>` starts a long-running run that writes a plan and works it one step per turn. |
+| **Chat** | Asks are answered from the scanned graph with tools; every tool call is a card, every answer from Sequence's own model cites file and line or says what was not read, and a Claude or Codex answer carries a coverage line naming the services it opened files in. A model chip names the model, a ring shows how much of the context window the last turn used. `/goal <text>` starts a long-running run that writes a plan and works it one step per turn; it runs on Sequence's own model, or on the chat's Claude Code or Codex agent, in an open project: Sequence gives the agent a tool to tick each step, and a run whose plan does not move for three turns stops and says so. |
 | **Architecture** | The scanned graph: packages, services, datastores and the typed edges between them. Solid edges were found in code; dashed ones are claims. Click a node and it becomes a chip in the composer. |
 | **Files** | The tree and its symbols, beside the graph, with a one-line breadcrumb, status colours, and rendered Markdown and diagrams. |
-| **Whiteboard** | Freehand ink beside the graph. A box or a line you draw is recognised into a typed node or edge (`@sequence/ink`), so the drawing stays a structured claim, not pixels. |
+| **Whiteboard** | Freehand ink beside the graph. A rough box, ellipse, diamond or arrow can be tidied into a clean shape by a small trained model (`@sequence/ink`); nothing drawn here is a claim about your code. (On the Architecture board, Sketch turns a box into a node and a line into an edge.) |
 | **AI Canvas** | Where explanations land as blocks: Markdown, a Mermaid diagram, SVG, HTML or a React component, rendered on a plane you can draw on. What you draw there reaches the model on the next turn. |
 | **Agents** | Context and Output as the agent reports them; workflows and runs collapsed until opened. |
 | **Terminal** | A shell inside the harness, with a one-line prompt and a toolbar. |
@@ -97,11 +111,10 @@ Chat stays on the left. The other panes open beside it and snap to clean splits.
 ## No key required
 
 The scan, the board, the whiteboard, impact, risks and export are static analysis and run with
-no account and no network. A key (Settings) adds the chat and the canvas: Anthropic,
-OpenAI, OpenRouter, or any OpenAI-compatible endpoint including a local Ollama, LM Studio or
-llama.cpp server. There is no way to sign in with a ChatGPT or Claude subscription — the
-providers do not offer one for third-party tools — so connecting AI means an API key or a local
-model. Everything binds to `127.0.0.1`.
+no account and no network. To chat, connect Claude Code or Codex (they
+run on your own signed-in CLI, including a subscription), a local model (Ollama, LM Studio,
+llama.cpp), or an API key (Settings): Anthropic, OpenAI, OpenRouter, or any OpenAI-compatible
+endpoint. A key adds Sequence's own chat and canvas. Everything binds to `127.0.0.1`.
 
 ## What is measured, and what is not
 

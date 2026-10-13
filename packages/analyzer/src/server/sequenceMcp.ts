@@ -64,7 +64,7 @@ export function sequenceMcpEntry(env: NodeJS.ProcessEnv = process.env, from: str
 /** The drawing ids a message references (@drawing:d3): the only ones the agent's visual tool may version from another chat. */
 export const referencedDrawingIds = (message: string): string[] => [...new Set([...message.matchAll(/@drawing:(d\d+)\b/g)].map((m) => m[1]!))];
 
-export function sequenceMcpServer(repo: string, opts: { allTools?: boolean; entry?: string | null; drawings?: { root: string; chat: string | null; referenced?: readonly string[] } } = {}): AgentMcpServer | null {
+export function sequenceMcpServer(repo: string, opts: { allTools?: boolean; /** false: the session starts without the `components` tool (mode manual, or components off). */ components?: boolean; /** Where `components load` asks the app, and as which thread (so approve mode can raise a card). */ componentsMode?: string; componentsUrl?: string; componentsKey?: string; entry?: string | null; drawings?: { root: string; chat: string | null; referenced?: readonly string[] }; /** A goal run is working this chat: the agent also gets the `goal` tool (plan ticks), jailed to this chat's plan. */ goal?: { chat: string; url: string; key: string } } = {}): AgentMcpServer | null {
   const entry = opts.entry === undefined ? sequenceMcpEntry() : opts.entry;
   if (!entry) return null;
   const electron = typeof process.versions.electron === 'string';
@@ -75,8 +75,13 @@ export function sequenceMcpServer(repo: string, opts: { allTools?: boolean; entr
     env: {
       SEQUENCE_REPO: path.resolve(repo),
       SEQUENCE_MCP_TOOLS: opts.allTools ? 'all' : 'core',
+      ...(opts.components === false ? { SEQUENCE_MCP_COMPONENTS: 'off' } : {}),
+      ...(opts.componentsMode ? { SEQUENCE_COMPONENTS_MODE: opts.componentsMode } : {}),
+      ...(opts.componentsUrl ? { SEQUENCE_COMPONENTS_URL: opts.componentsUrl } : {}),
+      ...(opts.componentsKey ? { SEQUENCE_COMPONENTS_KEY: opts.componentsKey } : {}),
       /* Lane components: the visual tool saves drawings where the app reads them (the project, not the chat's worktree) under this chat. */
       ...(opts.drawings ? { SEQUENCE_DRAWINGS_ROOT: path.resolve(opts.drawings.root), ...(opts.drawings.chat ? { SEQUENCE_CHAT: opts.drawings.chat } : {}), ...(opts.drawings.referenced?.length ? { SEQUENCE_REFERENCED: opts.drawings.referenced.join(',') } : {}) } : {}),
+      ...(opts.goal ? { SEQUENCE_GOAL_URL: opts.goal.url, SEQUENCE_GOAL_KEY: opts.goal.key, SEQUENCE_GOAL_CHAT: opts.goal.chat } : {}),
       ...(electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
     },
   };

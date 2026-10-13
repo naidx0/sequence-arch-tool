@@ -1,11 +1,40 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { CommandSurface } from '../shell/CommandSurface';
 import { PALETTE_EVENT } from '../shell/paletteEvent';
 import { sessionsClient } from '../sessions/sessionsClient';
 import { createNewChat } from './sessionActions';
+import { requestDiffBoard } from '../git/openDiff';
 import { SHELL_COMMANDS, type ShellCommand, type ShellCommandId } from '../shell/shellModel';
 import { groundedRepoRoot, useAppState, useStore } from '../state/connect';
+
+/**
+ * ONE PALETTE, NO MATTER HOW MANY MOUNTS (0.1.8, G10; owner: Ctrl+K "opens differently" from the bottom-left button).
+ * Shell2 mounts this component in the product; V3Shell also mounts it but is not part of the product today. Were two
+ * instances ever live, each would listen: one chord would open both (or toggle one open and the other shut) and the event
+ * would open both. This is a guard against that, and harmless with one mount. The earliest-mounted instance leads: it alone listens for the chord and for PALETTE_EVENT and draws the palette; any
+ * other renders nothing. When the leader unmounts the next one takes over.
+ */
+const mounted: object[] = [];
+const watchers = new Set<() => void>();
+const announce = () => watchers.forEach((w) => w());
+
+function useLeads(): boolean {
+  const token = useRef<object>({}).current;
+  const [, tick] = useState(0);
+  useLayoutEffect(() => {
+    const rerender = () => tick((n) => n + 1);
+    mounted.push(token);
+    watchers.add(rerender);
+    announce();
+    return () => {
+      mounted.splice(mounted.indexOf(token), 1);
+      watchers.delete(rerender);
+      announce();
+    };
+  }, [token]);
+  return mounted[0] === token;
+}
 
 /**
  * Cmd/Ctrl+K reachability for V3 — same command list as the retired Shell,
@@ -19,6 +48,7 @@ export function V3CommandPalette({
   onOpenSurface?: (id: ShellCommandId) => void;
   onRevealChat?: () => void;
 }) {
+  const leads = useLeads();
   const store = useStore();
   const state = useAppState();
   const repoRoot = groundedRepoRoot(state);
@@ -35,6 +65,7 @@ export function V3CommandPalette({
   }, [open]);
 
   useEffect(() => {
+    if (!leads) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
@@ -49,17 +80,18 @@ export function V3CommandPalette({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open]);
+  }, [open, leads]);
 
   /* The sidebar's Commands row and the chat's more menu open it too (shell/paletteEvent.ts). */
   useEffect(() => {
+    if (!leads) return undefined;
     const on = () => {
       openerRef.current = document.activeElement as HTMLElement | null;
       setOpen(true);
     };
     window.addEventListener(PALETTE_EVENT, on);
     return () => window.removeEventListener(PALETTE_EVENT, on);
-  }, []);
+  }, [leads]);
 
   const unavailableReason = useCallback(
     (command: ShellCommand): string | null => {
@@ -76,6 +108,11 @@ export function V3CommandPalette({
 
       if (command.overlay) {
         store.dispatch({ type: 'shell/overlay', overlay: command.overlay });
+        return;
+      }
+
+      if (command.id === 'canvas.diff') {
+        requestDiffBoard();
         return;
       }
 
@@ -100,7 +137,7 @@ export function V3CommandPalette({
     [onOpenSurface, onRevealChat, repoRoot, store, unavailableReason],
   );
 
-  if (!open) return null;
+  if (!leads || !open) return null;
 
   return (
     <CommandSurface

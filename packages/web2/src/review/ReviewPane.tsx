@@ -305,7 +305,9 @@ export function ReviewPane({
           controller.signal,
           state.scope === 'staged'
             ? { kind: 'staged' }
-            : state.scope === 'commit' && rev
+            : state.scope === 'unstaged'
+              ? { kind: 'unstaged' }
+              : state.scope === 'commit' && rev
               ? { kind: 'commit', rev }
               : state.scope === 'branch' && base
                 ? { kind: 'branch', base }

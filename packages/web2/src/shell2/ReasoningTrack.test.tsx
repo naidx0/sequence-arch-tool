@@ -71,7 +71,7 @@ describe('the reasoning slider (Faster to Smarter)', () => {
   it('the fill encloses the thumb (radius plus padding past the dot) and nothing animates on the first paint', () => {
     const css = readFileSync(resolve(__dirname, 'modelMenu.css'), 'utf8').replace(/\r\n/g, '\n');
     const fill = /\.s2-rt-fill \{([^}]*)\}/.exec(css)![1]!;
-    expect(fill).toMatch(/width:\s*calc\(var\(--rt-x\) \* 100% \+ 14px \+ 12px\)/);
+    expect(fill).toMatch(/width:\s*calc\(var\(--rt-x\) \* 100% \+ 14px \+ 9px \+ 5px\)/);
     expect(fill).not.toMatch(/transition/);
     expect(css).toMatch(/\.s2-rt\[data-ready='true'\] \.s2-rt-fill \{\s*transition: width/);
     expect(css).toMatch(/\.s2-rt\[data-ready='true'\] \.s2-rt-thumb \{\s*transition: left/);

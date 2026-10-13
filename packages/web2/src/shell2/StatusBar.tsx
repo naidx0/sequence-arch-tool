@@ -15,6 +15,7 @@ import { AsciiSpinner } from './AsciiSpinner';
 import { Fragment, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 
 import { agentActivity, limitsText } from '../agents/agentActivity';
+import { chatContext } from '../agents/contextMeter';
 import { activeAgentModel, resolvedModel } from '../agents/activeModel';
 import { agentRuns } from '../agents/agentRuns';
 import { ContextRing, formatContextWindowTokens, resolveContextRingUsed } from '../chat/ContextRing';
@@ -26,6 +27,7 @@ import { branchLabel } from '../worktree/worktreeGroups';
 import { ProviderIcon, modelGroupOf, providerLabel, providerOf, type ProviderKey } from './brandIcons';
 import { S2Icon } from './icons';
 import { liveWorktree } from './sessionGroups';
+import { useUpdateAvailable, type UpdatePillDeps } from './updatePill';
 import { markCut } from './softEdge';
 
 /** Input / output / cache of the turn in flight or the last answered one; "—" where nothing was metered. */
@@ -55,7 +57,7 @@ export function fitBranch(bar: HTMLElement): void {
   if (text && text.scrollWidth > text.clientWidth + 1 && text.clientWidth < BRANCH_MIN_PX) bar.setAttribute('data-nobranch', 'true');
 }
 
-export function StatusBar({ align = null }: { align?: StatusBarAlign } = {}) {
+export function StatusBar({ align = null, update: updateDeps }: { align?: StatusBarAlign; update?: UpdatePillDeps } = {}) {
   const barRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     const bar = barRef.current;
@@ -71,6 +73,8 @@ export function StatusBar({ align = null }: { align?: StatusBarAlign } = {}) {
   }, []);
   const state = useAppState();
   const store = useStore();
+  /* A newer release this install can take: one read after first idle (updatePill.ts). */
+  const update = useUpdateAvailable(updateDeps);
   const runs = useSyncExternalStore(agentRuns.subscribe, agentRuns.get, agentRuns.get);
   const sessionId = state.session.activeId;
   const act = agentActivity(runs, sessionId);
@@ -115,8 +119,10 @@ export function StatusBar({ align = null }: { align?: StatusBarAlign } = {}) {
   const composer = composerPropsFrom(state, store);
   /* An agent answers this chat: the meter is that agent's, in this chat. Until it has reported, it is empty;
      the Sequence model's window and counts (and the agent the chat left) are not its context. */
-  const used = act?.usage ? act.usage.used : act ? null : resolveContextRingUsed(state.session.inFlight?.usage ?? null, composer.contextUsed ?? null);
-  const windowTok = act?.usage ? act.usage.size : act ? null : composer.contextWindow;
+  /* The agent this chat is on now: a window an earlier agent reported is not this one's (contextMeter.ts scopes it). */
+  const agentCtx = chatContext(runs.runs, sessionId, act?.agentRef ?? null);
+  const used = act ? agentCtx.used : resolveContextRingUsed(state.session.inFlight?.usage ?? null, composer.contextUsed ?? null);
+  const windowTok = act ? agentCtx.size : composer.contextWindow;
   const inFlightUsage = state.session.inFlight?.usage ?? null;
   const ringNote = (act?.limits ? limitsText(act.limits) : null) ?? (act ? null : tokenLine(inFlightUsage, state.session.turns));
   const breakdown = act || state.session.inFlight ? null : (composer.contextBreakdown ?? null);
@@ -137,7 +143,9 @@ export function StatusBar({ align = null }: { align?: StatusBarAlign } = {}) {
       title: stateWord,
       node: (
         <>
-          {agentState === 'working' ? <AsciiSpinner /> : <span className={`s2-sb-dot is-${agentState}`} aria-hidden="true" />}
+          <span className="s2-sb-sym" data-testid="s2-status-symbol" aria-hidden="true">
+            {agentState === 'working' ? <AsciiSpinner /> : <span className={`s2-sb-dot is-${agentState}`} />}
+          </span>
           <span className={`s2-sb-state${agentState === 'working' ? ' shimmer-text' : ''}`} data-testid="s2-status-state" data-state={agentState}>
             {stateWord}
           </span>
@@ -183,6 +191,20 @@ export function StatusBar({ align = null }: { align?: StatusBarAlign } = {}) {
       ),
     },
     ...(branch && !worktree ? [{ key: 'branch', title: `Branch ${branch}`, node: <><S2Icon name="branch" small /><span className="s2-mono" data-testid="s2-status-branch">{branch}</span></> }] : []),
+    /* The update notice: a status item that opens Settings > General at the version row, where Update (and then Restart) is. */
+    ...(update
+      ? [
+          {
+            key: 'update',
+            title: `Version ${update.version} is ready to install`,
+            node: (
+              <button type="button" className="s2-sb-update" data-testid="s2-status-update" onClick={() => store.dispatch({ type: 'shell/overlay', overlay: { kind: 'settings', pane: 'app' } })}>
+                Update to v{update.version}
+              </button>
+            ),
+          },
+        ]
+      : []),
   ];
 
   /* A name changes (a model, a branch, the state word) without the bar's own box moving, but not on every streamed

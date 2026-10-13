@@ -4,7 +4,7 @@
  * Sequence MCP server. The only variable is whether the plugin is attached.
  *
  *   node tools/bench/agent-ab/run.mjs --questions q.json --repos repos.json \
- *     --agent codex|claude|bash|mock --arm plain|sequence|map [--map-budget 4000] [--model m] [--oss] [--limit n] [--out run.jsonl]
+ *     --agent codex|claude|bash|mock --arm plain|sequence|sequence-map|map [--map-budget 4000] [--model m] [--oss] [--limit n] [--out run.jsonl]
  *
  * Both arms: read-only, the user's own config and MCP servers ignored, the same
  * prompt (it names the repository's absolute path in both, so the plain arm is
@@ -39,7 +39,9 @@ const MODEL = arg('--model');
 const LIMIT = Number(arg('--limit', Q.length));
 const OUT = arg('--out', path.join(os.tmpdir(), `agent-ab-${AGENT}-${ARM}.jsonl`));
 const TIMEOUT = Number(arg('--timeout-ms', 600000));
-if (!['plain', 'sequence', 'map'].includes(ARM)) throw new Error('--arm plain|sequence|map');
+if (!['plain', 'sequence', 'sequence-map', 'map'].includes(ARM)) throw new Error('--arm plain|sequence|sequence-map|map');
+/* sequence-map: the sequence arm plus the architecture map block the app now puts in front of a Claude/Codex thread's first prompt (plan 2.1 A/B: sequence vs sequence-map). */
+const MCP_ON = ARM === 'sequence' || ARM === 'sequence-map';
 
 /* AB_PREFIX_FILE: text put in front of the prompt on every question (the refine-loop notes arm, tools/bench/refine-replay/on-pc). Unset, the prompt is exactly what it was. */
 const PREFIX = process.env.AB_PREFIX_FILE ? fs.readFileSync(process.env.AB_PREFIX_FILE, 'utf8') : '';
@@ -68,7 +70,7 @@ function runCodex(text, cwd) {
   const args = ['exec', '--json', '--ephemeral', '--ignore-user-config', '--skip-git-repo-check', '-s', 'read-only', '-C', cwd];
   if (has('--oss')) args.push('--oss', '--local-provider', 'ollama');
   if (MODEL) args.push('-m', MODEL);
-  if (ARM === 'sequence') {
+  if (MCP_ON) {
     args.push('-c', `mcp_servers.sequence.command="node"`, '-c', `mcp_servers.sequence.args=[${JSON.stringify(MCP.split(path.sep).join('/'))}]`);
     args.push('-c', 'mcp_servers.sequence.startup_timeout_sec=120');
   }
@@ -96,10 +98,10 @@ function runCodex(text, cwd) {
 
 function runClaude(text, cwd) {
   const cfg = path.join(os.tmpdir(), `agent-ab-mcp-${ARM}.json`);
-  const servers = ARM === 'sequence' ? { sequence: { command: 'node', args: [MCP] } } : {};
+  const servers = MCP_ON ? { sequence: { command: 'node', args: [MCP] } } : {};
   fs.writeFileSync(cfg, JSON.stringify({ mcpServers: servers }));
   const tools = ['Read', 'Grep', 'Glob', 'Bash(git log:*)', 'Bash(git grep:*)'];
-  if (ARM === 'sequence') tools.push('mcp__sequence');
+  if (MCP_ON) tools.push('mcp__sequence');
   const args = ['-p', '--output-format', 'json', '--strict-mcp-config', '--mcp-config', cfg, '--allowedTools', tools.join(','), '--disallowedTools', 'Edit,Write,NotebookEdit'];
   if (MODEL) args.push('--model', MODEL);
   const t0 = Date.now();
@@ -123,8 +125,8 @@ function runClaude(text, cwd) {
 
 /* A stand-in agent so the runner and scorer are tested without a model. */
 function runMock(_text, _cwd, q) {
-  const files = ARM === 'sequence' ? q.answer : q.answer.slice(0, 1).concat(['not/a/real/file.ts']);
-  return { ms: 1, last: `done\n${JSON.stringify({ files })}`, tokensIn: 100, tokensOut: 10, toolCalls: 1, mcpCalls: ARM === 'sequence' ? 1 : 0, exit: 0 };
+  const files = MCP_ON ? q.answer : q.answer.slice(0, 1).concat(['not/a/real/file.ts']);
+  return { ms: 1, last: `done\n${JSON.stringify({ files })}`, tokensIn: 100, tokensOut: 10, toolCalls: 1, mcpCalls: MCP_ON ? 1 : 0, exit: 0 };
 }
 
 /* The map arm: .sequence/map.md at --map-budget (default 4000), rendered in memory from a fresh scan so nothing is written into the repo under test. */
@@ -138,12 +140,18 @@ async function mapFor(repoAbs) {
   return maps.get(repoAbs);
 }
 const runBash = async (text, cwd) => runBashAgent({ question: text, cwd, arm: ARM, model: MODEL, map: ARM === 'map' ? await mapFor(cwd) : undefined });
+/* The same block the app sends (server/askAgentMap.ts agentMapBlockForThread), built from an in-memory scan. */
+async function mapBlockFor(repoAbs) {
+  const { AGENT_MAP_BLOCK_OPEN, AGENT_MAP_HEADER } = await import(url.pathToFileURL(path.join(ROOT, 'packages', 'analyzer', 'dist', 'server', 'askAgentMap.js')).href);
+  return [AGENT_MAP_BLOCK_OPEN, AGENT_MAP_HEADER, (await mapFor(repoAbs)).trimEnd(), '', '---', '', ''].join('\n');
+}
 const run = { codex: runCodex, claude: runClaude, bash: runBash, mock: runMock }[AGENT];
 if (!run) throw new Error('--agent codex|claude|bash|mock');
 fs.writeFileSync(OUT, '');
 for (const q of Q.slice(0, LIMIT)) {
   const repoAbs = path.resolve(REPOS[q.repo]);
-  const r = await run(prompt(q, repoAbs), repoAbs, q);
+  const text = prompt(q, repoAbs);
+  const r = await run(ARM === 'sequence-map' && (AGENT === 'codex' || AGENT === 'claude') ? `${await mapBlockFor(repoAbs)}${text}` : text, repoAbs, q);
   const files = parseAnswer(r.last);
   const s = scoreAnswer(q, files);
   const row = { id: q.id, repo: q.repo, type: q.type, agent: AGENT, arm: ARM, model: MODEL ?? null, files, ...s, ...r };

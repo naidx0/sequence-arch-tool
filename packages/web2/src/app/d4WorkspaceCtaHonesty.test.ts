@@ -21,7 +21,7 @@ describe('D4 workspace CTA honesty', () => {
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.state).toBe(INITIAL_WORKSPACE_VIEWS);
-    expect(r.reason).toBe('browser is not shipped yet. Open Files, Architecture, Whiteboard, Terminal or Agents instead.');
+    expect(r.reason).toBe('browser is not shipped yet. Open Files, Architecture, Spaces, Terminal or Agents instead.');
   });
 
   it('requestOpen allows terminal (chrome pill path)', () => {

@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { createRepoServer } from '../server/repoServer.js';
 import { setRepoTrust } from '../server/repoTrust.js';
 import { userStoreDir } from '../server/store.js';
-import { discover, expandTyped, importSelected, removeImported, resolveText, MAX_CANDIDATES, MAX_DEFAULT_CANDIDATES } from '../server/skillsDiscover.js';
+import { cursorRuleToSkill, defaultPlaces, discover, expandTyped, importSelected, removeImported, resolveText, MAX_CANDIDATES, MAX_DEFAULT_CANDIDATES } from '../server/skillsDiscover.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const TICKETING = path.resolve(here, '..', '..', '..', '..', 'examples', 'ticketing-scaffold');
@@ -33,6 +33,7 @@ function world() {
   put(path.join(home, '.codex', 'skills', 'other', 'SKILL.md'), '# Other\n');
   put(path.join(home, '.cursor', 'rules', 'style.mdc'), 'Use tabs.\n');
   put(path.join(root, 'AGENTS.md'), '# Agents here\n');
+  put(path.join(root, '.cursor', 'rules', 'proj.mdc'), '---\ndescription: Project naming\nglobs: src/**/*.ts\n---\nName things well.\n');
   return { home, root };
 }
 
@@ -41,7 +42,7 @@ test('default: no text looks in the known folders and the project, and finds ski
   const a = discover('', { home, root, env: {} });
   assert.equal(a.mode, 'default');
   const shown = a.candidates.map((c) => c.shown).sort();
-  assert.deepEqual(shown, ['~/.claude/skills/demo', '~/.codex/skills/other', '~/work/proj/AGENTS.md']);
+  assert.deepEqual(shown, ['~/.claude/skills/demo', '~/.codex/skills/other', '~/.cursor/rules/style.mdc', '~/work/proj/AGENTS.md', '~/work/proj/.cursor/rules/proj.mdc'].sort());
   assert.ok(a.candidates.every((c) => !c.path.includes('node_modules')));
   assert.equal(a.candidates.find((c) => c.slug === 'demo')!.folder, true);
 });
@@ -339,7 +340,7 @@ test('remove: a skill the project already had is never removed, nor a case varia
   const a = importSelected('', sel, d);
   assert.equal(a.status, 200);
   assert.deepEqual((a.body as { kept: string[] }).kept, ['demo']);
-  assert.deepEqual((a.body as { imported: string[] }).imported, ['other', 'agents-proj']);
+  assert.deepEqual((a.body as { imported: string[] }).imported, ['other', 'style', 'proj', 'agents-proj']);
   const r = removeImported(['demo', 'older', 'OTHER', 'Other'], d);
   assert.deepEqual((r.body as { removed: string[] }).removed, []);
   for (const keep of ['demo', 'older', 'other']) assert.ok(fs.existsSync(path.join(base, keep, 'SKILL.md')), keep);
@@ -358,4 +359,49 @@ test('default look: more than 60 skills are all found, and a later folder is sti
   assert.equal(a.truncated, false);
   assert.ok(a.candidates.some((c) => c.slug === 'other'), 'the codex folder after the claude one is scanned');
   assert.ok(MAX_DEFAULT_CANDIDATES > MAX_CANDIDATES);
+});
+
+test('cursor: defaultPlaces includes ~/.cursor/rules and the project .cursor/rules; a rule is a candidate with source cursor', () => {
+  assert.ok(defaultPlaces().includes('~/.cursor/rules'));
+  assert.ok(defaultPlaces().includes('.cursor/rules'));
+  const { home, root } = world();
+  const a = discover('', { home, root, env: {} });
+  assert.ok(a.looked.includes('~/.cursor/rules'));
+  assert.ok(a.looked.includes('~/work/proj/.cursor/rules'));
+  assert.equal(a.candidates.find((c) => c.shown === '~/.cursor/rules/style.mdc')?.source, 'cursor');
+  assert.equal(a.candidates.find((c) => c.shown === '~/work/proj/.cursor/rules/proj.mdc')?.source, 'cursor');
+  assert.equal(a.candidates.find((c) => c.slug === 'demo')?.source, 'claude');
+  assert.equal(a.candidates.find((c) => c.slug === 'other')?.source, 'codex');
+});
+
+test('cursor: with no project open, the project place is the home place and is listed once', () => {
+  const { home } = world();
+  const a = discover('', { home, root: null, env: {} });
+  assert.equal(a.looked.filter((l) => l === '~/.cursor/rules').length, 1);
+});
+
+test('cursor: "all" and "everything" include Cursor', () => {
+  for (const w of ['all', 'everything', 'bring everything']) assert.ok(resolveText(w).places.includes('~/.cursor/rules'), w);
+});
+
+test('cursor: cursorRuleToSkill keeps the description, keeps globs as a When to use line, and refuses an empty rule', () => {
+  const r = cursorRuleToSkill('---\ndescription: Naming rules\nglobs: src/**/*.ts\nalwaysApply: false\n---\nName things well.\n', 'Project Naming.mdc');
+  assert.ok(r);
+  assert.equal(r.slug, 'project-naming');
+  assert.ok(r.skillMd.startsWith('---\nname: project-naming\ndescription: Naming rules\n---\n'));
+  assert.ok(r.skillMd.includes('## When to use\n\nApplies to files matching: src/**/*.ts'));
+  assert.ok(r.skillMd.includes('Name things well.'));
+  assert.equal(cursorRuleToSkill('---\ndescription: x\n---\n\n', 'e.mdc'), null);
+  const plain = cursorRuleToSkill('Use tabs.\n', 'style.mdc');
+  assert.ok(plain && plain.skillMd.includes('description: Cursor rule style'));
+});
+
+test('cursor: importing an .mdc rule writes a SKILL.md built from it', () => {
+  const { home, root } = world();
+  const rule = path.join(home, '.cursor', 'rules', 'style.mdc');
+  const r = importSelected('', [rule], { home, root, env: {} });
+  assert.equal(r.status, 200);
+  const md = fs.readFileSync(path.join(root, '.sequence', 'skills', 'style', 'SKILL.md'), 'utf8');
+  assert.ok(md.startsWith('---\nname: style\n'));
+  assert.ok(md.includes('Use tabs.'));
 });

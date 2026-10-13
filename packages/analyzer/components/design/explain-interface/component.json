@@ -1,0 +1,22 @@
+{
+  "id": "design/explain-interface",
+  "group": "design",
+  "label": "Explain Interface",
+  "summary": "Explains how a website, a visual effect or an animation was built, from a live URL or a screenshot.",
+  "triggers": [
+    "explain how this was built",
+    "how was this animation made",
+    "explain a website build",
+    "explain this visual effect",
+    "how is this ui built"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/explain-interface"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/explain-interface"
+}

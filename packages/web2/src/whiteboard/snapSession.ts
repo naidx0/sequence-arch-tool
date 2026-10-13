@@ -96,6 +96,11 @@ export class SnapSession {
     return this.loading;
   }
 
+  /** Resolves once the shape model is loaded (rejects if it cannot load). */
+  ready(): Promise<void> {
+    return this.load().then(() => undefined);
+  }
+
   private cancelTimer(): void {
     if (this.timer !== null) (this.o.clearTimer ?? clearTimeout)(this.timer as never);
     this.timer = null;

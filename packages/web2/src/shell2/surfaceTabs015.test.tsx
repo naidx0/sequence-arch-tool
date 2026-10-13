@@ -105,16 +105,19 @@ describe('the surface bar can be driven (round 0.1.5)', () => {
   it('dragging a name across its neighbours reorders it, remembers the order, and does not click it', () => {
     render(<V3App appStore={freshStore()} />);
     const before = order();
-    expect(before[1]).toBe('files');
+    /* 0.1.8 C3: the bar starts in title order, so where Files sits is read, not assumed. */
+    const at = before.indexOf('files');
+    expect(at).toBeGreaterThanOrEqual(0);
     layOut();
     const pill = screen.getByTestId('s2-tab-files');
-    ptr(pill, 'pointerdown', 150);
-    ptr(bar(), 'pointermove', 190);
-    ptr(bar(), 'pointermove', 260);
+    const x = at * 100 + 50;
+    ptr(pill, 'pointerdown', x);
+    ptr(bar(), 'pointermove', x + 40);
+    ptr(bar(), 'pointermove', x + 110);
     const after = order();
-    expect(after[2]).toBe('files');
-    expect(after[1]).toBe(before[2]);
-    ptr(bar(), 'pointerup', 260);
+    expect(after[at + 1]).toBe('files');
+    expect(after[at]).toBe(before[at + 1]);
+    ptr(bar(), 'pointerup', x + 110);
     fireEvent.click(pill);
     expect(pill.getAttribute('aria-current')).toBeNull();
     expect(JSON.parse(localStorage.getItem(SURFACE_ORDER_KEY)!)).toEqual(after);

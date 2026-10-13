@@ -15,6 +15,10 @@
 
    Both are folded into one TurnUsage. Nothing here estimates: a turn the
    agent never reported usage for has `null`, not a guess.
+
+   A TurnUsage is PROCESSED tokens: a sum over the turn's requests (cache reads
+   counted on every one). It is never the context window's fill; that is the
+   agent's `usage_update` (`used` of `size`), read by web2's contextMeter.
    ══════════════════════════════════════════════════════════════════════════ */
 
 export interface TurnUsage {

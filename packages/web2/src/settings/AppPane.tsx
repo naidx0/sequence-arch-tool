@@ -48,6 +48,7 @@ export type ShellAction =
   | 'toggle-fullscreen'
   | 'open-help'
   | 'quit'
+  | 'restart-for-update'
   | 'info';
 
 /** What `shell('info')` answers with. Every field is printed verbatim. */

@@ -123,6 +123,8 @@
   font: inherit;
   cursor: pointer;
   white-space: nowrap;
+  gap: var(--sp-6);
+  transition: background var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
 .wfe-btn:hover:not(:disabled) { background: var(--b-glass); }
 .wfe-btn:disabled { color: var(--b-ink3); cursor: default; }
@@ -284,3 +286,17 @@
 @media (prefers-reduced-motion: reduce) { .wfe-scrim { animation: none; } }
 
 .wfe-why { flex: 0 1 auto; min-width: 0; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--b-ink3); font-size: var(--t-11-5); }
+
+/* G5: the buttons answer a hover and a press; Run is the one primary and says when it is running. */
+.wfe-btn > svg, .wfe-btn > .wfe-btn-ic { flex: none; }
+.wfe-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.wfe-btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+.wfe-btn-solid { font-weight: var(--fw-head); }
+.wfe-btn-solid:hover:not(:disabled) { opacity: 1; box-shadow: 0 2px 8px color-mix(in srgb, var(--b-ink1) 28%, transparent); }
+.wfe-btn[data-running='true']:disabled { color: var(--b-s1); opacity: 0.85; cursor: progress; }
+.wfe-x { transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
+.wfe-x:active { transform: scale(0.92); }
+@media (prefers-reduced-motion: reduce) {
+  .wfe-btn, .wfe-x { transition: none; }
+  .wfe-btn:hover:not(:disabled), .wfe-btn:active:not(:disabled), .wfe-x:active { transform: none; }
+}

@@ -111,6 +111,11 @@ export function serveGraph(graphPath: string, port: number, webDistArg?: string)
       'web viewer build not found — run "pnpm --filter @sequence/web2 build" first, or pass --web <dist-dir>'
     );
   }
+  // Loopback by default (the viewer has no auth and /api/file serves source from the scanned repo).
+  // `sequence serve --host <h>` sets SEQUENCE_BIND_HOST, and a non-loopback host is refused here for
+  // the same reason serveApp refuses it: nothing in this path checks who is asking.
+  const bindHost = (process.env.SEQUENCE_BIND_HOST ?? '127.0.0.1').trim() || '127.0.0.1';
+  assertSafeBind(bindHost);
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
@@ -156,9 +161,11 @@ export function serveGraph(graphPath: string, port: number, webDistArg?: string)
     }
   });
 
-  server.listen(port, () => {
+  server.listen(port, bindHost, () => {
+    const addr = server.address();
+    const boundPort = typeof addr === 'object' && addr ? addr.port : port;
     console.log(`sequence: serving ${graph.repoName} (${graph.nodes.length} nodes, ${graph.edges.length} edges)`);
-    console.log(`  http://localhost:${port}`);
+    console.log(`  http://${bindHost.includes(':') ? `[${bindHost}]` : bindHost}:${boundPort}`);
   });
   // Returned so programmatic callers (e.g. tests) can read the bound address and
   // close the server. The CLI ignores it; the served surface is unchanged.

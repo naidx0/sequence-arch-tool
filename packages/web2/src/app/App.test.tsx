@@ -316,8 +316,11 @@ describe('the shell mounts the surfaces the lanes built', () => {
       .getAllByRole('button')
       .map((b) => b.getAttribute('aria-label'))
       .filter((l): l is string => l !== null && !l.startsWith('Close '));
-    /* Decision 49: B's order, the board first; the chat is the column beside them. */
-    expect(labels).toEqual(['Architecture', 'Files', 'Whiteboard', 'Terminal', 'Agents']);
+    /* 0.1.8 C3 (owner): the strip reads in the order of the surface names, computed from the labels the code shows. */
+    expect(labels).toEqual([...labels].sort((x, y) => x.localeCompare(y, 'en', { sensitivity: 'base' })));
+    /* Exactly the shipped surfaces, by the labels the code reads (so a rename to Spaces still holds, and a missing pill fails). */
+    const shipped = ['agents', 'architecture', 'files', 'terminal', 'whiteboard'].map((id) => CHROME_TAB_DEFS[id as keyof typeof CHROME_TAB_DEFS].label);
+    expect([...labels].sort()).toEqual([...shipped].sort());
   });
 
   it('AI Canvas has no pill and no pane while it is hidden', () => {
@@ -395,7 +398,7 @@ describe('the shell mounts the surfaces the lanes built', () => {
 
     /* The palette's board command must not drop Files. */
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-    fireEvent.change(screen.getByTestId('command-field'), { target: { value: 'whiteboard' } });
+    fireEvent.change(screen.getByTestId('command-field'), { target: { value: 'spaces' } });
     fireEvent.click(screen.getAllByTestId('command-row')[0]!);
 
     expect(paneIsFocused('whiteboard')).toBe(true);
@@ -601,7 +604,7 @@ describe('the whiteboard has a door in the palette', () => {
     render(<App appStore={storeWithGraph(twoPackages())} />);
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-    fireEvent.change(screen.getByTestId('command-field'), { target: { value: 'whiteboard' } });
+    fireEvent.change(screen.getByTestId('command-field'), { target: { value: 'spaces' } });
 
     const row = screen.getAllByTestId('command-row')[0]!;
     expect(row.getAttribute('data-command')).toBe('canvas.whiteboard');

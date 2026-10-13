@@ -1,0 +1,6 @@
+{
+  "name": "t13-max-by-empty",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

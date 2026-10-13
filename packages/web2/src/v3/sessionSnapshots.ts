@@ -152,6 +152,11 @@ export function forgetSnapshot(id: string): void {
   held.delete(id);
 }
 
+/** A different workspace: chat ids are only unique inside one, so no held copy may stand in for another workspace's chat. */
+export function clearSnapshots(): void {
+  held.clear();
+}
+
 export function resetSnapshotsForTest(): void {
   held.clear();
 }

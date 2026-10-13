@@ -129,7 +129,7 @@ describe('<FirstRun>', () => {
       fireEvent.click(await screen.findByTestId('first-run-start'));
       expect(await screen.findByTestId('first-run-setup')).toBeTruthy();
       expect(onDone).not.toHaveBeenCalled();
-      expect(calls).toEqual(['GET /api/acp/agents', 'POST /api/acp/agents/connect']);
+      expect(calls).toEqual(['GET /api/local/setup', 'GET /api/acp/agents', 'POST /api/acp/agents/connect', 'GET /api/agent-settings']);
     } finally {
       fetchSpy.mockRestore();
     }
@@ -286,6 +286,7 @@ async function finishSetup() {
   fireEvent.click(await screen.findByTestId('first-run-start'));
   fireEvent.click(await screen.findByTestId('first-run-setup-project-skip'));
   fireEvent.click(await screen.findByTestId('first-run-setup-trust-skip'));
+  fireEvent.click(await screen.findByTestId('first-run-setup-map-skip'));
   fireEvent.click(await screen.findByTestId('first-run-skills-skip'));
   fireEvent.click(await screen.findByTestId('first-run-setup-done-go'));
 }
@@ -369,6 +370,7 @@ describe('<FirstRunGate>', () => {
     fireEvent.click(await screen.findByTestId('first-run-start'));
     fireEvent.click(await screen.findByTestId('first-run-setup-project-yes'));
     fireEvent.click(await screen.findByTestId('first-run-setup-trust-skip'));
+    fireEvent.click(await screen.findByTestId('first-run-setup-map-skip'));
     fireEvent.click(await screen.findByTestId('first-run-skills-skip'));
     fireEvent.click(await screen.findByTestId('first-run-setup-done-go'));
     await waitFor(() => expect(screen.queryByTestId('first-run')).toBeNull());

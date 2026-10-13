@@ -1,0 +1,35 @@
+# Halo License
+
+Copyright (c) 2026 White Circle, PBC
+
+The Work is licensed under the Apache License, Version 2.0 ("Apache License"; available at http://www.apache.org/licenses/LICENSE-2.0), as modified by, and subject to, the Supplemental Terms set out below. A copy of the Apache License is provided in the file APACHE-2.0.txt for reference. In the event of any conflict, the Supplemental Terms prevail. Capitalized terms used but not defined in the Supplemental Terms — including "Work," "Derivative Works," "Legal Entity" and "You" — have the meanings given in the Apache License.
+
+## Supplemental Terms
+
+**1. Definitions.**
+
+"**Affiliate**" means, with respect to You, any Legal Entity that controls, is controlled by, or is under common control with You, applying the definition of "control" in the Apache License.
+
+"**Annual Revenue**" means the total gross revenue of You and Your Affiliates for Your most recently completed fiscal year.
+
+"**Training as a Service**" means providing third parties with the ability to initiate, configure, or direct the training, fine-tuning, or post-training functionality of the Work or Derivative Works, including through any interface, API, hosted platform, or managed service You make available such that the third party selects or supplies the training data, sets or configures the training objectives or parameters, or otherwise directs the training runs. Training as a Service does not include: (a) use of the Work by or for You to train, fine-tune, or evaluate models, including models You subsequently distribute or deploy in Your own products and services; or (b) professional or consulting services in which Your personnel retain operational control of the training pipeline and perform training on a customer's behalf, even where the customer supplies data or specifies requirements.
+
+"**TaaS Revenue**" means the aggregate gross revenue of You and Your Affiliates that is directly attributable to a Training as a Service offering, measured over any twelve (12) consecutive months.
+
+"**Threshold Amount**" means US $20,000,000.
+
+**2. Training as a Service.**
+
+(a) You may make the Work or Derivative Works available as Training as a Service under the Apache License at no charge until TaaS Revenue first exceeds the Threshold Amount.
+
+(b) If TaaS Revenue exceeds the Threshold Amount, You must, within thirty (30) days after the end of the twelve-month period in which the threshold was exceeded, enter into a separate commercial agreement with White Circle (hello@whitecircle.com) governing continued provision of the Training as a Service offering. White Circle agrees to offer such an agreement on fair, reasonable, and non-discriminatory terms.
+
+(c) If You do not enter into such an agreement within the period in subsection (b) as it may be extended while the parties negotiate in good faith, Your license to provide new Training as a Service under this License terminates, and You must cease onboarding new Training as a Service customers. You must cease providing Training as a Service to Your existing Training as a Service customers no later than ninety (90) days after termination. For the avoidance of doubt, termination under this Section 2 does not affect: (i) Your rights under Section 4; (ii) any models already trained, or any Derivative Works already distributed or deployed, before termination; or (iii) the rights of Your existing end customers in respect of models already trained for them, which does not permit You to continue providing Training as a Service beyond the period stated in this subsection (c).
+
+(d) Revenue is measured across You and Your Affiliates on a combined basis; restructuring an offering among Affiliates does not reset or avoid the Threshold Amount.
+
+**3. Attribution.** If Your Annual Revenue exceeds the Threshold Amount and You publicly release or commercially deploy any model trained using the Work or Derivative Works, You must include the following attribution in the model card or accompanying documentation: "Trained with Halo (https://github.com/whitecircle/halo)." White Circle grants You a limited, non-exclusive, royalty-free license to use the "Halo" name and mark solely to provide the attribution required by this Section 3. Section 6 of the Apache License otherwise applies. If You fail to provide the attribution required by this Section 3 and do not cure that failure within thirty (30) days after written notice from White Circle, Your rights under this License to publicly release or commercially deploy models trained using the Work or Derivative Works terminate. Those rights are reinstated upon cure.
+
+**4. Reservation.** Except as expressly provided in Sections 2, 3 and 5, all rights granted under the Apache License — including use, reproduction, preparation of Derivative Works, distribution, and internal use at any scale — remain unrestricted.
+
+**5. Redistribution Subject to These Terms.** If You distribute the Work or any Derivative Works, You must include a complete copy of this Halo License, including these Supplemental Terms, with the distribution, and You may not license or purport to license the Work or Derivative Works to any recipient on terms that omit, or conflict with, these Supplemental Terms. Each recipient receives the Work and Derivative Works subject to these Supplemental Terms.

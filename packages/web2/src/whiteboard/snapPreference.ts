@@ -21,6 +21,7 @@ export const SNAP_MODES: readonly SnapMode[] = ['auto', 'suggest', 'off'];
 export const DEFAULT_SNAP_MODE: SnapMode = 'suggest';
 export const SNAP_MODE_KEY = 'sequence.whiteboard.snap';
 export const EDIT_LOG_KEY = 'sequence.boards.editlog';
+export const GRID_KEY = 'sequence.whiteboard.grid';
 /** Fired on `window` when either switch changes, so an open whiteboard follows without a reload. */
 export const SNAP_PREF_EVENT = 'sequence:whiteboard-prefs';
 
@@ -71,6 +72,27 @@ export function readEditLogEnabled(store: Store | undefined = storage()): boolea
 export function writeEditLogEnabled(enabled: boolean, store: Store | undefined = storage()): void {
   try {
     store?.setItem(EDIT_LOG_KEY, enabled ? 'on' : 'off');
+  } catch {
+    /* as above */
+  }
+  announce();
+}
+
+/**
+ * THE DOTTED GROUND, OFF BY DEFAULT: a Space opens as a plain dark field and the person can turn the grid on from the
+ * board's More menu. Per person (this browser), not per board; only an explicit "on" turns it on.
+ */
+export function readGridEnabled(store: Store | undefined = storage()): boolean {
+  try {
+    return store?.getItem(GRID_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+export function writeGridEnabled(enabled: boolean, store: Store | undefined = storage()): void {
+  try {
+    store?.setItem(GRID_KEY, enabled ? 'on' : 'off');
   } catch {
     /* as above */
   }

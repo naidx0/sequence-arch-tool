@@ -1,6 +1,6 @@
 {
   "name": "@sequence/analyzer",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "bin": {
     "sequence": "dist/cli.js"
@@ -21,6 +21,7 @@
     "graphology": "^0.26.0",
     "graphology-communities-louvain": "^2.0.2",
     "node-pty": "1.1.0",
+    "parse5": "7.3.0",
     "pg": "^8.22.0",
     "ws": "^8.18.0",
     "yaml": "^2.6.0"

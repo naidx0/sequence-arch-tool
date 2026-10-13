@@ -69,9 +69,13 @@ jobs:
             artifact: sequence-macos
             # The mac zip is electron-builder's own second target and it is the
             # one a person can unzip straight into /Applications. Both go out.
+            # The zip's `.blockmap` goes too: the app updates itself from the
+            # zip, fetching only the parts that changed since the version it is
+            # running (electron-builder writes it beside every mac zip).
             glob: |
               packages/desktop/release/*.dmg
               packages/desktop/release/*-mac.zip
+              packages/desktop/release/*-mac.zip.blockmap
           - os: ubuntu-latest
             label: Linux AppImage + deb
             artifact: sequence-linux
@@ -97,6 +101,22 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # The build number of a four-part release (tag v0.1.7.1 -> 1; any other
+      # tag -> 0), beside the analyzer's package.json. package.json versions
+      # must be three-part semver, so the app adds this as its fourth part and
+      # a 0.1.7.1 build is newer than 0.1.7 instead of looping on it.
+      - name: Record the build number
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          v="${TAG#v}"
+          build=0
+          if [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)([-+].*)?$ ]]; then build="${BASH_REMATCH[1]}"; fi
+          echo "{\"build\": $build}" > packages/analyzer/app-build.json
+          cat packages/analyzer/app-build.json
 
       # prepare-server.mjs refuses unless analyzer/dist and web2/dist exist —
       # it copies them, it does not build them.
@@ -137,7 +157,29 @@ jobs:
 
       - name: What was produced
         shell: bash
-        run: ls -lh packages/desktop/release/ || true
+        run: |
+          ls -lh packages/desktop/release/ || true
+          # A mac zip without its .blockmap would publish a release the app can
+          # only update by downloading the whole file, silently. Fail the build.
+          for z in packages/desktop/release/*-mac.zip; do
+            [ -e "$z" ] || continue
+            if [ ! -e "$z.blockmap" ]; then
+              echo "missing $z.blockmap: electron-builder did not write the block map for the mac zip" >&2
+              exit 1
+            fi
+          done
+
+      # THE LINUX ARTEFACTS ARE LAUNCHED BEFORE THEY ARE UPLOADED. Windows and macOS builds
+      # were downloaded and run on fresh machines; Linux was built and never started. The
+      # AppImage and the deb each open under a virtual display and must print a PASS line
+      # from the real main process (SEQUENCE_DESKTOP_SMOKE). A failure stops this row before
+      # upload, so a Linux file that does not start is never attached to a release.
+      - name: Launch smoke (Linux AppImage and deb)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libfuse2
+          node tools/ci/linux-launch-smoke.mjs --dir packages/desktop/release
 
       - uses: actions/upload-artifact@v4
         with:
@@ -198,7 +240,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p out
-          find artifacts -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.zip' -o -name '*.AppImage' -o -name '*.deb' \) \
+          find artifacts -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.zip' -o -name '*.blockmap' -o -name '*.AppImage' -o -name '*.deb' \) \
             -exec cp {} out/ \;
           cd out
           sha256sum * > SHASUMS256.txt

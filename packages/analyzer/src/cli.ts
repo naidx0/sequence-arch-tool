@@ -23,7 +23,7 @@ import { diffGraphs } from './diff.js';
 import { renderBrief } from './brief.js';
 import { serveGraph, serveRepo, serveApp } from './serve.js';
 import { openBrowser } from './open-browser.js';
-import { mermaidSequence, mermaidFlow, dependencyMatrix, archToMarkdown } from '@sequence/export';
+import { EXPORT_FORMATS } from './server/exportFormats.js';
 import { listAgents, addAgent, removeAgent } from './server/agentsStore.js';
 import { userStoreDir } from './server/store.js';
 import { isRepoTrusted, readRepoTrust, repoTrustKey, setRepoTrust } from './server/repoTrust.js';
@@ -34,6 +34,7 @@ import { runAskCli } from './askCli.js';
 import { runHarnessCli } from './refineCli.js';
 import { bootMark } from './server/bootMarks.js';
 import { startDailyUpdateCheck } from './server/appUpdate.js';
+import { automaticUpdateCheckAllowed } from './server/askAgentMap.js';
 import { defaultUpdateService } from './server/appUpdateRoutes.js';
 
 function usage(exitCode = 1): never {
@@ -55,7 +56,7 @@ usage:
   sequence diagram validate <file.seqd>
   sequence diagram export <graph.json> --format <fmt> [--out <file>]
   sequence diagram export --repo <dir> --format <fmt> [--out <file>]
-  sequence serve [<archgraph.json>] [--repo <dir>] [--port <n>] [--web <dist-dir>]
+  sequence serve [<archgraph.json>] [--repo <dir>] [--port <n>] [--host <addr>] [--web <dist-dir>]
   sequence doctor [<repo-path>]                      is everything working? (see below)
   sequence trust <repo-path> [--revoke]              let this repo direct + run (see below)
   sequence trust list                                which repositories you have trusted
@@ -140,6 +141,9 @@ serve modes:
                      "sequence diff <spec.json> <scan.json>".
   (no argument)      start the server with no repo attached yet and serve the web
                      app's home screen (attach a repo from the UI).
+  --host <addr>      bind this address instead of 127.0.0.1 (same as setting
+                     SEQUENCE_BIND_HOST). A non-loopback address is refused
+                     unless auth is configured.
 `);
   process.exit(exitCode);
 }
@@ -192,7 +196,7 @@ export async function launch(args: string[]): Promise<http.Server> {
 
   const server = await serveApp(repo, port, web);
   /* Once a day while the app is up, the release check (server/appUpdate.ts); Settings reads the cached answer. */
-  if (process.env.SEQUENCE_NO_UPDATE_CHECK !== '1') startDailyUpdateCheck(defaultUpdateService());
+  startDailyUpdateCheck(defaultUpdateService(), undefined, () => automaticUpdateCheckAllowed(userStoreDir()));
   const addr = server.address();
   const boundPort = typeof addr === 'object' && addr ? addr.port : port;
   const url = `http://127.0.0.1:${boundPort}`;
@@ -461,14 +465,8 @@ async function main() {
     const format = opt(args, '--format');
     const graphPath = args.shift();
     if (!graphPath) usage();
-    const formats: Record<string, (g: ArchGraph) => string> = {
-      'mermaid-seq': (g) => mermaidSequence(g),
-      'mermaid-flow': (g) => mermaidFlow(g),
-      'matrix-md': (g) => dependencyMatrix(g).markdown,
-      'matrix-csv': (g) => dependencyMatrix(g).csv,
-      'arch-md': (g) => archToMarkdown(g),
-    };
-    const render = format ? formats[format] : undefined;
+    const formats = EXPORT_FORMATS;
+    const render = format && Object.hasOwn(formats, format) ? formats[format]!.render : undefined;
     if (!render) {
       console.error(
         `export: unknown format '${format ?? ''}'. expected one of: ${Object.keys(formats).join(', ')}`
@@ -493,6 +491,10 @@ async function main() {
     flag(args, '--no-open');
     const port = Number(opt(args, '--port') ?? 4173);
     const web = opt(args, '--web');
+    const host = opt(args, '--host');
+    // Loopback unless asked. --host is the command-line spelling of SEQUENCE_BIND_HOST and follows its
+    // rules: a non-loopback host with no auth configured is refused before anything listens.
+    if (host !== undefined) process.env.SEQUENCE_BIND_HOST = host;
     const repo = opt(args, '--repo');
     if (repo) {
       // Live platform backend: scan the repo and serve it + the JSON API.
@@ -781,7 +783,7 @@ const invokedDirectly =
   !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (invokedDirectly) {
   main().catch((e) => {
-    console.error(`sequence: ${(e as Error).message}`);
+    console.error(`sequence: ${(e as Error).message.replace(/^sequence:\s*/, '')}`);
     process.exit(1);
   });
 }

@@ -297,9 +297,12 @@ describe('the changed mark', () => {
     expect(parent.getAttribute('data-dirty')).toBe('true');
     /* Never a letter: rolling several files' statuses into one would have to
        pick a winner, and any pick is a claim the panel cannot support. */
-    expect(parent.querySelector('.files-mark-dot')).not.toBeNull();
+    /* It says HOW MANY (a count), never WHICH (a letter). */
+    expect(parent.querySelector('.files-mark-count')?.textContent).toMatch(/^\d+$/);
+    expect(parent.querySelector('.files-mark-dot')).toBeNull();
     /* The dot wears the strongest tone beneath it. */
     expect(parent.getAttribute('data-tone')).toBe('modified');
+    /* The whole row, as before: no status letter anywhere on a directory. */
     expect(parent.textContent).not.toContain('M');
   });
 

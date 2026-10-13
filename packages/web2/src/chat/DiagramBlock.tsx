@@ -22,6 +22,7 @@ import { CodeBlock } from './CodeBlock';
 import { stripEmoji, stripEmojiIn, withEmojiFallback } from './drawingEmoji';
 import { fitSvgText } from './svgFit';
 import { sanitizeSvg } from './svgSanitize';
+import { themeSvg } from './svgTheme';
 import { useSavedDrawing, type SavedDrawing } from './drawingContext';
 import { CardAction, VisualActions } from './VisualActions';
 import { VisualCard } from './VisualCard';
@@ -171,6 +172,7 @@ async function draw(kind: 'mermaid' | 'svg', source: string): Promise<Drawn | 'u
     const r = sanitizeSvg(source);
     if (!r.ok) throw new Error(r.reason);
     stripEmojiIn(r.node, false); // the drawn copy's text nodes only: the saved source keeps what the agent wrote
+    if (!source.includes('<!--visual ')) themeSvg(r.node); // the app's font, colours and buttons (INLINE-ART-RULES.md); the kit already draws in them
     return { node: r.node };
   }
   const m = await import('../app/MermaidBlock');

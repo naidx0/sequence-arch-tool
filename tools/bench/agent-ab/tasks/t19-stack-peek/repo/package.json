@@ -1,0 +1,6 @@
+{
+  "name": "t19-stack-peek",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

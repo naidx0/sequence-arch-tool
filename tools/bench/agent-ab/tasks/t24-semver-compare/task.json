@@ -1,0 +1,23 @@
+{
+  "id": "t24-semver-compare",
+  "prompt": "compareVersions(a, b) compares \"1.10.0\" vs \"1.2.0\" numerically per part and returns -1, 0 or 1. It currently compares strings. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "compareVersions"
+    ]
+  }
+}

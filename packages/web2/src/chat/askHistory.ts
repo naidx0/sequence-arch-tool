@@ -37,6 +37,7 @@
 
 import type { AskHistoryEvidence, AskHistoryTurn } from '@sequence/api-types';
 
+import type { AgentRun, RunItem } from '../agents/agentRuns';
 import type { AssistantTurn, Turn, TurnEvidence, WorkRow } from '../state/types';
 
 /**
@@ -115,6 +116,51 @@ export function askHistoryMeta(
       return out;
     }),
   };
+}
+
+/** The label the prompt puts on an agent's reply: "claude", "codex", or the agent's own id. */
+function agentWord(agentRef: string | null): string {
+  const r = (agentRef ?? '').toLowerCase();
+  if (/claude/.test(r)) return 'claude';
+  if (/codex/.test(r)) return 'codex';
+  return r.slice(0, 40) || 'agent';
+}
+
+/**
+ * The transcript plus the chat's finished Claude/Codex runs, in time order.
+ *
+ * Switching from an agent to the built-in model used to drop every agent turn, so "and its callers?" after a Claude
+ * answer had nothing to refer to. A run contributes its prompt (user) and its FINAL message (assistant, labelled with
+ * the agent), the same cap as the rest; running, failed and compaction runs contribute nothing.
+ */
+export function askHistoryMetaWithRuns(
+  turns: readonly Turn[],
+  runs: readonly AgentRun[],
+  cap: number = HISTORY_CAP,
+): { turns: AskHistoryTurn[]; droppedTurns: number } {
+  const finished = runs.filter((r) => r.status === 'done' && r.operation !== 'compact' && r.prompt.trim());
+  const withReply = finished
+    .map((r) => {
+      const last = [...r.items].reverse().find((i): i is Extract<RunItem, { kind: 'message' }> => i.kind === 'message' && i.text.trim().length > 0);
+      return last ? { r, reply: last.text } : null;
+    })
+    .filter((x): x is { r: AgentRun; reply: string } => x !== null);
+  if (withReply.length === 0) return askHistoryMeta(turns, cap);
+  type Slot = { at: number; order: number; wire: AskHistoryTurn };
+  const slots: Slot[] = [];
+  let order = 0;
+  for (const t of turns) {
+    if (typeof t.text !== 'string' || !t.text.trim()) continue;
+    const one = askHistoryMeta([t], 1).turns[0];
+    if (one) slots.push({ at: t.at ?? 0, order: order++, wire: one });
+  }
+  for (const { r, reply } of withReply) {
+    slots.push({ at: r.startedAt, order: order++, wire: { role: 'user', text: r.prompt } });
+    slots.push({ at: r.endedAt ?? r.startedAt, order: order++, wire: { role: 'assistant', text: reply, agent: agentWord(r.agentRef) } });
+  }
+  slots.sort((a, b) => a.at - b.at || a.order - b.order);
+  const usable = slots.map((s) => s.wire);
+  return { droppedTurns: Math.max(0, usable.length - cap), turns: usable.slice(-cap) };
 }
 
 /**

@@ -22,7 +22,7 @@
    header names the worktree's branch. The board itself stays the user's.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ArchGraph } from '@sequence/schema';
 
@@ -35,6 +35,8 @@ import type { ChatWorktree } from '../../worktree/worktreeModel.js';
 const worktreeModel = () => import('../../worktree/worktreeModel.js');
 const branchLabel = (branch: string): string => branch.replace(/^sequence\//, '');
 import { useAppState } from '../../state/index.js';
+import { BranchSwitcher } from '../../git/BranchSwitcher';
+import { getBranchChanges } from '../../git/gitCalls';
 import { diffMarks, diffModel, type BranchFile, type DiffMarks } from './historyModel.js';
 import { viewName, type ViewBox, type ViewLine } from './viewModel.js';
 import './views.css';
@@ -45,6 +47,17 @@ type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 const STATUS_WORD: Record<string, string> = { added: 'added', changed: 'changed', modified: 'changed', deleted: 'removed', renamed: 'renamed' };
 /** One glyph per status, coloured by its token (views.css): + added, ~ changed, − removed. */
 export const STATUS_GLYPH: Record<string, string> = { added: '+', changed: '~', removed: '−', renamed: '~' };
+
+/**
+ * THE AGAINST-BASE METRIC, WRITTEN PLAINLY: "12 files changed against main, +340 −120".
+ * `counts` is null when the engine cannot say (no branch-changes route), and
+ * then the line says only what it knows.
+ */
+export function diffHeadline(files: number, vs: string, counts: { added: number; removed: number } | null): string {
+  if (files === 0) return `No files changed against ${vs}`;
+  const head = `${files} ${files === 1 ? 'file' : 'files'} changed against ${vs}`;
+  return counts ? `${head}, +${counts.added} −${counts.removed}` : head;
+}
 
 /* Round 7 C.6 (Jaden: "the UI doesn't match up. Icons aren't really
    centered"): the status is B's round chip with its glyph centred in it, then
@@ -107,6 +120,11 @@ export function DiffView({
   const [draft, setDraft] = useState(initialBase);
   const [files, setFiles] = useState<BranchFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /* +N −N per file, from GET /api/git/branch-changes when the engine serves it. */
+  const [counts, setCounts] = useState<ReadonlyMap<string, { added: number; removed: number }> | null>(null);
+  /* Bumped when the head moves, so the changes are read again against the new branch. */
+  const [reloadKey, setReloadKey] = useState(0);
+  const [current, setCurrent] = useState<string | null>(null);
   /* What the route compared against: the base asked for can fall back (main -> master ...), and a repo can have none. */
   const [resolved, setResolved] = useState<{ base: string | null; noBase: boolean } | null>(null);
   useEffect(() => {
@@ -115,6 +133,8 @@ export function DiffView({
     setFiles(null);
     setError(null);
     setResolved(null);
+    setCounts(null);
+    setCurrent(null);
     void (async () => {
       if (worktree && sessionId) {
         const { worktreeApi } = await worktreeModel();
@@ -137,6 +157,13 @@ export function DiffView({
         return;
       }
       try {
+        void getBranchChanges(base, f as typeof fetch).then((c) => {
+          if (!live) return;
+          if (c.outcome !== 'ok') return setCounts(null);
+          const map = new Map<string, { added: number; removed: number }>();
+          for (const x of c.body.files) if (typeof x.added === 'number' && typeof x.removed === 'number') map.set(x.path, { added: x.added, removed: x.removed });
+          setCounts(map.size > 0 ? map : null);
+        });
         const r = await f(`/api/git/branch-files?base=${encodeURIComponent(base)}`);
         const j = (await r.json().catch(() => ({}))) as { files?: BranchFile[]; error?: string; base?: string | null; noBase?: boolean };
         if (!live) return;
@@ -152,7 +179,7 @@ export function DiffView({
     return () => {
       live = false;
     };
-  }, [base, fetchImpl, against, turns, worktree, sessionId]);
+  }, [base, fetchImpl, against, turns, worktree, sessionId, reloadKey]);
   const vs = worktree
     ? `commit ${worktree.baseCommit.slice(0, 7)}, where this chat began`
     : against === 'turn'
@@ -168,6 +195,57 @@ export function DiffView({
   /* Handed up only when it changes: the ghosts it adds come back in `boxes`,
      which the model ignores, so the key settles after one round. */
   const marks = useMemo(() => (model ? diffMarks(model) : null), [model]);
+  /* Every changed file in the order the list shows them: what j/k walk and the jump list names. */
+  const order = useMemo(() => {
+    if (!model) return [] as string[];
+    const seen = new Set<string>();
+    /* Only files that are DRAWN (in a box or a removed module): the ones in no box have no row to land on. */
+    for (const b of [...model.boxes, ...model.removed]) for (const x of b.files) seen.add(x.path);
+    return [...seen];
+  }, [model]);
+  const orderRef = useRef(order);
+  orderRef.current = order;
+  const step = useCallback((delta: 1 | -1) => {
+    setCurrent((was) => {
+      const list = orderRef.current;
+      if (list.length === 0) return was;
+      const at = was === null ? -1 : list.indexOf(was);
+      const next = at === -1 ? (delta === 1 ? 0 : list.length - 1) : Math.min(list.length - 1, Math.max(0, at + delta));
+      return list[next]!;
+    });
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (e.key === 'j' || e.key === ']') step(1);
+      else if (e.key === 'k' || e.key === '[') step(-1);
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [step]);
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (current === null) return;
+    const el = [...(scroller.current?.querySelectorAll<HTMLElement>('[data-testid="diff-file"]') ?? [])].find((n) => n.dataset.path === current);
+    el?.scrollIntoView?.({ block: 'nearest' });
+  }, [current]);
+  const totals = useMemo(() => {
+    if (!counts || order.length === 0) return null;
+    let added = 0;
+    let removed = 0;
+    for (const p of order) {
+      const c = counts.get(p);
+      if (c) {
+        added += c.added;
+        removed += c.removed;
+      }
+    }
+    return { added, removed };
+  }, [counts, order]);
   const marksKey = marks ? JSON.stringify(marks) : '';
   const report = useRef(onMarks);
   report.current = onMarks;
@@ -185,6 +263,11 @@ export function DiffView({
           <code>{worktree.baseCommit.slice(0, 7)}</code>
         </p>
       ) : null}
+      {worktree ? null : (
+        <div className="dv-top">
+          <BranchSwitcher fetchImpl={fetchImpl as typeof fetch | undefined} onSwitched={() => setReloadKey((n) => n + 1)} />
+        </div>
+      )}
       <form
         hidden={worktree !== null}
         className="dv-base"
@@ -232,6 +315,23 @@ export function DiffView({
         <p className="bv-empty"><AsciiSpinner /> Reading the changes…</p>
       ) : (
         <>
+          <p className="dv-headline" data-testid="diff-headline">
+            {diffHeadline(files?.length ?? 0, vs, totals)}
+          </p>
+          {order.length > 0 ? (
+            <label className="dv-jump" title="Jump to a changed file (or press j and k)">
+              <span className="dv-field-k">File</span>
+              <select data-testid="diff-jump" aria-label="Jump to a changed file" value={current ?? ''} onChange={(e) => setCurrent(e.target.value || null)}>
+                <option value="">{`${order.length} changed (j next, k previous)`}</option>
+                {order.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          <div className="dv-scroll" data-testid="diff-scroll" ref={scroller} tabIndex={-1}>
           <p className="dv-sum" data-testid="diff-summary">
             {model.boxes.length + model.removed.length === 0
               ? `No box on this board changes against ${vs}.`
@@ -243,22 +343,26 @@ export function DiffView({
               <ul className="dv-list">
                 {model.boxes.map((b) => (
                   <li key={b.id} className="dv-row" data-testid="diff-box" data-id={b.id} data-status={b.status}>
+                    <div className="dv-row-hd">
                     <Status word={b.status} />
                     <span className="dv-name" data-testid="diff-box-name" title={name(b.id)}>
                       {name(b.id)}
                     </span>
                     <span className="dv-n">{b.files.length === 1 ? '1 file' : `${b.files.length} files`}</span>
-                    <FileList files={b.files} />
+                    </div>
+                    <FileList files={b.files} counts={counts} current={b.files.some((x) => x.path === current) ? current : null} />
                   </li>
                 ))}
                 {model.removed.map((b) => (
                   <li key={b.id} className="dv-row" data-testid="diff-box" data-id={b.id} data-status="removed">
+                    <div className="dv-row-hd">
                     <Status word="removed" />
                     <span className="dv-name" data-testid="diff-box-name" title={b.dir}>
                       {b.label}
                     </span>
                     <span className="dv-n">{b.files.length === 1 ? '1 file' : `${b.files.length} files`}</span>
-                    <FileList files={b.files} />
+                    </div>
+                    <FileList files={b.files} counts={counts} current={b.files.some((x) => x.path === current) ? current : null} />
                   </li>
                 ))}
               </ul>
@@ -285,6 +389,7 @@ export function DiffView({
               {model.elsewhere.length} changed {model.elsewhere.length === 1 ? 'file is' : 'files are'} in no box on this board.
             </p>
           ) : null}
+          </div>
         </>
       )}
     </div>
@@ -293,13 +398,32 @@ export function DiffView({
 
 /** The first FILES_SHOWN files of a box, the rest behind one row. */
 const FILES_SHOWN = 8;
-function FileList({ files }: { files: readonly BranchFile[] }) {
+const FileList = memo(function FileList({
+  files,
+  counts,
+  current,
+}: {
+  files: readonly BranchFile[];
+  counts: ReadonlyMap<string, { added: number; removed: number }> | null;
+  current: string | null;
+}) {
   const [all, setAll] = useState(false);
-  const shown = all ? files : files.slice(0, FILES_SHOWN);
+  /* The file j/k landed on is never hidden behind "more files": it is shown
+     alone, in its place, and the box does not open whole. */
+  const shown = all
+    ? files
+    : files.filter((x, i) => i < FILES_SHOWN || x.path === current);
   return (
     <ul className="dv-files">
       {shown.map((f) => (
-        <li key={f.path} className="dv-file" title={f.from ? `${f.from} -> ${f.path}` : f.path}>
+        <li
+          key={f.path}
+          className="dv-file"
+          data-testid="diff-file"
+          data-path={f.path}
+          data-current={current === f.path ? 'true' : undefined}
+          title={f.from ? `${f.from} -> ${f.path}` : f.path}
+        >
           <span className={`dv-fstatus is-${STATUS_WORD[f.status]}`}>
             <span className="dv-glyph" aria-hidden="true">
               {STATUS_GLYPH[STATUS_WORD[f.status]!]}
@@ -313,18 +437,25 @@ function FileList({ files }: { files: readonly BranchFile[] }) {
           <span className="dv-path" dir="rtl" data-testid="diff-file-path">
             {`‎${f.path}‎`}
           </span>
+          {counts?.get(f.path) ? (
+            <span className="dv-fcounts" data-testid="diff-file-counts">
+              {counts.get(f.path)!.added > 0 ? <span className="dv-cadd">{`+${counts.get(f.path)!.added}`}</span> : null}
+              {counts.get(f.path)!.added > 0 && counts.get(f.path)!.removed > 0 ? ' ' : null}
+              {counts.get(f.path)!.removed > 0 ? <span className="dv-cdel">{`−${counts.get(f.path)!.removed}`}</span> : null}
+            </span>
+          ) : null}
         </li>
       ))}
-      {files.length > FILES_SHOWN ? (
+      {files.length > FILES_SHOWN && (all || shown.length < files.length) ? (
         <li>
           <button type="button" className="dv-more" data-testid="diff-more-files" onClick={() => setAll((v) => !v)}>
-            {all ? 'Fewer files' : files.length - FILES_SHOWN === 1 ? '1 more file' : `${files.length - FILES_SHOWN} more files`}
+            {all ? 'Fewer files' : files.length - shown.length === 1 ? '1 more file' : `${files.length - shown.length} more files`}
           </button>
         </li>
       ) : null}
     </ul>
   );
-}
+});
 
 /**
  * The Diff view as the board mounts it (lazily): the active chat comes from the

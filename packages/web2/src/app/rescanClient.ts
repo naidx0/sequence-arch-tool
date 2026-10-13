@@ -20,7 +20,7 @@ export type RescanResult =
 
 export type ScanProgressHandler = (progress: ScanProgress) => void;
 
-function draftFromBody(body: unknown): ScannedRepoDraft | null {
+export function draftFromBody(body: unknown): ScannedRepoDraft | null {
   const graph = readScannedGraph(body);
   if (graph === null) return null;
   const root =

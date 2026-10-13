@@ -489,7 +489,7 @@ export type AskStreamEvent =
        * `removeIds` clears marks before append (delete / SystemBoard replace).
        */
       type: 'board:item';
-      items: import('./boardTools.js').BoardItem[];
+      items: (import('./boardTools.js').BoardItem | Extract<import('@sequence/api-types').BoardWireItem, { kind: 'svg' | 'video' | 'scene' }>)[];
       removeIds?: string[];
     }
   | {
@@ -787,6 +787,8 @@ export interface AskPipelineInput {
   skillBodyLines?: readonly string[];
   /** The repo's map.md section (askAgentMap.ts `agentMapLinesFor`); empty or absent when off. */
   agentMapLines?: readonly string[];
+  /** Setting `boardFlowsTopDown` (askAgentMap.ts): the board's diagram writers lay flows out top to bottom. Absent = today's layout. */
+  boardFlowTopDown?: boolean;
   surfaceAnswer?: string;
   graph: ArchGraph | null;
   digest: ReturnType<typeof buildDigest> | undefined;
@@ -1105,7 +1107,11 @@ async function applyAskToolRoundResult(
             toolEvidence += ` — WARNING: ${broken.join('; ')}. Fix the syntax before anything else.`;
           }
         }
-        toolResultBodies.push(`### tool ${tr.id} (${tr.name}): ${toolEvidence}`);
+        /* An applied edit_file keeps its diff in what the model reads: "wrote 1 file" alone asks it to trust a count. */
+        toolResultBodies.push(
+          `### tool ${tr.id} (${tr.name}): ${toolEvidence}` +
+            (tr.name === 'edit_file' && result.content ? `\n${result.content}` : ''),
+        );
         fedBack = true;
       }
     }
@@ -1503,6 +1509,21 @@ const EXPLAIN_ON_CANVAS_SECTION = [
 ].join('\n');
 
 /**
+ * INLINE ART IS THE APP'S ART (owner, 2026-10-12: "so it doesn't look like a random
+ * drawing from nowhere"). Its own short section, sent on every ask turn because the
+ * model may write an `svg` fence in any answer, not only on canvas turns. Mirrors
+ * web2 `chat/INLINE-ART-RULES.md`; `chat/svgTheme.ts` is the net under it.
+ */
+export const INLINE_ART_RULES_SECTION = [
+  '--- INLINE ART (binding) ---',
+  'Any `svg` you draw (a fence or a canvas block) is the app\'s art: labels use the app font, `font-family="var(--font-sans)"` (`var(--font-mono)` for code), and never name another family.',
+  'Colours are tokens, never a hex: `var(--ink-1)` text, `var(--surface-1)` boxes, `var(--edge-strong)` lines, one `var(--accent)`; `var(--fits)` good, `var(--spills)` warning, `var(--wont)` bad.',
+  'A button is `<rect class="btn">` (soft) or `<rect class="btn primary">` (solid), `rx="8"`; no other button shape.',
+  'Only when the user\'s own project asks for its own fonts (a mockup of their product) put `class="own-fonts"` on the root `<svg>` and keep theirs; otherwise the fonts are ours.',
+  'A workflow loop is a ```workflow fence of JSON, `{"name","steps":[{"id","label"}],"loop":{"from","to","until"}}` (2 to 12 steps; ids are short slugs, labels at most 40 chars; `loop` goes back to the same or an earlier step); the chat draws it inline with Run and Open in Workflows.',
+].join('\n');
+
+/**
  * BLOCK CRAFT — twelve lines, and every one of them is a choice the model was
  * making blind.
  *
@@ -1655,6 +1676,7 @@ export function renderAskInstructionBelt(input: AskInstructionHashInput): string
    * already carried; line charts belong in artifact blocks, not SeqDraw.
    * Plot/math asks get the same section even when the board belt is off.
    */
+  parts.push(INLINE_ART_RULES_SECTION);
   if (canvasOn || plotAsk) {
     parts.push(renderChartToolHintSection().join('\n'));
     parts.push(
@@ -5107,6 +5129,8 @@ export async function runAskPipeline(
      * else — the app server never sets it, so the product keeps its whitelist.
      */
     sandboxExec: process.env.SEQUENCE_SANDBOX_EXEC === '1',
+    /* The request's abort reaches run_command, which kills the command's whole process tree. */
+    ...(input.signal ? { signal: input.signal } : {}),
     canvasToolsEnabled: canvasToolsEnabled(input),
     /* Only when there is no repository — with one attached, the repo IS the
        place files come from and a second root would be ambiguous. */
@@ -5336,6 +5360,7 @@ export async function runAskPipeline(
      draws. `input.surface.board` is capped at forty for the PROMPT; the ids
      still all arrive, which is what the duplicate check needs. */
   const boardKnownThisTurn = {
+    flowTopDown: input.boardFlowTopDown === true,
     nodeIds: (input.graph?.nodes ?? []).map((n) => n.id),
     items: (input.surface?.board?.items ?? []).map((i) =>
       i.at ? { id: i.id, at: i.at } : { id: i.id },

@@ -838,7 +838,7 @@ function stubFetch(): { calls: () => number; restore: () => void } {
 test('G2 LOCK, the reported shape: `deny fetch_url(*)` REFUSES a real fetch_url and nothing is fetched', async () => {
   const net = stubFetch();
   try {
-    const ctx = { resolveReadable: () => null, repoRoot: null, designMode: true };
+    const ctx = { resolveReadable: () => null, repoRoot: null, designMode: true, webFetchImpl: (i: string | URL, init?: RequestInit) => globalThis.fetch(i, init) };
     // CONTROL: no rule, the same call goes to the (stubbed) network and succeeds.
     const control = await executeAskTool('fetch_url', { url: G2_LOOPBACK_URL }, {
       ...ctx,

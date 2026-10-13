@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { createRepoServer } from '../server/repoServer.js';
 import { setRepoTrust } from '../server/repoTrust.js';
 import { renderSkillBodyLines, renderSkillSummaryLines, loadSkillSummaries } from '../harness/skillLoader.js';
-import { planSkillImport, writeSkillImport, withSkillFrontMatter, MAX_SKILL_FILES } from '../server/skillsImport.js';
+import { planSkillImport, removeWorkspaceSkill, revealWorkspaceSkill, writeSkillImport, withSkillFrontMatter, MAX_SKILL_FILES } from '../server/skillsImport.js';
 import { userStoreDir } from '../server/store.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -216,4 +216,67 @@ test('front matter: a BOM file does not get a second front matter', () => {
 test('plan: two files in one skill that differ only by case are refused', () => {
   const r = planSkillImport([{ path: 'a/SKILL.md', content: 'x' }, { path: 'a/Ref.md', content: 'x' }, { path: 'a/ref.md', content: 'y' }]);
   assert.equal(r.ok, false);
+});
+
+test('remove: only a workspace skill folder goes; a bad name, a link and a missing skill are refused or 404, and nothing else is touched', () => {
+  const root = tmpRoot();
+  const outside = tmpRoot();
+  fs.writeFileSync(path.join(outside, 'keep.txt'), 'keep');
+  assert.deepEqual(writeSkillImport(root, planSkillImport([{ path: 'a/SKILL.md', content: 'one' }, { path: 'b/SKILL.md', content: 'two' }]) as never, false), { written: ['a', 'b'] });
+  fs.mkdirSync(path.join(root, '.sequence', 'other'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.sequence', 'other', 'x.md'), 'x');
+  for (const bad of ['..', '.', '../other', 'a/b', '.hidden', '', 'con']) assert.ok('refused' in removeWorkspaceSkill(root, bad), `refused: ${JSON.stringify(bad)}`);
+  assert.deepEqual(removeWorkspaceSkill(root, 'nope'), { missing: 'nope' });
+  fs.symlinkSync(outside, path.join(root, '.sequence', 'skills', 'linked'));
+  assert.ok('refused' in removeWorkspaceSkill(root, 'linked'));
+  assert.equal(fs.readFileSync(path.join(outside, 'keep.txt'), 'utf8'), 'keep');
+  assert.deepEqual(removeWorkspaceSkill(root, 'a'), { removed: 'a' });
+  assert.equal(fs.existsSync(path.join(root, '.sequence', 'skills', 'a')), false);
+  assert.equal(fs.existsSync(path.join(root, '.sequence', 'skills', 'b', 'SKILL.md')), true);
+  assert.equal(fs.existsSync(path.join(root, '.sequence', 'other', 'x.md')), true);
+});
+
+test('route: DELETE /api/skills/<slug> removes a workspace skill, 404s on a missing one, refuses a bad name, and the GET stops listing it', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-skills-del-'));
+  const repo = path.join(dir, 'repo');
+  fs.cpSync(TICKETING, repo, { recursive: true });
+  setRepoTrust(userStoreDir(), repo, true);
+  const userConfigDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-skills-user-')));
+  fs.mkdirSync(path.join(userConfigDir, 'skills', 'global-one'), { recursive: true });
+  fs.writeFileSync(path.join(userConfigDir, 'skills', 'global-one', 'SKILL.md'), 'global');
+  const server = await createRepoServer(repo, { webDist: undefined, userConfigDir });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+  const addr = server.address();
+  const base = `http://127.0.0.1:${typeof addr === 'object' && addr ? addr.port : 0}`;
+  try {
+    const files = [{ path: 'gate-first/SKILL.md', content: '---\nversion: 1\nname: Gate first\ndescription: Run the gate.\nevidenceRunIds: [run-1]\n---\nBody.\n' }];
+    assert.equal((await fetch(`${base}/api/skills`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ files }) })).status, 200);
+    assert.equal((await fetch(`${base}/api/skills/gate-first`, { method: 'DELETE' })).status, 200);
+    assert.equal(fs.existsSync(path.join(repo, '.sequence', 'skills', 'gate-first')), false);
+    const list = (await (await fetch(`${base}/api/skills`)).json()) as { skills: { slug: string }[] };
+    assert.equal(list.skills.some((s) => s.slug === 'gate-first'), false);
+    assert.equal((await fetch(`${base}/api/skills/gate-first`, { method: 'DELETE' })).status, 404);
+    assert.equal((await fetch(`${base}/api/skills/global-one`, { method: 'DELETE' })).status, 404);
+    assert.equal((await fetch(`${base}/api/skills/%2E%2E%2Fescape`, { method: 'DELETE' })).status, 400);
+    assert.equal(fs.existsSync(path.join(userConfigDir, 'skills', 'global-one', 'SKILL.md')), true);
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});
+
+test('reveal: only a real workspace SKILL.md is shown; a bad name, a link and a missing skill never reach the file manager', () => {
+  const root = tmpRoot();
+  const outside = tmpRoot();
+  fs.writeFileSync(path.join(outside, 'SKILL.md'), 'x');
+  assert.deepEqual(writeSkillImport(root, planSkillImport([{ path: 'a/SKILL.md', content: 'one' }]) as never, false), { written: ['a'] });
+  fs.symlinkSync(outside, path.join(root, '.sequence', 'skills', 'linked'));
+  const shown = [] as string[];
+  const reveal = (abs: string) => void shown.push(abs);
+  for (const bad of ['..', '../a', 'a/b', '.hidden', '']) assert.ok('refused' in revealWorkspaceSkill(root, bad, reveal), JSON.stringify(bad));
+  assert.deepEqual(revealWorkspaceSkill(root, 'nope', reveal), { missing: 'nope' });
+  assert.ok('refused' in revealWorkspaceSkill(root, 'linked', reveal));
+  assert.equal(shown.length, 0);
+  assert.deepEqual(revealWorkspaceSkill(root, 'a', reveal), { revealed: 'a' });
+  assert.equal(shown.length, 1);
+  assert.ok(shown[0]!.endsWith(path.join('.sequence', 'skills', 'a', 'SKILL.md')));
 });

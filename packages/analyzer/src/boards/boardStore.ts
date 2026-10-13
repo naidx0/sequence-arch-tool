@@ -22,6 +22,20 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  ARROWHEADS,
+  DASHES,
+  FILL_COLORS,
+  FONT_SIZES,
+  LABEL_POSITIONS,
+  STROKE_COLORS,
+  isHexColor,
+  type BoardArrowhead,
+  type BoardDash,
+  type BoardFontSize,
+  type BoardLabelPos,
+} from './boardPalette.js';
+import { SvgError, sanitizeSvg } from './svgSanitize.js';
 
 export type BoardKind = 'architecture' | 'whiteboard';
 
@@ -53,18 +67,43 @@ interface ItemBase {
   by?: 'agent' | 'person';
   /** A graph node id: the item's coordinates are offsets from that node's top-left. */
   anchor?: string;
+  /** Composes items into one diagram: items sharing a group id move and select together. */
+  group?: string;
+}
+
+/**
+ * Style fields (shapes, paths, frames). `stroke` and `fill` are palette NAMES
+ * (boardPalette.ts) that the renderer maps to Graphite custom properties; a
+ * #hex is stored only when `ownTheme` is true. Absent = the theme default.
+ */
+export interface ItemStyle {
+  stroke?: string;
+  fill?: string;
+  strokeWidth?: number;
+  dash?: BoardDash;
+  arrowStart?: BoardArrowhead;
+  arrowEnd?: BoardArrowhead;
+  labelPos?: BoardLabelPos;
+  fontSize?: BoardFontSize;
+  ownTheme?: boolean;
 }
 
 export interface BStroke extends ItemBase {
   kind: 'stroke';
+  /** Pen colour: a palette name (or #hex with ownTheme). Absent = the theme's pen colour. */
+  stroke?: string;
+  ownTheme?: boolean;
   points: BPoint[];
   width: number;
 }
-export interface BShape extends ItemBase {
+export interface BShape extends ItemBase, ItemStyle {
   kind: 'shape';
-  shape: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow';
+  /** `path` is a polyline through `points` (from/to are its bounding box); `frame` is a titled container (label = title). */
+  shape: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow' | 'path' | 'frame';
   from: BPoint;
   to: BPoint;
+  /** path only: the vertices, absolute board coordinates. */
+  points?: BPoint[];
   label?: string;
   /** An arrow bound to an item id on this board, or (architecture board) a node id. */
   fromId?: string;
@@ -72,6 +111,10 @@ export interface BShape extends ItemBase {
 }
 export interface BText extends ItemBase {
   kind: 'text';
+  /** Text colour: a palette name (or #hex with ownTheme). */
+  color?: string;
+  fontSize?: BoardFontSize;
+  ownTheme?: boolean;
   at: BPoint;
   text: string;
   /** A sticky note: text on a tinted card, `at` its top-left corner. */
@@ -89,7 +132,66 @@ export interface BNodeRef extends ItemBase {
   excerpt?: string;
 }
 
-export type BoardItem = BStroke | BShape | BText | BNodeRef;
+/** An SVG hosted on the board: `svg` is the SANITIZED markup (svgSanitize.ts), drawn inline in the w x h box at `at`. */
+export interface BSvg extends ItemBase {
+  kind: 'svg';
+  at: BPoint;
+  w: number;
+  h: number;
+  svg: string;
+  /** Short description for screen readers and the item list. */
+  label?: string;
+}
+
+/** A rendered clip on the board: `src` is a workspace-relative path to an .mp4/.webm/.gif inside the project. */
+export interface BVideo extends ItemBase {
+  kind: 'video';
+  at: BPoint;
+  w: number;
+  h: number;
+  src: string;
+  /** A workspace-relative image shown before play (and in the inline preview). */
+  poster?: string;
+  label?: string;
+}
+
+export const SCENE_EASINGS = ['linear', 'ease-in', 'ease-out', 'ease-in-out'] as const;
+export type SceneEasing = (typeof SCENE_EASINGS)[number];
+
+/** One keyframe of a scene: at `t` ms the item `target` (another item's id on this board) takes these values. */
+export interface SceneKeyframe {
+  t: number;
+  target: string;
+  x?: number;
+  y?: number;
+  scale?: number;
+  opacity?: number;
+  stroke?: string;
+  fill?: string;
+  text?: string;
+  easing?: SceneEasing;
+}
+
+/** A native animated scene: a stage frame (`at`, `w`, `h`) that plays keyframes over other items on the board. */
+export interface BScene extends ItemBase {
+  kind: 'scene';
+  at: BPoint;
+  w: number;
+  h: number;
+  /** Milliseconds, 100..600000. */
+  duration: number;
+  fps?: number;
+  easing?: SceneEasing;
+  title?: string;
+  ownTheme?: boolean;
+  keyframes: SceneKeyframe[];
+}
+
+export const MEDIA_EXTS = ['.mp4', '.webm', '.gif'] as const;
+export const POSTER_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.gif'] as const;
+export const SCENE_CAPS = { keyframes: 500, minDuration: 100, maxDuration: 600_000, text: 500 } as const;
+
+export type BoardItem = BStroke | BShape | BText | BNodeRef | BSvg | BVideo | BScene;
 
 export interface BoardDoc {
   version: 1;
@@ -329,8 +431,124 @@ function optId(v: unknown, what: string): string | undefined {
   return v;
 }
 
+function enumOf<T extends string>(v: unknown, list: readonly T[], what: string): T {
+  if (typeof v !== 'string' || !(list as readonly string[]).includes(v)) throw new BoardError(`${what} must be one of ${list.join(', ')}`);
+  return v as T;
+}
+
+/** A colour: a palette name or, with ownTheme, a #hex. */
+function colour(v: unknown, what: string, names: readonly string[], ownTheme: boolean): string {
+  if (typeof v === 'string' && names.includes(v)) return v;
+  if (isHexColor(v)) {
+    if (!ownTheme) throw new BoardError(`${what}: raw colour "${v}" is only allowed with ownTheme:true; use a palette name (${names.join(', ')})`);
+    return v;
+  }
+  throw new BoardError(`${what}: unknown colour ${JSON.stringify(v)}; use one of ${names.join(', ')}`);
+}
+
+function readStyle(o: Record<string, unknown>): ItemStyle {
+  const s: ItemStyle = {};
+  const own = o.ownTheme === true;
+  if (own) s.ownTheme = true;
+  if (o.stroke !== undefined) s.stroke = colour(o.stroke, 'stroke', STROKE_COLORS, own);
+  if (o.fill !== undefined) s.fill = colour(o.fill, 'fill', FILL_COLORS, own);
+  if (o.strokeWidth !== undefined) s.strokeWidth = Math.min(8, Math.max(1, num(o.strokeWidth, 'strokeWidth')));
+  if (o.dash !== undefined) s.dash = enumOf(o.dash, DASHES, 'dash');
+  if (o.arrowStart !== undefined) s.arrowStart = enumOf(o.arrowStart, ARROWHEADS, 'arrowStart');
+  if (o.arrowEnd !== undefined) s.arrowEnd = enumOf(o.arrowEnd, ARROWHEADS, 'arrowEnd');
+  if (o.labelPos !== undefined) s.labelPos = enumOf(o.labelPos, LABEL_POSITIONS, 'labelPos');
+  if (o.fontSize !== undefined) s.fontSize = enumOf(o.fontSize, FONT_SIZES, 'fontSize');
+  return s;
+}
+
+/** Where a write is happening: the project roots a media path may live under, and whether the file must exist now. */
+export interface ItemCtx {
+  roots: readonly string[];
+  mustExist: boolean;
+}
+
+const RESERVED_DIRS = ['.sequence', '.git', '.ssh', '.aws', '.gnupg'];
+
+/** True when a project-relative path sits in a folder the file routes never serve: all of .git/.ssh/.aws/.gnupg, and .sequence except .sequence/media/ (judged case-insensitively, as Windows and macOS compare). */
+function reservedMediaPath(rel: string): boolean {
+  const segs = rel.toLowerCase().split('/');
+  const first = segs[0] ?? '';
+  if (!RESERVED_DIRS.includes(first)) return false;
+  return !(first === '.sequence' && segs[1] === 'media' && segs.length > 2);
+}
+
+/**
+ * A workspace-relative media path: posix, no absolute form, no drive letter, no `..`, an allow-listed
+ * extension, and (on a write) a real file whose real path stays inside a project root.
+ */
+export function checkMediaPath(v: unknown, what: string, exts: readonly string[], ctx?: ItemCtx): string {
+  const raw = str(v, what, 500);
+  const rel = raw.replace(/\\/g, '/');
+  if (!rel || rel.startsWith('/') || /^[A-Za-z]:/.test(rel) || rel.includes('\0')) {
+    throw new BoardError(`${what} must be a path relative to the project (got ${JSON.stringify(raw)})`);
+  }
+  if (rel.split('/').some((seg) => seg === '..' || seg === '')) throw new BoardError(`${what} must stay inside the project: no ".." and no empty segments`);
+  /* An NTFS alternate data stream (`a.mp4:secret`) is another file under the same name. */
+  if (rel.includes(':')) throw new BoardError(`${what} must not contain ":"`);
+  if (reservedMediaPath(rel)) throw new BoardError(`${what} is under a reserved folder; clips live in .sequence/media/ or anywhere outside .sequence, .git, .ssh, .aws and .gnupg`);
+  const ext = path.extname(rel).toLowerCase();
+  if (!exts.includes(ext)) throw new BoardError(`${what} must end in one of ${exts.join(', ')} (got "${ext || 'none'}")`);
+  if (ctx?.mustExist) {
+    let found = false;
+    for (const root of ctx.roots) {
+      try {
+        const realRoot = fs.realpathSync(root);
+        const real = fs.realpathSync(path.resolve(root, rel));
+        const inside = path.relative(realRoot, real);
+        if (inside.startsWith('..') || path.isAbsolute(inside)) throw new BoardError(`${what} resolves outside the project`);
+        if (reservedMediaPath(inside.replace(/\\/g, '/'))) throw new BoardError(`${what} resolves into a reserved folder`);
+        const st = fs.statSync(real);
+        if (st.isFile() && st.nlink > 1) throw new BoardError(`${what} is a hard link; copy the file instead`);
+        if (st.isFile()) found = true;
+      } catch (e) {
+        if (e instanceof BoardError) throw e;
+      }
+      if (found) break;
+    }
+    if (!found) throw new BoardError(`${what}: no file at "${rel}" in the project; render it there first`);
+  }
+  return rel;
+}
+
+const KEYFRAME_KEYS = ['t', 'target', 'x', 'y', 'scale', 'opacity', 'stroke', 'fill', 'text', 'easing'];
+
+function readKeyframe(k: unknown, i: number, duration: number, own: boolean, selfId: string): SceneKeyframe {
+  const where = `keyframes[${i}]`;
+  if (!k || typeof k !== 'object') throw new BoardError(`${where} must be an object`);
+  const o = k as Record<string, unknown>;
+  const unknown = Object.keys(o).filter((key) => !KEYFRAME_KEYS.includes(key));
+  if (unknown.length > 0) throw new BoardError(`${where}: unknown key${unknown.length > 1 ? 's' : ''} ${unknown.map((u) => JSON.stringify(u)).join(', ')}; a keyframe takes ${KEYFRAME_KEYS.join(', ')}`);
+  const t = num(o.t, `${where}.t`);
+  if (t < 0 || t > duration) throw new BoardError(`${where}.t must be between 0 and the scene duration (${duration})`);
+  const out: SceneKeyframe = { t: Math.round(t), target: str(o.target, `${where}.target`, 300) };
+  if (!out.target) throw new BoardError(`${where}.target is required: the id of an item on this board`);
+  if (out.target === selfId) throw new BoardError(`${where}.target is the scene itself; a keyframe moves another item on the board`);
+  if (o.x !== undefined) out.x = num(o.x, `${where}.x`);
+  if (o.y !== undefined) out.y = num(o.y, `${where}.y`);
+  if (o.scale !== undefined) {
+    const sc = num(o.scale, `${where}.scale`);
+    if (sc < 0.01 || sc > 100) throw new BoardError(`${where}.scale must be between 0.01 and 100`);
+    out.scale = sc;
+  }
+  if (o.opacity !== undefined) {
+    const op = num(o.opacity, `${where}.opacity`);
+    if (op < 0 || op > 1) throw new BoardError(`${where}.opacity must be between 0 and 1`);
+    out.opacity = op;
+  }
+  if (o.stroke !== undefined) out.stroke = colour(o.stroke, `${where}.stroke`, STROKE_COLORS, own);
+  if (o.fill !== undefined) out.fill = colour(o.fill, `${where}.fill`, FILL_COLORS, own);
+  if (o.text !== undefined) out.text = str(o.text, `${where}.text`, SCENE_CAPS.text);
+  if (o.easing !== undefined) out.easing = enumOf(o.easing, SCENE_EASINGS, `${where}.easing`);
+  return out;
+}
+
 /** One item, checked and normalised. Unknown kinds are refused, not kept. */
-export function validateItem(raw: unknown): Check<BoardItem> {
+export function validateItem(raw: unknown, ctx?: ItemCtx): Check<BoardItem> {
   try {
     if (!raw || typeof raw !== 'object') throw new BoardError('item must be an object');
     const o = raw as Record<string, unknown>;
@@ -341,21 +559,40 @@ export function validateItem(raw: unknown): Check<BoardItem> {
     if (o.by === 'agent' || o.by === 'person') base.by = o.by;
     const anchor = optId(o.anchor, 'anchor');
     if (anchor) base.anchor = anchor;
+    const group = optId(o.group, 'group');
+    if (group) base.group = group;
     switch (o.kind) {
       case 'stroke': {
         if (!Array.isArray(o.points) || o.points.length < 2) throw new BoardError('a stroke needs at least 2 points');
         if (o.points.length > BOARD_CAPS.points) throw new BoardError(`a stroke holds at most ${BOARD_CAPS.points} points`);
         const width = o.width === undefined ? 2 : num(o.width, 'width');
+        const pen: Pick<BStroke, 'stroke' | 'ownTheme'> = {};
+        if (o.ownTheme === true) pen.ownTheme = true;
+        if (o.stroke !== undefined) pen.stroke = colour(o.stroke, 'stroke', STROKE_COLORS, o.ownTheme === true);
         return {
           ok: true,
-          item: { ...base, kind: 'stroke', points: o.points.map((p, i) => strokePt(p, `points[${i}]`)), width: Math.min(20, Math.max(0.5, width)) },
+          item: { ...base, kind: 'stroke', points: o.points.map((p, i) => strokePt(p, `points[${i}]`)), width: Math.min(20, Math.max(0.5, width)), ...pen },
         };
       }
       case 'shape': {
-        if (o.shape !== 'rect' && o.shape !== 'ellipse' && o.shape !== 'diamond' && o.shape !== 'line' && o.shape !== 'arrow') {
-          throw new BoardError('shape must be rect, ellipse, diamond, line or arrow');
+        const shape = enumOf(o.shape, ['rect', 'ellipse', 'diamond', 'line', 'arrow', 'path', 'frame'] as const, 'shape');
+        let points: BPoint[] | undefined;
+        let from: BPoint;
+        let to: BPoint;
+        if (shape === 'path') {
+          if (!Array.isArray(o.points) || o.points.length < 2) throw new BoardError('a path needs at least 2 points');
+          if (o.points.length > BOARD_CAPS.points) throw new BoardError(`a path holds at most ${BOARD_CAPS.points} points`);
+          points = o.points.map((p, i) => pt(p, `points[${i}]`));
+          const xs = points.map((p) => p.x);
+          const ys = points.map((p) => p.y);
+          /* The box is always derived from the points, whatever the caller sent. */
+          from = { x: Math.min(...xs), y: Math.min(...ys) };
+          to = { x: Math.max(...xs), y: Math.max(...ys) };
+        } else {
+          from = pt(o.from, 'from');
+          to = pt(o.to, 'to');
         }
-        const item: BShape = { ...base, kind: 'shape', shape: o.shape, from: pt(o.from, 'from'), to: pt(o.to, 'to') };
+        const item: BShape = { ...base, kind: 'shape', shape, from, to, ...readStyle(o), ...(points ? { points } : {}) };
         if (o.label !== undefined && o.label !== '') item.label = str(o.label, 'label', BOARD_CAPS.label);
         const fromId = optId(o.fromId, 'fromId');
         const toId = optId(o.toId, 'toId');
@@ -367,6 +604,9 @@ export function validateItem(raw: unknown): Check<BoardItem> {
       /* `kind: "sticky"` is read as the sticky text it means. */
       case 'sticky': {
         const item: BText = { ...base, kind: 'text', at: pt(o.at, 'at'), text: str(o.text, 'text', BOARD_CAPS.text) };
+        if (o.ownTheme === true) item.ownTheme = true;
+        if (o.color !== undefined) item.color = colour(o.color, 'color', STROKE_COLORS, o.ownTheme === true);
+        if (o.fontSize !== undefined) item.fontSize = enumOf(o.fontSize, FONT_SIZES, 'fontSize');
         if (o.kind === 'sticky' || o.sticky === true) {
           item.sticky = true;
           if (o.w !== undefined) item.w = Math.min(600, Math.max(60, num(o.w, 'w')));
@@ -390,6 +630,61 @@ export function validateItem(raw: unknown): Check<BoardItem> {
         if (typeof o.excerpt === 'string') item.excerpt = str(o.excerpt, 'excerpt', 4000);
         return { ok: true, item };
       }
+      case 'svg': {
+        let clean: string;
+        try {
+          clean = sanitizeSvg(o.svg, { idPrefix: `${o.id}~` }).svg;
+        } catch (e) {
+          if (e instanceof SvgError) throw new BoardError(`svg refused: ${e.message}`);
+          throw e;
+        }
+        const w = num(o.w, 'w');
+        const h = num(o.h, 'h');
+        if (w < 8 || h < 8 || w > 20000 || h > 20000) throw new BoardError('svg w and h must be between 8 and 20000');
+        const item: BSvg = { ...base, kind: 'svg', at: pt(o.at, 'at'), w, h, svg: clean };
+        if (o.label !== undefined && o.label !== '') item.label = str(o.label, 'label', BOARD_CAPS.label);
+        return { ok: true, item };
+      }
+      case 'video': {
+        const w = num(o.w, 'w');
+        const h = num(o.h, 'h');
+        if (w < 40 || h < 30 || w > 4000 || h > 4000) throw new BoardError('video w must be 40-4000 and h 30-4000');
+        const item: BVideo = { ...base, kind: 'video', at: pt(o.at, 'at'), w, h, src: checkMediaPath(o.src, 'src', MEDIA_EXTS, ctx) };
+        if (o.poster !== undefined && o.poster !== '') item.poster = checkMediaPath(o.poster, 'poster', POSTER_EXTS, ctx);
+        if (o.label !== undefined && o.label !== '') item.label = str(o.label, 'label', BOARD_CAPS.label);
+        return { ok: true, item };
+      }
+      case 'scene': {
+        const w = num(o.w, 'w');
+        const h = num(o.h, 'h');
+        if (w < 40 || h < 30 || w > 4000 || h > 4000) throw new BoardError('scene w must be 40-4000 and h 30-4000');
+        const duration = num(o.duration, 'duration');
+        if (duration < SCENE_CAPS.minDuration || duration > SCENE_CAPS.maxDuration) {
+          throw new BoardError(`duration must be ${SCENE_CAPS.minDuration}-${SCENE_CAPS.maxDuration} ms`);
+        }
+        if (!Array.isArray(o.keyframes)) throw new BoardError('keyframes must be an array (it may be empty)');
+        if (o.keyframes.length > SCENE_CAPS.keyframes) throw new BoardError(`a scene holds at most ${SCENE_CAPS.keyframes} keyframes`);
+        const own = o.ownTheme === true;
+        const dur = Math.round(duration);
+        const item: BScene = {
+          ...base,
+          kind: 'scene',
+          at: pt(o.at, 'at'),
+          w,
+          h,
+          duration: dur,
+          keyframes: o.keyframes.map((k, i) => readKeyframe(k, i, dur, own, String(o.id))),
+        };
+        if (own) item.ownTheme = true;
+        if (o.fps !== undefined) {
+          const fps = num(o.fps, 'fps');
+          if (fps < 1 || fps > 120) throw new BoardError('fps must be between 1 and 120');
+          item.fps = Math.round(fps);
+        }
+        if (o.easing !== undefined) item.easing = enumOf(o.easing, SCENE_EASINGS, 'easing');
+        if (o.title !== undefined && o.title !== '') item.title = str(o.title, 'title', BOARD_CAPS.label);
+        return { ok: true, item };
+      }
       default:
         throw new BoardError(`unknown item kind "${String(o.kind)}"`);
     }
@@ -403,7 +698,7 @@ export function validateItem(raw: unknown): Check<BoardItem> {
  * every reason listed, and the file is untouched. A half-applied diagram (the
  * boxes without their arrows) is worse than a clear refusal.
  */
-export function applyBoardOps(root: string, id: string, ops: readonly BoardOp[]): BoardDoc {
+export function applyBoardOps(root: string, id: string, ops: readonly BoardOp[], mediaRoots: readonly string[] = [root]): BoardDoc {
   if (!Array.isArray(ops)) throw new BoardError('ops must be an array');
   if (ops.length > BOARD_CAPS.opsPerCall) throw new BoardError(`at most ${BOARD_CAPS.opsPerCall} ops per call`);
   const index = listBoards(root);
@@ -423,7 +718,7 @@ export function applyBoardOps(root: string, id: string, ops: readonly BoardOp[])
       return;
     }
     if (op.op === 'put') {
-      const v = validateItem(op.item);
+      const v = validateItem(op.item, { roots: mediaRoots, mustExist: true });
       if (!v.ok) errors.push(`ops[${i}]: ${v.error}`);
       else {
         /* Re-inserting keeps the original z-order for an update. */

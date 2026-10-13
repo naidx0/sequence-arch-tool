@@ -25,7 +25,20 @@ describe('loadWorkspaceCountFacts', () => {
       pluginError: null,
       pluginAskWired: null,
       mcpServerCount: null,
+      memory: null,
     });
+  });
+
+  it('takes the memory summary from the route that serves it', async () => {
+    const summary = { notes: 2, notesPath: '.sequence/memory/NOTES.md', findFilesLabels: 5, findFilesModel: 'frozen' as const, agentThreads: 1 };
+    const facts = await loadWorkspaceCountFacts({
+      recent: async () => ({ outcome: 'unreachable' }),
+      sessions: async () => ({ outcome: 'unreachable' }),
+      memory: async () => null,
+      hooks: async () => ({ outcome: 'unreachable' }),
+      memorySummary: async () => ({ outcome: 'ok', body: summary }),
+    });
+    expect(facts.memory).toEqual(summary);
   });
 
   it('mcp ok list becomes mcpServerCount', async () => {

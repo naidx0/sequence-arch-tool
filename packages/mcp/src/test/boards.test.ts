@@ -159,3 +159,114 @@ test('invalid input is refused and nothing is drawn: unknown node, whiteboard an
     await close();
   }
 });
+
+/* ── B2/B5: an agent draws in colour, with lines, connectors, text and grouped diagrams ───────────────────────── */
+
+test('colour is a palette NAME: draw stores stroke/fill/group on the kinds that take them, and a hex or an unknown name is refused', async () => {
+  const repo = specimen();
+  const { call, close } = await connect(repo);
+  try {
+    const drawn = await call('draw', {
+      board: 'whiteboard',
+      ops: [
+        { op: 'add', id: 'api', type: 'rect', x: 0, y: 0, text: 'API', stroke: 'chart2', group: 'flow' },
+        { op: 'add', id: 'db', type: 'ellipse', x: 300, y: 0, text: 'DB', stroke: 'chart4', group: 'flow' },
+        { op: 'add', id: 'conn', type: 'arrow', from: 'api', to: 'db', text: 'reads', stroke: 'warning', group: 'flow' },
+        { op: 'add', id: 'rule', type: 'line', x: 0, y: 140, w: 300, h: 0, stroke: 'danger' },
+        { op: 'add', id: 'title', type: 'text', x: 0, y: -20, text: 'Read path', stroke: 'info' },
+        { op: 'add', id: 'note', type: 'sticky', x: 0, y: 160, text: 'cache?', stroke: 'chart5' },
+      ],
+    });
+    assert.equal(drawn.isError, false, drawn.text);
+    const byId = new Map(readBoard(repo, 'whiteboard')!.items.map((i) => [i.id, i]));
+    assert.deepEqual([(byId.get('api') as { stroke?: string }).stroke, byId.get('api')?.group], ['chart2', 'flow']);
+    assert.equal((byId.get('conn') as { stroke?: string }).stroke, 'warning');
+    assert.equal(byId.get('conn')?.group, 'flow');
+    assert.equal((byId.get('rule') as { stroke?: string }).stroke, 'danger');
+    assert.equal((byId.get('title') as { color?: string }).color ?? (byId.get('title') as { stroke?: string }).stroke, 'info');
+    assert.equal((byId.get('note') as { color?: string }).color ?? (byId.get('note') as { stroke?: string }).stroke, 'chart5');
+    /* update keeps the group and colour it was not told to change, and recolours what it was */
+    const upd = await call('draw', { board: 'whiteboard', ops: [{ op: 'update', id: 'api', stroke: 'danger' }] });
+    assert.equal(upd.isError, false, upd.text);
+    const api = readBoard(repo, 'whiteboard')!.items.find((i) => i.id === 'api')!;
+    assert.deepEqual([(api as { stroke?: string }).stroke, api.group], ['danger', 'flow']);
+  } finally {
+    await close();
+  }
+});
+
+test('draw refuses a hex or an unknown colour name with the palette in the message, and draws nothing', async () => {
+  const repo = specimen();
+  const { call, close } = await connect(repo);
+  try {
+    const hex = await call('draw', { board: 'whiteboard', ops: [{ op: 'add', id: 'a', type: 'rect', x: 0, y: 0, stroke: '#ff0000' }] });
+    assert.equal(hex.isError, true);
+    const nope = await call('draw', { board: 'whiteboard', ops: [{ op: 'add', id: 'a', type: 'rect', x: 0, y: 0, stroke: 'chartreuse' }] });
+    assert.equal(nope.isError, true);
+    assert.equal(readBoard(repo, 'whiteboard')!.items.length, 0);
+    /* the store refuses it too, for a writer that skips the schema (the app's routes, another process) */
+    const { applyBoardOps } = await import('@sequence/analyzer');
+    assert.throws(
+      () => applyBoardOps(repo, 'whiteboard', [{ op: 'put', item: { kind: 'shape', id: 'a', shape: 'rect', from: { x: 0, y: 0 }, to: { x: 5, y: 5 }, stroke: '#ff0000' } }]),
+      /ownTheme|palette/,
+    );
+  } finally {
+    await close();
+  }
+});
+
+test('the draw tool says how to colour, connect and group, and offers svg', async () => {
+  const repo = specimen();
+  const { client, close } = await connect(repo);
+  try {
+    const { tools } = await client.listTools();
+    const draw = tools.find((t) => t.name === 'draw')!;
+    assert.match(draw.description!, /palette names/);
+    assert.match(draw.description!, /ownTheme/);
+    const ops = (draw.inputSchema.properties as { ops: { items: { properties: Record<string, { enum?: string[] }> } } }).ops.items.properties;
+    assert.ok(ops.stroke && ops.fill && ops.group);
+    assert.ok(ops.type!.enum!.includes('svg'));
+  } finally {
+    await close();
+  }
+});
+
+/* ── B6: an agent hosts an SVG on a Space ─────────────────────────────────────────────────────────────────────── */
+
+test('draw hosts an svg as one item, stored as written, and update moves it without losing the markup', async () => {
+  const repo = specimen();
+  const { call, close } = await connect(repo);
+  try {
+    const svg = '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg"><polygon points="50,5 95,30 50,55 5,30" fill="none" stroke="currentColor"/></svg>';
+    const drawn = await call('draw', { board: 'whiteboard', ops: [{ op: 'add', id: 'anatomy', type: 'svg', x: 40, y: 50, w: 400, h: 240, svg, group: 'body' }] });
+    assert.equal(drawn.isError, false, drawn.text);
+    const item = readBoard(repo, 'whiteboard')!.items.find((i) => i.id === 'anatomy')!;
+    assert.equal(item.kind, 'svg');
+    assert.equal(item.kind === 'svg' && item.svg === svg && item.w === 400 && item.h === 240 && item.at.x === 40, true);
+    assert.equal(item.group, 'body');
+    const moved = await call('draw', { board: 'whiteboard', ops: [{ op: 'update', id: 'anatomy', x: 100, w: 200 }] });
+    assert.equal(moved.isError, false, moved.text);
+    const after = readBoard(repo, 'whiteboard')!.items.find((i) => i.id === 'anatomy')!;
+    assert.equal(after.kind === 'svg' && after.svg === svg && after.at.x === 100 && after.w === 200 && after.h === 240, true);
+  } finally {
+    await close();
+  }
+});
+
+test('an svg op without markup, or with markup that is not an svg, or oversize, is refused and draws nothing', async () => {
+  const repo = specimen();
+  const { call, close } = await connect(repo);
+  try {
+    const none = await call('draw', { board: 'whiteboard', ops: [{ op: 'add', type: 'svg', x: 0, y: 0 }] });
+    assert.equal(none.isError, true);
+    assert.match(none.text, /svg needs svg markup|needs svg markup/);
+    const notSvg = await call('draw', { board: 'whiteboard', ops: [{ op: 'add', type: 'svg', x: 0, y: 0, svg: '<div>hi</div>' }] });
+    assert.equal(notSvg.isError, true);
+    assert.match(notSvg.text, /<svg> root/);
+    const huge = await call('draw', { board: 'whiteboard', ops: [{ op: 'add', type: 'svg', x: 0, y: 0, svg: `<svg>${'x'.repeat(300_000)}</svg>` }] });
+    assert.equal(huge.isError, true);
+    assert.equal(readBoard(repo, 'whiteboard')!.items.length, 0);
+  } finally {
+    await close();
+  }
+});

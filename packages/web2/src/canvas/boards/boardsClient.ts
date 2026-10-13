@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { WbItem } from '../../whiteboard/whiteboardModel';
+import { onWorkspaceSwitched } from '../../sessions/workspaceEvents';
 import type { BoardDoc, BoardMeta, BoardOp, BoardsIndex } from './boardsModel';
 
 async function json<T>(res: Response): Promise<T> {
@@ -66,6 +67,16 @@ function openStream(): void {
   source = es;
 }
 
+/* The boards of another workspace: reopen the stream (the server watches the attached repo's boards) and refresh. */
+onWorkspaceSwitched(() => {
+  if (source) {
+    source.close();
+    source = null;
+    openStream();
+  }
+  for (const l of [...listeners]) l();
+});
+
 /** Hear every boards change while mounted. */
 export function useBoardsChanged(listener: Listener, enabled = true): void {
   const ref = useRef(listener);
@@ -94,7 +105,7 @@ export function resetBoardsStreamForTests(): void {
 
 /* ── the index ──────────────────────────────────────────────────────── */
 
-export function useBoardsIndex(enabled = true): { index: BoardsIndex | null; refresh: () => void; failed: boolean } {
+export function useBoardsIndex(enabled = true, project?: string): { index: BoardsIndex | null; refresh: () => void; failed: boolean } {
   const [index, setIndex] = useState<BoardsIndex | null>(null);
   /* No answer at all (no server: a frontend-only build, a test): the
      surfaces fall back to what they did before boards had a store. */
@@ -124,9 +135,19 @@ export function useBoardsIndex(enabled = true): { index: BoardsIndex | null; ref
       },
     );
   }, []);
+  /* THE LIST BELONGS TO A PROJECT. When the project changes, the old project's list is dropped at once and any answer
+     still in flight for it is ignored (the refresh below takes a newer sequence number), so a late answer from A never
+     lands as B's list. */
+  const seen = useRef(project);
   useEffect(() => {
-    if (enabled) refresh();
-  }, [enabled, refresh]);
+    if (!enabled) return;
+    if (seen.current !== project) {
+      seen.current = project;
+      seq.current += 1;
+      setIndex(null);
+    }
+    refresh();
+  }, [enabled, refresh, project]);
   useBoardsChanged(refresh, enabled);
   return { index, refresh, failed };
 }
@@ -151,6 +172,9 @@ export function useBoardDoc(id: string | null, enabled = true): BoardDocState {
   const [doc, setDoc] = useState<BoardDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
   const seq = useRef(0);
+  /* The board this hook is showing NOW: an answer for any other board is not this one's to report. */
+  const idRef = useRef(id);
+  idRef.current = id;
   const load = useCallback(() => {
     if (!id) return;
     const mine = ++seq.current;
@@ -168,6 +192,9 @@ export function useBoardDoc(id: string | null, enabled = true): BoardDocState {
   }, [id]);
   useEffect(() => {
     setDoc(null);
+    /* A failure belongs to the board it happened on: a deleted board's 404 must not outlive it on the next one. */
+    setError(null);
+    seq.current += 1;
     if (enabled) load();
   }, [enabled, load]);
   useBoardsChanged(load, enabled && id !== null);
@@ -176,9 +203,12 @@ export function useBoardDoc(id: string | null, enabled = true): BoardDocState {
       if (!id || ops.length === 0) return;
       try {
         const next = await boardsApi.ops(id, ops);
+        if (idRef.current !== id) return;
         setDoc((cur) => newer(cur, next));
         setError(null);
       } catch (e) {
+        /* A save that fails after the person has moved to another Space (or the board is gone) is not that Space's error. */
+        if (idRef.current !== id) return;
         setError((e as Error).message);
         load();
       }

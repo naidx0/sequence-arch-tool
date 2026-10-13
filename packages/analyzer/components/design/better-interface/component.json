@@ -1,0 +1,22 @@
+{
+  "id": "design/better-interface",
+  "group": "design",
+  "label": "Better Interface",
+  "summary": "Combines all of the `better-*` skills into a single review across accessibility, layout, writing, typography, color and UI polish.",
+  "triggers": [
+    "review the whole interface",
+    "better interface",
+    "combined ui review",
+    "polish the interface",
+    "ui review across all areas"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/better-interface"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/better-interface"
+}

@@ -413,6 +413,14 @@
   background-color: var(--ink-4);
 }
 
+/* A folder's rolled-up count: the dot's tone, as a number. */
+.files-scope .files-mark-count { padding: 0 var(--sp-4); }
+.files-scope .files-row-dir.files-tone-modified .files-mark-count,
+.files-scope .files-row-dir.files-tone-progress .files-mark-count { color: var(--spills); }
+.files-scope .files-row-dir.files-tone-added .files-mark-count { color: var(--fits); }
+.files-scope .files-row-dir.files-tone-conflict .files-mark-count { color: var(--wont); }
+.files-scope .files-row-dir.files-tone-deleted .files-mark-count { color: var(--ink-3); }
+
 .files-scope .files-crumb-leaf.files-tone-modified,
 .files-scope .files-crumb-leaf.files-tone-progress,
 .files-scope .files-hd-status.files-tone-modified,
@@ -706,6 +714,17 @@
 @container files-pane (max-width: 420px) {
   .files-scope .files-hd-status { display: none; }
 }
+
+/* The scope toggle above the tree: Working tree | This branch. Words stay at
+   every pane width (they are the whole control), and the tree rail is narrow. */
+.files-scope .files-scope-row { display: flex; flex-direction: column; gap: var(--sp-4); }
+.files-scope .files-scope-seg { width: 100%; }
+.files-scope .files-scope-seg .files-mode { flex: 1 1 0; padding: 0 var(--sp-6); min-width: 0; }
+@container files-pane (max-width: 560px) {
+  .files-scope .files-scope-seg .files-mode-word { display: inline; }
+}
+.files-scope .files-scope-note { color: var(--ink-3); font-size: var(--t-11); line-height: var(--lh-12); }
+.files-scope .files-hd-branchslot { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; }
 
 @media (prefers-reduced-motion: reduce) {
   .files-scope .files-mode,
@@ -1766,3 +1785,115 @@
   color-scheme: inherit;
   background: transparent;
 }
+
+/* Functions under a file (symbolsUi.tsx): a chevron on the file row, indented rows beneath. */
+/* The chevron is the folder twist's own slot (s2-rail-twist); this only makes it a pointer target. */
+.files-scope .files-symtwist { display: grid; place-items: center; cursor: pointer; }
+.files-scope .files-row-symbol { cursor: pointer; }
+.files-scope .files-row-symbol[data-playing='true'] .files-name { color: var(--accent-ink); }
+.files-scope .files-symglyph { color: var(--ink-3); font-size: var(--t-11); line-height: 1; }
+.files-scope .files-flowfoot { position: sticky; bottom: 0; background: var(--surface-1); max-height: 45%; overflow: auto; border-top: var(--w-hair) solid var(--glass-ctl-edge); }
+
+/* ── FIND IN THE PROJECT (G9) ────────────────────────────────────────────
+   A field above the Files card and a results sheet that drops from it. The
+   field reuses the Filter field's look; the sheet is a quiet raised surface. */
+.files-findbar {
+  position: relative;
+  flex: 0 0 auto;
+  padding: var(--sp-6) var(--sp-8) 0;
+  min-width: 0;
+}
+.files-find-wrap {
+  position: relative;
+  display: block;
+}
+.files-find-icon {
+  position: absolute;
+  left: var(--sp-8);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  pointer-events: none;
+  display: flex;
+}
+.files-find-field {
+  width: 100%;
+  height: var(--sp-24);
+  box-sizing: border-box;
+  padding: 0 var(--sp-8) 0 var(--sp-32);
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-8);
+  background-color: var(--state-hover);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  appearance: none;
+}
+.files-find-field::placeholder { color: var(--ink-3); }
+.files-find-field::-webkit-search-cancel-button { display: none; }
+.files-find-field:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.files-find-panel {
+  position: absolute;
+  z-index: 5;
+  left: var(--sp-8);
+  right: var(--sp-8);
+  top: calc(100% + var(--sp-4));
+  max-height: 60vh;
+  overflow: auto;
+  padding: var(--sp-4) 0;
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-8);
+  background: var(--surface-2);
+}
+.files-find-group {
+  display: block;
+}
+.files-find-file {
+  padding: var(--sp-4) var(--sp-8) var(--sp-2);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.files-find-hit {
+  display: flex;
+  gap: var(--sp-8);
+  align-items: baseline;
+  padding: var(--sp-2) var(--sp-8) var(--sp-2) var(--sp-16);
+  color: var(--ink-1);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  cursor: pointer;
+}
+.files-find-hit.is-active { background: var(--state-hover); }
+.files-find-ln {
+  flex: 0 0 var(--sp-32);
+  text-align: right;
+  color: var(--ink-3);
+}
+.files-find-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.files-find-mark {
+  background: transparent;
+  color: var(--accent);
+  font-weight: var(--fw-head);
+}
+.files-find-note {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-8);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+}
+.files-find-note.is-fail { color: var(--wont); }

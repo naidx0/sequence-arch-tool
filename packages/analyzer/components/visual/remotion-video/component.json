@@ -1,0 +1,21 @@
+{
+  "id": "visual/remotion-video",
+  "group": "visual",
+  "label": "Remotion Video",
+  "summary": "Make a short programmatic video inside the user's project with Remotion (React).",
+  "triggers": [
+    "make a video",
+    "remotion video",
+    "animated explainer",
+    "render an mp4",
+    "motion graphics clip"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/remotion-video"
+  },
+  "url": null
+}

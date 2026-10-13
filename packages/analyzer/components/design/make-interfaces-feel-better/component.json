@@ -1,0 +1,30 @@
+{
+  "id": "design/make-interfaces-feel-better",
+  "group": "design",
+  "label": "Make Interfaces Feel Better",
+  "summary": "Design engineering principles for making interfaces feel polished.",
+  "triggers": [
+    "make it feel better",
+    "polish an interface",
+    "design engineering details",
+    "interface feels polished",
+    "subtle ui polish"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/make-interfaces-feel-better",
+    "commit": "35545ea1512ad59fa463e6b1f95ca9c052981fe6",
+    "path": "skills/make-interfaces-feel-better"
+  },
+  "url": "https://github.com/jakubkrehel/make-interfaces-feel-better/tree/35545ea1512ad59fa463e6b1f95ca9c052981fe6/skills/make-interfaces-feel-better",
+  "externalRefs": [
+    "src/Card.tsx",
+    "src/card.css",
+    "src/Counter.tsx",
+    "src/timer.css",
+    "src/Button.tsx",
+    "src/button.css"
+  ]
+}

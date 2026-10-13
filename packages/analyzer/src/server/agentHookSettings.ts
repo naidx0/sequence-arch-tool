@@ -23,6 +23,8 @@ export const AGENT_HOOK_TOOL_MATCHER = 'Edit|Write|MultiEdit|Read|Bash';
 export const AGENT_HOOK_WRITE_MATCHER = 'Edit|Write|MultiEdit';
 /** The rest of the tool matcher, still fire-and-forget. */
 export const AGENT_HOOK_OTHER_MATCHER = 'Read|Bash';
+/** Claims-audit 2.6 (F3): the search tools whose FIRST call of a turn is answered with find_files results (setting findFilesFirst, off by default). */
+export const AGENT_HOOK_SEARCH_MATCHER = 'Grep|Glob';
 /** Hooks without a tool matcher. */
 export const AGENT_HOOK_LIFECYCLE = ['SessionStart', 'SubagentStart', 'SubagentStop', 'Stop'] as const;
 
@@ -49,7 +51,7 @@ export const BOARD_TOOLS_RULE = 'mcp__sequence__*';
  * hook's reply would never reach the session). Everything else is
  * `async: true`, so the board can never hold an agent up.
  */
-export function agentHookSettings(baseUrl: string, opts: { allowBoard?: boolean } = {}): HookSettings {
+export function agentHookSettings(baseUrl: string, opts: { allowBoard?: boolean; findFilesFirst?: boolean } = {}): HookSettings {
   const url = `${baseUrl.replace(/\/+$/, '')}/api/agent-event`;
   const sync: HttpHook = { type: 'http', url, timeout: 5 };
   const fireAndForget: HttpHook = { ...sync, async: true };
@@ -64,6 +66,8 @@ export function agentHookSettings(baseUrl: string, opts: { allowBoard?: boolean 
        working tree is snapshotted before the agent can change it. */
     UserPromptSubmit: [{ hooks: [sync] }],
   };
+  /* Synchronous: the reply carries the find_files context. Registered only when the setting is on for this session. */
+  if (opts.findFilesFirst) hooks.PreToolUse!.push({ matcher: AGENT_HOOK_SEARCH_MATCHER, hooks: [sync] });
   for (const ev of AGENT_HOOK_LIFECYCLE) if (!hooks[ev]) hooks[ev] = [{ hooks: [fireAndForget] }];
   return opts.allowBoard ? { hooks, permissions: { allow: [BOARD_TOOLS_RULE] } } : { hooks };
 }
@@ -78,12 +82,13 @@ export function writeClaudeSession(
   baseUrl: string,
   board: { command: string; args: string[]; env?: Record<string, string> } | null,
   homeDir: string = os.homedir(),
+  opts: { findFilesFirst?: boolean } = {},
 ): { settingsFile: string; mcpConfigFile: string | null; command: string } {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-hooks-'));
   const settingsFile = path.join(dir, 'claude-settings.json');
   const home = path.resolve(homeDir, '.claude', 'settings.json');
   if (path.resolve(settingsFile) === home) throw new Error("refusing to write the user's own ~/.claude/settings.json; pass a per-session file");
-  fs.writeFileSync(settingsFile, JSON.stringify(agentHookSettings(baseUrl, { allowBoard: board !== null }), null, 2) + '\n');
+  fs.writeFileSync(settingsFile, JSON.stringify(agentHookSettings(baseUrl, { allowBoard: board !== null, ...(opts.findFilesFirst ? { findFilesFirst: true } : {}) }), null, 2) + '\n');
   let mcpConfigFile: string | null = null;
   if (board) {
     mcpConfigFile = path.join(dir, 'claude-mcp.json');

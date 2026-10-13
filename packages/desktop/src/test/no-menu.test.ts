@@ -32,7 +32,6 @@ test('no application menu is built from a File/Edit/View/Window/Help template', 
      block comment above `buildMenu` for why Cmd+Q needs it. */
   for (const gone of [
     "label: 'File'",
-    "role: 'editMenu'",
     "label: 'View'",
     "role: 'windowMenu'",
     "role: 'help'",
@@ -45,6 +44,21 @@ test('no application menu is built from a File/Edit/View/Window/Help template', 
       `main.ts still builds a menu entry: ${gone} — the bar the owner asked to remove is back`,
     );
   }
+});
+
+test('macOS gets an Edit menu (Cmd+C/V/X/A/Z need it); Windows/Linux get none', () => {
+  /* On macOS Electron routes the editing chords through Edit-menu key
+     equivalents, so a template without editMenu leaves Cmd+C/V dead. */
+  const start = src.indexOf('function buildMenu()');
+  assert.ok(start >= 0, 'buildMenu not found');
+  const end = src.indexOf('\n}\n', start);
+  const body = src.slice(start, end);
+  const nonMac = body.slice(body.indexOf('if (!isMac)'), body.indexOf('const template'));
+  const mac = body.slice(body.indexOf('const template'));
+  assert.ok(nonMac.length > 0 && mac.length > 0, 'could not split buildMenu into non-mac and mac parts');
+  assert.match(mac, /role:\s*'editMenu'/, 'the mac template has no editMenu: Cmd+C/V do nothing on macOS');
+  assert.ok(!/editMenu/.test(nonMac), 'the non-mac branch must stay menu-less');
+  assert.match(nonMac, /Menu\.setApplicationMenu\(null\)/);
 });
 
 test('the menu is explicitly nulled rather than merely not built', () => {

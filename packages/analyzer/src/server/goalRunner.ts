@@ -109,6 +109,19 @@ export const GOAL_RUN_PROVIDER_FAILURES = 2;
  */
 export const GOAL_RUN_PLAN_TURNS = 3;
 
+/**
+ * AN AGENT ENGINE'S TURNS THAT LEFT THE PLAN EXACTLY AS IT WAS, in a row, before
+ * the run ends `no_progress`. Such a turn costs no strike (it is no evidence the
+ * step is undoable: the agent may have done the work and ignored the tick tool).
+ */
+export const GOAL_RUN_NO_PROGRESS_TURNS = 3;
+
+/** The scaffold after an agent turn that moved nothing on the plan. */
+export const TICK_NUDGE =
+  'That turn did not change the plan. If the first open step is finished, tick it NOW with the ' +
+  '`goal` tool (op mark_step_done, step: a few words of the line). If it is not finished, finish ' +
+  'it with your tools, then tick it. Do not ask the person; nobody is waiting to answer.';
+
 /** The run's file inside the session directory. */
 export const GOAL_RUN_FILE = 'goal-run.json';
 
@@ -391,6 +404,12 @@ export function stopSentence(reason: GoalRunStopReason, facts: StopFacts): strin
         `${facts.n ?? GOAL_RUN_NARRATION_TURNS} turns in a row announced a move and called no ` +
         'tool · nothing was parked, because narration is not evidence a step is undoable'
       );
+    case 'no_progress':
+      return (
+        `${facts.n ?? GOAL_RUN_NO_PROGRESS_TURNS} turns in a row left the plan exactly as it was · ` +
+        'the agent did not tick a step with the goal tool or in its reply, so nothing was parked. ' +
+        'Check what it did, tick the steps by hand, or reword the goal, then run it again'
+      );
     case 'turn_failed':
       return `the turn failed · ${facts.error ?? 'no reason given'}`;
     case 'engine_restarted':
@@ -479,6 +498,11 @@ export interface GoalTurnOutcome {
   /** The plan as the turn left it — the one thing that decides the step. */
   plan: PlanStep[];
   error?: string;
+  /**
+   * An agent engine's turn that moved nothing on the plan, by tool or by text.
+   * Costs no strike; `GOAL_RUN_NO_PROGRESS_TURNS` in a row end the run.
+   */
+  noProgress?: boolean;
 }
 
 /** What the loop needs from the world, so a test can be the world. */
@@ -656,6 +680,7 @@ export async function workGoalRun(deps: GoalRunnerDeps): Promise<GoalRunState> {
   /** Per-step, keyed by id. A park clears the key — the step is no longer open. */
   const strikes = new Map<string, number>();
   let hollow = 0;
+  let stalled = 0;
   let narrated = 0;
   let failures = 0;
   /** Strike-taking turns since anything was last ticked. Drives the replan. */
@@ -702,6 +727,8 @@ export async function workGoalRun(deps: GoalRunnerDeps): Promise<GoalRunState> {
     const outcome = await deps.takeTurn({ aimingAt: null, scaffold: AUDIT_SCAFFOLD, plan, audit: true });
     const after = readGoalRun(repoRoot, sessionId);
     if (after) writeRecord(repoRoot, { ...after, turns: after.turns + 1 });
+    /* Stop pressed during the audit stays stopped: the verdict does not overwrite a person's Stop. */
+    if (after && !after.running) return goalRunState(repoRoot, sessionId);
     const facts: StopFacts = { cap: row?.cap ?? GOAL_RUN_TURN_CAP, counts: planCounts(deps.readPlan()), at };
     if (outcome.kind !== 'ok') {
       return finish(before, facts, {
@@ -831,6 +858,18 @@ export async function workGoalRun(deps: GoalRunnerDeps): Promise<GoalRunState> {
        and this line cannot be mistaken for the turn's work. */
     const planAfter = outcome.plan;
     const stillOpen = planAfter.some((s) => s.id === aiming.id && s.status === 'open');
+
+    /* 6b. AN AGENT TURN THAT MOVED NOTHING ON THE PLAN. No strike (it may have done the
+          work and not ticked it); a tick nudge, then the run ends `no_progress`. */
+    if (outcome.noProgress && outcome.text.trim() !== '') {
+      stalled += 1;
+      if (stalled >= GOAL_RUN_NO_PROGRESS_TURNS) {
+        return finish('no_progress', { n: stalled, counts: planCounts(planAfter) });
+      }
+      scaffold = TICK_NUDGE;
+      continue;
+    }
+    stalled = 0;
 
     /* 7. NOTHING CAME BACK AT ALL. NO STRIKE — rule two, and the honest reading
           is that the model has stopped answering, not that the step is hard. */

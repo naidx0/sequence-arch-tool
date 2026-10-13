@@ -14,6 +14,8 @@
 export const BOOT_CACHED_ROUTES: readonly string[] = ['/api/sessions', '/api/skills', '/api/acp/agents'];
 /** How long a first answer may serve the second asker. Boot's duplicate reads land within this. */
 export const BOOT_CACHE_MS = 2500;
+/** POSTs that only compute an answer and change none of the cached lists (the board's annotate call runs at boot). They neither drop the cache nor hold it back. */
+export const READ_ONLY_POSTS: readonly string[] = ['/api/annotate'];
 
 type Entry = { at: number; response: Promise<Response> };
 
@@ -45,7 +47,7 @@ export function bootFetchCache(base: typeof fetch, now: () => number = () => Dat
   return ((input: RequestInfo | URL, init?: RequestInit) => {
     const url = urlOf(input);
     const method = (init?.method ?? (typeof input === 'object' && 'method' in input ? input.method : 'GET')).toUpperCase();
-    if (url && url.pathname.startsWith('/api/') && method !== 'GET' && method !== 'HEAD') {
+    if (url && url.pathname.startsWith('/api/') && method !== 'GET' && method !== 'HEAD' && !READ_ONLY_POSTS.includes(url.pathname)) {
       /* ANY write under /api/ (attach, detach, clone, file ops, session and agent changes...) may change what the lists
          say: drop everything now and again when it settles. */
       cache.clear();

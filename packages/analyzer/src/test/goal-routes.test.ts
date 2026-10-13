@@ -4,7 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import http from 'node:http';
 import { createRepoServer } from '../server/repoServer.js';
+import { addAgent } from '../server/agentsStore.js';
+import { readAgentRuns } from '../server/agentChatStore.js';
 import { createSession, readSessionIndex, updateSession } from '../server/sessionsStore.js';
 import { GOAL_RUN_TURN_CAP, goalRunState } from '../server/goalRunner.js';
 
@@ -234,6 +237,77 @@ test('the goal-run path is matched BEFORE the session block that refuses slashes
     assert.strictEqual(res.status, 200);
     const wrongMethod = await fetch(`${base}/api/sessions/${id}/goal-run`, { method: 'DELETE' });
     assert.strictEqual(wrongMethod.status, 405);
+  } finally {
+    await close();
+  }
+});
+/* ───────────────────────── a goal run on a coding agent ───────────────────────── */
+
+const MOCK_AGENT = path.join(ANALYZER_ROOT, '..', 'acp', 'src', 'test', 'fixtures', 'mock-agent.mjs');
+
+async function startAgentServer(repoRoot: string): Promise<{ base: string; close: () => Promise<void> }> {
+  const userConfigDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-goal-agent-user-')));
+  addAgent(userConfigDir, { id: 'mock', command: process.execPath, args: [MOCK_AGENT] });
+  const server = await createRepoServer(repoRoot, { webDist: undefined, userConfigDir });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 0;
+  return {
+    base: `http://127.0.0.1:${port}`,
+    close: () =>
+      new Promise<void>((resolve) => {
+        server.close(() => resolve());
+        (server as http.Server & { closeAllConnections?: () => void }).closeAllConnections?.();
+      }),
+  };
+}
+
+async function runEnded(base: string, id: string): Promise<{ running: boolean; turns: number; lastStopReason?: string }> {
+  for (let i = 0; i < 300; i += 1) {
+    const s = (await (await fetch(`${base}/api/sessions/${id}/goal-run`)).json()) as { running: boolean; turns: number; lastStopReason?: string };
+    if (!s.running) return s;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error('the goal run did not end');
+}
+
+test('POST goal-run with agentRef and no AI config is accepted; the turns go through run-node; an agent that ticks nothing ends no_progress', async () => {
+  const repo = freshRepo();
+  const id = seed(repo);
+  updateSession(repo, id, { goal: 'work the plan down', plan: [{ id: 's1', text: 'Read the parser', status: 'open' }] });
+  const { base, close } = await startAgentServer(repo);
+  try {
+    /* The control: the same request without an agent still needs the built-in model's key. */
+    const builtin = await fetch(`${base}/api/sessions/${id}/goal-run`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ permission: 'build' }),
+    });
+    assert.strictEqual(builtin.status, 400);
+    assert.match(((await builtin.json()) as { error?: string }).error ?? '', /AI provider not configured/);
+
+    const unknown = await fetch(`${base}/api/sessions/${id}/goal-run`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ permission: 'build', agentRef: 'nobody' }),
+    });
+    assert.strictEqual(unknown.status, 400);
+    assert.match(((await unknown.json()) as { error?: string }).error ?? '', /unknown agentRef/);
+
+    const res = await fetch(`${base}/api/sessions/${id}/goal-run`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ permission: 'build', agentRef: 'mock' }),
+    });
+    assert.strictEqual(res.status, 200, await res.clone().text());
+    const ended = await runEnded(base, id);
+    assert.strictEqual(ended.lastStopReason, 'no_progress', 'the mock agent echoes and ticks nothing');
+    assert.strictEqual(ended.turns, 3);
+    /* Each turn is an agent run on the chat, recorded by run-node itself (the Agents pane rows). */
+    const runs = readAgentRuns(repo, id);
+    assert.strictEqual(runs.length, 3, 'one agent run per goal turn');
+    assert.ok(runs.some((r) => /echo:/.test(JSON.stringify(r))), 'the agent reply is in the record');
+    assert.deepStrictEqual(readSessionIndex(repo)!.sessions.find((s) => s.id === id)!.plan?.map((s) => s.status), ['open'], 'nothing was parked');
   } finally {
     await close();
   }

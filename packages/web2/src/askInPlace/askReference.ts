@@ -112,8 +112,8 @@ export function referenceChip(reference: AskReference): ContextChip {
 /** The slice of a whiteboard item this reads (WbItem, structurally). */
 export interface WbRefItem {
   id: string;
-  kind: 'stroke' | 'shape' | 'text' | 'noderef' | 'artifact';
-  shape?: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow';
+  kind: 'stroke' | 'shape' | 'text' | 'noderef' | 'artifact' | 'svg' | 'scene' | 'video';
+  shape?: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow' | 'path' | 'frame';
   label?: string;
   text?: string;
   sticky?: boolean;

@@ -10,6 +10,13 @@
  *   node tools/bench/agent-context-bench.mjs --json
  *   node tools/bench/agent-context-bench.mjs --buckets
  *   node tools/bench/agent-context-bench.mjs --buckets 50000,100000,150000,200000
+ *
+ * AGENT ARM (claims-audit 2.7, T1): the INPUT tokens a coding agent itself reports per question (ACP turn usage),
+ * in synthetic repos of 4 sizes, 10 sealed questions each. A disclosure: no win condition.
+ *   node tools/bench/agent-context-bench.mjs --agent-arm --dry            plumbing only: mock agent, SYNTHETIC usage
+ *   node tools/bench/agent-context-bench.mjs --agent-arm                  LIVE: Claude Code via the ACP bridge (spends tokens)
+ *     --sizes 25,250,2500,10000   --per-size 10   --prefix-file FILE (text put before every question, e.g. the map block)
+ *     --out FILE (default tmp-shots/agent-arm/agent-arm[-dry].json)
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -653,7 +660,57 @@ async function runBuckets(buckets) {
   return out;
 }
 
+async function runAgentArmCli() {
+  const arg = (n) => {
+    const i = process.argv.indexOf(n);
+    return i === -1 ? undefined : process.argv[i + 1];
+  };
+  const dry = process.argv.includes('--dry');
+  const lib = await import('./lib/agent-arm-tokens.mjs');
+  const acp = await import('../../packages/acp/dist/index.js');
+  const sizes = (arg('--sizes') ?? lib.DEFAULT_SIZES.join(',')).split(',').map((x) => Number(x.trim())).filter((x) => x > 0);
+  const perSize = Number(arg('--per-size') ?? lib.QUESTIONS_PER_SIZE);
+  let launch;
+  if (dry) {
+    launch = { command: process.execPath, args: [path.join(REPO_ROOT, 'packages/acp/src/test/fixtures/bench-dry-agent.mjs')] };
+  } else {
+    const { agentLaunch } = await import('../../packages/analyzer/dist/server/providerProbe.js');
+    const l = agentLaunch('claude');
+    if (!l.ok) throw new Error(`Claude Code cannot be launched here: ${l.message}`);
+    launch = { command: l.command, args: l.args, env: acp.agentSpawnEnv(l.command) };
+  }
+  const prefixFile = arg('--prefix-file');
+  const prefix = prefixFile ? fs.readFileSync(prefixFile, 'utf8') : '';
+  const rows = await lib.runArm({
+    launch,
+    sizes,
+    perSize,
+    prefix,
+    acp,
+    onRow: (r) => process.stderr.write(`${r.files} files ${r.id}: input=${r.usage ? r.usage.input : 'n/a'} correct=${r.correct}${r.error ? ` error=${r.error}` : ''}\n`),
+  });
+  const out = {
+    measured_at: new Date().toISOString(),
+    arm: dry ? 'dry-mock-agent (SYNTHETIC usage; never quote)' : 'claude-code via ACP bridge, fresh session per question',
+    dry,
+    prefix_chars: prefix.length,
+    method: 'input tokens as the agent reports them per turn (ACP usage); synthetic repos; sealed questions asked by function name',
+    summary: lib.summarize(rows),
+    rows,
+  };
+  const file = arg('--out') ?? path.join(REPO_ROOT, 'tmp-shots', 'agent-arm', dry ? 'agent-arm-dry.json' : 'agent-arm.json');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(out, null, 2));
+  process.stdout.write(
+    [`Agent arm (${out.arm})`, ...out.summary.map((x) => `  ${String(x.files).padStart(6)} files: mean input ${x.meanInput === null ? 'n/a' : Math.round(x.meanInput)} (min ${x.minInput}, max ${x.maxInput}; ${x.reported}/${x.questions} reported; ${x.correct} correct; ${x.errors} errors)`), `Wrote ${file}`].join('\n') + '\n',
+  );
+}
+
 async function main() {
+  if (process.argv.includes('--agent-arm')) {
+    await runAgentArmCli();
+    return;
+  }
   const buckets = parseBucketsArg(process.argv);
   if (buckets) {
     await runBuckets(buckets);

@@ -10,6 +10,7 @@
 
 import { tokenTotalsBySession, type AgentRun, type RunTool } from './agentRuns';
 import { splitSubagent } from './subagents';
+import { chatContext, runContext } from './contextMeter';
 
 export type OverviewStatus = 'running' | 'done' | 'failed';
 
@@ -32,7 +33,7 @@ export interface OverviewRun {
   endedAt: number | null;
   /** Tokens this turn generated (output), or null when the agent did not say. */
   output: number | null;
-  /** Context size this turn sent (input incl. cache), or null when unknown. */
+  /** The window the agent said it held this turn (its usage_update, clamped to the window), or null when it said nothing. */
   context: number | null;
   /** Input plus output this turn processed (cache reads included), or null when unknown. */
   processed: number | null;
@@ -47,7 +48,7 @@ export interface OverviewChat {
   endedAt: number | null;
   /** Tokens the chat generated (output), or null when no turn reported any. */
   output: number | null;
-  /** The newest reporting turn's context size, or null. Not a sum: every turn re-sends the whole context. */
+  /** The window fill the agent reported for the chat's newest turn (contextMeter.ts), or null. Never a sum or a total. */
   context: number | null;
   /** Input plus output processed across all turns (cache reads counted every turn), or null. */
   processed: number | null;
@@ -60,7 +61,7 @@ export interface AgentsOverview {
   chats: OverviewChat[];
   /** Tokens generated (output) across every chat that reported, or null when none did. */
   totalOutput: number | null;
-  /** The context size of the newest chat that reported, or null. */
+  /** The open chat's context (the same reading as the status bar), or null when it has none or no chat is open. */
   context: number | null;
   /** Input plus output processed across every chat and turn (cache reads counted every turn), or null. */
   totalProcessed: number | null;
@@ -90,17 +91,17 @@ export interface ChatTitleLike {
 interface TurnUsageNums { output: number; context: number | null; processed: number }
 
 /**
- * One turn's honest numbers. Context is what the agent says the window holds now (`usage.used`, from usage_update). Only without it
- * does it fall back to input or the vendor total less output and thinking, whichever is larger: Codex's per-turn usage is the SUM of
- * its requests, so that fallback can read several times the real context. A turn that reported only `tokens` has no context figure
- * (Claude's inputTokens leaves cache reads out, so it would read far too low).
+ * One turn's honest numbers. Context is what the agent says the window holds now (`usage.used`, from usage_update), clamped to the
+ * window (contextMeter.ts), and nothing else: a turn with no usage_update has an unknown context (null). `processed` is the turn's
+ * SUM over its requests (Codex) with cache reads counted every turn, so it is a bill-like total, never a context figure. A turn that
+ * reported only `tokens` has no context either (Claude's inputTokens leaves cache reads out).
  */
 function runUsage(r: AgentRun): TurnUsageNums | null {
-  const used = r.usage && Number.isFinite(r.usage.used) && r.usage.used > 0 ? r.usage.used : null;
+  const used = runContext(r).used;
   const u = r.turnUsage;
   if (u) {
     const processed = u.total || u.input + u.output;
-    return { output: u.output, context: used ?? Math.max(u.input, processed - u.output - u.thought, 0), processed };
+    return { output: u.output, context: used, processed };
   }
   if (r.tokens && r.tokens.scope === 'turn') return { output: r.tokens.outputTokens, context: used, processed: r.tokens.inputTokens + r.tokens.outputTokens };
   return null;
@@ -112,7 +113,14 @@ function clip(text: string, max = 48): string {
 }
 
 /** The overview, newest-active chat first. `now` closes the span of work still running. */
-export function buildAgentsOverview(runs: readonly AgentRun[], chats: readonly ChatTitleLike[], now: number): AgentsOverview {
+export interface OverviewScope {
+  /** The agent each chat is on now (the runs state's `agents`); a chat missing here is on the agent of its newest run. */
+  agents?: Readonly<Record<string, string>>;
+  /** The open chat: the header's context is this chat's, or unknown. */
+  activeSessionId?: string | null;
+}
+
+export function buildAgentsOverview(runs: readonly AgentRun[], chats: readonly ChatTitleLike[], now: number, scope: OverviewScope = {}): AgentsOverview {
   const sums = tokenTotalsBySession(runs);
   const titles = new Map(chats.map((c) => [c.id, (c.title ?? '').trim()]));
   const bySession = new Map<string, AgentRun[]>();
@@ -162,7 +170,7 @@ export function buildAgentsOverview(runs: readonly AgentRun[], chats: readonly C
       startedAt: orows.find((r) => knownStart(r.startedAt))?.startedAt ?? 0,
       endedAt: running ? null : Math.max(...orows.map((r) => r.endedAt ?? r.startedAt)),
       output: sum ? sum.outputTokens : known.length ? known.reduce((n, r) => n + (r.output ?? 0), 0) : null,
-      context: [...orows].reverse().find((r) => r.context !== null)?.context ?? null,
+      context: chatContext(sorted, sessionId, scope.agents?.[sessionId] ?? sorted[sorted.length - 1]?.agentRef ?? null).used,
       processed: sum ? sum.inputTokens + sum.outputTokens : known.length ? known.reduce((n, r) => n + (r.processed ?? 0), 0) : null,
       reported: known.length,
       runs: orows,
@@ -173,7 +181,7 @@ export function buildAgentsOverview(runs: readonly AgentRun[], chats: readonly C
   return {
     chats: out,
     totalOutput: reporting.length ? reporting.reduce((n, c) => n + (c.output ?? 0), 0) : null,
-    context: out.find((c) => c.context !== null)?.context ?? null,
+    context: scope.activeSessionId ? (out.find((c) => c.sessionId === scope.activeSessionId)?.context ?? null) : null,
     totalProcessed: reporting.length ? reporting.reduce((n, c) => n + (c.processed ?? 0), 0) : null,
     reportedTurns: out.reduce((n, c) => n + c.reported, 0),
     spanStart: out.length ? Math.min(...out.map((c) => c.startedAt)) : now,

@@ -1,5 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { SessionIndexEntry } from '@sequence/api-types';
+import { createAgentRunStore } from '../agents/agentRuns';
+import { createStore, StoreProvider } from '../state';
+import { AgentChatLayer } from './AgentChatLayer';
 
 import { RefineNoteCard } from './RefineNoteCard';
 import { AgentMapSetting } from '../settings/AgentMapSetting';
@@ -139,5 +144,31 @@ describe('the Auto switch', () => {
     });
     expect(puts).toEqual([{ autoRefine: true }]);
     await waitFor(() => expect(box.checked).toBe(true));
+  });
+});
+
+describe('the note card in a chat that never used an agent', () => {
+  const entry = { id: 'b1', title: 'New chat', createdAt: '', updatedAt: '' } as SessionIndexEntry;
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('with zero agent runs and a pending card from the server, the card renders after a built-in turn ends', async () => {
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (String(url).endsWith('/cards')) return new Response(JSON.stringify({ auto: false, cards: [PENDING] }), { status: 200 });
+      return new Response(JSON.stringify({ runs: [] }), { status: 200 });
+    });
+    const store = createStore({});
+    store.dispatch({ type: 'session/index', sessions: [entry], activeId: 'b1' });
+    render(
+      <StoreProvider store={store}>
+        <AgentChatLayer empty={false} runs={createAgentRunStore()} />
+      </StoreProvider>,
+    );
+    store.dispatch({ type: 'composer/draft', text: 'where is the parser?' });
+    store.dispatch({ type: 'turn/send', at: 1 });
+    /* While the built-in turn streams, no card (one decision per turn). */
+    await act(async () => await new Promise((r) => setTimeout(r, 900)));
+    expect(screen.queryByTestId('refine-note')).toBeNull();
+    store.dispatch({ type: 'turn/event', event: { type: 'result', text: 'It is in parser.ts.' }, at: 2 });
+    expect(await screen.findByTestId('refine-note-tip', {}, { timeout: 3000 })).toBeTruthy();
   });
 });

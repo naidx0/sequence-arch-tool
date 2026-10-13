@@ -250,6 +250,8 @@ export interface BoardKnown {
    * the model's own coordinates, one call at a time.
    */
   turn?: BoardTurn;
+  /** The "short flows top to bottom" setting (boardFlowsTopDown): lay every flow out top to bottom. Absent = today's layout. */
+  flowTopDown?: boolean;
 }
 
 /* ========================================================== the result = */
@@ -1094,7 +1096,7 @@ function layOutTurn(
   const external = new Map(
     others.map((it) => [it.id, { ...it.at!, box: known.items.some((k) => k.id === `${it.id}${BOX_ID_SUFFIX}`) }] as const),
   );
-  const items = layoutTurn(turn, { origin, external });
+  const items = layoutTurn(turn, { origin, external, ...(known.flowTopDown ? { maxLrRanks: 0 } : {}) });
   const removeIds = [...turn.emitted];
   turn.emitted = items.map((it) => it.id);
   const boxes = turn.nodes.length;

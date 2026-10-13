@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { VersionSection } from './VersionSection';
 import { createVersionClient } from './versionClient';
@@ -150,5 +150,71 @@ describe('Version panel states', () => {
     expect((await screen.findByTestId('settings-update-error')).textContent).toMatch(/could not start/i);
     expect(text('settings-update-go')).toBe('Retry');
     expect(st.posts.length).toBe(1);
+  });
+});
+
+describe('the update installs when Sequence quits (I11/G1)', () => {
+  afterEach(() => {
+    delete (window as unknown as { sequence?: unknown }).sequence;
+  });
+  const READY = { ...IDLE, state: 'launched' as const, version: '0.1.5', installMode: 'in-place' as const, mode: 'differential' as const, downloaded: 12 * MB, fullSize: 180 * MB, reused: 168 * MB };
+
+  it('says it installs on quit, shows the differential numbers, and Restart now calls the quit shell action', async () => {
+    const shell = vi.fn(async () => null);
+    (window as unknown as { sequence: unknown }).sequence = { openRepo: async () => null, shell };
+    const { client } = serve({ install: READY });
+    render(<VersionSection client={client} />);
+    await waitFor(() => expect(text('settings-update-title')).toBe('Version 0.1.5 is ready'));
+    expect(text('settings-update-sub')).toMatch(/installs when Sequence quits/);
+    expect(document.body.textContent).not.toMatch(/installer for .* is running/);
+    expect(text('settings-update-detail')).toBe('Differential update: 12.0 MB downloaded of 180 MB, reused 168 MB');
+    fireEvent.click(screen.getByTestId('settings-update-restart'));
+    expect(shell).toHaveBeenCalledWith('restart-for-update');
+  });
+
+  it('a full download says so and why; in a browser tab there is no Restart now', async () => {
+    const { client } = serve({ install: { ...READY, mode: 'full', fallbackReason: 'no earlier copy to compare' } });
+    render(<VersionSection client={client} />);
+    await waitFor(() => expect(text('settings-update-detail')).toBe('Full download (no earlier copy to compare)'));
+    expect(screen.queryByTestId('settings-update-restart')).toBeNull();
+  });
+
+  it('while downloading it shows the differential progress line', async () => {
+    const { client } = serve({ install: { ...IDLE, state: 'downloading', version: '0.1.5', received: 6 * MB, total: 12 * MB, mode: 'differential', downloaded: 6 * MB, fullSize: 180 * MB, reused: 168 * MB } });
+    render(<VersionSection client={client} />);
+    await waitFor(() => expect(text('settings-update-detail')).toMatch(/^Differential update: 6\.0 MB downloaded of 180 MB, reused 168 MB$/));
+  });
+});
+
+describe('copy matches the buttons, and the automatic check switch', () => {
+  it('without a desktop bridge the ready copy does not tell the reader to press Restart now', async () => {
+    const { client } = serve({ install: { ...IDLE, state: 'launched', version: '0.1.5', installMode: 'in-place' } });
+    render(<VersionSection client={client} />);
+    await waitFor(() => expect(text('settings-update-sub')).toMatch(/installs when Sequence quits/));
+    expect(text('settings-update-sub')).not.toMatch(/Restart now/);
+    expect(screen.queryByTestId('settings-update-restart')).toBeNull();
+  });
+  it('Check for updates is a switch that PUTs updates.check; off shows the cached notice', async () => {
+    const puts: unknown[] = [];
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      const json = (b: unknown) => new Response(JSON.stringify(b), { status: 200 });
+      if (url === '/api/agent-settings') {
+        if (init?.method === 'PUT') {
+          puts.push(JSON.parse(String(init.body)));
+          return json({ updates: { check: false } });
+        }
+        return json({ updates: { check: true } });
+      }
+      if (url === '/api/app/version') return json({ version: '0.1.4', commit: 'abc', platform: 'win32', arch: 'x64', desktop: true });
+      if (url === '/api/app/releases') return json({ notes: [] });
+      return json({ check: { ...CHECK, newer: false, installable: false, checkDisabled: puts.length > 0, latest: { ...CHECK.latest, version: '0.1.4' } }, install: IDLE });
+    }) as unknown as typeof fetch;
+    render(<VersionSection client={createVersionClient(fetchImpl)} />);
+    const box = (await screen.findByTestId('settings-update-auto')) as HTMLInputElement;
+    expect(box.checked).toBe(true);
+    fireEvent.click(box);
+    await waitFor(() => expect(puts).toEqual([{ updates: { check: false } }]));
+    await waitFor(() => expect(text('settings-update-sub')).toMatch(/Automatic checks are off/));
+    expect(screen.getByTestId('settings-update-check').textContent).toBe('Check now');
   });
 });

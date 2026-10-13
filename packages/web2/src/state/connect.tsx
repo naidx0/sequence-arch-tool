@@ -6,7 +6,7 @@ import { createContext, type ReactNode, useContext, useEffect, useRef, useSyncEx
 
 import { fromCanvasMemory, toCanvasMemory, worthPersistingCanvas } from '../sessions/canvasMemory';
 import { fromChatMemory, toChatMemory, worthPersisting } from '../sessions/chatMemory';
-import { restoreAgentTranscript } from '../agents/agentRuns';
+import { agentRuns, restoreAgentTranscript } from '../agents/agentRuns';
 import { rememberCanvasForFlush, rememberChatForFlush, clearSessionFlush } from '../sessions/sessionPersist';
 
 import { type ChatColumnProps, type ComposerProps, type ToolbeltId } from '../chat';
@@ -31,7 +31,7 @@ import { withCanvasState, withBoardState } from './store';
 import { withDrawingState } from '../app/workspaceAskSurface';
 import type { AppState, ComposerAttachment, PermissionMode, ProposalId, Turn, TurnId } from './types';
 import type { AskContextBreakdown } from '@sequence/api-types';
-import { askHistoryMeta } from '../chat/askHistory';
+import { askHistoryMetaWithRuns } from '../chat/askHistory';
 import { modelFromConfig, modelLabel } from '../chat/modelSelection';
 import { publishedContextWindow } from '../chat/publishedContextWindow';
 import { sessionHomeContextFrom } from '../chat/sessionHomeModel';
@@ -555,7 +555,11 @@ export function composerPropsFrom(
       const unattached =
         state.repo.phase !== 'attached' && state.repo.phase !== 'stale';
 
-      const historyMeta = askHistoryMeta(state.session.turns);
+      /* Claude and Codex answers in this chat go with it: switching to the built-in model keeps the thread (askHistory.ts). */
+      const historyMeta = askHistoryMetaWithRuns(
+        state.session.turns,
+        agentRuns.get().runs.filter((r) => r.sessionId === state.session.activeId),
+      );
       dispatch({
         type: 'turn/send',
         at: Date.now(),
@@ -594,11 +598,11 @@ export function composerPropsFrom(
             question,
             /* The chips the user grounded on are context, not prose glued onto
              * their question — the same separation the server's prompt keeps. */
-            context: state.composer.chips.length
+            context: state.composer.chips.some((chip) => chip.kind !== 'component')
               ? {
                   /* Chip refs are grounded ids (node:/file:); labels alone lose
                      dual-board grounding when whiteboard + architecture share a node. */
-                  lines: state.composer.chips.map((chip) =>
+                  lines: state.composer.chips.filter((chip) => chip.kind !== 'component').map((chip) =>
                     /*
                      * A CHART PART IS NOT REPO-GROUNDED SCOPE, so it does not
                      * get the grounded-id shape. `chart-part:tok (Tokenizer)`
@@ -671,6 +675,10 @@ export function composerPropsFrom(
              * DISPLAYING. Sending it means the server never has to guess.
              */
             ...(state.session.activeId ? { threadId: state.session.activeId } : {}),
+            /* Components the reader attached (+ menu, /components): ids only, absent when none. */
+            ...(state.composer.chips.some((chip) => chip.kind === 'component')
+              ? { components: state.composer.chips.filter((chip) => chip.kind === 'component').map((chip) => chip.ref) }
+              : {}),
             /* Teach Mode: on the wire only when on — absent means off, and an
                older server ignores the unknown field harmlessly. */
             ...(state.composer.teach ? { teach: true } : {}),

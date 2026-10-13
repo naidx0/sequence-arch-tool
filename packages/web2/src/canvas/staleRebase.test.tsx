@@ -69,6 +69,28 @@ describe('the state a reader could not leave', () => {
     expect(s.edits).toBe(0);
   });
 
+  it('REBASE KEEPS A DRAWN CONNECTION AS A CLAIM, and the unsaved edit is only the drawing', () => {
+    /* Taking the scan used to take the drawing with it. A drawn edge the scan does not
+       have survives, dashed, and counts as the unsaved edit it is. */
+    const two = (graphId: string, label: string) =>
+      ({
+        ...(doc(graphId, label) as object),
+        nodes: [
+          { id: 'svc:a', label, kind: 'service' },
+          { id: 'svc:b', label: 'b', kind: 'service' },
+        ],
+      }) as never;
+    let s = docSessionReduce(EMPTY_DOC_SESSION, { type: 'doc/base', doc: two('g1', 'first') });
+    s = docSessionReduce(s, { type: 'doc/add-edge', id: 'draw:e1', from: 'svc:a', to: 'svc:b', family: 'call' });
+    s = docSessionReduce(s, { type: 'doc/base', doc: two('g1', 'second') });
+    s = docSessionReduce(s, { type: 'doc/rebase' });
+    expect(s.doc?.nodes[0]?.label).toBe('second');
+    expect(s.doc?.edges.map((e) => e.id)).toEqual(['draw:e1']);
+    expect(s.doc?.edges[0]?.evidenceRef).toBeUndefined();
+    expect(s.edits).toBe(1);
+    expect(s.lastNote).toBe('1 drawn connection is still a claim.');
+  });
+
   it('rebase with nothing held changes nothing', () => {
     /* Total, so a stray dispatch is not a way to lose a drawing. */
     const base = docSessionReduce(EMPTY_DOC_SESSION, { type: 'doc/base', doc: doc('g1', 'first') });
@@ -126,6 +148,40 @@ describe('and the board offers it', () => {
     expect(channel().session.baseChanged).toBe(false);
     expect(channel().session.pendingBase).toBeNull();
     expect(channel().session.doc?.nodes[0]?.label).toBe('second');
+  });
+
+  it('with a drawn connection held, the bar says it is kept, and taking the scan shows the outcome on the board', async () => {
+    let channel: Channel | null = null;
+    render(
+      <StoreProvider store={createStore()}>
+        <CanvasProvider>
+          <DocProvider>
+            <Probe onReady={(next) => (channel = next)} />
+            <ConnectedBoard />
+          </DocProvider>
+        </CanvasProvider>
+      </StoreProvider>,
+    );
+    const two = (label: string) =>
+      ({
+        ...(doc('g1', label) as object),
+        nodes: [
+          { id: 'svc:a', label, kind: 'service' },
+          { id: 'svc:b', label: 'b', kind: 'service' },
+        ],
+      }) as never;
+    const dispatch = channel!.dispatch;
+    act(() => {
+      dispatch({ type: 'doc/base', doc: two('first') });
+      dispatch({ type: 'doc/add-edge', id: 'draw:e1', from: 'svc:a', to: 'svc:b', family: 'call' });
+      dispatch({ type: 'doc/base', doc: two('second') });
+    });
+    await settleLayout();
+    expect(screen.getByTestId('board-stale').textContent).toMatch(/keeps your 1 drawn connection/i);
+    expect(screen.getByTestId('board-stale').textContent).not.toMatch(/replaces 1 unsaved edit/i);
+    fireEvent.click(screen.getByTestId('board-stale-rebase'));
+    await settleLayout();
+    expect(screen.getByTestId('board-ink-note').textContent).toBe('1 drawn connection is still a claim.');
   });
 
   it('SAYS WHAT TAKING IT COSTS, in edits', async () => {

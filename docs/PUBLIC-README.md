@@ -52,8 +52,9 @@ Other agents can use the same map. Sequence ships an MCP server with `who_calls`
 
 ## What that buys you
 
-**Answers you can check.** Every claim points at a file and a line, and the coverage line under each
-answer says how much of the map it actually drew on.
+**Answers you can check.** From Sequence's own model, every claim points at a file and a line. Under each
+answer, from any engine, a coverage line says how much of the map it actually drew on; for Claude
+and Codex it counts the services they opened files in.
 
 **A flat cost, however big the codebase is.** Pasting source into a model costs more the more you
 paste. Sequence sends the same small slice every time:
@@ -94,9 +95,11 @@ Other projects have added code graphs to agents too. The published results line 
 | Sequence's map given to a small local agent | Accuracy 0.09 to 0.21, more tokens | [our report](report/README.md#6-the-same-agent-with-and-without-sequence) |
 
 Two honest takeaways. A map helps most as an addition to search, not a replacement for it. And
-Sequence's own file picker is still weak: replayed over 344 real commits, it put a file the fix
-touched in its top five only 3% to 9% of the time, where plain grep managed 22% to 64%. It matches
-words against file names but not file contents, and that is the next fix.
+Sequence's file picker is a trained ranker that reads file contents, history and paths. On 8
+held-out repositories it put a file the real fix changed in its top five 84.9% of the time,
+against 51.0% for grep (an internal test; the repositories are not in this tree, so it cannot be
+re-run from here). The first picker, which matched words against file names only, lost to plain
+grep over 344 real commits (3 to 9 percent against 22 to 64) and was replaced.
 
 ![Finding the files a real fix touched](report/find-the-fix.svg)
 

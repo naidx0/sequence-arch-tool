@@ -7,6 +7,7 @@
  * (~665 MB RSS each at 20,000 files), and a call on a cold index waited up to
  * 4 s before answering by path words anyway.
  */
+import { bound } from './load-scale.js';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -67,7 +68,8 @@ test('find_files: a cold call on a 20,000-file repo answers by path words in wel
   const t = performance.now();
   const r = await findFilesShared(big, 'where is the retry delay computed', { entry: ENTRY, noLog: true });
   const wall = performance.now() - t;
-  assert.ok(wall < 2_000, `first call took ${Math.round(wall)} ms (host spawn included)`);
+  /* Scaled by load (never above 3.5 s, so the old 4 s index wait fails at any load): a cold call returns path-word results without waiting for the build. */
+  assert.ok(wall < bound(2_000, 3_500), `first call took ${Math.round(wall)} ms (host spawn included)`);
   assert.equal(r.ranker, 'paths');
   assert.match(r.text, /call find_files again in a few seconds/);
 });
@@ -76,7 +78,8 @@ test('find_files: in-process, a cold index waits at most 250 ms by default (it w
   const t = performance.now();
   const r = await findFiles(big, 'retry delay computed', { noLog: true });
   const wall = performance.now() - t;
-  assert.ok(wall < 1_000, `cold call took ${Math.round(wall)} ms`);
+  /* Scaled by load, ceiling 2.5 s: a cold in-process call does not wait for the build (the old wait was 4 s). */
+  assert.ok(wall < bound(1_000, 2_500), `cold call took ${Math.round(wall)} ms`);
   assert.equal(r.ranker, 'paths');
 });
 

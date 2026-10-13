@@ -16,11 +16,12 @@ import { askAgainFrom } from '../agents/askAgain';
 import type { ApprovalAnswer, RunNodeEvent } from '../agents/runNodeStream';
 import type { Store } from '../state/store';
 import { claimAutoResume, declineAutoResume } from '../agents/autoResume';
-import { useStore } from '../state/connect';
+import { useMemo } from 'react';
+import { useAppState, useStore } from '../state/connect';
+import { graphFactsOf } from './coverageLine';
 import { AgentRunsList } from './AgentRunThread';
 import { AgentToasts } from './AgentToasts';
 import { EditUndoBar } from './EditFromHere';
-import { RefineNoteCard } from './RefineNoteCard';
 
 /** What the agent is told when its plan is approved (S2b). */
 export const BUILD_THE_PLAN = 'The plan is approved. Build it now.';
@@ -93,11 +94,12 @@ export default function AgentRunsPane({
 }) {
   const app = useStore();
   const cb = runCallbacks(store, app);
+  const repoState = useAppState().repo;
+  const graph = useMemo(() => graphFactsOf(repoState as Parameters<typeof graphFactsOf>[0]), [repoState]);
   return (
     <>
-      {cards ? <AgentRunsList runs={runs} repoRoot={repoRoot} onAnswer={cb.onAnswer} onRetry={cb.onRetry} onBuild={cb.onBuild} onAskAgain={cb.onAskAgain} onApply={cb.onApply} /> : null}
+      {cards ? <AgentRunsList runs={runs} repoRoot={repoRoot} graph={graph} onAnswer={cb.onAnswer} onRetry={cb.onRetry} onBuild={cb.onBuild} onAskAgain={cb.onAskAgain} onApply={cb.onApply} /> : null}
       <EditUndoBar sessionId={sessionId} />
-      <RefineNoteCard sessionId={sessionId} />
       <AgentToasts store={store} repoRoot={repoRoot} />
     </>
   );

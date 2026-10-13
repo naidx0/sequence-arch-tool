@@ -31,6 +31,7 @@ import { parseAskLine, stripAskLine, type AskLedgerResult } from '@sequence/sche
 import { recordTurn } from '../harness/refineSignals.js';
 import { runSignalLoop } from '../harness/learningLoop.js';
 import { appendTurnLog, liveTurnIds, ownerNow, recordAgentRun, titleChatFromAgent, type StoredAgentRun, type StoredAgentTool } from './agentChatStore.js';
+import { addReadPaths, readPathsOf } from './agentReadPaths.js';
 
 export interface AgentTurnRuntimeOptions {
   clock: StatusClock;
@@ -55,6 +56,8 @@ export interface AgentTurnRuntimeOptions {
    * notes without asking (off by default).
    */
   refine?: { root: string; auto: boolean } | null;
+  /** Where the run's paths are made relative to: the chat's worktree when it has one, else the repo (readPaths). */
+  pathRoot?: string | null;
   /** Whether "answered" is decided from the stream (ACP bridges; codex ends its own turns). */
   detectAnswer: boolean;
   /** Called once when the turn is answered (the bridge may still hold the prompt open). */
@@ -78,6 +81,8 @@ export class AgentTurnRuntime {
   private text = '';
   private model: string | null = null;
   private readonly tools = new Map<string, StoredAgentTool>();
+  /** What the run's read, search and map calls named (agentReadPaths.ts). */
+  private readonly readPaths = new Set<string>();
   private readonly startedAt = Date.now();
   private answeredAt: number | null = null;
   private finished = false;
@@ -168,6 +173,7 @@ export class AgentTurnRuntime {
         if (c?.type === 'text' && typeof c.text === 'string') this.text += c.text;
       } else if ((u.sessionUpdate === 'tool_call' || u.sessionUpdate === 'tool_call_update') && typeof u.toolCallId === 'string') {
         const was = this.tools.get(u.toolCallId);
+        addReadPaths(this.readPaths, readPathsOf({ ...u, kind: u.kind ?? was?.toolKind, title: u.title ?? was?.title }, this.o.pathRoot ?? this.o.refine?.root ?? null));
         const st = String(u.status ?? '');
         const status: StoredAgentTool['status'] = st === 'completed' ? 'done' : st === 'failed' || st === 'cancelled' ? 'failed' : (was?.status ?? 'running');
         const input = u.rawInput as { subagent_type?: unknown; description?: unknown } | null | undefined;
@@ -308,6 +314,7 @@ export class AgentTurnRuntime {
         ...(this.pturn !== undefined ? { pturn: this.pturn } : {}),
         ...(this.thread ? { thread: this.thread } : {}),
         ...(ledger ? { askLedger: ledger } : {}),
+        ...(this.readPaths.size > 0 ? { readPaths: [...this.readPaths] } : {}),
       }, new Date(), { touch: status !== 'running' || first });
     } catch {
       /* A chat that cannot be written is still answered on screen. */

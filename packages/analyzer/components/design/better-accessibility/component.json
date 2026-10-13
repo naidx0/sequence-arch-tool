@@ -1,0 +1,22 @@
+{
+  "id": "design/better-accessibility",
+  "group": "design",
+  "label": "Better Accessibility",
+  "summary": "Reviews and fixes keyboard and focus behavior, ARIA, accessible names, forms, screen-reader announcements, motion and zoom in your...",
+  "triggers": [
+    "accessibility review",
+    "keyboard and focus",
+    "aria labels",
+    "screen reader announcements",
+    "accessible forms"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/better-accessibility"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/better-accessibility"
+}

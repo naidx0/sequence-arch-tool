@@ -44,6 +44,7 @@ export type ShellAction =
   | 'toggle-fullscreen'
   | 'open-help'
   | 'quit'
+  | 'restart-for-update'
   | 'info'
   /* The window buttons (main.ts says why they ride this channel). */
   | 'window-minimize'

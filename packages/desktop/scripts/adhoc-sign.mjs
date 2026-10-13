@@ -46,6 +46,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { writeAppManifest } from './app-manifest.mjs';
 
 /**
  * Should this pack be ad-hoc signed?
@@ -75,6 +76,8 @@ export function appBundleIn(appOutDir, readdir = fs.readdirSync) {
 }
 
 export default async function afterPack(context) {
+  /* Windows: list the shipped files so a portable update can tell Sequence's files from the person's. */
+  if (context.electronPlatformName === 'win32') console.log(`app-manifest: ${writeAppManifest(context.appOutDir)} files listed`);
   if (!shouldAdhocSign(context.electronPlatformName, process.env)) return;
   const app = appBundleIn(context.appOutDir);
   if (!app) {

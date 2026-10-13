@@ -22,6 +22,8 @@ import { requestHostCommand } from '../app/hostCommands';
 import { groundedRepoRoot, useAppState, useStore } from '../state/connect';
 import { sendBoardAsk } from '../askInPlace/sendBoardAsk';
 import { Whiteboard } from './Whiteboard';
+import { readScenes, writeScenes } from './sceneStore';
+import { useCloseWhenEmpty } from './useCloseWhenEmpty';
 import { readWhiteboard, whiteboardKey, writeWhiteboard, type WbItem, type WhiteboardDoc } from './whiteboardModel';
 
 const LIVE_GRACE_MS = 1500;
@@ -46,11 +48,14 @@ export function ConnectedWhiteboard() {
   const project = repoRoot ?? 'workspace';
   const graph = state.repo.phase === 'attached' || state.repo.phase === 'stale' ? state.repo.repo.graph : null;
 
-  const { index, refresh, failed } = useBoardsIndex(true);
+  const { index, refresh, failed } = useBoardsIndex(true, project);
   const chosen = useActiveWhiteboard(project);
   const whiteboards = (index?.boards ?? []).filter((b) => b.kind === 'whiteboard');
   /* The board you were last on, else the first whiteboard. */
   const current = index === null ? null : (whiteboards.find((b) => b.id === chosen) ?? whiteboards[0] ?? null);
+  /* THE LAST SPACE IS GONE, WHOEVER DELETED IT: there is nothing left on this surface to look at, so it closes (no
+     "No spaces" note, no error). Only a list that HAD a Space and now has none: a project opened with none keeps its note. */
+  useCloseWhenEmpty(project, index, whiteboards.length, () => requestHostCommand('whiteboard.close'));
   const board = useBoardDoc(current?.id ?? null, current !== null);
   const doc = board.doc && board.doc.id === current?.id ? board.doc : null;
 
@@ -63,7 +68,14 @@ export function ConnectedWhiteboard() {
   if (doc && (known.current?.id !== doc.id || known.current.rev !== doc.rev)) {
     known.current = { id: doc.id, rev: doc.rev, items: doc.items };
   }
-  const external = useMemo<WhiteboardDoc | null>(() => (doc ? { version: 1, items: doc.items } : null), [doc]);
+  /* SCENES live on this machine until the store takes the kind (sceneStore.ts): the board's own items, then its scenes. */
+  const lastScenes = useRef<Record<string, string>>({});
+  const external = useMemo<WhiteboardDoc | null>(() => {
+    if (!doc) return null;
+    const have = new Set(doc.items.map((i) => i.id));
+    const local = readScenes(doc.id).filter((s) => !have.has(s.id));
+    return { version: 1, items: [...doc.items, ...local] };
+  }, [doc]);
 
   /* The surface hydrates from this, once per board: the store's copy if it
      is in, else empty until it arrives (then `externalDoc` adopts it). */
@@ -84,6 +96,11 @@ export function ConnectedWhiteboard() {
     (next: WhiteboardDoc) => {
       const base = known.current;
       if (!base || base.id !== current?.id) return;
+      const scenes = JSON.stringify(next.items.filter((i) => i.kind === 'scene'));
+      if (scenes !== lastScenes.current[base.id]) {
+        lastScenes.current[base.id] = scenes;
+        writeScenes(base.id, next.items);
+      }
       const ops = diffOps(base.items, next.items);
       if (ops.length === 0) return;
       known.current = { ...base, items: next.items };
@@ -111,6 +128,7 @@ export function ConnectedWhiteboard() {
       <BoardTabs
         /* Absolutely placed between the pane's corners: its width is the pane's, so it folds on a measured fit. */
         measureFold
+        caption="Spaces"
         index={index}
         current={current?.id ?? ''}
         itemCount={(id) => (id === doc?.id ? doc.items.length : null)}
@@ -127,15 +145,15 @@ export function ConnectedWhiteboard() {
         onRename={(id, name) => void boardsApi.rename(id, name).then(refresh, refresh)}
         onDelete={(id) => void boardsApi.remove(id).then(refresh, refresh)}
       />
-      {board.error ? (
+      {board.error && current !== null ? (
         <p className="wb-boards-note" role="status" data-testid="wb-boards-error">
-          This board could not be saved: {board.error}
+          This space could not be saved: {board.error}
         </p>
       ) : null}
       <div className="wb-boards-body">
         {index !== null && current === null ? (
           <p className="wb-boards-note" data-testid="wb-boards-none">
-            No whiteboards in this project. Press + to make one.
+            No spaces in this project. Press + to make one.
           </p>
         ) : (
           <Whiteboard

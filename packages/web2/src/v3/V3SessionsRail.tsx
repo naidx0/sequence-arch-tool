@@ -6,9 +6,10 @@ import { readStillAnswers, type RootRead } from '../app/bootRead';
 import { Icon } from '../chat/Icon';
 import { agentRuns } from '../agents/agentRuns';
 import { revealSubagent, subagentsOf } from '../agents/subagents';
+import { ConfirmDialog } from '../shell2/ConfirmDialog';
 import { SubagentSubRows, SubagentTwist, useSubagentFolds } from '../shell2/SubagentRows';
 import { sessionWhenLabel } from '../sessions/sessionWhen';
-import { sessionsClient, type SessionsClient } from '../sessions/sessionsClient';
+import { sessionsClient, type ChatSearchHit, type SessionsClient } from '../sessions/sessionsClient';
 import { groundedRepoName, groundedRepoRoot, useAppState, useStore } from '../state/connect';
 import {
   activateSession,
@@ -228,9 +229,37 @@ export function V3SessionsRail({
    * the chat: fork, move to another project, rename, delete.
    */
   const [query, setQuery] = useState('');
+  /* Words inside chats, asked of the server once the query is three letters long and has rested (GET /api/sessions/search). */
+  const [found, setFound] = useState<ChatSearchHit[]>([]);
+  const [cutShort, setCutShort] = useState(false);
+  const searchRoot = groundedRepoRoot(state);
+  useEffect(() => {
+    const needle = query.trim().toLowerCase();
+    /* Hits belong to the workspace they were found in: a switch (or a new query) drops them at once. */
+    setFound([]);
+    setCutShort(false);
+    if (needle.length < 3 || !client.search) return;
+    const ctl = new AbortController();
+    const timer = window.setTimeout(() => {
+      void client.search!(needle, ctl.signal).then((a) => {
+        if (ctl.signal.aborted) return;
+        setFound(a.outcome === 'ok' ? a.body.hits : []);
+        setCutShort(a.outcome === 'ok' && a.body.truncated);
+      });
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      ctl.abort();
+    };
+  }, [query, client, searchRoot]);
   const [dragPath, setDragPath] = useState<string | null>(null);
   const [overPath, setOverPath] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  /* A chat delete waiting on the app's own confirm. NOT window.confirm: on macOS Electron that native sheet
+     needs a keypress (Enter / Cmd+Enter) and was unreliable, so a mouse click on Delete did nothing visible. */
+  const [confirmDelete, setConfirmDelete] = useState<
+    { kind: 'one'; entry: SessionIndexEntry; repoPath?: string } | { kind: 'picked'; count: number } | null
+  >(null);
 
   /**
    * ── ONE READ OF `GET /api/sessions`, FEEDING BOTH HALVES OF THE RAIL ─────
@@ -607,21 +636,49 @@ export function V3SessionsRail({
     setMenuKey(null);
   }
 
-  async function deleteSession(entry: SessionIndexEntry, repoPath?: string) {
-    if (!window.confirm(`Delete chat “${sessionTitle(entry)}”?`)) return;
-    await client.remove(entry.id, repoPath);
-    clearSessionPads(entry.id);
-    await refreshSessions();
-    setMenuKey(null);
+  function deleteSession(entry: SessionIndexEntry, repoPath?: string) {
+    confirmedRef.current = false;
+    setConfirmDelete({ kind: 'one', entry, repoPath });
   }
 
-  async function deletePicked() {
+  /* Chats whose DELETE is in flight, as `repoPath|id`. A ref, not state: two events in one tick (Enter's keydown
+     and its click) both see the same render's state, but they share this. */
+  const deletingRef = useRef<Set<string>>(new Set());
+  const confirmedRef = useRef(false);
+
+  async function reallyDeleteSession(entry: SessionIndexEntry, repoPath?: string) {
+    const k = `${repoPath ?? ''}|${entry.id}`;
+    if (deletingRef.current.has(k)) return;
+    deletingRef.current.add(k);
+    try {
+      await client.remove(entry.id, repoPath);
+      clearSessionPads(entry.id);
+      await refreshSessions();
+      setMenuKey(null);
+    } finally {
+      deletingRef.current.delete(k);
+    }
+  }
+
+  function deletePicked() {
+    if (picked.size === 0) return;
+    confirmedRef.current = false;
+    setConfirmDelete({ kind: 'picked', count: picked.size });
+  }
+
+  async function reallyDeletePicked() {
     const keys = [...picked];
     if (keys.length === 0) return;
-    if (!window.confirm(`Delete ${keys.length} chat${keys.length === 1 ? '' : 's'}?`)) return;
     for (const key of keys) {
       const { id, repoPath } = parseRowKey(key);
-      await client.remove(id, repoPath);
+      const k = `${repoPath ?? ''}|${id}`;
+      if (deletingRef.current.has(k)) continue;
+      deletingRef.current.add(k);
+      try {
+        await client.remove(id, repoPath);
+      } finally {
+        deletingRef.current.delete(k);
+      }
       clearSessionPads(id);
       backgroundWorking.delete(id);
     }
@@ -881,7 +938,7 @@ export function V3SessionsRail({
                 type="button"
                 role="menuitem"
                 className="is-danger"
-                onClick={() => void deleteSession(entry, repoPath)}
+                onClick={() => deleteSession(entry, repoPath)}
               >
                 Delete
               </button>
@@ -1218,6 +1275,20 @@ export function V3SessionsRail({
             </div>
           </div>
         ))}
+        {query.trim().length >= 3 && (found.length > 0 || cutShort) ? (
+          <div className="v3-rail-section" data-testid="v3-rail-messages">
+            <span className="v3-rail-section-label">In messages (this project)</span>
+            <div className="v3-rail-section-body">
+              {found.map((hit) => (
+                <Fragment key={hit.chatId}>
+                  {renderRow(generalRows.find((e: SessionIndexEntry) => e.id === hit.chatId) ?? ({ id: hit.chatId, title: hit.title, createdAt: hit.at, updatedAt: hit.at } as SessionIndexEntry))}
+                  <p className="v3-rail-section-empty" data-testid="v3-rail-hit-snippet">{hit.snippet}</p>
+                </Fragment>
+              ))}
+              {cutShort ? <p className="v3-rail-section-empty" data-testid="v3-rail-hits-truncated">Searched the newest chats. Refine the search to look further back.</p> : null}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {picked.size > 0 ? (
@@ -1227,7 +1298,7 @@ export function V3SessionsRail({
             type="button"
             className="v3-selection-delete"
             data-testid="v3-selection-delete"
-            onClick={() => void deletePicked()}
+            onClick={() => deletePicked()}
           >
             Delete {picked.size}
           </button>
@@ -1239,6 +1310,37 @@ export function V3SessionsRail({
             Clear
           </button>
         </div>
+      ) : null}
+
+      {confirmDelete ? (
+        <ConfirmDialog
+          icon="trash"
+          danger
+          title={
+            confirmDelete.kind === 'one'
+              ? `Delete chat “${sessionTitle(confirmDelete.entry)}”?`
+              : `Delete ${confirmDelete.count} chat${confirmDelete.count === 1 ? '' : 's'}?`
+          }
+          body="This cannot be undone."
+          confirmLabel="Delete"
+          testId="v3-delete-confirm"
+          okTestId="v3-delete-confirm-ok"
+          cancelTestId="v3-delete-confirm-cancel"
+          onCancel={() => {
+            setConfirmDelete(null);
+            setMenuKey(null);
+          }}
+          onConfirm={() => {
+            /* Enter on the focused button fires keydown AND click: act on the first only (a ref, so a second
+               event in the same tick sees it). */
+            if (confirmedRef.current) return;
+            confirmedRef.current = true;
+            const pending = confirmDelete;
+            setConfirmDelete(null);
+            if (pending.kind === 'one') void reallyDeleteSession(pending.entry, pending.repoPath);
+            else void reallyDeletePicked();
+          }}
+        />
       ) : null}
 
       <div className="v3-rail-foot">

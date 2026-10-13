@@ -1,0 +1,6 @@
+{
+  "name": "t07-is-palindrome-case",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

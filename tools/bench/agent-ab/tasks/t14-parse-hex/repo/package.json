@@ -1,0 +1,6 @@
+{
+  "name": "t14-parse-hex",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

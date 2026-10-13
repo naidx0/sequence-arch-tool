@@ -1,3 +1,4 @@
+import { prefStorage } from '../boot/prefStorage';
 /** Shared with index.html's pre-paint choice and the shell's startup guard. */
 export const THEME_KEY = 'seq.theme';
 export const THEME_EVENT = 'sequence:theme';
@@ -54,7 +55,7 @@ function switchRoom(update: () => void): void {
 }
 
 export function writeTheme(theme: Theme): void {
-  try { localStorage.setItem(THEME_KEY, theme); } catch { /* The current window still changes. */ }
+  try { prefStorage.setItem(THEME_KEY, theme); } catch { /* The current window still changes. */ }
   switchRoom(() => {
     applyTheme(theme);
     window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: theme }));

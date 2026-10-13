@@ -78,6 +78,8 @@ const AnatomyPanel = lazy(() =>
 import type { BoardNode } from './NodeCard.js';
 import { useCanvas } from './canvasChannel.js';
 import { useDoc } from './docChannel.js';
+import { offerToInk } from './snapToEdit.js';
+import { readSnapMode } from '../whiteboard/snapPreference';
 import type { BoardMenuTarget } from './BoardMenu.js';
 import { buildGenerateRequest, isGeneratable } from './generateGate.js';
 import { docEdit } from './docEdit.js';
@@ -158,6 +160,12 @@ import { useAppState, useStore } from '../state';
 import { architectureReference, type ArchRefNode } from '../askInPlace/askReference';
 import { regionAround, unionBox } from '../askInPlace/snapshotGeometry';
 import { useAskInPlace } from '../askInPlace/useAskInPlace';
+import type { GenerateOutcome } from './NodeSurfacePanel';
+/* The node surface panel draws only when a node's surface is opened: it loads then, not at boot. */
+const NodeSurfacePanel = lazy(() => import('./NodeSurfacePanel').then((m) => ({ default: m.NodeSurfacePanel })));
+import { generateFlow } from './flowsClient';
+import { SURFACE_KINDS, nodeSurface, workflowAsk, type WorkflowAudience } from './nodeSurface';
+import { followGitEvents } from '../git/boardReload';
 import { groundedRepoRoot } from '../state/connect';
 import { requestHostCommand } from '../app/hostCommands';
 import { BoardTabs } from './boards/BoardTabs.js';
@@ -208,6 +216,12 @@ export function attachFitKeyFor(base: string | null | undefined, layoutKey: stri
 function logBoardEdit(...args: Parameters<typeof import('../whiteboard/boardEditLog').logBoardEdit>): void {
   void import('../whiteboard/boardEditLog').then((m) => m.logBoardEdit(...args)).catch(() => undefined);
 }
+
+/** The shape session's idle grouping window (`GROUP_IDLE_MS` in @sequence/ink/shape, pinned
+ *  by archSketchModel.test.tsx): inlined so the shape package stays out of the boot chunk. */
+const SKETCH_IDLE_MS = 900;
+/* The longest the give-up waits for the shape model to load before the old rules run anyway. */
+const SKETCH_MODEL_WAIT_MS = 5000;
 
 export function ConnectedBoard() {
   const store = useStore();
@@ -302,6 +316,28 @@ export function ConnectedBoard() {
      stroke is indistinguishable from a dropped event. */
   const [inkNote, setInkNote] = useState<string | null>(null);
   const drawnEdgeSeq = useRef(0);
+  /* Sketch's grouped shape reading: the session (loaded on the first stroke),
+     the latest applier it calls, and the "not a box" timer. */
+  const sketchArmGen = useRef(0);
+  const sketchSession = useRef<Promise<import('../whiteboard/snapSession').SnapSession> | null>(null);
+  const sketchApply = useRef<((results: import('@sequence/ink').InkResult[]) => void) | null>(null);
+  const sketchSeq = useRef(0);
+  const sketchUndecided = useRef<{ id: string; points: { x: number; y: number }[] }[]>([]);
+  const sketchPairs = useRef(new Map<string, number>());
+  const sketchGiveUp = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sketchRecent = useRef<{ id: string; points: { x: number; y: number }[] }[]>([]);
+  /* The session's own sentence ("2 drawn connections are now in the code; 1 is still a
+     claim.") reaches the reader through the board's ink-note line. */
+  useEffect(() => {
+    if (session.lastNote) setInkNote(session.lastNote);
+  }, [session.lastNote, session.doc]);
+  useEffect(
+    () => () => {
+      if (sketchGiveUp.current) clearTimeout(sketchGiveUp.current);
+      void sketchSession.current?.then((snap) => snap.dispose()).catch(() => undefined);
+    },
+    [],
+  );
   const flowConvert = useRef<(point: { x: number; y: number }) => { x: number; y: number }>(
     (point) => point,
   );
@@ -2151,6 +2187,41 @@ export function ConnectedBoard() {
     onSend: (payload) => void import('../askInPlace/sendBoardAsk').then((m) => m.sendBoardAsk(store, payload)),
   });
 
+  /* ══ THE NODE SUB-SURFACE (nodeSurface.ts) ═══════════════════════════════
+     A single picked service or module opens a side card with what the scan
+     knows about it and a Generate workflow button, which asks the chat (the
+     same sender the ask-in-place popover uses) to draw its page-to-page flow. */
+  const [surfaceClosed, setSurfaceClosed] = useState<string | null>(null);
+  const surfaceId = canvas.selection.nodeIds.length === 1 && edgeSel.length === 0 ? canvas.selection.nodeIds[0]! : null;
+  /* Closing is for the node it was closed on: picking anything else forgets it, so coming back reopens. */
+  useEffect(() => {
+    setSurfaceClosed((was) => (was !== null && was !== surfaceId ? null : was));
+  }, [surfaceId]);
+  const surfaceModel = useMemo(() => {
+    if (!graph || surfaceId === null || surfaceClosed === surfaceId || viewShown !== 'map' || proposal || canvas.view.state === 'S3') return null;
+    const model = nodeSurface(graph, surfaceId);
+    return model && SURFACE_KINDS.has(model.kind) ? model : null;
+  }, [graph, surfaceId, surfaceClosed, viewShown, proposal, canvas.view.state]);
+  /* The engine draws the flow onto a Space when it can (POST /api/services/:id/flows) and
+     the Space opens; an engine without the route gets the same ask as a chat message. */
+  const generateWorkflow = async (audience: WorkflowAudience): Promise<GenerateOutcome> => {
+    if (!surfaceModel) return { kind: 'failed', message: 'Nothing is selected.' };
+    const drawn = await generateFlow(surfaceModel.id, audience);
+    if (drawn.outcome === 'ok') {
+      refreshBoards();
+      openWhiteboard(drawn.boardId);
+      return { kind: 'space', name: drawn.name };
+    }
+    if (drawn.outcome === 'failed') return { kind: 'failed', message: drawn.message };
+    const reference = architectureReference(askNodes(), boardEdges, [surfaceModel.id], []);
+    if (!reference) return { kind: 'failed', message: 'This node is not on the board, so there is nothing to ask about.' };
+    const { sendBoardAsk } = await import('../askInPlace/sendBoardAsk');
+    await sendBoardAsk(store, { text: workflowAsk(surfaceModel.label, audience), reference, image: null });
+    return { kind: 'chat' };
+  };
+  /* The branch moved under the board (a switch here, in a terminal, by an agent): read the graph again. */
+  useEffect(() => followGitEvents(store), [store]);
+
   const boardTabs = (
     <BoardTabs
       index={boardsIndex}
@@ -2362,7 +2433,7 @@ export function ConnectedBoard() {
         onFlowReady={(api) => {
           flowConvert.current = api.screenToFlow;
         }}
-        onStroke={(points) => {
+        onStroke={(points, timing) => {
           if (!doc) {
             /* Unattached / unscanned: bootstrap the session scratch pad so Draw
                can place boxes instead of dead-ending on the empty lid
@@ -2391,11 +2462,20 @@ export function ConnectedBoard() {
            * real artifact" — and fires no ask and no proposal. Generate is the
            * separate, deliberate step, and it is the user's to take.
            */
-          /* Stroke recognition loads with the first stroke, not at boot
-             (perf ratchet, bootJsBytes): only a person who draws needs it. */
-          void Promise.all([import('./inkToEdit.js'), import('@sequence/ink')]).then(([{ inkToEdit }, { recognizeStroke }]) => {
-          const outcome = inkToEdit(recognizeStroke(points), {
-            hitTest: (at) => {
+          /* Sketch reads strokes with the trained, grouped shape model, the
+             whiteboard's own (`SnapSession`): a box drawn in four strokes is one
+             box, a lone closed stroke decides at once, and handwriting is left
+             alone. The session loads with the first stroke, not at boot (perf
+             ratchet, bootJsBytes).
+
+             'off' in Settings means no shape reading anywhere; 'auto' and
+             'suggest' both apply here, because choosing the Sketch tool is
+             itself the consent a suggestion would ask for. */
+          if (readSnapMode() === 'off') {
+            setInkNote('Shape reading is off in Settings, so Sketch adds nothing. Turn it on there, or add a service from the palette.');
+            return;
+          }
+          const hitTest = (at: { x: number; y: number }): string | null => {
               /* The board's own DOM answers "what is under this point": the
                  cards are laid out by ELK and transformed by the camera, and
                  re-deriving either here would be a second answer that drifts
@@ -2426,21 +2506,120 @@ export function ConnectedBoard() {
               } finally {
                 if (layer) layer.style.pointerEvents = prev ?? '';
               }
-            },
-            nextEdgeId: () => `draw:e${++drawnEdgeSeq.current}`,
-          });
-          setInkNote(outcome.kind === 'edit' ? outcome.note : outcome.note);
-          if (outcome.kind === 'edit') {
-            logBoardEdit('architecture', 'add', { kind: outcome.edit.type });
-            editDoc(outcome.edit);
-            /* PIN THE DRAWN BOX where the stroke was — otherwise ELK packs the
-               new id into the clump and "draw a box" feels like it vanished. */
-            if (outcome.edit.type === 'doc/add-node' && outcome.place) {
-              const flow = flowConvert.current(outcome.place);
-              dispatch({ type: 'canvas/position', nodeId: outcome.edit.id, x: flow.x, y: flow.y });
+            };
+          /* The session outlives this render; what it calls must not. */
+          sketchApply.current = (results) => {
+            void import('./inkToEdit.js').then(({ inkToEdit }) => {
+              /* Switched off while the pen was resting: nothing is added. */
+              if (readSnapMode() === 'off') {
+                setInkNote('Shape reading is off in Settings, so Sketch adds nothing. Turn it on there, or add a service from the palette.');
+                return;
+              }
+              for (const result of results) {
+                const outcome = inkToEdit(result, {
+                  hitTest,
+                  /* The counter restarts with the page, the drawn edges do not: an id
+                     already in the document is skipped, or the edit is refused as a
+                     duplicate and the stroke seems to have done nothing. */
+                  nextEdgeId: () => {
+                    const taken = new Set(doc.edges.map((e) => e.id));
+                    let id = `draw:e${++drawnEdgeSeq.current}`;
+                    while (taken.has(id)) id = `draw:e${++drawnEdgeSeq.current}`;
+                    return id;
+                  },
+                });
+            if (outcome.kind === 'edit' && outcome.edit.type === 'doc/add-edge') {
+              /* The old-rules fallback and a model connector can both read one line. */
+              const key = `${outcome.edit.from}\u0000${outcome.edit.to}`;
+              const seen = sketchPairs.current.get(key);
+              if (seen !== undefined && Date.now() - seen < 3000) continue;
+              sketchPairs.current.set(key, Date.now());
             }
-          }
-          });
+            setInkNote(outcome.note);
+            if (outcome.kind === 'edit') {
+              logBoardEdit('architecture', 'add', { kind: outcome.edit.type });
+              editDoc(outcome.edit);
+              /* PIN THE DRAWN BOX where the stroke was — otherwise ELK packs the
+                 new id into the clump and "draw a box" feels like it vanished. */
+              if (outcome.edit.type === 'doc/add-node' && outcome.place) {
+                const flow = flowConvert.current(outcome.place);
+                dispatch({ type: 'canvas/position', nodeId: outcome.edit.id, x: flow.x, y: flow.y });
+              }
+            }
+              }
+            });
+          };
+          const t1 = timing?.t1 ?? performance.now();
+          const strokeId = `sk${++sketchSeq.current}`;
+          sketchRecent.current = [...sketchRecent.current.slice(-19), { id: strokeId, points }];
+          sketchUndecided.current.push({ id: strokeId, points });
+          setInkNote('Reading the drawing…');
+          if (sketchGiveUp.current) clearTimeout(sketchGiveUp.current);
+          /* The session says nothing for handwriting, and silence after a stroke
+             reads as a dropped event; so the reader is told once the pen has rested.
+             One timer for the strokes no offer has covered yet: an offer for a box
+             takes ITS strokes off the list and leaves a later line on it. */
+          const giveUp = () => {
+            sketchGiveUp.current = null;
+            const left = sketchUndecided.current;
+            sketchUndecided.current = [];
+            if (left.length === 0) return;
+            /* The model snaps arrows and closed shapes. A bare straight line
+               between two cards was an edge before the model, and still is: the
+               old rules read it, and inkToEdit refuses it unless both ends land
+               on a card. */
+            void import('@sequence/ink').then(({ recognizeStroke }) => {
+              const lines = left.map((u) => recognizeStroke(u.points)).filter((r) => r.kind === 'line');
+              if (lines.length > 0) {
+                sketchApply.current?.(lines);
+                return;
+              }
+              setInkNote('That was not a box or a line, so nothing was added. Draw a closed shape for a service, or a line between two of them.');
+            });
+          };
+          /* The countdown starts only once the model is ready: under load its first
+             offer can land after a countdown that began at the stroke, and the old
+             rules would call a box "not a box". The ceiling keeps nothing dropped. */
+          const armGen = ++sketchArmGen.current;
+          sketchGiveUp.current = setTimeout(giveUp, SKETCH_MODEL_WAIT_MS);
+          const session = (sketchSession.current ??= import('../whiteboard/snapSession').then(
+            ({ SnapSession }) =>
+              new SnapSession({
+                onOffer: (offers) => {
+                  const covered = new Set(offers.flatMap((o) => o.strokeIds));
+                  sketchUndecided.current = sketchUndecided.current.filter((u) => !covered.has(u.id));
+                  if (sketchUndecided.current.length === 0 && sketchGiveUp.current) {
+                    clearTimeout(sketchGiveUp.current);
+                    sketchGiveUp.current = null;
+                  }
+                  sketchApply.current?.(offers.map(offerToInk));
+                },
+                context: (pending) =>
+                  sketchRecent.current.flatMap((r) => (pending.has(r.id) ? [] : [r.points])),
+                present: () => true,
+                zoom: () => 1,
+                recognizer: () =>
+                  import('@sequence/ink/shape-model').then((m) => (pts, o) => m.recognizeShape(pts, o)),
+              }),
+          ));
+          void session
+            .then((snap) => snap.ready())
+            .then(() => {
+              if (sketchArmGen.current !== armGen || sketchGiveUp.current === null) return;
+              clearTimeout(sketchGiveUp.current);
+              sketchGiveUp.current = setTimeout(giveUp, SKETCH_IDLE_MS + 150);
+            })
+            .catch(() => undefined);
+          void session
+            .then((snap) => {
+              snap.strokeBegan();
+              return snap.strokeEnded({ id: strokeId, points, t0: timing?.t0 ?? t1, t1 });
+            })
+            .catch(() => {
+              /* A chunk that failed to load is tried again on the next stroke. */
+              sketchSession.current = null;
+              setInkNote('Could not load shape reading. Try the stroke again.');
+            });
         }}
         empty={empty}
         edgeless={openedService ? null : edgeless}
@@ -2669,9 +2848,15 @@ export function ConnectedBoard() {
             The repository changed while you were drawing. This board is showing the older scan.
           </span>
           <span className="pb-why">
-            {session.edits === 1
-              ? 'Taking the new one replaces 1 unsaved edit.'
-              : `Taking the new one replaces ${session.edits} unsaved edits.`}
+            {(() => {
+              const drawn = session.doc?.edges.filter((e) => e.id.startsWith('draw:')).length ?? 0;
+              if (drawn === 0) {
+                return session.edits === 1
+                  ? 'Taking the new one replaces 1 unsaved edit.'
+                  : `Taking the new one replaces ${session.edits} unsaved edits.`;
+              }
+              return `Taking the new one keeps your ${drawn} drawn connection${drawn === 1 ? '' : 's'}: the ones the scan now finds become solid, the rest stay as claims. Other unsaved edits are replaced.`;
+            })()}
           </span>
           <button
             type="button"
@@ -2878,6 +3063,11 @@ export function ConnectedBoard() {
         />
       ) : null}
       {ask.layer}
+      {surfaceModel ? (
+        <Suspense fallback={null}>
+          <NodeSurfacePanel surface={surfaceModel} onClose={() => setSurfaceClosed(surfaceModel.id)} onGenerate={generateWorkflow} />
+        </Suspense>
+      ) : null}
       {edgeInspect && inspected ? (
         <EdgeEvidence {...inspected} at={{ x: edgeInspect.x, y: edgeInspect.y }} onClose={() => setEdgeInspect(null)} />
       ) : null}

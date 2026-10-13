@@ -225,6 +225,13 @@ export type Action =
   | { type: 'repo/failed'; attempted: string | null; failure: AttachFailure }
   | { type: 'repo/detached' }
   /**
+   * The person moved to another workspace WITHOUT a page reload (the in-place switch,
+   * sessions/workspaceSwitch.ts). Resets everything scoped to the repo being left; keeps what is the person's
+   * (shell layout, composer, net) and what belongs to the page (the agent run store lives outside this store).
+   * `root` is the destination, or null for the home workspace.
+   */
+  | { type: 'workspace/switch'; root: string | null; at: number }
+  /**
    * The graph is knowingly out of date.
    *
    * `PUT /api/file` clears the persisted graph cache WITHOUT re-scanning, so the
@@ -393,6 +400,10 @@ export type Action =
       /** Position after the drag (human pin). */
       at: { x: number; y: number };
     }
+  /** A file named in an answer: open it in the Files surface (optionally at a line). */
+  | { type: 'files/open'; path: string; line?: number }
+  /** A component offer's lifecycle: the reader pressed a button, then the server answered. */
+  | { type: 'component/offer-status'; offerId: string; status: 'sending' | 'accepted' | 'declined' | 'pending' }
   | { type: 'files/focus-clear' };
 
 /* ========================================================================== *
@@ -773,6 +784,34 @@ export function reduce(state: AppState, action: Action, deps: ReduceDeps): AppSt
       );
     }
 
+    case 'workspace/switch': {
+      /*
+       * REPO-SCOPED STATE DOES NOT CROSS A WORKSPACE. The repo, the board (canvas), the rail's index, the trust probe
+       * and the whole session slice (threads, transcript, proposals, git, board items) describe the workspace being
+       * left; every one is reset. The old graph stays on screen as `previous` under a scanning phase until the new
+       * one lands, so the board does not blank to the first-run screen in between. The shell, the composer and the
+       * net are the person's and stay. Total on any phase.
+       */
+      const previous =
+        state.repo.phase === 'attached' || state.repo.phase === 'stale'
+          ? state.repo.repo
+          : state.repo.phase === 'scanning'
+            ? state.repo.previous
+            : null;
+      const fresh = createInitialState();
+      return {
+        ...state,
+        repo:
+          action.root === null
+            ? { phase: 'unattached' }
+            : { phase: 'scanning', root: action.root, repoName: action.root.split(/[\/]/).filter(Boolean).pop() ?? action.root, startedAt: action.at, progress: null, previous },
+        canvas: fresh.canvas,
+        rail: fresh.rail,
+        trust: fresh.trust,
+        session: { ...fresh.session, hydrating: true },
+      };
+    }
+
     case 'repo/stale': {
       /*
        * ONLY FROM ATTACHED OR STALE. `RepoStale` carries a `ScannedRepo`, so
@@ -981,6 +1020,8 @@ export function reduce(state: AppState, action: Action, deps: ReduceDeps): AppSt
           boardPinnedIds: [],
           boardIntentGhosts: [],
           filesFocus: null,
+          /* An offer belongs to the chat whose turn made it. */
+          componentOffers: [],
           /* NAVIGATION IS NOT PRODUCTION. Opening a thread clears whatever the
              last turn asked you to look at, so hydrating that thread's canvas
              cannot bring its pane to the front (owner, 2026-09-17). */
@@ -1239,7 +1280,7 @@ export function reduce(state: AppState, action: Action, deps: ReduceDeps): AppSt
       const dy = action.at.y - action.ghostAt.y;
       const boardAgentItems = state.session.boardAgentItems.map((it) => {
         if (it.id !== action.id) return it;
-        if (it.kind === 'text' || it.kind === 'noderef' || it.kind === 'artifact') {
+        if (it.kind === 'text' || it.kind === 'noderef' || it.kind === 'artifact' || it.kind === 'svg' || it.kind === 'scene' || it.kind === 'video') {
           return { ...it, at: { x: action.at.x, y: action.at.y } };
         }
         if (it.kind === 'shape') {
@@ -1264,6 +1305,33 @@ export function reduce(state: AppState, action: Action, deps: ReduceDeps): AppSt
         },
       };
     }
+
+    case 'component/offer-status': {
+      const offers = state.session.componentOffers ?? [];
+      if (!offers.some((o) => o.offerId === action.offerId)) return state;
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          componentOffers: offers.map((o) => (o.offerId === action.offerId ? { ...o, status: action.status } : o)),
+        },
+      };
+    }
+
+    case 'files/open':
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          filesFocus: {
+            path: action.path,
+            view: action.line ? 'edit' : 'code',
+            proposedContent: null,
+            ...(action.line ? { line: action.line } : {}),
+            nonce: (state.session.filesFocus?.nonce ?? 0) + 1,
+          },
+        },
+      };
 
     case 'files/focus-clear':
       if (state.session.filesFocus === null) return state;
@@ -1557,6 +1625,15 @@ export function withBoardState(
             at: { x: Math.round(it.from.x), y: Math.round(it.from.y) },
           };
         }
+        if (it.kind === 'video') {
+          return { id: it.id, kind: 'text' as const, label: 'video', at: { x: Math.round(it.at.x), y: Math.round(it.at.y) } };
+        }
+        if (it.kind === 'scene') {
+          return { id: it.id, kind: 'text' as const, label: 'scene', at: { x: Math.round(it.at.x), y: Math.round(it.at.y) } };
+        }
+        if (it.kind === 'svg') {
+          return { id: it.id, kind: 'text' as const, label: 'svg', at: { x: Math.round(it.at.x), y: Math.round(it.at.y) } };
+        }
         if (it.kind === 'artifact') {
           const label =
             it.ref.type === 'chart' ? `chart#${it.ref.index}` : `block:${it.ref.blockId}`;
@@ -1793,6 +1870,9 @@ function applyCanvasBlock(
  * variant added to the wire type fails the build rather than being dropped by a
  * default branch.
  */
+/** How many board marks a turn keeps for its inline preview (the board itself is the source of truth). */
+const BOARD_MARKS_KEPT = 80;
+
 /** How much of a turn's thinking is held — the tail, see `case 'reasoning'`. */
 export const REASONING_TAIL_CHARS = 16_000;
 
@@ -2056,6 +2136,60 @@ function streamEventCore(state: AppState, event: AskEvent, at: number): AppState
       if (event.id === 'provider') return state;
       return withInFlight(state, { ...inFlight, work: closeRow(inFlight.work, `step:${event.id}`) });
 
+    case 'component:offer': {
+      const offers = state.session.componentOffers ?? [];
+      if (offers.some((o) => o.offerId === event.offerId)) return state;
+      return {
+        ...state,
+        session: {
+          ...state.session,
+          componentOffers: [
+            ...offers,
+            { offerId: event.offerId, turnId: event.turnId, componentId: event.componentId, name: event.name, reason: event.reason, status: 'pending' },
+          ],
+        },
+      };
+    }
+
+    case 'component:used':
+      /* A normal tool row: the turn says what it ran, like any other tool. */
+      return withInFlight(state, {
+        ...inFlight,
+        work: [
+          ...inFlight.work,
+          {
+            id: `component:${event.componentId}:${inFlight.work.length}`,
+            group: 'run',
+            verb: 'Used a component',
+            identifier: event.name,
+            outcome: null,
+            provenance: null,
+            status: 'done',
+            from: 'component:used',
+            opens: null,
+          },
+        ],
+      });
+
+    case 'component:skipped':
+      return withInFlight(state, {
+        ...inFlight,
+        work: [
+          ...inFlight.work,
+          {
+            id: `component-skipped:${event.componentId}:${inFlight.work.length}`,
+            group: 'run',
+            verb: 'Skipped a component',
+            identifier: `${event.componentId}: ${event.reason}`,
+            outcome: null,
+            provenance: null,
+            status: 'done',
+            from: 'component:skipped',
+            opens: null,
+          },
+        ],
+      });
+
     case 'provider:start':
       return withInFlight(state, {
         ...inFlight,
@@ -2190,10 +2324,13 @@ function streamEventCore(state: AppState, event: AskEvent, at: number): AppState
       const k = event.replacesTurnChart;
       if (k !== undefined && Number.isInteger(k) && k >= 0 && k < rowsThisTurn && rowsThisTurn <= drawn.length) {
         const at = drawn.length - rowsThisTurn + k;
+        const mine = [...(inFlight.charts ?? [])];
+        if (k < mine.length) mine[k] = event.chart;
         return {
           ...state,
           session: {
             ...state.session,
+            inFlight: { ...inFlight, charts: mine },
             canvasDoc: {
               ...state.session.canvasDoc,
               forSession: state.session.activeId,
@@ -2227,6 +2364,7 @@ function streamEventCore(state: AppState, event: AskEvent, at: number): AppState
           },
           inFlight: {
             ...inFlight,
+            charts: [...(inFlight.charts ?? []), event.chart],
             work: [
               ...inFlight.work,
               {
@@ -2279,7 +2417,7 @@ function streamEventCore(state: AppState, event: AskEvent, at: number): AppState
       const remove = new Set(event.removeIds ?? []);
       const kept = state.session.boardAgentItems.filter((i) => !remove.has(i.id));
       const have = new Set(kept.map((i) => i.id));
-      const fresh = event.items.map(boardWireToWbItem).filter((i) => !have.has(i.id));
+      const fresh = event.items.map(boardWireToWbItem).filter((i): i is import('../whiteboard/whiteboardModel').WbItem => i !== null && !have.has(i.id));
       const nextItems = [...kept, ...fresh];
       if (fresh.length === 0 && remove.size === 0) return state;
       const nextPins = state.session.boardPinnedIds.filter((id) => !remove.has(id));
@@ -2293,6 +2431,7 @@ function streamEventCore(state: AppState, event: AskEvent, at: number): AppState
           boardIntentGhosts: nextGhosts,
           inFlight: {
             ...inFlight,
+            ...(fresh.length > 0 ? { boardMarks: [...(inFlight.boardMarks ?? []), ...fresh].slice(-BOARD_MARKS_KEPT) } : {}),
             work: [
               ...inFlight.work,
               {
@@ -2530,6 +2669,8 @@ function commit(
        scrolling back can still see what the turn set out to do and what it
        actually finished — the same reason `work` is kept rather than cleared. */
     todos: inFlight.todos,
+    ...(inFlight.charts && inFlight.charts.length > 0 ? { charts: inFlight.charts } : {}),
+    ...(inFlight.boardMarks && inFlight.boardMarks.length > 0 ? { boardMarks: inFlight.boardMarks } : {}),
     ...(inFlight.reasoning ? { reasoning: inFlight.reasoning, thoughtMs: Math.max(0, (inFlight.firstTokenAt ?? at) - inFlight.startedAt) } : {}),
     effect,
     /*
@@ -2563,6 +2704,8 @@ function commit(
     ...state.session,
     turns: [...state.session.turns, assistant],
     inFlight: null,
+    /* An offer only means something while its turn runs: a settled turn leaves no card to answer. */
+    ...(state.session.componentOffers?.length ? { componentOffers: [] } : {}),
     canvasDoc: landCanvasBlocks(state.session.canvasDoc),
   };
 

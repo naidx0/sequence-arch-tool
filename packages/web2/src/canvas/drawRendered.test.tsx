@@ -92,7 +92,12 @@ async function strokeSettled() {
   /* The recogniser loads with the first stroke (a dynamic import): under the
      full suite's load that import has taken over the 1 s default, so the wait
      is for the module, not a guess at a frame count. */
-  await waitFor(() => expect(screen.getByTestId('board-ink-note')).toBeTruthy(), { timeout: 10000 });
+  /* Sketch groups strokes: "Reading the drawing…" is the wait, not the outcome. A lone
+     closed box decides at once; a scribble is reported once the pen has rested. */
+  await waitFor(
+    () => expect(screen.getByTestId('board-ink-note').textContent).not.toMatch(/Reading the drawing/),
+    { timeout: 10000 },
+  );
 }
 
 /** Drag a wobbly closed box across the capture layer, and wait for its outcome. */

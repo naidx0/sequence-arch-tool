@@ -36,7 +36,7 @@ beforeAll(async () => {
   browser = await (await loadPlaywright()).launch(launchOptions(binary));
   page = await browser.newPage({ viewport: { width: 900, height: 700 } });
   page.on('pageerror', (e: Error) => errors.push(e.message));
-}, 60000);
+}, 180000); // a vite build plus a Chromium launch: setup, not the behaviour under test; 60 s timed out on a loaded machine
 afterAll(async () => { await browser?.close(); await new Promise<void>(done => server ? server.close(() => done()) : done()); });
 
 async function open(width = 900) {

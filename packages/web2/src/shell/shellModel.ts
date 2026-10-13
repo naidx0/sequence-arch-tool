@@ -631,6 +631,7 @@ export type ShellCommandId =
   | 'composer.focus'
   | 'canvas.whiteboard'
   | 'canvas.board'
+  | 'canvas.diff'
   | 'chat.new'
   | 'surface.files'
   | 'surface.terminal'
@@ -702,8 +703,9 @@ export const SHELL_COMMANDS: readonly ShellCommand[] = [
   /* Round 11 (UX audit 7): the surface bar's own words, so every door the bar has is in the palette too. */
   { id: 'chat.new', label: 'New chat', searchTerms: ['start', 'chat'], owner: 'host', shortcut: 'new-chat' },
   { id: 'canvas.board', label: 'Open Architecture', searchTerms: ['board', 'graph'], owner: 'host' },
+  { id: 'canvas.diff', label: 'Open Diff', searchTerms: ['changes', 'branch', 'against main'], owner: 'host' },
   { id: 'surface.files', label: 'Open Files', searchTerms: ['code', 'editor'], owner: 'host' },
-  { id: 'canvas.whiteboard', label: 'Open Whiteboard', searchTerms: ['draw'], owner: 'host' },
+  { id: 'canvas.whiteboard', label: 'Open Spaces', searchTerms: ['draw', 'whiteboard'], owner: 'host' },
   { id: 'surface.terminal', label: 'Open Terminal', searchTerms: ['shell', 'console'], owner: 'host' },
   { id: 'surface.agents', label: 'Open Agents', searchTerms: ['runs', 'subagents'], owner: 'host' },
   { id: 'pane.chat', label: 'Show or hide the chat', owner: 'shell' },

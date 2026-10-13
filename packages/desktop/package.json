@@ -1,6 +1,6 @@
 {
   "name": "@sequence/desktop",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "description": "Electron desktop shell for Sequence — a double-click window around the local architecture app, with a native OS folder picker for attaching a repo",
   "license": "MIT",

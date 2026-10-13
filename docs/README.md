@@ -117,6 +117,7 @@ queued behind them.
 | Doc | Role |
 |-----|------|
 | [`feature-honesty.md`](feature-honesty.md) | Claims must match the running product |
+| [`claims.json`](claims.json) | The public-claim registry (id, text, sources, engines, code, tests, status); `tools/ci/claims.test.mjs` checks every symbol and test file exists and fails the build on known-false phrases |
 | [`w5-journeys-web2.md`](w5-journeys-web2.md) | P7 — Journey A/B walks rewritten for web2 + one true socials sentence |
 | [`TRANSLATION_GRADE.md`](TRANSLATION_GRADE.md) | Internal scan→English grade (`pnpm grade`) |
 

@@ -79,6 +79,10 @@ export function useGoalRun(input: {
   /** The composer's mode, which decides whether a run may start at all. */
   mode: GoalRunMode;
   jobMode?: 'work' | 'code';
+  /** The coding agent (Claude, Codex) this chat talks to: a run then works the plan through it, with no AI key. Absent: Sequence's own model. */
+  agentRef?: string | undefined;
+  /** The agent when Start is pressed (wins over `agentRef`): a chat's agent can change between the render and the press. */
+  getAgentRef?: () => string | undefined;
   /** Injected in tests; the real client otherwise. */
   client?: SessionsClient;
   pollMs?: number;
@@ -181,6 +185,7 @@ export function useGoalRun(input: {
            be this surface asserting a consent nobody gave. */
         permission: effectiveMode === 'build' ? 'build' : 'plan',
         ...(input.jobMode === undefined ? {} : { jobMode: input.jobMode }),
+        ...((input.getAgentRef ? input.getAgentRef() : input.agentRef) ? { agentRef: (input.getAgentRef ? input.getAgentRef() : input.agentRef)! } : {}),
       },
       repoPath,
     );
@@ -195,7 +200,7 @@ export function useGoalRun(input: {
      * decide it did not work.
      */
     await refresh();
-  }, [client, input.jobMode, input.mode, refresh, repoPath, sessionId]);
+  }, [client, input.agentRef, input.getAgentRef, input.jobMode, input.mode, refresh, repoPath, sessionId]);
 
   const stop = useCallback(async () => {
     const id = sessionId;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { AgentRun } from '../agents/agentRuns';
 import type { Turn, WorkRow } from '../state/types';
 
 import {
@@ -7,6 +8,7 @@ import {
   HISTORY_WORK_CAP,
   askHistory,
   askHistoryMeta,
+  askHistoryMetaWithRuns,
   summarizeHistoryEvidence,
   summarizeHistoryWork,
 } from './askHistory';
@@ -172,5 +174,66 @@ describe('summarize helpers', () => {
 
   it('returns undefined evidence when nothing was grounded', () => {
     expect(summarizeHistoryEvidence({ tools: [], filesRead: [], proposals: [] })).toBeUndefined();
+  });
+});
+
+function claudeRun(prompt: string, reply: string, startedAt: number, over: Partial<AgentRun> = {}): AgentRun {
+  return {
+    id: `run-${startedAt}`,
+    sessionId: 'chat',
+    agentRef: 'claude',
+    nodeId: null,
+    nodeLabel: null,
+    prompt,
+    status: 'done',
+    startedAt,
+    endedAt: startedAt + 5,
+    items: [{ kind: 'message', id: 'm0', text: reply }],
+    approvals: [],
+    error: null,
+    ...over,
+  } as AgentRun;
+}
+
+describe('askHistoryMetaWithRuns (A7)', () => {
+  it('with one Claude run then a local ask, history includes the Claude reply, ordered by time', () => {
+    const turns = [{ ...user('earlier question'), at: 10 } as Turn, { ...assistant('earlier answer'), at: 11 } as Turn];
+    const out = askHistoryMetaWithRuns(turns, [claudeRun('what does scan.ts do', 'It walks the repo.', 100)]);
+    expect(out.turns).toEqual([
+      { role: 'user', text: 'earlier question' },
+      { role: 'assistant', text: 'earlier answer' },
+      { role: 'user', text: 'what does scan.ts do' },
+      { role: 'assistant', text: 'It walks the repo.', agent: 'claude' },
+    ]);
+    expect(out.droppedTurns).toBe(0);
+  });
+
+  it('places a run between the local turns it happened between', () => {
+    const turns = [{ ...user('a'), at: 1 } as Turn, { ...assistant('b'), at: 2 } as Turn, { ...user('c'), at: 300 } as Turn, { ...assistant('d'), at: 301 } as Turn];
+    const out = askHistoryMetaWithRuns(turns, [claudeRun('q', 'r', 100)]);
+    expect(out.turns.map((t) => t.text)).toEqual(['a', 'b', 'q', 'r', 'c', 'd']);
+  });
+
+  it('is capped by HISTORY_CAP from the newest end and counts what it dropped', () => {
+    const runs = Array.from({ length: 15 }, (_, i) => claudeRun(`q${i}`, `r${i}`, 100 + i * 10));
+    const out = askHistoryMetaWithRuns([], runs);
+    expect(out.turns).toHaveLength(HISTORY_CAP);
+    expect(out.turns.at(-1)).toMatchObject({ text: 'r14', agent: 'claude' });
+    expect(out.droppedTurns).toBe(30 - HISTORY_CAP);
+  });
+
+  it('carries final messages only: not a running, failed or compaction run, and a codex run is labelled codex', () => {
+    const out = askHistoryMetaWithRuns([], [
+      claudeRun('q1', 'still going', 1, { status: 'running', endedAt: null }),
+      claudeRun('q2', 'oops', 2, { status: 'failed' }),
+      claudeRun('/compact', 'summary', 3, { operation: 'compact' }),
+      claudeRun('q4', 'tools then text', 4, { agentRef: 'codex', items: [{ kind: 'message', id: 'm0', text: 'early words' }, { kind: 'tool', id: 't', title: 'Read x', toolKind: 'read', status: 'done', startedAt: 4, endedAt: 4, changes: [], diffs: [], output: null }, { kind: 'message', id: 'm2', text: 'the answer' }] }),
+    ]);
+    expect(out.turns).toEqual([{ role: 'user', text: 'q4' }, { role: 'assistant', text: 'the answer', agent: 'codex' }]);
+  });
+
+  it('with no runs it is askHistoryMeta', () => {
+    const turns = [user('hi'), assistant('hello')];
+    expect(askHistoryMetaWithRuns(turns, [])).toEqual(askHistoryMeta(turns));
   });
 });

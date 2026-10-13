@@ -38,6 +38,7 @@ import {
 import { createAcpExecutor, createAgentClient, type AcpAgentClient, type AcpClientConfig } from '@sequence/acp';
 import { listAgents, getAgent, type AgentEntry } from './server/agentsStore.js';
 import { readAgentSettings } from './server/askAgentMap.js';
+import { componentsLaunchOpts, readComponentSettings } from './components/settings.js';
 import { sequenceMcpServer } from './server/sequenceMcp.js';
 import { withTypedStateWrites } from './server/programRunner.js';
 import { userStoreDir } from './server/store.js';
@@ -95,7 +96,8 @@ export function programAgentLaunch(
   where: { repo?: string; storeDir: string; spawn?: typeof childProcess.spawn },
 ): AcpClientConfig {
   const repo = where.repo ? path.resolve(where.repo) : null;
-  const board = repo ? sequenceMcpServer(repo, { allTools: readAgentSettings(where.storeDir).allBoardTools }) : null;
+  const comp = readComponentSettings(where.storeDir);
+  const board = repo ? sequenceMcpServer(repo, { allTools: readAgentSettings(where.storeDir).allBoardTools, ...componentsLaunchOpts(comp) }) : null;
   const cwd = repo ?? entry.cwd;
   return {
     command: entry.command,

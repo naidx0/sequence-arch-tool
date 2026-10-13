@@ -1,0 +1,1 @@
+These skills work inside a clone of github.com/Gen-Verse/RSI-Anything. If the project is not an RSI-Anything checkout, ask the user before cloning it (pinned commit 99dbf000). Project code is Apache-2.0 (LICENSE in this folder); third-party code, models and data keep their own terms.

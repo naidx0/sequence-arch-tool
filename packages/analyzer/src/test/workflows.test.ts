@@ -1,3 +1,4 @@
+import { bound } from './load-scale.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -111,13 +112,16 @@ test('writers in other processes do not lose each other: revisions climb one by 
   const a = createWorkflow(root, { name: 'Race' });
   /* A file URL: on Windows import() refuses a bare C:\ path. */
   const mod = pathToFileURL(path.join(here, '..', 'workflows', 'workflowStore.js')).href;
-  const code = `const s = await import(${JSON.stringify(mod)}); for (let i = 0; i < 40; i++) await s.applyWorkflowEdit(${JSON.stringify(root)}, ${JSON.stringify(a.id)}, [{ op: 'update', id: 'b1', title: process.argv[1] + i }]);`;
+  /* "busy, try again" (409) is the store's documented answer when the lock is held past its give-up; on a loaded machine a writer can be starved that long, so a writer retries it, as a client would. Every edit must still land exactly once: the revision count below is the proof. */
+  const code = `const s = await import(${JSON.stringify(mod)}); for (let i = 0; i < 40; i++) { for (let k = 0; ; k++) { try { await s.applyWorkflowEdit(${JSON.stringify(root)}, ${JSON.stringify(a.id)}, [{ op: 'update', id: 'b1', title: process.argv[1] + i }]); break; } catch (e) { if (e && e.status === 409 && k < 20) continue; throw e; } } }`;
   const { spawn } = await import('node:child_process');
   await Promise.all(
     ['A', 'B', 'C'].map(
       (t) => new Promise<void>((resolve, reject) => {
-        const p = spawn(process.execPath, ['--input-type=module', '-e', code, t], { stdio: 'inherit' });
-        p.on('exit', (c) => (c === 0 ? resolve() : reject(new Error(`writer ${t} exited ${c}`))));
+        const p = spawn(process.execPath, ['--input-type=module', '-e', code, t], { stdio: ['ignore', 'inherit', 'pipe'] });
+        let err = '';
+        p.stderr.on('data', (d: Buffer) => (err += d.toString()));
+        p.on('exit', (c) => (c === 0 ? resolve() : reject(new Error(`writer ${t} exited ${c}: ${err.slice(0, 600)}`))));
       }),
     ),
   );
@@ -176,7 +180,7 @@ test('a lock left by a dead process is broken at once, and the wait never blocks
   const t0 = Date.now();
   const doc = await applyWorkflowEdit(root, a.id, [{ op: 'rename', name: 'after a crash' }]);
   assert.equal(doc.name, 'after a crash');
-  assert.ok(Date.now() - t0 < 2_000, `took ${Date.now() - t0}ms`);
+  assert.ok(Date.now() - t0 < bound(2_000, 5_000), `took ${Date.now() - t0}ms`); /* ceiling 5 s: a dead owner's lock is broken at once, not after waiting out a stale age (60 s) */
   assert.deepEqual(fs.readdirSync(path.join(root, '.sequence', 'workflows')), [`${a.id}.json`]);
   /* a live owner (this process) holds it: the edit waits, and timers keep firing meanwhile */
   fs.writeFileSync(lock, JSON.stringify({ pid: process.pid, startedAt: Date.now(), token: 'mine-elsewhere' }));
@@ -185,7 +189,8 @@ test('a lock left by a dead process is broken at once, and the wait never blocks
   const waiting = applyWorkflowEdit(root, a.id, [{ op: 'rename', name: 'second' }]);
   await new Promise((r) => setTimeout(r, 200));
   assert.equal(readWorkflow(root, a.id)!.name, 'after a crash');
-  assert.ok(ticks >= 10, `event loop starved: ${ticks} ticks`);
+  /* 200 ms of 5 ms timers is 40 ticks idle; a blocked thread gives ~0. Under load timers coalesce, so ask for a fraction. */
+  assert.ok(ticks >= 3, `event loop starved: ${ticks} ticks`);
   fs.rmSync(lock);
   assert.equal((await waiting).name, 'second');
   clearInterval(tick);
@@ -193,7 +198,7 @@ test('a lock left by a dead process is broken at once, and the wait never blocks
   fs.writeFileSync(lock, '');
   const t1 = Date.now();
   await applyWorkflowEdit(root, a.id, [{ op: 'rename', name: 'third' }]);
-  assert.ok(Date.now() - t1 < 3_000, `took ${Date.now() - t1}ms`);
+  assert.ok(Date.now() - t1 < bound(3_000, 4_000), `took ${Date.now() - t1}ms`); /* ceiling 4 s: an unreadable lock is broken after its 1 s grace, not a longer one */
 });
 
 test('a writer releases only its own lock: one that was replaced under it is put back', async () => {

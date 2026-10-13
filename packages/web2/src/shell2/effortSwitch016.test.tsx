@@ -37,8 +37,9 @@ afterEach(() => {
 });
 
 describe('the effort row moves with the picker own motion', () => {
-  it('the thumb, fill, dots and Recommended caption move with --s2-switch-dur/--s2-switch-ease, not the quick --dur-3', () => {
-    for (const sel of [".s2-rt[data-ready='true'] .s2-rt-fill", ".s2-rt[data-ready='true'] .s2-rt-thumb", '.s2-rt-dot', '.s2-rt-rec']) {
+  it('the dots and Recommended caption move with --s2-switch-dur/--s2-switch-ease, not the quick --dur-3', () => {
+    /* 0.1.8 F1: the thumb and the fill glide on the slider's own 180 ms ease-out (literals in modelMenu.css), asserted in sliderMotion018.test.tsx. */
+    for (const sel of ['.s2-rt-dot', '.s2-rt-rec']) {
       const b = block(sel);
       expect(b, sel).toMatch(/transition:[^;]*var\(--s2-switch-dur\) var\(--s2-switch-ease\)/);
       expect(b, sel).not.toMatch(/--dur-3/);
@@ -50,7 +51,7 @@ describe('the effort row moves with the picker own motion', () => {
   it('the section height and the level read are animated too, and all of it is off under reduced motion', () => {
     expect(block('.s2-efold')).toMatch(/transition:\s*height var\(--s2-switch-dur\) var\(--s2-switch-ease\)/);
     expect(block('.s2-effort-now')).toMatch(/animation:\s*s2-eff-in var\(--s2-switch-dur\) var\(--s2-switch-ease\)/);
-    const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce) {\n  .s2-rt-thumb'));
+    const reduced = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce) {\n  .s2-rt[data-ready='true'] .s2-rt-thumb"));
     for (const sel of ['.s2-rt-thumb', '.s2-rt-fill', '.s2-rt-dot', '.s2-rt-rec', '.s2-efold']) expect(reduced, sel).toContain(sel);
     expect(reduced).toMatch(/\.s2-effort-now,[^{]*\{\s*animation:\s*none/);
   });

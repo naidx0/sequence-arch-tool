@@ -153,7 +153,7 @@ export function LongTasks() {
       kicker="Long tasks"
       band
       title="Hand it a goal. Come back later."
-      line="Type /goal and a task. The agent writes a plan, then works through it one step at a time."
+      line="Type /goal and a task. It writes a plan, then works through it one step at a time, on Sequence's own model or on your Claude Code or Codex chat."
       clip="agents-workflows"
       window="Sequence · Agents"
       alt="The Agents pane with the context an agent used and its output, and workflows and runs listed below. Recorded in the app; the run history and figures are a sample."
@@ -192,9 +192,10 @@ export function SmallModels() {
         it stays on your computer.
       </p>
       <p className="lt-note mx-auto mt-4 max-w-[40rem] text-center">
-        <strong>It learns from failures too.</strong> When the same kind of question fails twice, Sequence proposes a short
-        note for the repository, with the failed runs as evidence. You accept or deny it. Accepted notes go into later prompts,
-        and a note that makes answers worse is left out.
+        <strong>It learns from failures too.</strong> When a request keeps going wrong (asked twice, stopped, rewritten, or
+        reported not done), Sequence proposes a short note for the repository, quoting those turns. You accept or dismiss it.
+        Accepted notes go into later prompts; a note after which those failures come back more often is flagged for you and
+        left out of later prompts.
       </p>
     </Block>
   );

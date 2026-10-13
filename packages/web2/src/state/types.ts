@@ -736,6 +736,13 @@ export interface AssistantTurn {
   /** The work list as it stood when the turn ended. Empty when none was set. */
   todos: TodoItem[];
   /**
+   * The charts this turn drew, in order (`chart:proposal`), so the chat can show
+   * each inline and a reload keeps them. One per `chart:proposal` work row.
+   */
+  charts?: SeqChart[];
+  /** The marks this turn put on the board (`board:item`), capped, for the inline preview. */
+  boardMarks?: import('../whiteboard/whiteboardModel').WbItem[];
+  /**
    * The model's thinking channel, as streamed by `reasoning` frames (owner,
    * 2026-09-22: "Why is it calling what it's calling? Instead of just seeing a
    * working symbol"). Kept apart from `text` — it is never the answer. Absent
@@ -833,6 +840,10 @@ export interface InFlightTurn {
    */
   reasoning?: string;
   work: WorkRow[];
+  /** Charts drawn this turn, in order; committed onto the assistant turn. */
+  charts?: SeqChart[];
+  /** Board marks drawn this turn; committed onto the assistant turn. */
+  boardMarks?: import('../whiteboard/whiteboardModel').WbItem[];
   /**
    * The work list, replaced wholesale on each `todo:list` frame. Empty on every
    * turn that never declares one, which is most of them.
@@ -923,7 +934,21 @@ export interface ContextChip {
  * sits in the composer, it is removable, and it is context for the next
  * question. What differs is only what it points at.
  */
-export type ContextChipKind = 'node' | 'file' | 'function' | 'canvas-block' | 'chart-part' | 'board-ref';
+export type ContextChipKind = 'node' | 'file' | 'function' | 'canvas-block' | 'chart-part' | 'board-ref' | 'component';
+
+/**
+ * A component the model offered to use (`component:offer`), waiting for the
+ * reader's answer: "Use it" or "Keep the regular workflow". Answered offers
+ * are kept with their status so the card can settle instead of vanishing.
+ */
+export interface ComponentOffer {
+  offerId: string;
+  turnId: string;
+  componentId: string;
+  name: string;
+  reason: string;
+  status: 'pending' | 'sending' | 'accepted' | 'declined';
+}
 
 /*
  * `board-ref` is a SELECTION ON A BOARD (whiteboard items, or architecture
@@ -976,7 +1001,7 @@ export interface MentionResult {
    * never appear in its list, which is a table entry nothing can reach and the
    * kind of quiet untruth this contract exists to refuse.
    */
-  kind: Exclude<ContextChipKind, 'chart-part' | 'board-ref'>;
+  kind: Exclude<ContextChipKind, 'chart-part' | 'board-ref' | 'component'>;
   ref: string;
   label: string;
   /** The path or `:line` shown to the right of the name. */
@@ -1560,11 +1585,17 @@ export interface SessionSlice {
    * refused by the panel when no callback is passed; this only drives selection
    * + diff view from chat proposals.
    */
+  /** Components the model offered this chat, newest last (`component:offer`). Absent until one arrives. */
+  componentOffers?: ComponentOffer[];
   filesFocus: {
     path: string;
     view: 'code' | 'diff' | 'edit';
     /** Proposed body for diff when git diff is empty / unattached. */
     proposedContent: string | null;
+    /** 1-based line to reveal (a `path:12` the model wrote). */
+    line?: number;
+    /** Bumps on every open, so following the same path:line twice reveals it twice. */
+    nonce?: number;
   } | null;
   /**
    * ── THE SURFACE THIS TURN WANTS YOU TO LOOK AT ──────────────────────────

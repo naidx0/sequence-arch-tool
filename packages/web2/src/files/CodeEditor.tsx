@@ -90,9 +90,17 @@ export interface CodeEditorProps {
   onSave?: () => void;
   canSave?: boolean;
   onDiscard?: () => void;
+  /** A `file:12` the reader followed from the chat: the caret and the view go to that line. */
+  revealLine?: number;
+  /** Changes each time the same line is asked for again. */
+  revealKey?: number;
+  /** A project search the reader followed here: the in-file find opens seeded with it. */
+  findSeed?: string;
+  /** Changes each time a seed is applied. */
+  findKey?: number;
 }
 
-export function CodeEditor({ path, value, onChange, dirty, onSave, canSave = true, onDiscard }: CodeEditorProps) {
+export function CodeEditor({ path, value, onChange, dirty, onSave, canSave = true, onDiscard, revealLine, revealKey, findSeed, findKey }: CodeEditorProps) {
   const ta = useRef<HTMLTextAreaElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
   const findRef = useRef<HTMLInputElement | null>(null);
@@ -137,13 +145,30 @@ export function CodeEditor({ path, value, onChange, dirty, onSave, canSave = tru
     }
   };
 
+  useEffect(() => {
+    if (!revealLine) return;
+    const el = ta.current;
+    if (!el) return;
+    const all = el.value.split('\n');
+    const at = all.slice(0, Math.min(revealLine, all.length) - 1).reduce((n, l) => n + l.length + 1, 0);
+    el.setSelectionRange(at, at);
+    setCaret(caretAt(el.value, at));
+    reveal(Math.min(revealLine, all.length));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealLine, revealKey, path]);
+  useEffect(() => {
+    if (!findSeed) return;
+    setNeedle(findSeed);
+    setFinding(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [findSeed, findKey, path]);
   useEffect(() => setHit(-1), [needle]);
   useEffect(() => {
     if (finding) findRef.current?.focus();
   }, [finding]);
 
   const onKey = (e: ReactKeyboardEvent<HTMLElement>) => {
-    if (isMod(e) && e.key.toLowerCase() === 'f') {
+    if (isMod(e) && !e.shiftKey && e.key.toLowerCase() === 'f') {
       e.preventDefault();
       const el = ta.current;
       const picked = el ? el.value.slice(el.selectionStart, el.selectionEnd) : '';

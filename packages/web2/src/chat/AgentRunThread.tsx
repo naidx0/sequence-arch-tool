@@ -35,6 +35,7 @@ import { AsciiSpinner } from '../shell2/AsciiSpinner';
 import { ChatStatus } from './ChatStatus';
 import { keptOpen, resetKeptOpen } from './keptOpen';
 import { RunLiveStatus } from './RunLiveStatus';
+import { ShowWhatItRead } from './ShowWhatItRead';
 import { isStarting, RunWatchdog, watchdogLevel } from './RunWatchdog';
 import { byteSize, fetchStreamBody, withStringAt, type CappedBody } from './cappedBody';
 import { anchorRowTop } from './transcriptNav';
@@ -46,6 +47,7 @@ import { splitSubagent, SUBAGENT_REVEAL_EVENT, subagentAnchor } from '../agents/
 import { subagentLabel } from './subagentLabel';
 import { foldSummary, splitToolTitle, unwrapShell } from './commandLabel';
 
+import { coverageFromRun, type GraphFacts } from './coverageLine';
 import './agentRun.css';
 import './toolRows.css';
 import './subagent.css';
@@ -971,6 +973,7 @@ export function RunFoot({ run, onRetry, onBuild, onAskAgain, onStop = (r) => age
       ) : null}
       <RecoveryCard run={run} onRetry={onRetry} />
       <AskLedgerChip run={run} onAskAgain={onAskAgain} />
+      <ShowWhatItRead run={run} />
     </>
   );
 }
@@ -985,8 +988,11 @@ export function AgentRunView({
   onAskAgain,
   onApply,
   onQuestion,
+  graph,
 }: {
   run: AgentRun;
+  /** The scanned services, for the coverage line under a finished run. */
+  graph?: GraphFacts | null;
   onAskAgain?: (run: AgentRun, text: string) => void;
   now: number;
   repoRoot: string | null;
@@ -999,12 +1005,18 @@ export function AgentRunView({
   onBuild?: (run: AgentRun) => void;
 }) {
   const merged = mergedApprovals(run);
+  const coverage = coverageFromRun(run, graph ?? null);
   return (
     <article id={`agrun-${run.id}`} className="s2-run" data-status={run.status} data-testid="agent-run" aria-label={`Agent run: ${run.prompt}`}>
       <RunHead run={run} now={now} />
       {runGroups(run, merged).map(({ key, group }) => (
         <RunGroup key={key} run={run} group={group} merged={merged} now={now} repoRoot={repoRoot} onAnswer={onAnswer} onApply={onApply} onQuestion={onQuestion} />
       ))}
+      {coverage ? (
+        <p className="coverage" data-testid="chat-coverage">
+          {coverage}
+        </p>
+      ) : null}
       <RunFoot run={run} onRetry={onRetry} onBuild={onBuild} onAskAgain={onAskAgain} />
     </article>
   );
@@ -1019,8 +1031,10 @@ export function AgentRunsList({
   onBuild,
   onAskAgain,
   onApply,
+  graph,
 }: {
   runs: readonly AgentRun[];
+  graph?: GraphFacts | null;
   onAskAgain?: (run: AgentRun, text: string) => void;
   repoRoot: string | null;
   onAnswer: (runId: string, requestId: string, d: ApprovalAnswer) => void;
@@ -1033,7 +1047,7 @@ export function AgentRunsList({
   return (
     <>
       {runs.map((r) => (
-        <AgentRunView key={r.id} run={r} now={now} repoRoot={repoRoot} onAnswer={onAnswer} onRetry={onRetry} onBuild={onBuild} onAskAgain={onAskAgain} onApply={onApply} />
+        <AgentRunView key={r.id} run={r} now={now} repoRoot={repoRoot} onAnswer={onAnswer} onRetry={onRetry} onBuild={onBuild} onAskAgain={onAskAgain} onApply={onApply} graph={graph} />
       ))}
     </>
   );

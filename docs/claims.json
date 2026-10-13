@@ -1,0 +1,3030 @@
+{
+  "$comment": "The public-claim registry (plan 0.1). One entry per claim made in README, PUBLIC-README, release notes, the site and in-app copy. Seeded from the claims audit of integrate/0.1.7 @ 273c8f43 (133+ rows) and updated as claims are built. Checked by tools/ci/claims.test.mjs: every code symbol exists, every tests file exists, known-false phrases fail. status: real = implemented, wired, on; partial = part has no code or holds on one engine only (gap says which); off = built but default off. engines: builtin = Sequence's own model, acp = Claude Code / Codex.",
+  "snapshot": "integrate/0.1.7 @ 273c8f43, re-based on 8095ed14",
+  "claims": [
+    {
+      "id": "A1",
+      "area": "agents",
+      "text": "Run Claude Code, Codex or a model on your own computer, in the same app. / Pick any model and any agent",
+      "sources": [
+        "site/src/components/lt/Story.tsx:93",
+        "Hero.tsx:37",
+        "site/index.html:9",
+        "sites/…/sequence-page.tsx:27"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/acp/src/client.ts",
+        "packages/acp/src/codexAppServer.ts",
+        "packages/analyzer/src/server/provider.ts",
+        "packages/analyzer/src/server/agentsStore.ts",
+        "packages/analyzer/src/cli.ts"
+      ],
+      "tests": [
+        "packages/acp/src/test/client.test.ts",
+        "packages/acp/src/test/codex-app-server.test.ts",
+        "packages/analyzer/src/test/local-providers.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A2",
+      "area": "agents",
+      "text": "Claude Code: Sets itself up the first time you use it. Sign in once. / Claude sets itself up the first time you use it. There is no separate install step.",
+      "sources": [
+        "Story.tsx:100",
+        "docs/releases/v0.1.4.md:10,15"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/claudeCli.ts#resolveClaudeExecutable",
+        "packages/analyzer/src/server/claudeCli.ts#claude",
+        "packages/analyzer/src/server/claudeBridgeInstall.ts",
+        "packages/analyzer/src/server/claudeBoot.ts",
+        "packages/analyzer/src/server/providerProbe.ts",
+        "packages/analyzer/src/server/cliInstall.ts",
+        "packages/analyzer/src/server/onboardingRoutes.ts",
+        "packages/web2/src/onboarding/FirstRun.tsx"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/claude-bridge-download.test.ts",
+        "packages/analyzer/src/test/claude-bundled-bridge.test.ts",
+        "packages/analyzer/src/test/cli-install.test.ts",
+        "packages/web2/src/onboarding/installCli.test.tsx"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL. BUILT (plan 4.2): on first run the Install button runs the vendor's own native installer (claude.ai/install.sh or install.ps1; fixed commands, only on the click), shows its last line, and shows a failure verbatim with the copy-hint. Not yet run on a clean Windows user (plan 4.3), and the Settings > Agents pane still shows the copy-paste command with no Install button and no embedded sign-in",
+      "default": "bridge download on (bundling only with SEQUENCE_BUNDLE_CLAUDE_BRIDGE=1, desktop/scripts/prepare-server.mjs:260-272)",
+      "guard": {
+        "topic": "no separate install step",
+        "words": "Claude",
+        "unless": "bridge"
+      }
+    },
+    {
+      "id": "A3",
+      "area": "agents",
+      "text": "Codex: Its approvals and diffs show up in the chat.",
+      "sources": [
+        "Story.tsx:101"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/acp/src/codexAppServer.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/http-codex-approval.test.ts",
+        "packages/acp/src/test/codex-app-server.test.ts",
+        "packages/web2/src/chat/codexChanges.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A4",
+      "area": "agents",
+      "text": "Local models: Ollama, LM Studio or any server on your machine that speaks the OpenAI API format. No key, works offline.",
+      "sources": [
+        "Story.tsx:102",
+        "README.md:100-101"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/localProviders.ts",
+        "packages/analyzer/src/server/localSetup.ts",
+        "packages/analyzer/src/server/modelListRoutes.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/local-providers.test.ts",
+        "packages/analyzer/src/test/local-setup.test.ts",
+        "packages/analyzer/src/test/model-list.test.ts"
+      ],
+      "status": "real",
+      "default": "user picks; nothing configured by default"
+    },
+    {
+      "id": "A5",
+      "area": "agents",
+      "text": "To chat, connect Claude Code or Codex (they run on your own signed-in CLI, including a subscription), a local model, or an API key. Everything binds to 127.0.0.1.",
+      "sources": [
+        "README.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/providerProbe.ts",
+        "packages/analyzer/src/server/claudeCli.ts"
+      ],
+      "tests": [
+        "tools/ci/claims.test.mjs"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "A6",
+      "area": "agents",
+      "text": "Several agents at once: tick two or more agents and Send to N. Each gets its own chat and worktree. Compare, merge one, or discard the rest. / Start a task on several at once and compare.",
+      "sources": [
+        "v0.1.4.md:18",
+        "Story.tsx:93",
+        "sequence-page.tsx:54"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/fanout.ts#createFanout",
+        "packages/analyzer/src/server/fanout.ts#compareFanout",
+        "packages/analyzer/src/server/fanout.ts#chooseFanout",
+        "packages/analyzer/src/server/fanout.ts#discardOthers",
+        "packages/analyzer/src/server/fanoutRoutes.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/fanout.test.ts"
+      ],
+      "status": "real",
+      "default": "on (needs a git repo)"
+    },
+    {
+      "id": "A7",
+      "area": "agents",
+      "text": "Switching a chat to another agent hands it the chat so far, and an agent you switch back to is caught up on what it missed. A one-line note in the chat says so for the agent. When you switch to the built-in model, the Claude and Codex replies in this chat go into its history (no note).",
+      "sources": [
+        "v0.1.6.md:5",
+        "sites/…/x-posts.md:20"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/agentHandoff.ts#planHandoff",
+        "packages/analyzer/src/server/agentHandoff.ts#handoffPrompt",
+        "packages/web2/src/agents/handoffNote.ts",
+        "packages/web2/src/agents/savedRuns.ts",
+        "packages/web2/src/chat/askHistory.ts#askHistoryMetaWithRuns",
+        "packages/analyzer/src/explain/explain.ts#parseAskHistoryTurns"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/agent-handoff.test.ts",
+        "packages/web2/src/agents/agentSwitchNotice.test.ts",
+        "packages/web2/src/chat/askHistory.test.ts",
+        "packages/analyzer/src/test/ask-history-agent.test.ts"
+      ],
+      "status": "real",
+      "scopeWords": [
+        "ACP",
+        "agent"
+      ],
+      "default": "on"
+    },
+    {
+      "id": "A8",
+      "area": "agents",
+      "text": "Import old Claude Code and Codex chats from the Workspaces header. Importing the same chat twice opens the same chat.",
+      "sources": [
+        "v0.1.4.md:17",
+        "sequence-page.tsx:56"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/importHistory.ts#listImportable",
+        "packages/analyzer/src/server/importHistory.ts#importSession"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/import-history.test.ts"
+      ],
+      "status": "real",
+      "default": "on (ACP gate)"
+    },
+    {
+      "id": "A9",
+      "area": "agents",
+      "text": "First run can bring your skills from Claude, Codex and Cursor in one click. In-app: Looks in (the tools the server reports).",
+      "sources": [
+        "docs/releases/v0.1.6.md",
+        "packages/web2/src/onboarding/FirstRunSkills.tsx"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/skillsDiscover.ts#defaultPlaces",
+        "packages/analyzer/src/server/skillsDiscover.ts#cursorRuleToSkill",
+        "packages/web2/src/onboarding/FirstRunSkills.tsx#lookedLine"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/skills-discover.test.ts",
+        "packages/web2/src/onboarding/firstRunSkills.test.tsx"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A10",
+      "area": "agents",
+      "text": "Each chat keeps its own agent, model and effort. Switching chats, reloading or restarting brings the right model back",
+      "sources": [
+        "v0.1.7.md:5"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/agents/chatConfig.ts",
+        "packages/desktop/src/main.ts"
+      ],
+      "tests": [
+        "packages/web2/src/agents/chatModelPersistence.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A11",
+      "area": "agents",
+      "text": "Refresh models reads each provider's own model list (Ollama, OpenAI-compatible, Anthropic).",
+      "sources": [
+        "v0.1.6.md:16"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/modelListRoutes.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/model-list.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A12",
+      "area": "agents",
+      "text": "Decision card: when a finished turn ends by asking, or hands over a plan, the chat shows it as a card… Nothing is sent until you press Send. A plan written in words is read too.",
+      "sources": [
+        "v0.1.5.md:10,15"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/chat/decisionModel.ts#detectDecisions",
+        "packages/web2/src/chat/decisionModel.ts#endsAsking",
+        "packages/web2/src/chat/decisionModel.ts#planFromText",
+        "packages/web2/src/chat/decisionSource.ts#latestDecision"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A13",
+      "area": "agents",
+      "text": "Dropped requests are named… the chat says so and offers Ask again. Off by default. Turn it on in Settings, Agents.",
+      "sources": [
+        "v0.1.4.md:20",
+        "in-app AskLedgerSetting.tsx:21-23"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/settings/askLedgerPreference.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/ask-ledger-run-node.test.ts"
+      ],
+      "status": "off",
+      "gap": "OFF (claim says so; ACP chats only; never A/B'd, per askLedgerPreference.ts:4-5)",
+      "default": "OFF (`readAskLedgerMode` returns 'off')",
+      "guard": {
+        "topic": "Ask again",
+        "words": "built-in|local model",
+        "unless": "Claude|Codex|ACP"
+      }
+    },
+    {
+      "id": "A14",
+      "area": "agents",
+      "text": "Type /goal and a task. The agent writes a plan, then works through it one step at a time. / `/goal <text>` starts a long-running run that writes a plan and works it one step per turn. / hand off long tasks",
+      "sources": [
+        "Story.tsx:155-156",
+        "README.md:88",
+        "Hero.tsx:37"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/goalRunner.ts",
+        "packages/analyzer/src/server/goalAgentTurn.ts",
+        "packages/analyzer/src/server/goalAgentTools.ts",
+        "packages/mcp/src/goalTools.ts",
+        "packages/web2/src/v3/useGoalRun.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/goal-runner.test.ts",
+        "packages/analyzer/src/test/goal-plan.test.ts",
+        "packages/analyzer/src/test/goal-routes.test.ts",
+        "packages/analyzer/src/test/goal-store.test.ts",
+        "packages/analyzer/src/test/goal-tools.test.ts",
+        "packages/analyzer/src/test/goal-agent-turn.test.ts",
+        "packages/analyzer/src/test/goal-agent-e2e.test.ts",
+        "packages/mcp/src/test/goalTool.test.ts",
+        "packages/web2/src/v3/useGoalRunAgent.test.tsx"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A15",
+      "area": "agents",
+      "text": "One workflow per chat… the chat's agent can edit the workflow for you.",
+      "sources": [
+        "v0.1.6.md:7"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/workflowsRoutes.ts",
+        "packages/analyzer/src/workflows/workflowStore.ts",
+        "packages/mcp/src/index.ts",
+        "packages/analyzer/src/programRun.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "A16",
+      "area": "agents",
+      "text": "A model chip names the model, a ring shows how much of the context window the last turn used. / Context and Output as the agent reports them",
+      "sources": [
+        "README.md:88,93",
+        "v0.1.7.md:6"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/acp/src/turnUsage.ts"
+      ],
+      "tests": [
+        "packages/acp/src/test/turn-usage.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "F1",
+      "area": "agents",
+      "text": "find_files: a read-only tool for agents. It returns the files a question is about, ranked, with a one-line reason for each. / the top 5 files, each with a reason and a snippet, 800-token budget",
+      "sources": [
+        "v0.1.4.md:24",
+        "site/src/data/advantages.ts FIND_FILES"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/explain/findFiles.ts#findFiles",
+        "packages/analyzer/src/explain/findFiles.ts#reasonLine",
+        "packages/analyzer/src/explain/findFilesHost.ts",
+        "packages/mcp/src/findFilesTool.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/find-files.test.ts",
+        "packages/analyzer/src/test/find-files-shared.test.ts",
+        "packages/mcp/src/test/findFiles.test.ts",
+        "packages/mcp/src/test/s2a-session.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "F2",
+      "area": "agents",
+      "text": "Finds the right files… On 8 repositories it had never seen, a file the real fix changed was in its top five picks 84.9% of the time. Plain grep … managed 51%.",
+      "sources": [
+        "Story.tsx:185",
+        "Plain.tsx:86-113",
+        "site-claims.md:48",
+        "sequence-page.tsx:50"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/explain/askLtr.ts#rankAskFileLtrScored",
+        "packages/analyzer/src/explain/askLtrModel.generated.ts",
+        "packages/analyzer/src/explain/lightgbm.ts",
+        "packages/analyzer/src/explain/findFiles.ts",
+        "packages/analyzer/src/explain/askFileResearch.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/ask-ltr.test.ts",
+        "tools/ci/site-advantages.test.mjs"
+      ],
+      "status": "real",
+      "evidence": {
+        "metric": "hit@5",
+        "n": 8,
+        "baseline": 51,
+        "file": "site/src/data/advantages.ts"
+      },
+      "default": "on (`askLtrEnabled()` unless SEQUENCE_ASK_PICKER=hyb, askFileIndex.ts:541)"
+    },
+    {
+      "id": "F3",
+      "area": "agents",
+      "text": "A small model we trained picks which files to open and hands the agent only those.",
+      "sources": [
+        "site/src/components/bench/Plain.tsx:87"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/mcp/src/index.ts",
+        "packages/analyzer/src/server/agentEvents.ts",
+        "packages/analyzer/src/server/agentHookSettings.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/find-files-first-hook.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL. Only the built-in ask path restricts files (askFileResearch). For Claude sessions started from the Agents panel a PreToolUse hook that answers the first Grep or Glob of a turn with find_files results is BUILT behind the setting findFilesFirst (default OFF; plan 2.6). It adds context; it does not stop the agent searching or limit it to the picked files, Codex has no such hook, and the agent-ab A/B (F1 +0.05 at 1.1x tokens or less) has not been run",
+      "scopeWords": [
+        "built-in"
+      ],
+      "guard": {
+        "topic": "hands the agent only|only those files",
+        "words": "Claude|Codex",
+        "unless": "built-in|own model"
+      },
+      "default": "off (setting findFilesFirst)"
+    },
+    {
+      "id": "F4",
+      "area": "agents",
+      "text": "Sequence's file picker is a trained ranker that reads file contents, history and paths. On 8 held-out repositories it put a file the real fix changed in its top five 84.9% of the time, against 51.0% for grep (internal test; the repositories are not in this tree).",
+      "sources": [
+        "docs/PUBLIC-README.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/explain/askLtr.ts#rankAskFileLtrScored"
+      ],
+      "tests": [
+        "tools/ci/claims.test.mjs",
+        "tools/ci/site-advantages.test.mjs"
+      ],
+      "status": "real",
+      "evidence": {
+        "metric": "hit@5",
+        "n": 8,
+        "baseline": 51,
+        "file": "site/src/data/advantages.ts"
+      }
+    },
+    {
+      "id": "F5",
+      "area": "agents",
+      "text": "It learns from what the agent changes. In each repository the file finder checks which files the agent actually edited, and retrains on that. It switches to the new version only if it tests no worse than the old one. All of it stays on your computer.",
+      "sources": [
+        "Story.tsx:190-192",
+        "sequence-page.tsx:32",
+        "maxnaid projects page"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/explain/findFilesLearn.ts#createFindFilesLearner",
+        "packages/analyzer/src/explain/ltrTrain.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/find-files.test.ts"
+      ],
+      "status": "real",
+      "default": "on (off only with SEQUENCE_FIND_FILES_LEARN=0)"
+    },
+    {
+      "id": "L1",
+      "area": "agents",
+      "text": "It learns from failures too. When a request keeps going wrong (asked twice, stopped, rewritten, or reported not done), Sequence proposes a short note for the repository, quoting those turns. You accept or dismiss it. Accepted notes go into later prompts; a note after which those failures come back more often is flagged for you and left out of later prompts.",
+      "sources": [
+        "Story.tsx:195-197",
+        "site/index.html:9",
+        "sequence-page.tsx:32",
+        "maxnaid"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/harness/refineSignals.ts#recordTurn",
+        "packages/analyzer/src/harness/refineCandidates.ts#qualifies",
+        "packages/analyzer/src/harness/learningLoop.ts#runSignalLoop",
+        "packages/analyzer/src/harness/learningLoop.ts#runLearningLoop",
+        "packages/analyzer/src/harness/refineOutcome.ts#evaluateOutcome",
+        "packages/analyzer/src/harness/refineOutcome.ts#worseNoteIds"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/refineSignals.test.ts",
+        "packages/analyzer/src/test/learningLoop.test.ts",
+        "packages/analyzer/src/test/refineNotes.test.ts",
+        "packages/web2/src/chat/refineNoteCard.test.tsx"
+      ],
+      "status": "real",
+      "default": "proposals on; auto-add off"
+    },
+    {
+      "id": "L2",
+      "area": "agents",
+      "text": "Refine notes: after work that fell short, the app can propose a short note for your project. Nothing is added until you Accept. Adding notes without asking is off by default.",
+      "sources": [
+        "docs/releases/v0.1.4.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/agentTurnRuntime.ts#runSignalLoop"
+      ],
+      "tests": [
+        "tools/ci/claims.test.mjs"
+      ],
+      "status": "real",
+      "default": "proposals ON"
+    },
+    {
+      "id": "L3",
+      "area": "agents",
+      "text": "Accept adds one line to `.sequence/memory/NOTES.md`. Undo removes that line. Nothing is written without an Accept.",
+      "sources": [
+        "v0.1.4.md:23"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/harness/refineApply.ts#acceptProposal",
+        "packages/analyzer/src/harness/refineApply.ts#undoProposal"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/refineNotes.test.ts",
+        "packages/analyzer/src/test/refineLoop.test.ts"
+      ],
+      "status": "real",
+      "default": "Auto off"
+    },
+    {
+      "id": "L4",
+      "area": "agents",
+      "text": "Add notes without asking — Applies to every project. Even on, a note in the agent's words still waits for you.",
+      "sources": [
+        "web2 settings/AgentMapSetting.tsx:125-126"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/askAgentMap.ts",
+        "packages/analyzer/src/harness/learningLoop.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/refineLoop.test.ts"
+      ],
+      "status": "off",
+      "gap": "OFF (as labelled; no plan needed)",
+      "default": "OFF"
+    },
+    {
+      "id": "M1",
+      "area": "agents",
+      "text": "Settings Memory: What carries between turns and chats; a new session clears the transcript, not the repo notes or the finder's learning. The counts are live from GET /api/memory/summary.",
+      "sources": [
+        "web2 settings/settingsSections.ts:196-210"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/settings/settingsFactsLoad.ts",
+        "packages/web2/src/settings/MemorySetting.tsx",
+        "packages/analyzer/src/server/memorySummary.ts#memorySummary"
+      ],
+      "tests": [
+        "packages/web2/src/settings/settingsSections.test.ts",
+        "packages/web2/src/settings/memorySetting.test.tsx",
+        "packages/analyzer/src/test/memory-summary.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "T1",
+      "area": "agents",
+      "text": "Only the relevant slice of the map goes to the model / A flat cost, however big the codebase is… Sequence answers the same question from 1,887. / Save tokens: A question is answered from one slice of the map / a question about the code costs about 3,500 tokens at any repository size",
+      "sources": [
+        "PUBLIC-README.md:35,45-47,57-64",
+        "sequence-page.tsx:30",
+        "maxnaid projects page (text)",
+        "bench Plain.tsx:27-54"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/askPipeline.ts",
+        "packages/analyzer/src/explain/askFileResearch.ts",
+        "tools/bench/agent-context-bench.mjs",
+        "tools/bench/lib/agent-arm-tokens.mjs"
+      ],
+      "tests": [
+        "tools/ci/agent-arm-tokens.test.mjs"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL. True only for the built-in model's prompt. Claude and Codex chats get no slice, and the agent A/B shows 4.6x more tokens with Sequence. \"At any repository size\" for \"a question\" in general overreaches. The agent arm of agent-context-bench (per-question input tokens as the agent reports them, 4 repo sizes, plan 2.7) is BUILT and its plumbing proven with a mock agent; the live numbers are not yet measured or published",
+      "scopeWords": [
+        "built-in model",
+        "built-in"
+      ],
+      "default": "on",
+      "guard": {
+        "topic": "3,?500 tokens|flat cost|one slice of the map",
+        "words": "Claude|Codex",
+        "unless": "built-in|own model"
+      }
+    },
+    {
+      "id": "T2",
+      "area": "agents",
+      "text": "Include the architecture map in the agent's context: the map is about N tokens, sent with every question to Sequence's own model. Claude and Codex read it through the map tool when they need it. Also send it to Claude and Codex (off by default): about N tokens on the first message of each chat thread, and again when a rescan changes the map.",
+      "sources": [
+        "packages/web2/src/settings/AgentMapSetting.tsx"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/askAgentMap.ts#agentMapLinesFor",
+        "packages/analyzer/src/server/askAgentMap.ts#agentMapBlockForThread"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/acp-agent-map.test.ts",
+        "packages/web2/src/settings/agentMapSetting.test.tsx",
+        "packages/web2/src/settings/boardToolsSetting.test.tsx"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL. The built-in model gets the map with every question. Claude and Codex do not receive it unless they call the map tool, or the person turns on Also send it to Claude and Codex (mapToAgents, off by default until the A/B shows it helps).",
+      "scopeWords": [
+        "Sequence's own model",
+        "built-in model"
+      ],
+      "default": "ON",
+      "guard": {
+        "topic": "architecture map|the map is about",
+        "words": "Claude|Codex",
+        "unless": "map tool|through the map|not yet|next|off until|also send"
+      }
+    },
+    {
+      "id": "T3",
+      "area": "agents",
+      "text": "Give coding agents every board tool: the count and the listing tokens come from the tool registry, not from typed copy.",
+      "sources": [
+        "packages/web2/src/settings/AgentMapSetting.tsx"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/mcp/src/toolListing.ts#toolsSummary",
+        "packages/mcp/src/toolListing.ts#toolListingTokens",
+        "packages/analyzer/src/server/askAgentMap.ts#handleAgentSettingsRoute",
+        "packages/analyzer/src/server/toolsListing.ts#readToolsListing",
+        "packages/web2/src/settings/AgentMapSetting.tsx#boardToolsStatus"
+      ],
+      "tests": [
+        "packages/mcp/src/test/toolListing.test.ts",
+        "packages/analyzer/src/test/agent-settings-claims.test.ts",
+        "packages/web2/src/settings/boardToolsSetting.test.tsx",
+        "tools/ci/claims.test.mjs"
+      ],
+      "status": "real",
+      "default": "OFF"
+    },
+    {
+      "id": "T4",
+      "area": "agents",
+      "text": "every answer from the built-in model cites file and line or says what was not read / a coverage line under each answer, from any engine, says how much of the map it actually drew on",
+      "sources": [
+        "README.md:101",
+        "PUBLIC-README.md:54-57"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/chat/coverageLine.ts",
+        "packages/web2/src/chat/transcriptModel.ts",
+        "packages/web2/src/chat/coverageLine.ts#coverageFromRun",
+        "packages/analyzer/src/server/agentReadPaths.ts#readPathsOf"
+      ],
+      "tests": [
+        "packages/web2/src/chat/coverageLine.test.ts",
+        "packages/web2/src/chat/AgentRunThread.test.tsx",
+        "packages/analyzer/src/test/agent-read-paths.test.ts"
+      ],
+      "status": "real",
+      "scopeWords": [
+        "own model",
+        "built-in model",
+        "built-in"
+      ],
+      "default": "on"
+    },
+    {
+      "id": "P1",
+      "area": "agents",
+      "text": "Sequence ships an MCP server with `who_calls`, `impact` and `path_between`, so Codex, Claude Code or your own agent can ask the map",
+      "sources": [
+        "PUBLIC-README.md:37,50-51"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/sequenceMcp.ts"
+      ],
+      "tests": [
+        "packages/mcp/src/test/path-between.test.ts",
+        "packages/mcp/src/test/s2a-session.test.ts"
+      ],
+      "status": "real",
+      "default": "standalone all / in-app core"
+    },
+    {
+      "id": "P2",
+      "area": "agents",
+      "text": "Model. Any OpenAI-compatible endpoint. By default that is a small model in Ollama on your own machine",
+      "sources": [
+        "PUBLIC-README.md:105-106"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/localSetup.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/local-setup.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL (\"default\" here means the measurement setup, not a shipped default)",
+      "default": "none"
+    },
+    {
+      "id": "P3",
+      "area": "agents",
+      "text": "The graph is built from the code rather than described to the model, which is why an agent given it drifts less than one given a summary.",
+      "sources": [
+        "sites/ss-maxnaid/…/docs/sequence/index.html (text line \"It runs locally…\")"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "MISSING (no measurement)"
+    },
+    {
+      "id": "A17",
+      "area": "agents",
+      "text": "small local helper models that recognise your drawings and pick which files to open",
+      "sources": [
+        "site/index.html:9",
+        "sequence-page.tsx:31",
+        "Story.tsx:170-171"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/explain/lightgbm.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/ask-ltr.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U01",
+      "area": "ux",
+      "text": "Windows: `Sequence Setup 0.1.4.exe` (installer) or `Sequence-0.1.4-win.zip` (portable).",
+      "sources": [
+        "README.md:44",
+        "site/src/data/release.ts:81-90,128-132",
+        "v0.1.4.md:76"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/electron-builder.yml",
+        ".github/workflows/release.yml"
+      ],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U02",
+      "area": "ux",
+      "text": "macOS: a `.dmg` or a `.zip`, for Apple silicon and for Intel.",
+      "sources": [
+        "README.md:45"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/electron-builder.yml",
+        ".github/workflows/release.yml",
+        "packages/desktop/scripts/adhoc-sign.mjs"
+      ],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U03",
+      "area": "ux",
+      "text": "Linux: an AppImage or a deb. / site Linux button AppImage, 117 MB",
+      "sources": [
+        "README.md:46",
+        "release.ts:100-119",
+        "site-claims.md:65-66"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/electron-builder.yml",
+        ".github/workflows/release.yml"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL (built, never launch-tested)"
+    },
+    {
+      "id": "U04",
+      "area": "ux",
+      "text": "`SHASUMS256.txt` on the same page lists the SHA-256 of every file.",
+      "sources": [
+        "README.md:48",
+        "v0.1.4.md:79"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        ".github/workflows/release.yml"
+      ],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U05",
+      "area": "ux",
+      "text": "Each build was downloaded and launched on a fresh machine before release. / 4 of 4 builds install and launch",
+      "sources": [
+        "docs/PUBLIC-README.md:116-117",
+        "report/README.md:33,155-164"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "tools/release/download-smoke.mjs",
+        ".github/workflows/download-smoke.yml"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL (not a release gate, no Linux, stale evidence)"
+    },
+    {
+      "id": "U06",
+      "area": "ux",
+      "text": "The installers are not code-signed or notarized.",
+      "sources": [
+        "README.md:50-56",
+        "Get.tsx:36"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/electron-builder.yml",
+        ".github/workflows/release.yml"
+      ],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U07",
+      "area": "ux",
+      "text": "One file for your system. No Node, no Docker, no account.",
+      "sources": [
+        "site/src/components/lt/Get.tsx:35",
+        "release.yml:221",
+        "x-posts.md:32"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/src/main.ts",
+        "packages/desktop/scripts/prepare-server.mjs",
+        "packages/analyzer/src/server/cliInstall.ts",
+        "packages/analyzer/src/server/onboardingRoutes.ts",
+        "packages/web2/src/onboarding/FirstRun.tsx"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/cli-install.test.ts",
+        "packages/web2/src/onboarding/installCli.test.tsx"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: true for the app and the scan. Claude Code and Codex: the first-run Install button now runs their own native installers (plan 4.2), with no Node needed. Not yet run on a clean Windows user (plan 4.3), and the Settings > Agents pane still shows the copy-paste command with no Install button and no embedded sign-in"
+    },
+    {
+      "id": "U08",
+      "area": "ux",
+      "text": "Claude Code: Sets itself up the first time you use it. Sign in once. / Claude sets itself up the first time you use it. There is no separate install step.",
+      "sources": [
+        "Story.tsx:100",
+        "site-claims.md:20",
+        "v0.1.4.md:10,15",
+        "x-posts.md:40"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/claudeBridgeInstall.ts#createBridgeProvisioner",
+        "packages/analyzer/src/server/providerProbe.ts#provisionerFor",
+        "packages/analyzer/src/server/providerProbe.ts#chooseBridge",
+        "packages/analyzer/src/server/claudeCli.ts#resolveClaudeExecutable",
+        "packages/analyzer/src/server/cliInstall.ts",
+        "packages/analyzer/src/server/onboardingRoutes.ts",
+        "packages/web2/src/onboarding/FirstRun.tsx"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/claude-bridge-download.test.ts",
+        "packages/analyzer/src/test/claude-bundled-bridge.test.ts",
+        "packages/analyzer/src/test/cli-install.test.ts",
+        "packages/web2/src/onboarding/installCli.test.tsx"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL. BUILT (plan 4.2): on first run the Install button runs the vendor's own native installer (claude.ai/install.sh or install.ps1; fixed commands, only on the click), shows its last line, and shows a failure verbatim with the copy-hint. Not yet run on a clean Windows user (plan 4.3), and the Settings > Agents pane still shows the copy-paste command with no Install button and no embedded sign-in",
+      "default": "auto on first probe"
+    },
+    {
+      "id": "U09",
+      "area": "ux",
+      "text": "The app fetches a pinned 8.2 MB bridge the first time it needs it and shows its progress.",
+      "sources": [
+        "site/src/data/content.ts:82 (the `ALSO_014` block, not on the live landing)",
+        "release.ts:40"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/claudeBridgeInstall.ts#verifyIntegrity",
+        "packages/analyzer/src/server/claudeBridgeClosure.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/claude-bridge-download.test.ts"
+      ],
+      "status": "real",
+      "default": "auto"
+    },
+    {
+      "id": "U10",
+      "area": "ux",
+      "text": "Proxies work, and failures say why.",
+      "sources": [
+        "v0.1.4.md:15"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/claudeBridgeInstall.ts#proxyChoice",
+        "packages/analyzer/src/server/claudeBridgeInstall.ts#plainReason"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/claude-bridge-download.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: env-var proxies only. A Windows system/PAC proxy (Settings > Proxy) is never read, and an NTLM 407 is reported, not passed",
+      "default": "env-driven"
+    },
+    {
+      "id": "U11",
+      "area": "ux",
+      "text": "Sign in once during setup. The prompts that repeated before now ask once.",
+      "sources": [
+        "v0.1.4.md:5",
+        "Story.tsx:100"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/onboarding/signInState.ts#settleSignIn",
+        "packages/web2/src/onboarding/signInState.ts#SETTLE_BUDGET_MS",
+        "packages/web2/src/onboarding/signInState.ts#QUIET_MS"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL: never run against a real signed-out CLI, which v0.1.4.md:64 and the maxnaid page admit. The server half of the Ready path is skipped on Windows (U08)",
+      "default": "on"
+    },
+    {
+      "id": "U12",
+      "area": "ux",
+      "text": "Claude Code: Sign in with your Claude plan / Codex: Sign in with ChatGPT",
+      "sources": [
+        "FirstRun.tsx:46-47"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/providerProbe.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on click"
+    },
+    {
+      "id": "U13",
+      "area": "ux",
+      "text": "To chat, connect Claude Code or Codex (they run on your own signed-in CLI, including a subscription), a local model, or an API key.",
+      "sources": [
+        "README.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/providerProbe.ts"
+      ],
+      "tests": [
+        "tools/ci/claims.test.mjs"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U14",
+      "area": "ux",
+      "text": "Connecting, signing in, installing and updating agents is done with buttons, or a ready prompt for your agent in chat.",
+      "sources": [
+        "v0.1.7.md:14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/cliInstall.ts",
+        "packages/analyzer/src/server/onboardingRoutes.ts",
+        "packages/web2/src/onboarding/FirstRun.tsx"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/cli-install.test.ts",
+        "packages/web2/src/onboarding/installCli.test.tsx"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: connect, bridge install and (first run, plan 4.2) agent CLI install are buttons. In Settings > Agents the CLI install is still a command to copy, and Settings sign-in is a command to copy; no live check on a clean Windows user yet (plan 4.3)"
+    },
+    {
+      "id": "U15",
+      "area": "ux",
+      "text": "First run can bring your skills from Claude, Codex and Cursor in one click. In-app: Looks in (the tools the server reports).",
+      "sources": [
+        "docs/releases/v0.1.6.md",
+        "packages/web2/src/onboarding/FirstRunSkills.tsx"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/skillsDiscover.ts#defaultPlaces",
+        "packages/analyzer/src/server/skillsDiscover.ts#cursorRuleToSkill",
+        "packages/web2/src/onboarding/FirstRunSkills.tsx#lookedLine"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/skills-discover.test.ts",
+        "packages/web2/src/onboarding/firstRunSkills.test.tsx"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U16",
+      "area": "ux",
+      "text": "By default that is a small model in Ollama on your own machine.",
+      "sources": [
+        "docs/PUBLIC-README.md:105-106"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/repoServer.ts#loadAiConfig",
+        "packages/analyzer/src/server/localSetup.ts",
+        "packages/web2/src/onboarding/FirstRun.tsx",
+        "packages/web2/src/onboarding/FirstRunModels.tsx#LocalPanel"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/local-setup.test.ts",
+        "packages/web2/src/onboarding/firstRunSteps.test.tsx"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: First Run preselects an installed Ollama model that fits this machine (saved only on Use it); with no Ollama or no model installed there is no default, and nothing is downloaded without the person choosing it",
+      "default": "a fitting installed Ollama model is preselected on First Run; otherwise none"
+    },
+    {
+      "id": "U17",
+      "area": "ux",
+      "text": "Paste one prompt into Claude Code or Codex on your Mac and it downloads the latest build, checks the SHA-256, installs ... clears the quarantine flag ... opens it.",
+      "sources": [
+        "v0.1.7.md:29",
+        "MacAgent.tsx:41-42"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "site/src/data/macPrompt.ts",
+        "docs/install/mac-agent-prompt.md",
+        ".github/workflows/release.yml"
+      ],
+      "tests": [
+        "site/tests/mac-prompt.test.mjs"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U18",
+      "area": "ux",
+      "text": "First run: four options, then Start chatting; Pick a folder. Sequence maps it on your machine.",
+      "sources": [
+        "FirstRun.tsx:1-13,44-49",
+        "Get.tsx:37"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/repoServer.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "shown until an agent is connected or skipped"
+    },
+    {
+      "id": "U20",
+      "area": "ux",
+      "text": "Settings shows the version and build, checks daily, and installs an update in one click.",
+      "sources": [
+        "v0.1.5.md:7,14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/appUpdate.ts#install",
+        "packages/analyzer/src/server/appUpdate.ts#launchInstaller",
+        "packages/analyzer/src/server/appUpdate.ts#startDailyUpdateCheck",
+        "packages/analyzer/src/server/appUpdateRoutes.ts",
+        "packages/analyzer/src/cli.ts",
+        "packages/web2/src/settings/versionClient.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/app-update.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL. (1) Windows runs the NSIS installer with its wizard: `oneClick: false` (electron-builder.yml:145) and no `/S` (appUpdate.ts:721-723). (2) macOS opens the DMG and asks the person to drag (:725-727). (3) Linux saves an AppImage and asks the person to run it (:729-740); deb installs are not handled. (4) A Windows portable zip copy is offered the NSIS installer (pickAsset :133-136), which installs a second, separate copy. (5) The first automatic check runs 24 h after launch (setInterval only)",
+      "default": "on (`SEQUENCE_NO_UPDATE_CHECK=1` env opt-out only)"
+    },
+    {
+      "id": "U21",
+      "area": "ux",
+      "text": "The app can tell you when a new version is out.",
+      "sources": [
+        "v0.1.5.md:7"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/settings/versionModel.ts"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL (no notice anywhere a person looks without opening Settings)"
+    },
+    {
+      "id": "U22",
+      "area": "ux",
+      "text": "The installer is checked against the release's SHA-256 list before it runs.",
+      "sources": [
+        "v0.1.5.md:14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/appUpdate.ts#parseShasums",
+        "packages/analyzer/src/server/appUpdate.ts#verifyChecksum"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/app-update.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U23",
+      "area": "ux",
+      "text": "Only the installed desktop app offers to run it. Any other copy gets a link to the release page and the reason.",
+      "sources": [
+        "v0.1.5.md:14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/appUpdate.ts#desktop",
+        "packages/desktop/src/main.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/app-update.test.ts"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U24",
+      "area": "ux",
+      "text": "Release notes for each version are shown inside the app. / What's new with Read more",
+      "sources": [
+        "v0.1.5.md:14",
+        "v0.1.6.md:15"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/appUpdate.ts#readReleaseNotes",
+        "packages/desktop/scripts/prepare-server.mjs"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U25",
+      "area": "ux",
+      "text": "Updates are checked against the release's SHA-256 list but are not yet signed. Signature checking is built and stays off until the release key is pinned.",
+      "sources": [
+        "v0.1.5.md:45"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/appUpdate.ts#verifySignature",
+        "docs/updater-signing.md",
+        ".github/workflows/release.yml"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/app-update.test.ts"
+      ],
+      "status": "off",
+      "gap": "OFF (honestly stated)",
+      "default": "**off**"
+    },
+    {
+      "id": "U26",
+      "area": "ux",
+      "text": "Updates also understand four-part versions such as 0.1.7.1.",
+      "sources": [
+        "v0.1.7.md:17"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/appUpdate.ts#parse",
+        "packages/analyzer/src/server/appUpdate.ts#compareVersions",
+        "packages/analyzer/src/server/appUpdateRoutes.ts",
+        "packages/desktop/src/main.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/app-update.test.ts"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U27",
+      "area": "ux",
+      "text": "A failed update offers Ask the agent to help, which drafts a prompt with the error and the links.",
+      "sources": [
+        "v0.1.6.md:15"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "real",
+      "default": "on failure"
+    },
+    {
+      "id": "U30",
+      "area": "ux",
+      "text": "Switching chats inside the same workspace is faster.",
+      "sources": [
+        "v0.1.4.md:33"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "tools/measure/switch-bench.mjs"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL (unquantified claim; the tool to quantify it exists)"
+    },
+    {
+      "id": "U31",
+      "area": "ux",
+      "text": "Switching workspaces keeps the page and its running chats: the page no longer reloads, and coming back to a repo that has not changed is instant on the server.",
+      "sources": [
+        "v0.1.5.md:31"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/sessions/workspaceSwitch.ts#switchWorkspaceInPlace",
+        "packages/web2/src/sessions/workspaceEvents.ts",
+        "packages/web2/src/state/store.ts",
+        "packages/analyzer/src/server/repoServer.ts",
+        "packages/analyzer/src/server/repoWatch.ts"
+      ],
+      "tests": [
+        "packages/web2/src/sessions/workspaceSwitch.test.ts",
+        "packages/analyzer/src/test/repo-contexts.test.ts"
+      ],
+      "status": "real",
+      "default": "on (seq.inPlaceSwitch=0 turns it off)"
+    },
+    {
+      "id": "U32",
+      "area": "ux",
+      "text": "Several chats at once across workspaces. Three agents in two workspaces can stream together, and switching between them leaves the others running.",
+      "sources": [
+        "v0.1.5.md:17"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/agentTurnRuntime.ts",
+        "packages/analyzer/src/server/agentChatStore.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U33",
+      "area": "ux",
+      "text": "A chat turn keeps running when you reload or open another workspace. Come back and the page picks the turn up where it is, and Stop still works.",
+      "sources": [
+        "v0.1.5.md:6"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [
+        "packages/web2/src/agents/agentRunsStopRace.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U34",
+      "area": "ux",
+      "text": "Site speed figures (6.5 s cold scan, 0.55 s cached; 14.0 s → 7.8 s answers)",
+      "sources": [
+        "site-claims.md:109-116"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "out of scope here (scan and answers belong to the other workers). No public boot-time or load-time claim exists; the internal ~947 ms launch-to-composer (docs/speed-slice-plan.md:3) is not published"
+    },
+    {
+      "id": "U40",
+      "area": "ux",
+      "text": "A restart no longer loses a turn. An interrupted turn shows Continue.",
+      "sources": [
+        "v0.1.4.md:9,16",
+        "content.ts:86",
+        "bastion sequence-page.tsx:29,53"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/agentChatStore.ts#listInterruptedChats",
+        "packages/web2/src/agents/savedRuns.ts#interrupted",
+        "packages/web2/src/agents/savedRuns.ts#CONTINUE_PROMPT",
+        "packages/analyzer/src/server/repoServer.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U41",
+      "area": "ux",
+      "text": "Queued prompts come back held, with Resume.",
+      "sources": [
+        "v0.1.4.md:16",
+        "content.ts:86"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/composer/promptQueue.ts#QUEUE_STORAGE_PREFIX",
+        "packages/web2/src/boot/prefsMirror.ts#startPrefsMirror",
+        "packages/analyzer/src/server/uiPrefs.ts#patchUiPrefs"
+      ],
+      "tests": [
+        "packages/web2/src/boot/prefsMirror.test.ts",
+        "packages/analyzer/src/test/ui-prefs.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U42",
+      "area": "ux",
+      "text": "Import old Claude Code and Codex chats from the Workspaces header. Importing the same chat twice opens the same chat. / Your next message continues it. The CLI folders are not changed.",
+      "sources": [
+        "v0.1.4.md:17",
+        "content.ts:90"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/importHistory.ts#listImportable",
+        "packages/analyzer/src/server/importHistory.ts#importSession",
+        "packages/analyzer/src/server/repoServer.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/import-history.test.ts"
+      ],
+      "status": "real",
+      "default": "shown only when a repo is open (`repoPath`), not in the home workspace"
+    },
+    {
+      "id": "U43",
+      "area": "ux",
+      "text": "Edit from here: rewrite an earlier message, and the agent forgets what came after it. Undo lasts until your next send.",
+      "sources": [
+        "v0.1.4.md:8",
+        "README.md:28",
+        "content.ts:74"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/agentRewind.ts#rewindChat",
+        "packages/analyzer/src/server/agentRewind.ts#settleRewind",
+        "packages/analyzer/src/server/agentRewind.ts#SEED_MAX_CHARS",
+        "packages/web2/src/agents/editUndo.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/rewind-e2e.test.ts",
+        "packages/analyzer/src/test/rewind-thread.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U44",
+      "area": "ux",
+      "text": "Open a pull request from a worktree chat. The app writes the title and body, commits, pushes, and opens the PR with `gh`. Files that look like secrets are held back and listed.",
+      "sources": [
+        "v0.1.4.md:19",
+        "content.ts:98"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/prFlow.ts#draftMessages",
+        "packages/analyzer/src/server/prFlow.ts#secretReason",
+        "packages/analyzer/src/server/prFlow.ts#previewPullRequest",
+        "packages/analyzer/src/server/prFlow.ts#openPullRequest",
+        "packages/analyzer/src/server/prRoutes.ts",
+        "packages/analyzer/src/server/repoServer.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/pr-flow.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U45",
+      "area": "ux",
+      "text": "Several agents at once: tick two or more agents and Send to N. Each gets its own chat and worktree. Compare, merge one, or discard the rest.",
+      "sources": [
+        "v0.1.4.md:18",
+        "content.ts:94"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/fanout.ts",
+        "packages/analyzer/src/server/fanoutRoutes.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/fanout.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U46",
+      "area": "ux",
+      "text": "Stop names the turn it stops. A Stop pressed before the server has named the turn waits for the name and then stops that turn.",
+      "sources": [
+        "v0.1.5.md:18"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/agents/agentRuns.ts"
+      ],
+      "tests": [
+        "packages/web2/src/agents/agentRunsStopRace.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U47",
+      "area": "ux",
+      "text": "Background runs ... A chat whose agent is waiting on an approval or a question says 'Needs you'.",
+      "sources": [
+        "v0.1.5.md:16"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U48",
+      "area": "ux",
+      "text": "Search chats finds a chat by its title, its goal, or any words in its turns and agent replies (an In messages group, after three letters).",
+      "sources": [
+        "shell2/SessionPanel.tsx:810-811,834-835",
+        "v3/V3SessionsRail.tsx:1034"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/sessionsSearch.ts#searchChats",
+        "packages/web2/src/shell2/SessionPanel.tsx"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/sessions-search.test.ts",
+        "packages/web2/src/shell2/sessionPanelSearch.test.tsx"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U49",
+      "area": "ux",
+      "text": "Each chat keeps its own agent, model and effort. Switching chats, reloading or restarting brings the right model back.",
+      "sources": [
+        "v0.1.7.md:5"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/agents/chatConfig.ts#chatPick",
+        "packages/web2/src/agents/chatConfig.ts#setChatPick",
+        "packages/web2/src/boot/prefsMirror.ts#startPrefsMirror",
+        "packages/analyzer/src/server/uiPrefs.ts#patchUiPrefs"
+      ],
+      "tests": [
+        "packages/web2/src/agents/chatModelPersistence.test.ts",
+        "packages/web2/src/boot/prefsMirror.test.ts",
+        "packages/analyzer/src/test/ui-prefs.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U50",
+      "area": "ux",
+      "text": "Switching a chat to another agent hands it the chat so far ... A one-line note in the chat says so.",
+      "sources": [
+        "v0.1.6.md:5"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/agentHandoff.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/agent-handoff.test.ts",
+        "packages/web2/src/agents/agentSwitchNotice.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U51",
+      "area": "ux",
+      "text": "Decision card ... Nothing is sent until you press Send.",
+      "sources": [
+        "v0.1.5.md:10,15"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/chat/decisionModel.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U52",
+      "area": "ux",
+      "text": "Turns past 200 stay on disk ... Show older; A damaged chat file is never read as empty.",
+      "sources": [
+        "v0.1.4.md:52-53"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/agentChatStore.ts#readArchivePage",
+        "packages/web2/src/agents/savedRuns.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/agent-chat-store-safety.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U60",
+      "area": "ux",
+      "text": "Theme is a three-way switch.",
+      "sources": [
+        "v0.1.4.md:30"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/settings/themePreference.ts#system",
+        "packages/web2/src/boot/prefsMirror.ts#startPrefsMirror",
+        "packages/analyzer/src/server/uiPrefs.ts#patchUiPrefs"
+      ],
+      "tests": [
+        "packages/web2/src/settings/themePreference.test.ts",
+        "packages/web2/src/boot/prefsMirror.test.ts",
+        "packages/analyzer/src/test/ui-prefs.test.ts"
+      ],
+      "status": "real",
+      "default": "**dark** (:8)"
+    },
+    {
+      "id": "U61",
+      "area": "ux",
+      "text": "The light and dark switch is one quick cross-fade.",
+      "sources": [
+        "v0.1.6.md:26"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/settings/themePreference.ts#switchRoom",
+        "packages/web2/src/settings/themePreference.ts#THEME_FADE_MS",
+        "packages/web2/src/boot/prefsMirror.ts#startPrefsMirror",
+        "packages/analyzer/src/server/uiPrefs.ts#patchUiPrefs"
+      ],
+      "tests": [
+        "packages/web2/src/settings/themePreference.test.ts",
+        "packages/web2/src/boot/prefsMirror.test.ts",
+        "packages/analyzer/src/test/ui-prefs.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U62",
+      "area": "ux",
+      "text": "Interface font (Inter, Geist, IBM Plex Sans, System)",
+      "sources": [
+        "v0.1.6.md:14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/settings/fontPreference.ts",
+        "packages/web2/src/boot/prefsMirror.ts#startPrefsMirror",
+        "packages/analyzer/src/server/uiPrefs.ts#patchUiPrefs"
+      ],
+      "tests": [
+        "packages/web2/src/boot/prefsMirror.test.ts",
+        "packages/analyzer/src/test/ui-prefs.test.ts"
+      ],
+      "status": "real",
+      "default": "Inter"
+    },
+    {
+      "id": "U63",
+      "area": "ux",
+      "text": "Open new surfaces large (the newest surface takes about 75%)",
+      "sources": [
+        "v0.1.6.md:14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/shell2/layoutPrefs.ts#setFocusLarge",
+        "packages/web2/src/boot/prefsMirror.ts#startPrefsMirror",
+        "packages/analyzer/src/server/uiPrefs.ts#patchUiPrefs"
+      ],
+      "tests": [
+        "packages/web2/src/boot/prefsMirror.test.ts",
+        "packages/analyzer/src/test/ui-prefs.test.ts"
+      ],
+      "status": "real",
+      "default": "off"
+    },
+    {
+      "id": "U64",
+      "area": "ux",
+      "text": "The minimum window size is 960 by 640.",
+      "sources": [
+        "v0.1.4.md:35"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/src/main.ts"
+      ],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U65",
+      "area": "ux",
+      "text": "Chat never squeezes a pane below 240 px.",
+      "sources": [
+        "v0.1.5.md:28"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/shell2/layoutPrefs.ts"
+      ],
+      "tests": [
+        "packages/web2/src/shell2/paneEdges015.test.ts"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U66",
+      "area": "ux",
+      "text": "Chat-only view is wider; the reading column stays centred.",
+      "sources": [
+        "v0.1.6.md:13"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U67",
+      "area": "ux",
+      "text": "The desktop app keeps a short log of window closes, crashes and server restarts (keys and tokens hidden), and reloads a crashed page once.",
+      "sources": [
+        "v0.1.7.md:16"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/src/mainLog.ts",
+        "packages/desktop/src/rendererRecovery.ts",
+        "packages/desktop/src/main.ts"
+      ],
+      "tests": [
+        "packages/desktop/src/test/main-log.test.ts",
+        "packages/desktop/src/test/main-log-wiring.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "U70",
+      "area": "ux",
+      "text": "Everything binds to 127.0.0.1; `serve --host` is the opt-out and follows SEQUENCE_BIND_HOST.",
+      "sources": [
+        "README.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/serve.ts#serveGraph",
+        "packages/analyzer/src/serve.ts#serveApp"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/serve-graph-bind.test.ts"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U71",
+      "area": "ux",
+      "text": "The whole thing runs on your machine. Your code leaves it only for a model or agent you connect; without one, the only network calls are a daily update check to GitHub and, the first time Claude is used, the bridge download from npm.",
+      "sources": [
+        "README.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/askAgentMap.ts#updatesCheckEnabled",
+        "packages/analyzer/src/server/appUpdate.ts#startDailyUpdateCheck",
+        "packages/analyzer/src/server/claudeBridgeInstall.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/agent-settings-claims.test.ts",
+        "tools/ci/claims.test.mjs"
+      ],
+      "status": "real",
+      "note": "The update check can be turned off with the updates.check setting or SEQUENCE_NO_UPDATE_CHECK=1. A Settings switch for it is not built yet."
+    },
+    {
+      "id": "U72",
+      "area": "ux",
+      "text": "Your code does not leave the machine unless you connect a cloud model yourself. / Nothing is uploaded.",
+      "sources": [
+        "docs/PUBLIC-README.md:82-83",
+        "maxnaid projects page"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/repoServer.ts"
+      ],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U73",
+      "area": "ux",
+      "text": "Local models: Ollama, LM Studio or any server ... No key, works offline.",
+      "sources": [
+        "Story.tsx:102"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/localProviders.ts",
+        "packages/analyzer/src/server/localSetup.ts",
+        "packages/analyzer/src/server/appUpdate.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/local-providers.test.ts"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U74",
+      "area": "ux",
+      "text": "Version 0.1.6. Free and open source. / Free, no account. / Open source under the MIT licence.",
+      "sources": [
+        "Get.tsx:59,115",
+        "README.md:42",
+        "site-claims.md:62,70"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "U75",
+      "area": "ux",
+      "text": "No hosted free tier. The gateway package exists in the repository; nothing runs behind it.",
+      "sources": [
+        "README.md:155-156"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/freeTierLimit.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "off"
+    },
+    {
+      "id": "U80",
+      "area": "ux",
+      "text": "What's new in 0.1.7 / The current version is 0.1.7.",
+      "sources": [
+        "README.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/desktop/package.json"
+      ],
+      "tests": [
+        "tools/ci/claims.test.mjs"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "U81",
+      "area": "ux",
+      "text": "Current release: 0.1.5. / Download v0.1.5",
+      "sources": [
+        "sites/ss-maxnaid/.../projects/sequence/index.html",
+        "docs/sequence/index.html"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "site/src/data/release.ts"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "The README is fixed. The maxnaid project pages still name 0.1.5; they live in the site repos and are not changed from here."
+    },
+    {
+      "id": "V01",
+      "area": "surfaces",
+      "text": "reads a repository into a live architecture graph with static analysis — no model involved",
+      "sources": [
+        "README.md:5",
+        "PUBLIC-README:22",
+        "index.html:9 \"a live map of your code\""
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/scan.ts",
+        "packages/analyzer/src/server/repoWatch.ts",
+        "packages/web2/src/canvas/layout.ts",
+        "packages/web2/src/canvas/elk.worker.ts"
+      ],
+      "tests": [
+        "packages/web2/src/canvas/boardRendered.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V02",
+      "area": "surfaces",
+      "text": "Every solid edge on the board traces to a real import, call, route or manifest line. / Every solid line points to a line of code.",
+      "sources": [
+        "README.md:6-7",
+        "site `lt/Story.tsx:126`",
+        "sites site-claims.md:34",
+        "x-posts.md:11"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/canvas/project.ts",
+        "packages/web2/src/canvas/edgeLines.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V03",
+      "area": "surfaces",
+      "text": "Anything drawn or proposed stays dashed until the scanner finds it in code. / A drawn edge stays a claim until the scanner finds it. / Anything drawn stays a claim until the code proves it.",
+      "sources": [
+        "README.md:7-8",
+        "site `cx/Features.tsx:29`, `lt/Steps.tsx:28`",
+        "`sections/Difference.tsx:53` \"the scanner turns one solid when it finds the import\" (dead section)"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/canvas/inkToEdit.ts",
+        "packages/web2/src/canvas/docSession.ts"
+      ],
+      "tests": [
+        "packages/web2/src/canvas/inkToEdit.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: dashed is true; \"until the scanner finds it\" implies promotion, which does not exist, and a rebase discards drawn edits",
+      "default": "Draw off until pressed"
+    },
+    {
+      "id": "V04",
+      "area": "surfaces",
+      "text": "Ask for a diagram in chat. It lays itself out and animates in. / describe a system in chat and watch it lay itself out / with the text inside the boxes",
+      "sources": [
+        "README.md:20",
+        "site `lt/Story.tsx:116-117`",
+        "maxnaid projects/sequence \"03 Draw on the whiteboard\""
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/boardLayout.ts",
+        "packages/analyzer/src/server/boardTools.ts",
+        "packages/web2/src/whiteboard/agentLayout.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/board-layout.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V05",
+      "area": "surfaces",
+      "text": "Whiteboard and boards lay out top to bottom by default",
+      "sources": [
+        "docs/releases/v0.1.6.md:19"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/boardLayout.ts",
+        "packages/web2/src/canvas/layout.ts",
+        "tools/bench/flow-direction-score.mjs"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/board-layout.test.ts",
+        "tools/ci/flow-direction-score.test.mjs"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: architecture board is TD; whiteboard flows of 1-3 ranks are LR by default (contradicts \"by default\"). Top to bottom for them is BUILT behind the setting boardFlowsTopDown (default OFF, PUT /api/agent-settings; plan 1.6). It stays off until the screenshot A/B (40 sealed asks, tools/bench/flow-direction-score.mjs) says TD wins by more than 2 SE; not yet run",
+      "default": "flows of <=3 ranks run left to right"
+    },
+    {
+      "id": "V06",
+      "area": "surfaces",
+      "text": "Point at a box … right-click or press Ctrl+Enter. The chat gets a chip naming it and a cropped snapshot.",
+      "sources": [
+        "README.md:23",
+        "site `lt/Story.tsx:139-140`",
+        "content.ts:49",
+        "x-posts.md:14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/askInPlace/sendBoardAsk.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V07",
+      "area": "surfaces",
+      "text": "Click a node and it becomes a chip in the composer.",
+      "sources": [
+        "README.md:89",
+        "site content.ts:116"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V08",
+      "area": "surfaces",
+      "text": "The architecture board has one view dropdown / One view menu on the map",
+      "sources": [
+        "v0.1.4:34",
+        "content.ts:53"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/canvas/views/viewModel.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "Map"
+    },
+    {
+      "id": "V09",
+      "area": "surfaces",
+      "text": "+N% more questions answered right from the Grid view; Finding the riskiest parts … Hotspots view",
+      "sources": [
+        "site benchmarks `bench/Sections.tsx:518-551`",
+        "data `bench.ts:91-97`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "tools/measure/board-views-ab.mjs",
+        "lab/log.md"
+      ],
+      "tests": [
+        "tools/measure/board-views-ab.test.mjs"
+      ],
+      "status": "real",
+      "default": "off until picked"
+    },
+    {
+      "id": "V10",
+      "area": "surfaces",
+      "text": "40–0 for charts that name each hop",
+      "sources": [
+        "site benchmarks `Sections.tsx:524-526`",
+        "`report/README.md:150`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL: the measured chart is real but users of 0.1.7 cannot see it"
+    },
+    {
+      "id": "V11",
+      "area": "surfaces",
+      "text": "Whiteboard: A rough box or line you draw is turned into a clean one that the agent can read.",
+      "sources": [
+        "site `lt/Story.tsx:124`",
+        "site-claims.md:28",
+        "x-posts.md:23"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/whiteboard/snapSession.ts",
+        "packages/web2/src/whiteboard/snapShape.ts",
+        "packages/web2/src/whiteboard/snapPreference.ts"
+      ],
+      "tests": [
+        "packages/web2/src/whiteboard/snapUnits.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: by default it is offered, not turned; loose lines are only offered even in Auto; the marketing kit itself notes lines stayed wobbly (`captions.md:11`)",
+      "default": "**suggest**: nothing changes until Enter/click; offer expires (`OFFER_MS`)"
+    },
+    {
+      "id": "V12",
+      "area": "surfaces",
+      "text": "Turns a hand-drawn shape into a clean box or arrow. On 530 diagrams it had never seen, it picked the right shape 93.9% of the time.",
+      "sources": [
+        "site `lt/Story.tsx:181`, data `advantages.ts:406-412`",
+        "site-claims.md:47"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/ink/src/shapeModel.ts",
+        "packages/ink/src/shapeModelWeights.ts",
+        "packages/ink/src/shapeGroup.ts"
+      ],
+      "tests": [
+        "packages/ink/src/shape.test.ts",
+        "packages/ink/src/shapeGroup.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: 93.89% is 5-way decision accuracy that counts \"leave as ink\" as right; snap recall is 78.0%, wrong-snap 1.62%; strokes are DiDi pen data, not mouse; the architecture board's Draw does not use this model",
+      "default": "suggest"
+    },
+    {
+      "id": "V13",
+      "area": "surfaces",
+      "text": "Whiteboard: a rough box, ellipse, diamond or arrow can be tidied into a clean shape by a small trained model; nothing drawn here is a claim about your code. On the Architecture board, Sketch turns a box into a node and a line into an edge.",
+      "sources": [
+        "README.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/whiteboard/whiteboardModel.ts"
+      ],
+      "tests": [
+        "tools/ci/claims.test.mjs",
+        "packages/web2/src/whiteboard/whiteboardModel.test.ts"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "V14",
+      "area": "surfaces",
+      "text": "Architecture board Draw/Sketch: Draw a box to add a service. Draw a line between two boxes to connect them. (in-app hint)",
+      "sources": [
+        "`w2/canvas/boards/ArchDraw.tsx:36`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/ink/src/index.ts#recognizeStroke",
+        "packages/web2/src/canvas/inkToEdit.ts"
+      ],
+      "tests": [
+        "packages/web2/src/canvas/inkToEdit.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: works, single stroke only (a 4-stroke box is a scribble), old recognizer (fresh-sealed old-model acc 88.1% / recall 54.4% vs trained grouped 93.9% / 78.0%)",
+      "default": "off until Draw pressed"
+    },
+    {
+      "id": "V15",
+      "area": "surfaces",
+      "text": "Settings Tidy drawn shapes: Suggest / Auto / Off and Keep a local edit log. Saved in this project's .sequence folder, never sent.",
+      "sources": [
+        "`w2/settings/WhiteboardSetting.tsx:59-93` mounted `SettingsPanel.tsx:2630`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/whiteboard/boardEditLog.ts",
+        "packages/analyzer/src/boards/boardEditLog.ts",
+        "packages/analyzer/src/server/boardsRoutes.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/board-edit-log.test.ts"
+      ],
+      "status": "real",
+      "default": "suggest; log ON"
+    },
+    {
+      "id": "V16",
+      "area": "surfaces",
+      "text": "A box the reader dragged stays where it was put after a reload or a rescan … until they choose Reset layout (in-app Reset layout)",
+      "sources": [
+        "`w2/canvas/boardLayoutMemory.ts:1-19`",
+        "`BoardControlsBody.tsx:114`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V17",
+      "area": "surfaces",
+      "text": "Drawings in chat. svg and html blocks from the agent draw inline in a sandboxed frame. They are saved under `.sequence/drawings`, and a later block with the same id adds a version.",
+      "sources": [
+        "v0.1.4:21",
+        "site `lt/Story.tsx:125`",
+        "content.ts:69",
+        "README.md:34"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/drawings/drawingStore.ts",
+        "packages/acp/src/accessMode.ts",
+        "packages/acp/src/client.ts",
+        "packages/acp/src/codexAppServer.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/drawings-store.test.ts",
+        "packages/analyzer/src/test/drawings-routes.test.ts",
+        "packages/acp/src/test/draw-guidance.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V18",
+      "area": "surfaces",
+      "text": "Charts from numbers: twelve built-in components (line with forecast, bar, kpi, sparkline, histogram, donut, flow, sequence, load path, timeline, capacity forecast, dashboard). The agent draws them from a spec. / Twelve built-in chart and diagram types draw from a spec.",
+      "sources": [
+        "v0.1.4:22",
+        "content.ts:69",
+        "site `lt/WhatsNew.tsx:26`",
+        "mcp/README.md:36"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/schema/src/visual/registry.ts#renderVisual",
+        "packages/schema/src/visual/diagrams.ts",
+        "packages/mcp/src/visualTools.ts"
+      ],
+      "tests": [
+        "packages/schema/src/visual/visual.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: real and tested; only ACP agents are told about it; a native-model chat never is (see V17)",
+      "default": "on",
+      "guard": {
+        "topic": "inline drawing|drawings in chat",
+        "words": "local model|built-in",
+        "unless": "Claude|Codex|ACP|agent"
+      }
+    },
+    {
+      "id": "V19",
+      "area": "surfaces",
+      "text": "Charts are drawn at the chat column's width, and no chart is taller than 420 px at the default width. (Superseded in 0.1.5: drawings scale to the chat column with no height cap.)",
+      "sources": [
+        "docs/releases/v0.1.4.md"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [
+        "tools/ci/claims.test.mjs"
+      ],
+      "status": "real"
+    },
+    {
+      "id": "V20",
+      "area": "surfaces",
+      "text": "Inline drawings fold, title centred, scale to column, no height cap, text fitted, flows >3 steps top down, svg centred full screen",
+      "sources": [
+        "v0.1.5:24",
+        "lt/WhatsNew.tsx:14"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/schema/src/visual/util.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V21",
+      "area": "surfaces",
+      "text": "The agent now gets drawing guidance … and four worked examples. / Drawings follow the app's own components: no emoji, theme colours only, kit classes",
+      "sources": [
+        "v0.1.5:25",
+        "v0.1.6:20"
+      ],
+      "engines": [
+        "acp"
+      ],
+      "code": [
+        "packages/acp/src/accessMode.ts",
+        "packages/web2/src/chat/drawingEmoji.ts"
+      ],
+      "tests": [
+        "packages/acp/src/test/draw-guidance.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V22",
+      "area": "surfaces",
+      "text": "Diagrams and charts appear right in the conversation, not in a separate file.",
+      "sources": [
+        "site `lt/Story.tsx:125`",
+        "site-claims.md:29",
+        "maxnaid \"Draw … right in the chat\""
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL: true for Claude Code/Codex; for the local-model chat the site leads with, charts go to the hidden AI Canvas"
+    },
+    {
+      "id": "V23",
+      "area": "surfaces",
+      "text": "AI Canvas: Where explanations land as blocks: Markdown, a Mermaid diagram, SVG, HTML or a React component … What you draw there reaches the model on the next turn. / Where the agent draws charts and plans. / Describe a system and a diagram appears on the AI Canvas",
+      "sources": [
+        "README.md:92",
+        "content.ts:155 (dead)",
+        "marketing captions.md:327-331"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/app/canvasSurfaces.ts",
+        "packages/web2/src/app/chromeTabModel.ts"
+      ],
+      "tests": [],
+      "status": "off",
+      "gap": "OFF",
+      "default": "hidden"
+    },
+    {
+      "id": "V24",
+      "area": "surfaces",
+      "text": "Browser: A page inside the harness, for checking what you just changed.",
+      "sources": [
+        "README.md:95",
+        "content.ts:158 (dead)"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "off",
+      "gap": "OFF",
+      "default": "hidden"
+    },
+    {
+      "id": "V25",
+      "area": "surfaces",
+      "text": "Chat, files, graph, whiteboard, canvas, terminal and browser in one window. / 8 Surfaces in one harness",
+      "sources": [
+        "content.ts:172,183 (dead sections)"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "WRONG if re-used (6 ship); not on live landing"
+    },
+    {
+      "id": "V26",
+      "area": "surfaces",
+      "text": "Files: A one-line breadcrumb, VS Code status colours, rendered Markdown and diagrams. Preview, Edit or Diff. / diagrams that render in the Files preview",
+      "sources": [
+        "README.md:24",
+        "content.ts:59",
+        "v0.1.4:25",
+        "bastion sequence-page.tsx:28"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/files/mdPrepare.ts"
+      ],
+      "tests": [
+        "packages/web2/src/files/mdPrepare.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V27",
+      "area": "surfaces",
+      "text": "Markdown preview reads front-matter as rows and draws every mermaid fence.",
+      "sources": [
+        "v0.1.6:22"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/files/mdPrepare.ts#splitFrontMatter"
+      ],
+      "tests": [
+        "packages/web2/src/files/mdPrepare.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V28",
+      "area": "surfaces",
+      "text": "Files: The tree and its symbols, beside the graph",
+      "sources": [
+        "README.md:90"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/rail/index.ts"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL (tree yes, symbols no)"
+    },
+    {
+      "id": "V29",
+      "area": "surfaces",
+      "text": "Help: Files & functions sit in the index rail inside this pane — click a function and the board plays the flow it belongs to.",
+      "sources": [
+        "in-app `w2/help/HelpPanel.tsx:85-86`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "MISSING (dead code)"
+    },
+    {
+      "id": "V30",
+      "area": "surfaces",
+      "text": "Show. The answer's path is drawn on the map / Answer with file paths, and the path drawn on the map / maxnaid path drawn",
+      "sources": [
+        "PUBLIC-README:36,47",
+        "maxnaid under-the-hood"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL (lookups and lessons only; nothing for a normal answer or for ACP agents)",
+      "default": "on"
+    },
+    {
+      "id": "V31",
+      "area": "surfaces",
+      "text": "Teach mode: explains one idea at a time, draws the chart from the scanned code, and asks you a question about it. / maxnaid take one concept, draw one picture, ask a real comprehension question, withhold the answer until they commit, and reveal it next turn",
+      "sources": [
+        "PUBLIC-README:109-111",
+        "maxnaid docs/sequence",
+        "Help/journeys `docs/journeys/teach-mode.md` (shows a Teach row that no longer exists)"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/lessonState.ts",
+        "packages/analyzer/src/server/teachTurn.ts",
+        "packages/analyzer/src/server/conceptChart.ts",
+        "packages/analyzer/src/server/askPipeline.ts"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "PARTIAL (one-concept + check-in + board spotlight work on native path; the chart is invisible; no mode; not for Claude Code/Codex)",
+      "default": "off unless phrased"
+    },
+    {
+      "id": "V32",
+      "area": "surfaces",
+      "text": "Terminal: A shell inside the harness, with a one-line prompt and a toolbar. / Commands typed or sent to the terminal now run. / tools strip at bottom, accent prompt",
+      "sources": [
+        "README.md:94",
+        "v0.1.4:26",
+        "v0.1.6:21",
+        "v0.1.7:21",
+        "Help:82"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/terminal/promptLine.ts",
+        "packages/web2/src/terminal/terminalInput.ts",
+        "packages/analyzer/src/server/terminal.ts",
+        "packages/analyzer/src/server/ptyShell.ts",
+        "packages/analyzer/src/server/repoServer.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on for loopback without auth"
+    },
+    {
+      "id": "V33",
+      "area": "surfaces",
+      "text": "Review: Five scopes as a segmented control (Unstaged · Staged · Commit · Branch · Last turn) … per-file accept, line comments, five scopes + each hunk can be reverted",
+      "sources": [
+        "docs/CANON.md:80,132",
+        "in-app scope copy `w2/review/reviewScopes.ts:66-114`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/review/turnsClient.ts",
+        "packages/analyzer/src/server/repoServer.ts"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/git-diff-scopes.test.ts",
+        "packages/analyzer/src/test/git-revisions.test.ts",
+        "packages/analyzer/src/test/snapshot-routes.test.ts",
+        "packages/analyzer/src/test/turn-snapshots.test.ts",
+        "packages/web2/src/review/reviewScopes.test.ts"
+      ],
+      "status": "partial",
+      "gap": "PARTIAL: four git scopes + last-turn served; \"Unstaged\" shows `git diff HEAD` (includes staged, own caveat `:71-72`); file list cannot split staged/unstaged (`:79-80`); hunk revert only for snapshot turns"
+    },
+    {
+      "id": "V34",
+      "area": "surfaces",
+      "text": "Codex: Its approvals and diffs show up in the chat.",
+      "sources": [
+        "site lt/Story.tsx:101"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "partial",
+      "gap": "not scored here (agents lane)",
+      "default": "on"
+    },
+    {
+      "id": "V35",
+      "area": "surfaces",
+      "text": "The scan, the board, the whiteboard, impact, risks and export are static analysis and run with no account and no network. / Board exports for review: Mermaid, dependency matrix (Markdown or CSV) and an architecture note",
+      "sources": [
+        "README.md:99",
+        "PUBLIC-README:107-108",
+        "Difference.tsx:57-58 (dead)"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/server/exportFormats.ts#exportFilename",
+        "packages/analyzer/src/cli.ts",
+        "packages/web2/src/export/exportClient.ts#fetchExport"
+      ],
+      "tests": [
+        "packages/analyzer/src/test/export.test.ts",
+        "packages/analyzer/src/test/diagram-cli.test.ts",
+        "packages/analyzer/src/test/export-route.test.ts",
+        "packages/web2/src/export/exportClient.test.ts"
+      ],
+      "status": "partial",
+      "note": "GET /api/export?format=mermaid-flow|matrix-csv|arch-md serves the CLI renderers; the web2 client helper exists, a board menu entry does not yet.",
+      "gap": "The route and client helper exist; the board menu entry is the UX update (wip/018-uxexport). The app does not offer the Markdown matrix or the sequence Mermaid yet; the CLI does."
+    },
+    {
+      "id": "V36",
+      "area": "surfaces",
+      "text": "CLI `explain <repo>` Print the structural outline in plain English, no key needed.",
+      "sources": [
+        "README.md:125"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/analyzer/src/cli.ts"
+      ],
+      "tests": [],
+      "status": "real"
+    },
+    {
+      "id": "V37",
+      "area": "surfaces",
+      "text": "Agent overlay (in-app Main agent: editing accessMode.ts chips on cards)",
+      "sources": [
+        "in-app only",
+        "no public claim"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/agents/overlayModel.ts"
+      ],
+      "tests": [
+        "packages/web2/src/canvas/agentChipLayout.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V38",
+      "area": "surfaces",
+      "text": "Every node carries a kind, service, module, datastore, topic, agent, entry, distinguished without relying on colour",
+      "sources": [
+        "maxnaid docs/sequence"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/canvas/roleIconMap.ts",
+        "packages/web2/src/canvas/kinds.ts",
+        "packages/web2/src/canvas/archKinds.ts"
+      ],
+      "tests": [
+        "packages/web2/src/canvas/roleIconMap.test.ts",
+        "packages/web2/src/canvas/kinds.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V39",
+      "area": "surfaces",
+      "text": "Whiteboard Select is the default, Space pans, and letter keys switch tools; Ask on the whiteboard is never disabled; text tool opens a note",
+      "sources": [
+        "v0.1.4:7",
+        "v0.1.5:9,20"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [],
+      "tests": [],
+      "status": "real",
+      "default": "select"
+    },
+    {
+      "id": "V40",
+      "area": "surfaces",
+      "text": "Agent drawings on the whiteboard land readable. Boxes grow to fit their text and push their neighbours, connectors follow…",
+      "sources": [
+        "v0.1.5:26",
+        "lt/WhatsNew.tsx:15"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/whiteboard/agentLayout.ts"
+      ],
+      "tests": [
+        "packages/web2/src/whiteboard/agentLayout.test.ts"
+      ],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V41",
+      "area": "surfaces",
+      "text": "Drawing cards show only a title. … A card can be resized and keeps its size.",
+      "sources": [
+        "v0.1.4:36"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/web2/src/chat/cardState.ts"
+      ],
+      "tests": [],
+      "status": "real",
+      "default": "on"
+    },
+    {
+      "id": "V42",
+      "area": "surfaces",
+      "text": "Lab-only diagram languages (json/flow/mermaid/dot/path/ascii/d2/states)",
+      "sources": [
+        "no public claim",
+        "`docs/canvas-language-plan.md`"
+      ],
+      "engines": [
+        "builtin",
+        "acp"
+      ],
+      "code": [
+        "packages/schema/src/drawLanguages.ts"
+      ],
+      "tests": [],
+      "status": "partial",
+      "gap": "n/a (not claimed; do not claim)"
+    }
+  ]
+}

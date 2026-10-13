@@ -335,3 +335,40 @@ li[data-state='running'] > .ags-row .ags-meta { color: var(--b-ink2); }
   min-height: 100%;
   margin-inline: auto;
 }
+
+/* 0.1.8: "Show 5 more" under a chat's newest prompts; a quiet text row, the same height and inset as a prompt row. */
+.ags-more-row {
+  list-style: none;
+}
+.ags-more {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  min-height: var(--row-h-tool);
+  padding: 0 var(--sp-6);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--b-acc);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ags-more:hover {
+  background: var(--b-glass);
+}
+.ags-more:hover .ags-more-t {
+  text-decoration: underline;
+}
+.ags-more:focus-visible {
+  outline: var(--w-hair) solid var(--b-acc);
+}
+.ags-more-n {
+  margin-left: auto;
+  color: var(--b-ink3);
+  white-space: nowrap;
+}
+.ags-more-t {
+  min-width: 0;
+}

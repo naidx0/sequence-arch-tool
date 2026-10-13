@@ -26,8 +26,8 @@ describe('menus answer Escape', () => {
     const more = screen.getByTestId('s2-chat-more');
     more.focus();
     fireEvent.click(more);
-    /* Round 11: the menu now opens on the palette-only doors (search, review, rewind, help), then Agents. */
-    expect(document.activeElement).toBe(screen.getByTestId('s2-chat-menu-overlay.search'));
+    /* 0.1.8 G8: search, review and rewind are quick icons in the header; the menu opens on Help, then Agents. */
+    expect(document.activeElement).toBe(screen.getByTestId('s2-chat-menu-overlay.help'));
     expect(screen.getByTestId('v3-agents-toggle')).toBeTruthy();
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
     expect(screen.queryByTestId('v3-agents-toggle')).toBeNull();

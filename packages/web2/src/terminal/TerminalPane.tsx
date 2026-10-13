@@ -19,12 +19,14 @@ import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, typ
 import { condensePrompt } from './promptLine';
 import { takeTerminalInput } from './terminalInput';
 import { createScreen, resizeScreen, viewScreen, writeScreen, type TerminalScreen } from './terminalScreen';
+import './terminalFallback.css';
 
 import {
   connectTerminal,
   estimateTerminalSize,
   type TerminalBackend,
   type TerminalClient,
+  type TerminalClientHandlers,
 } from './terminalClient';
 
 export interface TerminalPaneProps {
@@ -91,6 +93,23 @@ function measureCells(surface: HTMLElement): { cols: number; rows: number } | nu
   return { cols: Math.max(20, Math.floor(w / charW)), rows: Math.max(4, Math.floor(h / lineH)) };
 }
 
+/** How long a connected terminal may stay blank before the fallback shows, in ms. */
+export const BLANK_MS = 4000;
+
+/** The grid the pane's box can hold, or null while the box has no size (hidden tab, not laid out yet):
+    a 0x0 box must never be reported to the shell as a (tiny) terminal. */
+function measureGrid(wrap: HTMLElement, surface: HTMLElement): { cols: number; rows: number } | null {
+  const box = wrap.getBoundingClientRect();
+  if (!(box.width > 0) || !(box.height > 0)) return null;
+  const m = measureCells(surface) ?? estimateTerminalSize(box.width, box.height);
+  if (!(m.cols > 0) || !(m.rows > 0)) return null;
+  return m;
+}
+
+/** How many times a refused connect (the server has no root yet: 409) is retried before the pane gives up. */
+const CONNECT_RETRIES = 8;
+const CONNECT_RETRY_MS = 750;
+
 export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: TerminalPaneProps) {
   const surfaceRef = useRef<HTMLPreElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -122,6 +141,9 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
   const [closeCode, setCloseCode] = useState<number | null>(null);
   /* Bumped by Reconnect so the connect effect runs again. */
   const [attempt, setAttempt] = useState(0);
+  /* G4: the shell connected but has drawn nothing for BLANK_MS. A calm fallback names the folder and offers Start again. */
+  const gotOutput = useRef(false);
+  const [blank, setBlank] = useState(false);
   const onExitRef = useRef(onExit);
   onExitRef.current = onExit;
 
@@ -149,33 +171,66 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
     setStatus('connecting');
     setDetail('Connecting…');
     setCloseCode(null);
+    gotOutput.current = false;
+    setBlank(false);
     resetScreen();
 
+    const handlers: TerminalClientHandlers = {
+      onOutput(bytes) {
+        const chunk = decoder.decode(bytes, { stream: true });
+        if (!chunk) return;
+        gotOutput.current = true;
+        setBlank(false);
+        writeScreen(screenRef.current, chunk);
+        repaint();
+      },
+      onBackend(b) {
+        if (!cancelled) setBackend(b);
+      },
+      onClose({ code, reason }) {
+        if (cancelled) return;
+        setBlank(false);
+        setStatus('closed');
+        setCloseCode(code);
+        setDetail(reason || 'Terminal disconnected.');
+        onExitRef.current?.({ ended: code === 1000 || /^shell exited/.test(reason ?? '') });
+      },
+      onError(message) {
+        if (cancelled) return;
+        setBlank(false);
+        setStatus('error');
+        setDetail(message);
+      },
+    };
+
+    /* The retry wait is cancellable: unmounting (or Reconnect) must not leave a timer that opens a socket later. */
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let wake: (() => void) | null = null;
+    const sleep = (ms: number) =>
+      new Promise<void>((r) => {
+        wake = r;
+        retryTimer = setTimeout(() => {
+          retryTimer = null;
+          r();
+        }, ms);
+      });
     void (async () => {
       try {
-        client = await connectTerminal({
-          onOutput(bytes) {
-            const chunk = decoder.decode(bytes, { stream: true });
-            if (!chunk) return;
-            writeScreen(screenRef.current, chunk);
-            repaint();
-          },
-          onBackend(b) {
-            if (!cancelled) setBackend(b);
-          },
-          onClose({ code, reason }) {
+        /* The server answers 409 until it has a root; a browser cannot see the status, only a failed open.
+           Retry a few times instead of leaving a dead pane the user has to notice and reconnect by hand. */
+        for (let tryNo = 0; ; tryNo++) {
+          try {
+            client = await connectTerminal(handlers, signIn, launch);
+            break;
+          } catch (e) {
+            /* 403 (terminal disabled) and 429 (too many terminals) will not change by waiting: say so at once. */
+            const status = (e as { status?: number } | null)?.status;
+            if (cancelled || tryNo >= CONNECT_RETRIES || status === 403 || status === 429) throw e;
+            setDetail('Waiting for the project…');
+            await sleep(CONNECT_RETRY_MS);
             if (cancelled) return;
-            setStatus('closed');
-            setCloseCode(code);
-            setDetail(reason || 'Terminal disconnected.');
-            onExitRef.current?.({ ended: code === 1000 || /^shell exited/.test(reason ?? '') });
-          },
-          onError(message) {
-            if (cancelled) return;
-            setStatus('error');
-            setDetail(message);
-          },
-        }, signIn, launch);
+          }
+        }
         if (cancelled) {
           client.close();
           return;
@@ -186,10 +241,16 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
         /* A shell (not a sign-in) takes lines queued elsewhere in the page (terminalInput.ts). */
         const live = client;
         if (!signIn && !launch) releaseInput = takeTerminalInput((line) => live.sendInput(new TextEncoder().encode(`${line}\r`)));
+        /* The observer may have measured before this socket existed (and told nobody): measure now. */
+        const wrapEl = wrapRef.current;
+        const surfaceEl = surfaceRef.current;
+        const fit = wrapEl && surfaceEl ? measureGrid(wrapEl, surfaceEl) : null;
+        if (fit) resizeScreen(screenRef.current, fit.cols, fit.rows);
         const s = screenRef.current;
-        client.resize(s.cols, s.rows);
+        if (s.cols > 0 && s.rows > 0) client.resize(s.cols, s.rows);
       } catch (e) {
         if (cancelled) return;
+        setBlank(false);
         setStatus('error');
         setDetail(e instanceof Error ? e.message : 'Failed to connect');
       }
@@ -197,11 +258,22 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
 
     return () => {
       cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      wake?.();
       releaseInput?.();
       client?.close();
       clientRef.current = null;
     };
   }, [repoRoot, signIn, launch, attempt, repaint, resetScreen]);
+
+  /* Live with no output after BLANK_MS: the fallback shows (output arriving later hides it again). */
+  useEffect(() => {
+    if (status !== 'live') return undefined;
+    const id = setTimeout(() => {
+      if (!gotOutput.current) setBlank(true);
+    }, BLANK_MS);
+    return () => clearTimeout(id);
+  }, [status, attempt]);
 
   /* Follow new output to the bottom only while the reader is already at the bottom (or the content does
      not overflow yet, so there is nothing to follow): scrolling up to read must not be yanked back. */
@@ -221,8 +293,8 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
     const surface = surfaceRef.current;
     if (!wrap || !surface) return undefined;
     const ro = new ResizeObserver(() => {
-      const box = wrap.getBoundingClientRect();
-      const m = measureCells(surface) ?? estimateTerminalSize(box.width, box.height);
+      const m = measureGrid(wrap, surface);
+      if (!m) return;
       const s = screenRef.current;
       if (m.cols === s.cols && m.rows === s.rows) return;
       resizeScreen(s, m.cols, m.rows);
@@ -422,6 +494,19 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
       >
         {shown}
       </pre>
+      {(blank && status === 'live') || status === 'error' ? (
+        <div className="terminal-pane-fallback" data-testid="terminal-fallback" role="status">
+          <span className="terminal-pane-fallback-t">{status === 'error' ? 'The terminal could not start.' : 'The terminal is open but has shown nothing yet.'}</span>
+          {repoRoot ? (
+            <span className="terminal-pane-fallback-s" data-testid="terminal-fallback-folder">
+              Folder it tried: <span className="mono">{repoRoot}</span>
+            </span>
+          ) : null}
+          <button type="button" className="terminal-pane-reconnect" data-testid="terminal-fallback-restart" onClick={() => setAttempt((n) => n + 1)}>
+            Start again
+          </button>
+        </div>
+      ) : null}
       <span id={hintId} hidden>
         Tab completes in the shell. Shift+Tab, or Esc then Tab, moves focus out of the terminal.
       </span>

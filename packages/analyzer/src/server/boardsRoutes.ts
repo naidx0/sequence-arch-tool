@@ -10,6 +10,7 @@
      PATCH  /api/boards/:id            {name}  rename
      DELETE /api/boards/:id            delete (never the architecture board)
      POST   /api/boards/:id/ops        {ops:[{op:"put",item}|{op:"remove",id}]}
+     GET    /api/boards/:id/render.svg ?group=<id> | ?items=<id,id>  those items as one themed SVG (the inline preview)
      POST   /api/boards/edit-log       {events:[{t,board,kind,data?}]}  append to .sequence/board-edits.jsonl
      GET    /api/boards/edit-log       {enabled, events}  what this machine recorded (read-only)
 
@@ -35,6 +36,7 @@ import {
   renameBoard,
   type BoardOp,
 } from '../boards/boardStore.js';
+import { renderItemsSvg, selectItems } from '../boards/boardRender.js';
 import { EditLogError, appendBoardEdits, boardEditLogEnabled, readBoardEdits } from '../boards/boardEditLog.js';
 
 export interface BoardsRouteDeps {
@@ -44,6 +46,9 @@ export interface BoardsRouteDeps {
   sendJson: (res: http.ServerResponse, status: number, body: unknown) => void;
   sendError: (res: http.ServerResponse, status: number, message: string) => void;
 }
+
+/** The most items one render.svg draws; a longer selection is cut, and says so (header x-board-truncated and a line in the SVG). */
+export const RENDER_CAP = 500;
 
 type Listener = (event: { type: 'boards'; id?: string; rev?: number }) => void;
 
@@ -191,6 +196,27 @@ export async function handleBoardsRoute(
         emit(root, { type: 'boards', id });
         return void deps.sendJson(res, 200, { ok: true }), true;
       }
+    }
+    if (rest.length === 2 && rest[1] === 'render.svg' && method === 'GET') {
+      const doc = readBoard(root, id);
+      if (!doc) return void deps.sendError(res, 404, `no board "${id}"`), true;
+      const q = new URL(req.url ?? '/', 'http://localhost').searchParams;
+      if (!q.get('group') && !q.get('items')) return void deps.sendError(res, 400, 'name what to render: ?group=<id> or ?items=<id,id>'), true;
+      const all = selectItems(doc.items, { group: q.get('group'), items: q.get('items') });
+      const picked = all.slice(0, RENDER_CAP);
+      const dropped = all.length - picked.length;
+      if (picked.length === 0) return void deps.sendError(res, 404, 'no items match that group or list on this board'), true;
+      const out = renderItemsSvg(picked, { title: q.get('group') ?? `${id} items`, ...(dropped > 0 ? { note: `Showing the first ${RENDER_CAP} of ${all.length} items; open the board for the rest.` } : {}) });
+      res.statusCode = 200;
+      res.setHeader('content-type', 'image/svg+xml; charset=utf-8');
+      res.setHeader('cache-control', 'no-store');
+      res.setHeader('x-content-type-options', 'nosniff');
+      res.setHeader('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:");
+      res.setHeader('x-board-rev', String(doc.rev));
+      res.setHeader('x-board-skipped', String(out.skipped));
+      if (dropped > 0) res.setHeader('x-board-truncated', String(dropped));
+      res.end(out.svg);
+      return true;
     }
     if (rest.length === 2 && rest[1] === 'ops' && method === 'POST') {
       const b = (await jsonBody(req, deps)) as { ops?: unknown };

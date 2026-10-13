@@ -1,6 +1,7 @@
 import http from 'node:http';
 import type stream from 'node:stream';
 import childProcess from 'node:child_process';
+import fs from 'node:fs';
 import { WebSocketServer, type WebSocket } from 'ws';
 import {
   killWindowsTree,
@@ -84,6 +85,8 @@ export interface TerminalOptions {
    * command, chosen server-side, and needs no attached repo.
    */
   launch?: (id: string) => { file: string; args: string[]; env: NodeJS.ProcessEnv; cwd: string } | null;
+  /** Test seam: how the PTY binding is loaded (default: {@link loadPtyModule}). */
+  loadPty?: () => Promise<unknown>;
 }
 
 /** Observability handle returned by {@link attachTerminal} (used by tests/caps). */
@@ -260,8 +263,8 @@ export function attachTerminal(server: http.Server, opts: TerminalOptions): Term
 
     wss.handleUpgrade(req, socket, head, (ws) => {
       releasePending();
-      if (launch) void startShell(ws, launch.cwd, live, launch);
-      else void startShell(ws, root as string, live);
+      if (launch) void startShell(ws, launch.cwd, live, opts.loadPty ?? loadPtyModule, launch);
+      else void startShell(ws, root as string, live, opts.loadPty ?? loadPtyModule);
     });
   });
 
@@ -313,17 +316,100 @@ interface Launch {
   verbatim?: true;
 }
 
-async function startShell(ws: WebSocket, cwd: string, live: Set<LiveSlot>, launch?: Launch): Promise<void> {
-  await loadPtyModule();
+/**
+ * Input that arrives before the shell exists (the pty module is still loading) is
+ * HELD, not dropped. `ws.on('message')` used to be attached only inside the
+ * backend start, after `await loadPtyModule()`: a resize and the first keystrokes
+ * sent the moment the socket opened were emitted to no listener and lost, so the
+ * pane came up at the wrong size and the first command never ran ("loads blank").
+ */
+type WsMessage = [data: Buffer, isBinary: boolean];
+interface InputGate {
+  /** First well-formed resize seen so far, if any. */
+  firstSize(): { cols: number; rows: number } | null;
+  /** Replay what was held, in arrival order, then deliver live. */
+  attach(fn: (data: Buffer, isBinary: boolean) => void): void;
+}
+
+/** A real terminal is never wider or taller than this; a huge size spawns a dead ConPTY shell. */
+const MAX_DIM = 1000;
+
+function parseResize(data: Buffer): { cols: number; rows: number } | null {
+  try {
+    const msg = JSON.parse(data.toString('utf8')) as { type?: unknown; cols?: unknown; rows?: unknown };
+    if (msg && typeof msg === 'object' && msg.type === 'resize') {
+      const cols = Number(msg.cols);
+      const rows = Number(msg.rows);
+      if (Number.isFinite(cols) && Number.isFinite(rows) && cols >= 1 && rows >= 1 && cols <= MAX_DIM && rows <= MAX_DIM) {
+        return { cols: Math.floor(cols), rows: Math.floor(rows) };
+      }
+    }
+  } catch {
+    /* not a control frame */
+  }
+  return null;
+}
+
+function gateInput(ws: WebSocket): InputGate {
+  const held: WsMessage[] = [];
+  let sink: ((data: Buffer, isBinary: boolean) => void) | null = null;
+  ws.on('message', (data: Buffer, isBinary: boolean) => {
+    if (sink) sink(data, isBinary);
+    else held.push([data, isBinary]);
+  });
+  return {
+    firstSize() {
+      for (const [data, isBinary] of held) {
+        if (isBinary) continue;
+        const size = parseResize(data);
+        if (size) return size;
+      }
+      return null;
+    },
+    attach(fn) {
+      sink = fn;
+      for (const [data, isBinary] of held.splice(0)) fn(data, isBinary);
+    },
+  };
+}
+
+async function startShell(
+  ws: WebSocket,
+  cwd: string,
+  live: Set<LiveSlot>,
+  loadPty: () => Promise<unknown>,
+  launch?: Launch,
+): Promise<void> {
+  const input = gateInput(ws);
+  let gone = false;
+  ws.once('close', () => {
+    gone = true;
+  });
+  ws.once('error', () => {
+    gone = true;
+  });
+  /* The shell opens in the root the server resolved, never in whatever directory this process has. */
+  if (!fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory()) {
+    try {
+      ws.close(1011, `shell directory does not exist: ${cwd}`);
+    } catch {
+      /* socket already gone */
+    }
+    return;
+  }
+  await loadPty();
+  if (gone || ws.readyState !== ws.OPEN) return; /* nobody left to own a shell */
   const shell = launch?.file ?? resolveShell();
   const env = launch?.env ?? process.env;
   const args = launch?.args ?? [];
-  const pty = trySpawnPty(shell, cwd, env, 80, 24, args, launch?.verbatim === true);
+  /* Spawn at the size the page already reported, so the shell never paints a 80x24 screen first. */
+  const size = input.firstSize();
+  const pty = trySpawnPty(shell, cwd, env, size?.cols ?? 80, size?.rows ?? 24, args, launch?.verbatim === true);
   if (pty) {
-    startPtyShell(ws, pty, live);
+    startPtyShell(ws, pty, live, input);
     return;
   }
-  startPipeShell(ws, shell, cwd, live, args, env, launch?.verbatim === true);
+  startPipeShell(ws, shell, cwd, live, input, args, env, launch?.verbatim === true);
 }
 
 function announceBackend(ws: WebSocket, backend: ShellBackend): void {
@@ -335,7 +421,7 @@ function announceBackend(ws: WebSocket, backend: ShellBackend): void {
   }
 }
 
-function startPtyShell(ws: WebSocket, pty: PtySpawnResult, live: Set<LiveSlot>): void {
+function startPtyShell(ws: WebSocket, pty: PtySpawnResult, live: Set<LiveSlot>, input: InputGate): void {
   const slot: LiveSlot = { backend: 'pty', kill: () => pty.kill() };
   live.add(slot);
   let closed = false;
@@ -373,7 +459,7 @@ function startPtyShell(ws: WebSocket, pty: PtySpawnResult, live: Set<LiveSlot>):
     teardown();
   });
 
-  ws.on('message', (data: Buffer, isBinary: boolean) => {
+  input.attach((data: Buffer, isBinary: boolean) => {
     if (isBinary) {
       pty.write(data);
       return;
@@ -402,7 +488,7 @@ function startPtyShell(ws: WebSocket, pty: PtySpawnResult, live: Set<LiveSlot>):
        * terminal failure was cygwin console-slot exhaustion from shells that
        * kill left behind; see killWindowsTree in ptyShell.ts.
        */
-      if (Number.isFinite(cols) && Number.isFinite(rows)) {
+      if (Number.isFinite(cols) && Number.isFinite(rows) && cols >= 1 && rows >= 1 && cols <= MAX_DIM && rows <= MAX_DIM) {
         try {
           pty.resize(cols, rows);
         } catch {
@@ -421,6 +507,7 @@ function startPipeShell(
   shell: string,
   cwd: string,
   live: Set<LiveSlot>,
+  input: InputGate,
   args: readonly string[] = [],
   baseEnv: NodeJS.ProcessEnv = process.env,
   verbatim = false,
@@ -502,7 +589,7 @@ function startPipeShell(
 
   const toPipe = pipeLineEndings();
 
-  ws.on('message', (data: Buffer, isBinary: boolean) => {
+  input.attach((data: Buffer, isBinary: boolean) => {
     if (isBinary) {
       if (child.stdin && !child.stdin.destroyed) child.stdin.write(toPipe(data));
       return;

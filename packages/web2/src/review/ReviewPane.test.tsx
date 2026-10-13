@@ -695,6 +695,30 @@ describe('item 5.4 — the scope segmented control', () => {
     expect(diffCall.url).toMatch(/scope=staged/);
   });
 
+  it('the unstaged segment asks for index-to-worktree, not git diff HEAD', async () => {
+    /* Unstaged used to send no scope, i.e. `git diff HEAD`, which folds staged
+       changes in (claims-audit 1.5). It must name its own scope on the wire. */
+    const { calls, fetchImpl } = recorder({
+      '/api/git/status': () => [200, REAL_STATUS],
+      '/api/git/diff': (url) => [200, { path: url.searchParams.get('path'), diff: REAL_DIFF }],
+    });
+    render(
+      <ReviewPane
+        client={createReviewClient(fetchImpl)}
+        proposal={null}
+        graph={null}
+        functions={null}
+        scope="unstaged"
+        onSteer={NO_STEER}
+      />,
+    );
+    await waitFor(() =>
+      expect(calls.some((c) => c.url.startsWith('/api/git/diff'))).toBe(true),
+    );
+    const diffCall = calls.find((c) => c.url.startsWith('/api/git/diff'))!;
+    expect(diffCall.url).toMatch(/scope=unstaged/);
+  });
+
   it('choosing Commit asks for a revision, and diffs the one that was chosen', async () => {
     const { calls, fetchImpl } = recorder({
       '/api/git/status': () => [200, REAL_STATUS],

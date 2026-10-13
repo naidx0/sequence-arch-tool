@@ -41,6 +41,10 @@
    exact document.
    ══════════════════════════════════════════════════════════════════════════ */
 
+
+import { asWbColor, asWbFill } from './palette';
+import { sanitizeScene, upsertKeyframe, type Easing, type SceneKeyframe } from './scene';
+
 export interface Point {
   x: number;
   y: number;
@@ -71,6 +75,16 @@ export interface Point {
 export interface WbMarkMeta {
   by?: 'agent' | 'person';
   anchor?: string;
+  /** A text's colour, a palette name (`palette.ts`); on a shape or stroke this is only the first palette's field, still read. */
+  color?: string;
+  /** A shape's or stroke's line colour, a palette name (a `#hex` only with `ownTheme`). Absent is the ink. */
+  stroke?: string;
+  /** A shape's or sticky's fill: a palette name, `surface` or `none`. */
+  fill?: string;
+  /** The colours above are the agent's own hex, drawn raw (a diagram that brings its colours). */
+  ownTheme?: boolean;
+  /** Marks that share a group id are one diagram: a press selects them together and a drag moves them together. */
+  group?: string;
 }
 
 /** Freehand ink, kept as the points it was drawn with. */
@@ -94,9 +108,17 @@ export interface WbShape extends WbMarkMeta {
    * sketching surface that could only draw undirected lines could not express
    * "A calls B", which is most of what anyone draws on one.
    */
-  shape: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow';
+  shape: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow' | 'path' | 'frame';
   from: Point;
   to: Point;
+  /** A `path`: the polyline's vertices, absolute board coordinates (from/to are its first and last). */
+  points?: Point[];
+  strokeWidth?: number;
+  dash?: 'solid' | 'dashed' | 'dotted';
+  arrowStart?: 'none' | 'arrow' | 'dot' | 'bar';
+  arrowEnd?: 'none' | 'arrow' | 'dot' | 'bar';
+  labelPos?: 'center' | 'top' | 'bottom' | 'left' | 'right';
+  fontSize?: 'sm' | 'md' | 'lg';
   /** A caption drawn inside a rect or ellipse, or along an arrow. */
   label?: string;
   /**
@@ -125,6 +147,7 @@ export interface WbText extends WbMarkMeta {
   sticky?: boolean;
   w?: number;
   h?: number;
+  fontSize?: 'sm' | 'md' | 'lg';
 }
 
 /**
@@ -200,7 +223,86 @@ export const WB_BOX_PAD_Y = 12;
 export const STICKY_W = 180;
 export const STICKY_H = 110;
 
-export type WbItem = WbStroke | WbShape | WbText | WbNodeRef | WbArtifact;
+/**
+ * A HOSTED SVG: a drawing an agent wrote (an isometric anatomy, a floor plan) placed on a Space as one movable,
+ * resizable item. `markup` is the agent's text, never trusted: it is rebuilt from an allowlist where it is drawn
+ * (`chat/svgSanitize.ts`), so a script or an event handler in it is gone before it reaches the page. `at` is its
+ * top-left corner and `w` x `h` the frame it is fitted into (its own viewBox scales to it). The fields are the
+ * backend contract's (docs/requests/backend-shapes.md "Board items": at, w, h, svg, label).
+ */
+export interface WbSvg extends WbMarkMeta {
+  kind: 'svg';
+  id: string;
+  at: Point;
+  w: number;
+  h: number;
+  /** The drawing, as the backend contract names it. */
+  svg?: string;
+  /** The first version's name for the same text; still read. */
+  markup?: string;
+  label?: string;
+}
+
+/**
+ * The item in today's names, for WRITING it back. This branch's first palette stored `color`/`fill` as gold..indigo, a
+ * shape's colour in `color`, and an svg's text in `markup`; the board store's validator takes chart1..6, `stroke`
+ * and `svg`. Reading keeps accepting the old names; saving never sends them.
+ */
+export function normalizeLegacy(item: WbItem): WbItem {
+  const name = (v: string | undefined): string | undefined => (v === undefined ? v : (asWbColor(v) ?? v));
+  if (item.kind === 'svg') {
+    const { markup, ...rest } = item;
+    return markup !== undefined ? { ...rest, svg: rest.svg ?? markup } : item;
+  }
+  if (item.kind === 'shape' || item.kind === 'stroke') {
+    const { color, ...rest } = item;
+    const stroke = rest.stroke ?? color;
+    const out = { ...rest } as typeof item;
+    if (stroke !== undefined) out.stroke = item.ownTheme ? stroke : name(stroke);
+    if (rest.fill !== undefined && !item.ownTheme) out.fill = asWbFill(rest.fill) ?? rest.fill;
+    return out;
+  }
+  if (item.kind === 'text' && item.color !== undefined && !item.ownTheme) return { ...item, color: name(item.color) };
+  return item;
+}
+
+/** The svg text of a hosted svg, whichever name it was stored under. */
+export function svgSourceOf(item: WbSvg): string {
+  return item.svg ?? item.markup ?? '';
+}
+
+/**
+ * A SCENE: a stage frame on the board and a timeline of keyframes over the board's other items (scene.ts has the
+ * semantics and the stored JSON). `at` is the stage's top-left, `w` x `h` its size, `duration` in milliseconds.
+ */
+export interface WbScene extends WbMarkMeta {
+  kind: 'scene';
+  id: string;
+  at: Point;
+  w: number;
+  h: number;
+  duration: number;
+  fps?: number;
+  easing?: Easing;
+  title?: string;
+  keyframes: SceneKeyframe[];
+}
+
+/** A VIDEO: a repo-relative .mp4/.webm/.gif on the board (videoItem.tsx). The store serves it with Range. */
+export interface WbVideo extends WbMarkMeta {
+  kind: 'video';
+  id: string;
+  at: Point;
+  w: number;
+  h: number;
+  src: string;
+  poster?: string;
+  label?: string;
+}
+
+export const SVG_MIN = 40;
+
+export type WbItem = WbStroke | WbShape | WbText | WbNodeRef | WbArtifact | WbSvg | WbScene | WbVideo;
 
 export interface WhiteboardDoc {
   version: 1;
@@ -220,6 +322,12 @@ export type WhiteboardEdit =
   | { type: 'wb/resize'; id: string; w: number; h: number }
   | { type: 'wb/text'; id: string; text: string }
   | { type: 'wb/delete'; id: string }
+  /** Recolour one mark. `null` takes the colour (or the fill) off; `ink` is stored as no colour. */
+  | { type: 'wb/style'; id: string; stroke?: string | null; fill?: string | null }
+  /** Make these marks one diagram (a shared group id), or take them out of it (`null`). One undo frame. */
+  | { type: 'wb/group'; ids: string[]; group: string | null }
+  /** A drag of a scene's target at time t > 0 writes a keyframe (x, y) there instead of moving the item. */
+  | { type: 'wb/scene-key'; id: string; key: SceneKeyframe }
   /**
    * Take some marks out and put others in, as ONE edit (one undo frame). The tidy-up
    * uses it: the raw strokes leave and the clean shape lands where the first of them
@@ -238,6 +346,7 @@ function shift(item: WbItem, dx: number, dy: number): WbItem {
         ...item,
         from: { x: item.from.x + dx, y: item.from.y + dy },
         to: { x: item.to.x + dx, y: item.to.y + dy },
+        ...(item.points ? { points: item.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy })) } : {}),
       };
     case 'artifact':
       return { ...item, at: { x: item.at.x + dx, y: item.at.y + dy } };
@@ -263,8 +372,10 @@ export function whiteboardEdit(doc: WhiteboardDoc, edit: WhiteboardEdit): Whiteb
       /* A box (`X:box`) and the label item that is drawn inside it (`X`) are one
          mark to the reader, so they travel together. */
       const label = edit.id.endsWith(WB_BOX_SUFFIX) ? edit.id.slice(0, -WB_BOX_SUFFIX.length) : null;
+      /* A mark in a group travels with the rest of its diagram. */
+      const grouped = doc.items.find((it) => it.id === edit.id)?.group;
       const items = doc.items.map((it) => {
-        if (it.id !== edit.id && it.id !== label) return it;
+        if (it.id !== edit.id && it.id !== label && !(grouped && it.group === grouped)) return it;
         touched = true;
         return shift(it, edit.dx, edit.dy);
       });
@@ -276,10 +387,70 @@ export function whiteboardEdit(doc: WhiteboardDoc, edit: WhiteboardEdit): Whiteb
       const h = Math.max(60, Math.round(edit.h));
       let touched = false;
       const items = doc.items.map((it) => {
-        if (it.id !== edit.id || it.kind !== 'artifact') return it;
+        if (it.id !== edit.id) return it;
+        if (it.kind === 'svg') {
+          /* A hosted svg may be smaller than an artifact frame, down to SVG_MIN. */
+          const sw = Math.max(SVG_MIN, Math.round(edit.w));
+          const sh = Math.max(SVG_MIN, Math.round(edit.h));
+          if (it.w === sw && it.h === sh) return it;
+          touched = true;
+          return { ...it, w: sw, h: sh };
+        }
+        if (it.kind !== 'artifact') return it;
         if (it.size.w === w && it.size.h === h) return it;
         touched = true;
         return { ...it, size: { w, h } };
+      });
+      return touched ? { ...doc, items } : doc;
+    }
+
+    case 'wb/style': {
+      let touched = false;
+      const items = doc.items.map((it) => {
+        if (it.id !== edit.id) return it;
+        const next: WbItem = { ...it };
+        /* A text is coloured by `color`; a shape or stroke by `stroke`. The first palette's `color` on a shape is replaced. */
+        const line = it.kind === 'text' ? 'color' : 'stroke';
+        if (edit.stroke !== undefined) {
+          delete next.color;
+          delete next.stroke;
+          if (edit.stroke !== null && edit.stroke !== 'ink') next[line] = edit.stroke;
+        }
+        if (edit.fill !== undefined) {
+          if (edit.fill === null) delete next.fill;
+          else next.fill = edit.fill;
+        }
+        if (JSON.stringify(next) === JSON.stringify(it)) return it;
+        touched = true;
+        return next;
+      });
+      return touched ? { ...doc, items } : doc;
+    }
+
+    case 'wb/scene-key': {
+      let touched = false;
+      const items = doc.items.map((it) => {
+        if (it.id !== edit.id || it.kind !== 'scene') return it;
+        touched = true;
+        return { ...it, keyframes: upsertKeyframe(it, edit.key) };
+      });
+      return touched ? { ...doc, items } : doc;
+    }
+
+    case 'wb/group': {
+      const ids = new Set(edit.ids);
+      let touched = false;
+      const items = doc.items.map((it) => {
+        if (!ids.has(it.id)) return it;
+        if (edit.group === null) {
+          if (it.group === undefined) return it;
+          touched = true;
+          const { group: _drop, ...rest } = it;
+          return rest as WbItem;
+        }
+        if (it.group === edit.group) return it;
+        touched = true;
+        return { ...it, group: edit.group };
       });
       return touched ? { ...doc, items } : doc;
     }
@@ -552,8 +723,11 @@ export function whiteboardBounds(
         ys.push(p.y);
       }
     } else if (it.kind === 'shape') {
-      xs.push(it.from.x, it.to.x);
-      ys.push(it.from.y, it.to.y);
+      xs.push(it.from.x, it.to.x, ...(it.points ?? []).map((p) => p.x));
+      ys.push(it.from.y, it.to.y, ...(it.points ?? []).map((p) => p.y));
+    } else if (it.kind === 'svg' || it.kind === 'scene' || it.kind === 'video') {
+      xs.push(it.at.x, it.at.x + it.w);
+      ys.push(it.at.y, it.at.y + it.h);
     } else if (it.kind === 'artifact') {
       xs.push(it.at.x, it.at.x + it.size.w);
       ys.push(it.at.y, it.at.y + it.size.h);
@@ -609,6 +783,18 @@ export function readWhiteboard(raw: string | null): WhiteboardDoc {
     if (k === 'shape') return !!(it as WbShape).from && !!(it as WbShape).to;
     if (k === 'text') return typeof (it as WbText).text === 'string';
     if (k === 'noderef') return typeof (it as WbNodeRef).nodeId === 'string';
+    if (k === 'video') {
+      const v = it as WbVideo;
+      return typeof v.src === 'string' && typeof v.at?.x === 'number' && typeof v.at?.y === 'number' && typeof v.w === 'number' && typeof v.h === 'number';
+    }
+    if (k === 'scene') {
+      const sc = it as WbScene;
+      return typeof sc.at?.x === 'number' && typeof sc.at?.y === 'number' && typeof sc.w === 'number' && typeof sc.h === 'number' && typeof sc.duration === 'number' && Array.isArray(sc.keyframes);
+    }
+    if (k === 'svg') {
+      const s = it as WbSvg;
+      return (typeof s.svg === 'string' || typeof s.markup === 'string') && typeof s.at?.x === 'number' && typeof s.w === 'number' && typeof s.h === 'number';
+    }
     if (k === 'artifact') {
       const a = it as WbArtifact;
       return (
@@ -622,7 +808,12 @@ export function readWhiteboard(raw: string | null): WhiteboardDoc {
     return false;
   });
 
-  return { version: 1, items };
+  /* A scene is rebuilt with only its well-formed keyframes and a duration the player can use (scene.ts sanitizeScene). */
+  const clampSide = (n: number) => Math.min(8192, Math.max(1, Number.isFinite(n) ? n : 1));
+  return {
+    version: 1,
+    items: items.map((it) => (it.kind === 'scene' ? sanitizeScene(it) : it.kind === 'video' ? { ...it, w: clampSide(it.w), h: clampSide(it.h) } : it)),
+  };
 }
 
 /** Serialise for storage. */

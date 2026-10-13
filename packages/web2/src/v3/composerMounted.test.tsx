@@ -27,7 +27,7 @@ describe('the composer stays mounted', () => {
     render(<V3App appStore={store} />);
     const first = field();
     /* Decision 49: the chat is a column, not a pill; the surfaces switch beside it. */
-    for (const label of ['Files', 'Architecture', 'Whiteboard', 'Files', 'Architecture']) {
+    for (const label of ['Files', 'Architecture', 'Spaces', 'Files', 'Architecture']) {
       const t = tab(label);
       expect(t, label).toBeTruthy();
       act(() => fireEvent.click(t));

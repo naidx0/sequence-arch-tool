@@ -28,7 +28,7 @@ export const CHROME_TAB_DEFS: Record<ChromeTabId, ChromeTabDef> = {
      name the book does not define is refused by `test/icon-book.test.ts`. */
   files: { id: 'files', label: 'Files', icon: 'file' },
   architecture: { id: 'architecture', label: 'Architecture', icon: 'board' },
-  whiteboard: { id: 'whiteboard', label: 'Whiteboard', icon: 'frame' },
+  whiteboard: { id: 'whiteboard', label: 'Spaces', icon: 'frame' },
   'ai-canvas': { id: 'ai-canvas', label: 'AI Canvas', icon: 'spark' },
   terminal: { id: 'terminal', label: 'Terminal', icon: 'terminal' },
   agents: { id: 'agents', label: 'Agents', icon: 'flow' },

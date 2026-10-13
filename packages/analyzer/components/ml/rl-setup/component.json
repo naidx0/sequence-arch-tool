@@ -1,0 +1,31 @@
+{
+  "id": "ml/rl-setup",
+  "group": "ml",
+  "label": "Rl Setup",
+  "summary": "Wire up online GRPO (RLVR) or async GRPO with environments (multi-turn tool-use) for Halo: bring up the separate rollout container —...",
+  "triggers": [
+    "grpo training",
+    "reinforcement learning rollouts",
+    "rlvr setup",
+    "multi-turn tool use training",
+    "rollout container"
+  ],
+  "status": "ready",
+  "license": "Apache-2.0 + Halo supplemental terms",
+  "source": {
+    "repo": "whitecircle/halo",
+    "commit": "41da0838499a2459b236252ba1200a31957d3606",
+    "path": "skills/rl-setup"
+  },
+  "url": "https://github.com/whitecircle/halo/tree/41da0838499a2459b236252ba1200a31957d3606/skills/rl-setup",
+  "externalRefs": [
+    "agent-docs/infrastructure/rollout-servers.md",
+    "docker/nccl_pin.py",
+    "src/trainers/grpo/rollout/weight_sync.py",
+    "agent-docs/training-methods/grpo/rewards/README.md",
+    "grpo/rewards/README.md",
+    "async-grpo/setup.md",
+    "src/trainers/grpo/environmental.py"
+  ],
+  "preamble": "SEQUENCE.md"
+}

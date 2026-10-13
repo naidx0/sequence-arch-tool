@@ -154,6 +154,10 @@ export interface SettingsClient {
   setHookTrust(trusted: boolean): Promise<WireResult<{ trusted: boolean }>>;
   /** GET /api/skills — this repo's skills and the instruction file in use. */
   skills(signal?: AbortSignal): Promise<WireResult<SkillsView>>;
+  /** DELETE /api/skills/<slug> — removes one WORKSPACE skill's folder; user-global skills are never touched. */
+  removeSkill(slug: string): Promise<WireResult<{ removed: string }>>;
+  /** POST /api/skills/<slug>/reveal — shows that skill's SKILL.md in the file manager (Files hides .sequence). */
+  revealSkill(slug: string): Promise<WireResult<{ revealed: string }>>;
   /** GET /api/local/setup — what this machine has, and the one next step. */
   localPlan(signal?: AbortSignal): Promise<WireResult<LocalSetupPlanView>>;
   /**
@@ -302,6 +306,20 @@ export function createSettingsClient(fetchImpl: typeof fetch = fetch): SettingsC
         if ((e as Error).name === 'AbortError') {
           return { outcome: 'error', status: 0, message: 'cancelled' };
         }
+        return { outcome: 'error', status: 0, message: (e as Error).message };
+      }
+    },
+    async removeSkill(slug) {
+      try {
+        return await parse<{ removed: string }>(await fetchImpl(`${SKILLS_ROUTE}/${encodeURIComponent(slug)}`, { method: 'DELETE', headers: { accept: 'application/json' } }));
+      } catch (e) {
+        return { outcome: 'error', status: 0, message: (e as Error).message };
+      }
+    },
+    async revealSkill(slug) {
+      try {
+        return await parse<{ revealed: string }>(await fetchImpl(`${SKILLS_ROUTE}/${encodeURIComponent(slug)}/reveal`, { method: 'POST', headers: { accept: 'application/json' } }));
+      } catch (e) {
         return { outcome: 'error', status: 0, message: (e as Error).message };
       }
     },

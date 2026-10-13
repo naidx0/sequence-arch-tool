@@ -266,6 +266,12 @@ export interface AgentEventHubOptions {
    * snapshot is started and not awaited; an edit's PreToolUse waits for it.
    */
   snapshots?: TurnSnapshotGate;
+  /**
+   * Claims-audit 2.6 (F3): answer the FIRST Grep or Glob of a turn with find_files results, as hook context.
+   * `enabled` is read on every call (the setting `findFilesFirst`, off by default); `run` returns the
+   * ranked-files text for a query and may be slow or fail (the hook then answers nothing and the search runs as usual).
+   */
+  findFilesFirst?: { enabled: () => boolean; run: (root: string, query: string) => Promise<string> };
 }
 
 export interface IngestResult {
@@ -373,6 +379,47 @@ export class AgentEventHub {
     return ev;
   }
 
+  /** Per session: the latest prompt, and whether this turn's first search was already answered. */
+  private readonly turns = new Map<string, { prompt: string; answered: boolean }>();
+
+  /**
+   * F3 hook: the PreToolUse reply for the first Grep or Glob of a turn, with find_files results as
+   * `additionalContext` (no permission decision: the search itself runs as usual). Null for every
+   * other event, for later searches in the same turn, when the setting is off, and on any failure.
+   */
+  async findFilesContext(p: Payload): Promise<Record<string, unknown> | null> {
+    const cfg = this.opts.findFilesFirst;
+    const sid = str(p.session_id) ?? 'unknown';
+    const hook = str(p.hook_event_name);
+    if (hook === 'UserPromptSubmit') {
+      this.turns.set(sid, { prompt: str(p.prompt) ?? '', answered: false });
+      while (this.turns.size > 64) this.turns.delete(this.turns.keys().next().value as string);
+      return null;
+    }
+    if (!cfg || hook !== 'PreToolUse' || !/^(Grep|Glob)$/.test(str(p.tool_name) ?? '') || !cfg.enabled()) return null;
+    const root = this.opts.getRoot();
+    if (!root) return null;
+    const turn = this.turns.get(sid) ?? { prompt: '', answered: false };
+    if (turn.answered) return null;
+    turn.answered = true;
+    this.turns.set(sid, turn);
+    const input = (p.tool_input && typeof p.tool_input === 'object' ? p.tool_input : {}) as Payload;
+    const query = (turn.prompt.trim() || str(input.pattern) || '').slice(0, 2000);
+    if (!query) return null;
+    try {
+      const text = await Promise.race([cfg.run(root, query), new Promise<string>((_, rej) => setTimeout(() => rej(new Error('find_files timed out')), 4000).unref?.())]);
+      if (!text || !text.trim()) return null;
+      /* "No file matched" is noise, not an answer: leave the turn unanswered so a later, better-aimed search can try. */
+      if (/^No file matched/m.test(text)) {
+        turn.answered = false;
+        return null;
+      }
+      return { hookEventName: 'PreToolUse', additionalContext: `[Added by Sequence. Files a trained ranker picks for this task, before your search:]\n${text}`.slice(0, 6000) };
+    } catch {
+      return null;
+    }
+  }
+
   ingest(p: Payload): IngestResult {
     const ev = this.normalize(p);
     if (!ev) return { event: null, reply: {} };
@@ -458,7 +505,7 @@ function readBody(req: http.IncomingMessage, max: number): Promise<string> {
 }
 
 /** Is the TCP peer on this machine? (Host/Origin say where the caller claims to be.) */
-function peerIsLoopback(req: http.IncomingMessage): boolean {
+export function peerIsLoopback(req: http.IncomingMessage): boolean {
   const a = req.socket.remoteAddress ?? '';
   return a === '127.0.0.1' || a === '::1' || a === '::ffff:127.0.0.1';
 }
@@ -493,6 +540,8 @@ export async function handleAgentEventRoute(ctx: AgentEventContext): Promise<boo
     return true;
   }
   await ctx.hub.snapshot(payload as Payload);
-  send(res, 200, ctx.hub.ingest(payload as Payload).reply);
+  const answer = ctx.hub.ingest(payload as Payload).reply;
+  const ff = await ctx.hub.findFilesContext(payload as Payload);
+  send(res, 200, ff ? { ...answer, hookSpecificOutput: ff } : answer);
   return true;
 }

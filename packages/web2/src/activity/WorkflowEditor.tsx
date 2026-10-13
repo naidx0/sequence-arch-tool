@@ -19,6 +19,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import { createPortal } from 'react-dom';
 import { BLOCK_INFO, BLOCK_KINDS, TEST_COMMANDS, loopBodies, type BlockKind, type WorkflowBlock, type WorkflowOp } from '@sequence/schema';
 
+import { AsciiSpinner } from '../shell2/AsciiSpinner';
 import { trapFocus } from '../shell/focusTrap';
 import { ActionGlyph, GLYPH } from './WfeGlyphs';
 import { WfeSelect } from './WfeSelect';
@@ -369,6 +370,8 @@ export function WorkflowEditor({ onClose, onRun, api: injected, pollMs = POLL_MS
               type="button"
               className={movable === 0 ? 'wfe-btn' : 'wfe-btn wfe-btn-solid'}
               data-testid="wfe-run"
+              data-running={running ? 'true' : undefined}
+              aria-busy={running || undefined}
               disabled={running || !wf.valid || !!emptyWhy || movable === 0}
               title={movable === 0 ? 'Add a block to run this workflow' : emptyWhy ?? (wf.valid ? 'Run this workflow' : wf.errors.join('. '))}
               onClick={() => {
@@ -380,7 +383,19 @@ export function WorkflowEditor({ onClose, onRun, api: injected, pollMs = POLL_MS
                 });
               }}
             >
-              Run
+              {running ? (
+                <>
+                  <AsciiSpinner />
+                  <span>Running</span>
+                </>
+              ) : (
+                <>
+                  <svg {...GLYPH} width={12} height={12} viewBox="0 0 12 12" fill="currentColor" stroke="none" className="wfe-btn-ic" data-glyph="play">
+                    <path d="M3.5 2.2v7.6L9.8 6z" />
+                  </svg>
+                  <span>Run</span>
+                </>
+              )}
             </button>
           ) : null}
           <button type="button" className="wfe-x" aria-label="Close the editor" title="Close (Esc)" data-testid="wfe-close" onClick={onClose}>

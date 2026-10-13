@@ -229,6 +229,7 @@ describe('the composer access switch', () => {
       's2-quickmode-plan',
       's2-quickmode-smart',
       's2-quickmode-full',
+      's2-quickmode-teach',
     ]);
     expect(screen.queryByTestId('s2-model-menu')).toBeNull();
     fireEvent.click(screen.getByTestId('s2-quickmode-smart'));

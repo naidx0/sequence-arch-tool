@@ -70,7 +70,7 @@ describe('the palette is a door to every surface', () => {
   it('lists the surfaces, New chat and the project doors in the words of the UI', () => {
     render(<V3App appStore={createStore({})} />);
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-    for (const want of ['New chat', 'Open Architecture', 'Open Files', 'Open Whiteboard', 'Open Terminal', 'Open Agents', 'Open a project', 'Close project', 'Search this project', 'Review the working tree', 'Rewind an edit', 'What can I do here?', 'Open Chats']) {
+    for (const want of ['New chat', 'Open Architecture', 'Open Files', 'Open Spaces', 'Open Terminal', 'Open Agents', 'Open a project', 'Close project', 'Search this project', 'Review the working tree', 'Rewind an edit', 'What can I do here?', 'Open Chats']) {
       expect(rows()).toContain(want);
     }
     /* A command with a shortcut shows it. */
@@ -100,22 +100,24 @@ describe('Ctrl+K and the palette-only doors are visible', () => {
     expect(screen.getByTestId('command-surface')).toBeTruthy();
     fireEvent.keyDown(screen.getByTestId('command-field'), { key: 'Escape' });
   });
-  it('the chat more menu holds search, review, rewind and help, and they open their overlays', () => {
+  it('the chat header has quick icons for search, review and rewind, the more menu holds help, and each opens its overlay', () => {
     const store = createStore({});
     render(<V3App appStore={store} />);
+    /* 0.1.8 G8: the three doors are header icons; there is no "All commands" row (the sidebar's Commands entry and Ctrl+K are the way). */
+    /* G9: Find in files is no longer an overlay; it opens the Files space (chatQuickIcons018.test.tsx drives that). */
+    fireEvent.click(screen.getByTestId('s2-chat-quick-overlay.search'));
+    expect(store.getState().shell.overlay).toBeNull();
     for (const [id, kind] of [
-      ['overlay.search', 'search'],
       ['overlay.review', 'review'],
       ['overlay.rewind', 'rewind'],
-      ['overlay.help', 'help'],
     ] as const) {
-      fireEvent.click(screen.getByTestId('s2-chat-more'));
-      fireEvent.click(screen.getByTestId(`s2-chat-menu-${id}`));
+      fireEvent.click(screen.getByTestId(`s2-chat-quick-${id}`));
       expect(store.getState().shell.overlay?.kind).toBe(kind);
       act(() => store.dispatch({ type: 'shell/overlay', overlay: null }));
     }
     fireEvent.click(screen.getByTestId('s2-chat-more'));
-    fireEvent.click(screen.getByTestId('s2-chat-menu-commands'));
-    expect(screen.getByTestId('command-surface')).toBeTruthy();
+    expect(screen.queryByTestId('s2-chat-menu-commands')).toBeNull();
+    fireEvent.click(screen.getByTestId('s2-chat-menu-overlay.help'));
+    expect(store.getState().shell.overlay?.kind).toBe('help');
   });
 });

@@ -7,6 +7,14 @@ import { requestAgentsView } from './agentsSection';
 import { agentRuns, type AgentRun } from './agentRuns';
 import { buildAgentsOverview } from './agentsOverview';
 import { AgentsSurface } from './AgentsSurface';
+import { StoreProvider, createStore } from '../state';
+
+/* The header's context is the open chat's: a store with that chat open. */
+const openChat = (id: string) => {
+  const store = createStore({});
+  store.dispatch({ type: 'session/index', sessions: [{ id, title: id, pinned: false, updatedAt: '2026-01-01' }], activeId: id } as never);
+  return store;
+};
 
 const run = (over: Partial<AgentRun>): AgentRun =>
   ({ id: 'r', sessionId: 'a', agentRef: 'claude', nodeId: null, nodeLabel: null, prompt: 'Why is the limiter wrong?', status: 'done', startedAt: 1_000, endedAt: 5_000, items: [], approvals: [], error: null, ...over }) as AgentRun;
@@ -16,7 +24,7 @@ const usage = (total: number) => ({ input: total - 10, output: 10, cacheRead: 0,
 
 const runs: AgentRun[] = [
   run({ id: 'r1', sessionId: 'a', items: [task(), step] as never, turnUsage: usage(1200) }),
-  run({ id: 'r2', sessionId: 'a', startedAt: 6_000, endedAt: 9_000, prompt: 'And the proxy?', turnUsage: usage(300) }),
+  run({ id: 'r2', sessionId: 'a', startedAt: 6_000, endedAt: 9_000, prompt: 'And the proxy?', turnUsage: usage(300), usage: { used: 290, size: 200_000, cost: null } }),
   run({ id: 'r3', sessionId: 'b', startedAt: 2_000, endedAt: 3_000, prompt: 'Rename the store' }),
 ];
 
@@ -36,19 +44,19 @@ describe('the Agents overview folds runs into a tree with honest tokens', () => 
     expect(o.chats.find((c) => c.sessionId === 'a')!.runs.map((r) => r.processed)).toEqual([1200, 300]);
     expect(o.chats.find((c) => c.sessionId === 'a')!.runs.map((r) => r.output)).toEqual([10, 10]);
     expect(buildAgentsOverview([runs[2]!], [], 10_000).totalOutput).toBeNull();
-    expect(buildAgentsOverview([runs[2]!], [], 10_000).context).toBeNull();
+    expect(buildAgentsOverview([runs[2]!], [], 10_000, { activeSessionId: 'b' }).context).toBeNull();
   });
   it('nine turns that each re-send a ~100k context do not read as ~900k: the headline is context and output', () => {
     const turns = Array.from({ length: 9 }, (_, i) =>
-      run({ id: `t${i}`, sessionId: 'big', startedAt: 1_000 + i * 1_000, endedAt: 1_500 + i * 1_000, turnUsage: { input: 8_000 + i * 100, cacheRead: 92_000, cacheWrite: 0, output: 2_000, thought: 0, total: 102_000 + i * 100 } }),
+      run({ id: `t${i}`, sessionId: 'big', startedAt: 1_000 + i * 1_000, endedAt: 1_500 + i * 1_000, turnUsage: { input: 8_000 + i * 100, cacheRead: 92_000, cacheWrite: 0, output: 2_000, thought: 0, total: 102_000 + i * 100 }, usage: { used: 100_000 + i * 100, size: 200_000, cost: null } }),
     );
-    const o = buildAgentsOverview(turns, [], 20_000);
-    expect(o.context).toBe(8_800 + 92_000 + 0);
+    const o = buildAgentsOverview(turns, [], 20_000, { activeSessionId: 'big' });
+    expect(o.context).toBe(100_800);
     expect(o.totalOutput).toBe(18_000);
     expect(o.totalProcessed).toBeGreaterThan(900_000);
     expect(o.reportedTurns).toBe(9);
     act(() => agentRuns.patch((s) => ({ ...s, runs: turns })));
-    render(<AgentsSurface />);
+    render(<StoreProvider store={openChat('big')}><AgentsSurface /></StoreProvider>);
     const head = screen.getByTestId('agents-surface-total');
     expect(screen.getByTestId('agents-surface-context').textContent).toBe('101k');
     expect(screen.getByTestId('agents-surface-output').textContent).toBe('18k');
@@ -59,15 +67,16 @@ describe('the Agents overview folds runs into a tree with honest tokens', () => 
   it('Codex: turn usage is the sum of its requests, so context comes from usage_update, not from the summed input', () => {
     /* The last acp:usage and usage_update of packages/acp edit-with-plan.sse.jsonl. */
     const codex = run({ id: 'cx', sessionId: 'cx', turnUsage: { input: 142_328, output: 1_147, cacheRead: 114_432, cacheWrite: 0, thought: 542, total: 143_475 }, usage: { used: 24_528, size: 258_400, cost: null } });
-    const o = buildAgentsOverview([codex], [], 10_000);
+    const o = buildAgentsOverview([codex], [], 10_000, { activeSessionId: 'cx' });
     expect(o.context).toBe(24_528);
     expect(o.chats[0]!.runs[0]!.context).toBe(24_528);
-    /* Without usage_update the formula is the fallback. */
-    expect(buildAgentsOverview([{ ...codex, usage: null }], [], 10_000).context).toBe(142_328);
+    /* Without usage_update the context is unknown: never worked out from the summed turn (0.1.8 C). */
+    expect(buildAgentsOverview([{ ...codex, usage: null }], [], 10_000, { activeSessionId: 'cx' }).context).toBeNull();
+    expect(buildAgentsOverview([{ ...codex, usage: null }], [], 10_000).chats[0]!.runs[0]!.processed).toBe(143_475);
   });
   it('a turn that reported only tokens has no context figure of its own', () => {
     const t = run({ id: 'tk', sessionId: 'tk', tokens: { scope: 'turn', inputTokens: 900, outputTokens: 50, cachedReadTokens: 80_000, cachedWriteTokens: 0 } });
-    const o = buildAgentsOverview([t], [], 10_000);
+    const o = buildAgentsOverview([t], [], 10_000, { activeSessionId: 'tk' });
     expect(o.chats[0]!.runs[0]!.context).toBeNull();
     expect(o.context).toBeNull();
     expect(o.chats[0]!.runs[0]!.output).toBe(50);
@@ -89,7 +98,7 @@ describe('the Agents surface', () => {
 
   it('draws two chats as a tree, with "—" where tokens are unknown and a total where known', () => {
     act(() => agentRuns.patch((s) => ({ ...s, runs })));
-    render(<AgentsSurface />);
+    render(<StoreProvider store={openChat('a')}><AgentsSurface /></StoreProvider>);
     const chats = screen.getAllByTestId('agents-surface-chat');
     expect(chats).toHaveLength(2);
     expect(screen.getAllByTestId('agents-surface-chat-tokens').map((n) => n.textContent)).toContain('—');
@@ -98,12 +107,12 @@ describe('the Agents surface', () => {
     expect(within(chats[0]!).queryAllByTestId('agents-surface-subagent').length + within(chats[1]!).queryAllByTestId('agents-surface-subagent').length).toBe(1);
   });
 
-  it('a running run shows the ASCII spinner and a shimmering label; the timeline is a twist on each row (round 13), not a tab', () => {
+  it('a running run shows the ASCII spinner and a shimmering label; the timeline is a twist on each row (round 13) and also a tab (0.1.8)', () => {
     act(() => agentRuns.patch((s) => ({ ...s, runs: [run({ id: 'r9', sessionId: 'z', status: 'running', endedAt: null })] })));
     const { container } = render(<AgentsSurface />);
     expect(screen.getAllByTestId('s2-ascii-spinner').length).toBeGreaterThan(0);
     expect(container.querySelector('.ags-label.shimmer-text')).not.toBeNull();
-    expect(screen.queryByRole('tab', { name: 'Timeline' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Timeline' })).toBeTruthy();
     expect(screen.queryByTestId('agents-surface-detail')).toBeNull();
     fireEvent.click(screen.getAllByTestId('agents-surface-twist')[0]!);
     expect(screen.getAllByTestId('agents-surface-detail')).toHaveLength(1);
@@ -151,7 +160,7 @@ describe('the Workflows section (the old Activity overlay, inside the Agents sur
 describe('round 12: the tabs fold to icons under 1200px, and the running colour is neutral', () => {
   it('each tab has an icon, a word, an aria-label and a tooltip', () => {
     render(<AgentsSurface />);
-    for (const [v, word] of [['tree', 'Tree'], ['workflows', 'Workflows']] as const) {
+    for (const [v, word] of [['tree', 'Tree'], ['timeline', 'Timeline'], ['workflows', 'Workflows']] as const) {
       const b = screen.getByTestId(`agents-surface-tab-${v}`);
       expect(b.getAttribute('aria-label')).toBe(word);
       expect(b.getAttribute('title')).toBe(word);

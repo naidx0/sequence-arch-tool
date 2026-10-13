@@ -19,7 +19,7 @@ import { Icon } from '../chat/Icon';
 import { ProseMessage } from '../chat/ProseMessage';
 import { stripToolProse, toolCardTitle } from '../chat/stripToolProse';
 import { TodoList } from '../chat/TodoList';
-import { DecisionCard } from '../chat/DecisionCard';
+import { COMPONENTS_MODES, createComponentsClient, type ComponentsClient, type ComponentsListing, type ComponentsMode } from '../components/componentsClient';
 import { latestDecision } from '../chat/decisionSource';
 import { ChatTranscript } from '../chat/ChatTranscript';
 import { takeStaticComposer, type StaticComposerState } from '../chat/staticHandoff';
@@ -396,11 +396,21 @@ const MessageBlock = memo(function MessageBlock({
             : timelineTools
         }
       />
-      {/* Tool row already names the chart — no second "open the AI Canvas" line. */}
       {stripped.trim() ? (
         <div className="s2-answer" data-testid="v3-msg-prose">
           <ProseMessage text={stripped} />
         </div>
+      ) : null}
+      {/* What the turn drew shows here as a little diagram, with Open on surface; the board or canvas stays the source of truth. */}
+      {(assistant.charts ?? []).map((chart, i) => (
+        <Suspense key={`chart-${i}`} fallback={null}>
+          <ChartTurnCard chart={chart} onOpen={() => requestHostCommand('canvas.ai')} />
+        </Suspense>
+      ))}
+      {(assistant.boardMarks?.length ?? 0) > 0 ? (
+        <Suspense fallback={null}>
+          <BoardTurnCard items={assistant.boardMarks!} onOpen={() => requestHostCommand('canvas.ai')} />
+        </Suspense>
       ) : null}
       {usage ? (
         <div
@@ -707,12 +717,19 @@ type ModeKey = 'plan' | 'build';
    the plan intent; Smart is Build at auto-edit; Full auto is Build at Full
    access. Teach is gone as a mode: Plan carries its teaching and discussion. */
 const MODE_ICON: Record<ComposerModeKey, S2IconName> = { plan: 'plan', smart: 'shield', full: 'bolt' };
-const B_MODES: { key: ComposerModeKey; label: string; desc: string; icon: S2IconName }[] = COMPOSER_MODE_KEYS.map((key) => ({
-  key,
-  label: COMPOSER_MODE_COPY[key].label,
-  desc: COMPOSER_MODE_COPY[key].desc,
-  icon: MODE_ICON[key],
-}));
+type BModeKey = ComposerModeKey | 'teach';
+/* Teach is a row of the popup again (I3: a learner can pick it without knowing the phrase): Plan's wire values plus the teach flag. */
+const TEACH_ROW = { key: 'teach' as const, label: 'Teach', desc: 'Explains and draws, no edits', icon: 'spark' as S2IconName };
+const B_MODES: { key: BModeKey; label: string; desc: string; icon: S2IconName }[] = [
+  ...COMPOSER_MODE_KEYS.map((key) => ({
+    key,
+    label: COMPOSER_MODE_COPY[key].label,
+    desc: COMPOSER_MODE_COPY[key].desc,
+    icon: MODE_ICON[key],
+  })),
+  TEACH_ROW,
+];
+const TEACH_ON_AGENT_NOTE = 'Teach runs on the built-in model. Pick a Sequence model to use it.';
 /* What each command does, in words a reader acts on (Jaden: the hints read
    oddly, "/models Reasoning connected"). */
 const SLASH_DESC: Record<string, string> = {
@@ -728,8 +745,9 @@ const B_SLASH_MODES: SlashCommand[] = [
   { name: 'plan', label: 'Plan', hint: COMPOSER_MODE_COPY.plan.desc, icon: 'map' as never, source: { kind: 'mode', mode: 'plan' } },
   { name: 'smart', label: 'Smart', hint: COMPOSER_MODE_COPY.smart.desc, icon: 'pen', source: { kind: 'mode', mode: 'build' } },
   { name: 'full', label: 'Full auto', hint: COMPOSER_MODE_COPY.full.desc, icon: 'hammer', source: { kind: 'mode', mode: 'build' } },
+  { name: 'teach', label: 'Teach', hint: TEACH_ROW.desc, icon: 'spark' as never, source: { kind: 'mode', mode: 'teach' } },
 ];
-const B_SLASH_TO_MODE: Record<string, ComposerModeKey> = { plan: 'plan', smart: 'smart', full: 'full' };
+const B_SLASH_TO_MODE: Record<string, BModeKey> = { plan: 'plan', smart: 'smart', full: 'full', teach: 'teach' };
 const SLASH_GLYPH: Partial<Record<string, S2IconName>> = {
   file: 'file', board: 'board', pen: 'pen', terminal: 'term', run: 'term', module: 'grid', alert: 'flame',
   key: 'cpu', target: 'spark', skill: 'box', book: 'layers', hammer: 'bolt', map: 'map', branch: 'branch', flow: 'nodes',
@@ -751,8 +769,17 @@ export interface V3ChatProps {
   goalRunClient?: SessionsClient;
   /** The Full access confirm route. Injected only by tests. */
   fullAccessClient?: FullAccessClient;
+  /** The Components routes (docs/requests/components-ui-contract.md). Injected only by tests. */
+  componentsClient?: ComponentsClient;
 }
 
+/* Inline charts and board sketches load the first time a turn has one. */
+/* Drawn only when an offer, a decision or the components menu exists: they load then, not at boot. */
+const DecisionCard = lazy(() => import('../chat/DecisionCard').then((m) => ({ default: m.DecisionCard })));
+const ComponentOfferCard = lazy(() => import('../components/ComponentOfferCard').then((m) => ({ default: m.ComponentOfferCard })));
+const ComponentsPicker = lazy(() => import('../components/ComponentsPicker').then((m) => ({ default: m.ComponentsPicker })));
+const ChartTurnCard = lazy(() => import('../chat/ChartTurnCard'));
+const BoardTurnCard = lazy(() => import('../chat/BoardTurnCard'));
 /* Decision 49: the takeover and the changed-files line load with the first agent run. */
 const Takeover = lazy(() => import('../shell2/Takeover'));
 const ChangedFiles = lazy(() => import('../shell2/ChangedFiles'));
@@ -764,7 +791,7 @@ const MergePanel = lazy(() => import('../worktree/MergePanel'));
 const FanoutMenu = lazy(() => import('../fanout/FanoutMenu').then((m) => ({ default: m.FanoutMenu })));
 const WorktreeChip = lazy(() => import('../worktree/WorktreeChip').then((m) => ({ default: m.WorktreeChip })));
 
-export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
+export function V3Chat({ goalRunClient, fullAccessClient, componentsClient }: V3ChatProps = {}) {
   const store = useStore();
   const state = useAppState();
   const composer = composerPropsFrom(state, store);
@@ -823,6 +850,26 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
   const picker = useRef(createModelPicker()).current;
   const [now, setNow] = useState(() => Date.now());
   const [toolsOpen, setToolsOpen] = useState(false);
+  /* Components: the listing (null = the route is absent, so every Components entry stays hidden) and the picker. */
+  const [componentsListing, setComponentsListing] = useState<ComponentsListing | null>(null);
+  const [componentsOpen, setComponentsOpen] = useState(false);
+  const componentsApi = useMemo(() => componentsClient ?? createComponentsClient(), [componentsClient]);
+  /* Read when the reader reaches for it (the + menu opens, or a slash is typed), never at boot. */
+  const componentsBusy = useRef(false);
+  const wantsComponents = toolsOpen || state.composer.draft.startsWith('/');
+  useEffect(() => {
+    /* Asked again on the next open while it has not answered (a 404 may be a backend that has since arrived). */
+    if (!wantsComponents || componentsListing !== null || componentsBusy.current) return undefined;
+    componentsBusy.current = true;
+    void componentsApi.list().then((l) => {
+      componentsBusy.current = false;
+      setComponentsListing(l);
+    });
+    return undefined;
+  }, [wantsComponents, componentsApi, componentsListing]);
+  useEffect(() => {
+    if (!toolsOpen) setComponentsOpen(false);
+  }, [toolsOpen]);
   /* The turn whose Plan-ready card the reader answered (Build it / Keep
      planning), so the card does not come back for the same plan. */
   const [planCardAnswered, setPlanCardAnswered] = useState<string | null>(null);
@@ -919,6 +966,8 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
        tooltip says "switch to Build" — advice that has to be about the chip
        they can see. */
     mode: activeMode,
+    /* This chat's agent works the plan when it has one, read when Start is pressed (the store the composer sends to). */
+    getAgentRef: () => agentRuns.get().agents?.[store.getState().session.activeId ?? ''],
     booted: state.net.reachable !== null,
     ...(goalRunClient ? { client: goalRunClient } : {}),
   });
@@ -1335,7 +1384,18 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
 
   const enabledModes = state.composer.permission.enabled;
   const currentBMode: ComposerModeKey = modeOf(mode, accessSwitch.access);
-  function chooseBMode(key: ComposerModeKey): void {
+  function chooseBMode(key: BModeKey): void {
+    if (key === 'teach') {
+      /* Teach runs on the built-in model: an agent chat says so and keeps its mode. */
+      if (agentRun) {
+        setModeNote(TEACH_ON_AGENT_NOTE);
+        return;
+      }
+      pickMode('plan');
+      composer.onTeachToggle?.(true);
+      return;
+    }
+    composer.onTeachToggle?.(false);
     if (key === 'plan') {
       pickMode('plan');
       return;
@@ -1535,13 +1595,13 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
         /* `board: true` — V3 owns the architecture pane, so `/draw` here can
            actually be carried out. `chat/Composer.tsx` owns no board and must
            not offer it, same rule as `goal`. */
-        { goal: true, board: true, skills: workspaceSkills },
+        { goal: true, board: true, skills: workspaceSkills, components: componentsListing !== null },
         /* S2b: the agent this chat talks to: its own commands and skills, as typed (rows built lazily, agentSlash). */
       )
         .map((c) => (SLASH_DESC[c.name] ? { ...c, hint: SLASH_DESC[c.name]! } : c))
         .concat(B_SLASH_MODES)
         .concat(agentCaps?.slash ?? []),
-    [workspaceSkills, agentCaps],
+    [workspaceSkills, agentCaps, componentsListing],
   );
 
   /*
@@ -1648,6 +1708,7 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
      */
     else if (command.source.kind === 'mode' && B_SLASH_TO_MODE[command.name] && !(command.name === 'plan' && rest)) {
       chooseBMode(B_SLASH_TO_MODE[command.name]!);
+      if (command.name === 'teach' && rest) composer.onDraftChange(rest);
     } else if (command.source.kind === 'mode' && command.source.mode === 'plan' && rest) {
       pickMode('plan');
       const text = `/plan ${rest}`;
@@ -1701,14 +1762,32 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
      * substitute ours is the thing `a-door-the-model-takes-one-time-in-three`
      * is about.
      */
-    else if (command.source.kind === 'board') {
+    else if (command.source.kind === 'components') {
+      /* `/components` opens the picker; `/components off` and `/components on` flip the master switch. */
+      const word = rest.trim().toLowerCase();
+      if (word === 'off' || word === 'on') {
+        const enabled = word === 'on';
+        void componentsApi.setSettings({ enabled }).then((ok) => {
+          if (ok) setComponentsListing((l) => (l ? { ...l, enabled } : l));
+        });
+      } else if ((COMPONENTS_MODES as readonly string[]).includes(word)) {
+        const mode = word as ComponentsMode;
+        void componentsApi.setSettings({ mode }).then((ok) => {
+          if (ok) setComponentsListing((l) => (l ? { ...l, mode } : l));
+        });
+      } else {
+        setToolsOpen(true);
+        setComponentsOpen(true);
+      }
+    } else if (command.source.kind === 'board') {
       composer.onDraftChange(
         rest
           ? `Draw the architecture board for this project: ${rest}`
           : 'Draw the architecture board for this project from what is actually in the code.',
       );
       textareaRef.current?.focus();
-    } else {
+    }
+    else {
       const unreachable: never = command.source;
       void unreachable;
     }
@@ -2038,8 +2117,26 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
                 },
               ]
             : []),
+          ...(state.session.componentOffers ?? [])
+            .filter((o) => o.status !== 'accepted' && o.status !== 'declined')
+            .map((o) => ({
+              key: `component-offer-${o.offerId}`,
+              node: (
+                <Suspense fallback={null}>
+                  <ComponentOfferCard
+                    offer={o}
+                    onAnswer={(accept) => {
+                      store.dispatch({ type: 'component/offer-status', offerId: o.offerId, status: 'sending' });
+                      void componentsApi.answerOffer(o.offerId, accept).then((ok) => {
+                        store.dispatch({ type: 'component/offer-status', offerId: o.offerId, status: ok ? (accept ? 'accepted' : 'declined') : 'pending' });
+                      });
+                    }}
+                  />
+                </Suspense>
+              ),
+            })),
           ...(decision
-            ? [{ key: `decision-${decision.id}`, node: <DecisionCard source={decision} onSend={(text) => boardSendRef.current(text)} /> }]
+            ? [{ key: `decision-${decision.id}`, node: (<Suspense fallback={null}><DecisionCard source={decision} onSend={(text) => boardSendRef.current(text)} /></Suspense>) }]
             : []),
         ]}
       />
@@ -2498,7 +2595,7 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
                 <span className="s2-attach-group" data-testid="composer-chips">
                   {state.composer.chips.map((chip) => (
                     <span key={chip.id} className="s2-chip" data-testid="composer-chip" data-kind={chip.kind} title={`Grounded ask context: ${chip.kind} ${chip.ref}`}>
-                      <S2Icon name={chip.kind === 'file' ? 'file' : chip.kind === 'node' ? 'box' : 'term'} small />
+                      <S2Icon name={chip.kind === 'file' ? 'file' : chip.kind === 'node' ? 'box' : chip.kind === 'component' ? 'spark' : 'term'} small />
                       <span className="s2-chip-l">{chip.label}</span>
                       <button type="button" className="s2-chip-x" data-testid="composer-chip-remove" aria-label={`Remove ${chip.label}`} onClick={() => composer.onRemoveChip(chip.id)}>
                         <S2Icon name="x" small />
@@ -2602,7 +2699,27 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
               >
                 <S2Icon name="plus" />
               </button>
-              {toolsOpen ? (
+              {toolsOpen && componentsOpen && componentsListing ? (
+                <Suspense fallback={null}>
+                <ComponentsPicker
+                  listing={componentsListing}
+                  onClose={() => {
+                    setToolsOpen(false);
+                    textareaRef.current?.focus();
+                  }}
+                  onEnable={() => {
+                    void componentsApi.setSettings({ enabled: true }).then((ok) => {
+                      if (ok) setComponentsListing((l) => (l ? { ...l, enabled: true } : l));
+                    });
+                  }}
+                  onPick={(entry) => {
+                    store.dispatch({ type: 'composer/chip-add', chip: { id: `component:${entry.id}`, kind: 'component', ref: entry.id, label: entry.name, nodeKind: null } });
+                    setToolsOpen(false);
+                    textareaRef.current?.focus();
+                  }}
+                />
+                </Suspense>
+              ) : toolsOpen ? (
                 <div className="s2-menu s2-menu-up" role="menu" aria-label="Add to the message">
                   <button type="button" role="menuitem" className="s2-mi" data-testid="v3-tools-attach" onClick={() => { setToolsOpen(false); attachInputRef.current?.click(); }}>
                     <S2Icon name="file" />
@@ -2626,6 +2743,12 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
                     <S2Icon name="spark" />
                     <span className="s2-mi-d">Skills and commands<span>/ lists them</span></span>
                   </button>
+                  {componentsListing?.enabled ? (
+                    <button type="button" role="menuitem" className="s2-mi" data-testid="v3-tools-components" onClick={() => setComponentsOpen(true)}>
+                      <S2Icon name="box" />
+                      <span className="s2-mi-d">Components<span>Add a ready-made design or review pass to this message</span></span>
+                    </button>
+                  ) : null}
                   {repoRoot ? (
                     <button type="button" role="menuitem" className="s2-mi" data-testid="v3-tools-fanout" onClick={() => { setToolsOpen(false); setFanoutOpen(true); }}>
                       <S2Icon name="layers" />
@@ -2696,10 +2819,10 @@ export function V3Chat({ goalRunClient, fullAccessClient }: V3ChatProps = {}) {
               chipIdentity={chipIdentity}
               effortLabel={effortLabel}
               modes={B_MODES}
-              currentMode={currentBMode}
+              currentMode={state.composer.teach && !agentRun ? 'teach' : currentBMode}
               onMode={(key) => {
                 setModelOpen(false);
-                chooseBMode(key as ComposerModeKey);
+                chooseBMode(key as BModeKey);
               }}
               onModeIntent={(key) => {
                 if (key === 'full') preloadFullAccessDialog();

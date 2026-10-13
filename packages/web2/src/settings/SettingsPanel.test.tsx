@@ -802,7 +802,7 @@ describe('P3 permissions editor', () => {
       /* A separate chunk, behind React.lazy: the boot bundle carries none of it
          (tools/measure/perf-counts.mjs measures that); here it must still arrive. */
       expect(await screen.findByTestId('settings-agent-map')).toBeTruthy();
-      await waitFor(() => expect(screen.getByTestId('settings-agent-map-status').textContent).toMatch(/map 602 tokens/));
+      await waitFor(() => expect(screen.getByTestId('settings-agent-map-status').textContent).toMatch(/the map is about 602 tokens/));
     } finally {
       globalThis.fetch = realFetch;
     }
@@ -1019,7 +1019,8 @@ describe('what steers the agent is shown, not guessed at', () => {
     fireEvent.click(await screen.findByTestId('settings-nav-skills'));
     const list = await screen.findByTestId('settings-skills-list');
     expect(within(list).getByText('Gate first')).toBeTruthy();
-    expect(within(list).getByText('gate-first')).toBeTruthy();
+    /* 0.1.8: the row is the name and a one-line description; the slug rides on the title, not the row's text. */
+    expect(within(list).getByTestId('settings-skill-row').getAttribute('title')).toBe('Gate first (gate-first)');
     /* The one that did NOT load is the one worth saying out loud: it is on
        disk, its author believes it is live, and it is not. */
     expect(screen.getByTestId('settings-skills-warnings').textContent).toMatch(/half-written/);

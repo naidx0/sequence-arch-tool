@@ -5,6 +5,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import { programAgentLaunch } from '../programRun.js';
+import { writeComponentSettings } from '../components/settings.js';
 
 /* S2a: a CLI program run given --repo runs its agents there with the board;
    without one, nothing is guessed. */
@@ -19,7 +20,10 @@ test("program run --repo: an agent node runs in the repo (or worktree) and gets 
     assert.equal(withRepo.mcpServers?.length, 1);
     const board = withRepo.mcpServers![0]!;
     assert.equal(board.name, 'sequence');
-    assert.deepEqual(board.env, { SEQUENCE_REPO: path.resolve(repo), SEQUENCE_MCP_TOOLS: 'core' });
+    /* The mode the person set is carried, so a load with no app to ask cannot be looser than approve. */
+    assert.deepEqual(board.env, { SEQUENCE_REPO: path.resolve(repo), SEQUENCE_MCP_TOOLS: 'core', SEQUENCE_COMPONENTS_MODE: 'approve' });
+    writeComponentSettings(store, { mode: 'manual' });
+    assert.deepEqual(programAgentLaunch(entry, { repo, storeDir: store }).mcpServers![0]!.env, { SEQUENCE_REPO: path.resolve(repo), SEQUENCE_MCP_TOOLS: 'core', SEQUENCE_MCP_COMPONENTS: 'off', SEQUENCE_COMPONENTS_MODE: 'manual' });
     const without = programAgentLaunch(entry, { storeDir: store });
     assert.equal(without.cwd, entry.cwd);
     assert.equal(without.mcpServers, undefined);

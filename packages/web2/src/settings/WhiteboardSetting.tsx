@@ -52,7 +52,7 @@ export function WhiteboardSetting() {
   const [log, setLog] = useState(readEditLogEnabled);
   return (
     <section className="sb-group" data-testid="settings-whiteboard">
-      <h3 className="sb-lab">Whiteboard</h3>
+      <h3 className="sb-lab">Spaces</h3>
       <div className="sb-card">
         <div className="sb-row sb-theme" data-testid="settings-snap">
           <span className="sb-row-txt">

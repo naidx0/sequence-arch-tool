@@ -12,7 +12,7 @@
    PURE. Values in, values out; the tests pin exact geometry.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { STICKY_H, STICKY_W, type Point, type WbItem, type WbShape } from '../../whiteboard/whiteboardModel';
+import { STICKY_H, STICKY_W, normalizeLegacy, type Point, type WbItem, type WbShape } from '../../whiteboard/whiteboardModel';
 
 export type BoardKind = 'architecture' | 'whiteboard';
 
@@ -52,9 +52,11 @@ export interface Box {
 export function itemBox(item: WbItem): Box | null {
   switch (item.kind) {
     case 'shape': {
-      const x = Math.min(item.from.x, item.to.x);
-      const y = Math.min(item.from.y, item.to.y);
-      return { x, y, w: Math.abs(item.to.x - item.from.x), h: Math.abs(item.to.y - item.from.y) };
+      const xs = [item.from.x, item.to.x, ...(item.points ?? []).map((p) => p.x)];
+      const ys = [item.from.y, item.to.y, ...(item.points ?? []).map((p) => p.y)];
+      const x = Math.min(...xs);
+      const y = Math.min(...ys);
+      return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
     }
     case 'text':
       if (item.sticky) return { x: item.at.x, y: item.at.y, w: item.w ?? STICKY_W, h: item.h ?? STICKY_H };
@@ -63,6 +65,10 @@ export function itemBox(item: WbItem): Box | null {
       return { x: item.at.x, y: item.at.y - 14, w: Math.max(24, item.label.length * 7), h: 20 };
     case 'artifact':
       return { x: item.at.x, y: item.at.y, w: item.size.w, h: item.size.h };
+    case 'svg':
+    case 'scene':
+    case 'video':
+      return { x: item.at.x, y: item.at.y, w: item.w, h: item.h };
     case 'stroke': {
       if (item.points.length === 0) return null;
       const xs = item.points.map((p) => p.x);
@@ -81,7 +87,7 @@ export function shiftItem<T extends WbItem>(item: T, dx: number, dy: number): T 
     case 'stroke':
       return { ...item, points: item.points.map(mv) };
     case 'shape':
-      return { ...item, from: mv(item.from), to: mv(item.to) };
+      return { ...item, from: mv(item.from), to: mv(item.to), ...(item.points ? { points: item.points.map(mv) } : {}) };
     default:
       return { ...item, at: mv((item as { at: Point }).at) } as T;
   }
@@ -166,25 +172,59 @@ export function resolveItems(
   };
 }
 
+/**
+ * When the Spaces surface closes because its list emptied. `had` is the project that last showed a Space: only an
+ * emptying of THAT project's list closes the surface. A project opened (or switched to) with none keeps its
+ * "No spaces" note, however many Spaces the project before it had.
+ */
+export function closeAfterEmpty(had: string | null, project: string, count: number): { close: boolean; had: string | null } {
+  if (count > 0) return { close: false, had: project };
+  return { close: had === project, had: null };
+}
+
 /** The ops that turn `prev` into `next`. Artifact frames are not boards' to store. */
+/**
+ * WHETHER THE BOARD STORE TAKES THE `scene` KIND. It does not yet (its validator refuses unknown kinds), so scenes are
+ * kept locally per board (ConnectedWhiteboard) and are not written as ops. The backend adds the kind with the JSON
+ * shape in whiteboard/scene.ts, and flips this to true.
+ */
+export const SCENE_ON_SERVER = false;
+
+/**
+ * WHETHER THE STORE TAKES THE `video` KIND AND SERVES ITS FILES. Until it does, a video item is not written as an op (the
+ * store's validator would refuse the whole batch and lose the person's other edits with it); it is kept with the
+ * board on this machine like a scene is. Flip to true when the backend merges the kind.
+ */
+export const VIDEO_ON_SERVER = false;
+
 export function diffOps(prev: readonly WbItem[], next: readonly WbItem[]): BoardOp[] {
-  const before = new Map(prev.filter((i) => i.kind !== 'artifact').map((i) => [i.id, JSON.stringify(i)]));
+  const skip = (i: WbItem) => i.kind === 'artifact' || (i.kind === 'scene' && !SCENE_ON_SERVER) || (i.kind === 'video' && !VIDEO_ON_SERVER);
+  const before = new Map(prev.filter((i) => !skip(i)).map((i) => [i.id, JSON.stringify(i)]));
   const ops: BoardOp[] = [];
   const seen = new Set<string>();
   for (const it of next) {
-    if (it.kind === 'artifact') continue;
+    if (skip(it)) continue;
     seen.add(it.id);
-    if (before.get(it.id) !== JSON.stringify(it)) ops.push({ op: 'put', item: it });
+    /* A re-saved item is written in the current names (normalizeLegacy), so the store's validator accepts it. */
+    if (before.get(it.id) !== JSON.stringify(it)) ops.push({ op: 'put', item: normalizeLegacy(it) });
   }
   for (const id of before.keys()) if (!seen.has(id)) ops.push({ op: 'remove', id });
   return ops;
 }
 
-/** A name for the next new board: "Whiteboard 2", "Whiteboard 3", … */
+/**
+ * What a board is CALLED on screen. A project made before Spaces has its default board stored as "Whiteboard"; the
+ * reader's word for it is "Space", so that untouched default displays as Space. A name the person chose is theirs.
+ */
+export function boardLabel(b: Pick<BoardMeta, 'id' | 'kind' | 'name'>): string {
+  return b.kind === 'whiteboard' && b.id === 'whiteboard' && b.name === 'Whiteboard' ? 'Space' : b.name;
+}
+
+/** A name for the next new space: "Space", "Space 2", … Boards already named "Whiteboard N" keep their names. */
 export function nextBoardName(index: BoardsIndex | null): string {
-  const names = new Set((index?.boards ?? []).map((b) => b.name.toLowerCase()));
-  if (!names.has('whiteboard')) return 'Whiteboard';
+  const names = new Set((index?.boards ?? []).map((b) => boardLabel(b).toLowerCase()));
+  if (!names.has('space')) return 'Space';
   let n = 2;
-  while (names.has(`whiteboard ${n}`)) n += 1;
-  return `Whiteboard ${n}`;
+  while (names.has(`space ${n}`)) n += 1;
+  return `Space ${n}`;
 }

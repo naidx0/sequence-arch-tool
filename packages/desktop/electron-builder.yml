@@ -163,6 +163,9 @@ nsis:
 
 linux:
   category: Development
+  # The binary inside /opt/Sequence (deb) is named here, not left to a default derived from the scoped package name:
+  # tools/ci/linux-launch-smoke.mjs launches /opt/Sequence/sequence and the deb update check keys off /opt/Sequence.
+  executableName: sequence
   # A deb needs a Maintainer with an email; without one electron-builder stops.
   maintainer: Sequence <sequence@users.noreply.github.com>
   target:

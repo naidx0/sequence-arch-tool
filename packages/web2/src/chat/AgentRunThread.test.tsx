@@ -56,6 +56,28 @@ const STREAM: [RunNodeEvent, number][] = [
   ],
 ];
 
+describe('the coverage sentence under a finished agent run', () => {
+  const graph = { repoRoot: ROOT, services: [{ id: 'svc:orders', label: 'Orders', path: 'orders' }, { id: 'svc:billing', label: 'Billing', path: 'billing' }] };
+  const read = (id: string, file: string): [RunNodeEvent, number] => [upd({ sessionUpdate: 'tool_call', toolCallId: id, title: `Read ${file}`, kind: 'read', status: 'completed', locations: [{ path: `${ROOT}/${file}` }] }), 50];
+  const answer: [RunNodeEvent, number] = [upd({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Orders places them.' } }), 10];
+
+  it('a finished Claude run that read 2 files in Orders shows the coverage sentence naming Orders', () => {
+    const run = runOf([answer, read('r1', 'orders/a.ts'), read('r2', 'orders/b.ts')], { status: 'done', endedAt: 900, agentRef: 'claude' });
+    render(<AgentRunView run={run} now={900} repoRoot={ROOT} graph={graph} onAnswer={() => {}} />);
+    const line = screen.getByTestId('chat-coverage');
+    expect(line.className).toBe('coverage');
+    expect(line.textContent).toBe('drew on 1 of 2 services (Orders), did not read Billing');
+  });
+
+  it('a run with no reads, and a run still going, show none', () => {
+    const { unmount } = render(<AgentRunView run={runOf([answer], { status: 'done', endedAt: 900 })} now={900} repoRoot={ROOT} graph={graph} onAnswer={() => {}} />);
+    expect(screen.queryByTestId('chat-coverage')).toBeNull();
+    unmount();
+    render(<AgentRunView run={runOf([answer, read('r1', 'orders/a.ts')])} now={900} repoRoot={ROOT} graph={graph} onAnswer={() => {}} />);
+    expect(screen.queryByTestId('chat-coverage')).toBeNull();
+  });
+});
+
 describe('an agent run in the chat thread', () => {
   it('shows the pinned node, the text, and every piece of work as a collapsed card with status and duration', () => {
     render(<AgentRunView run={runOf(STREAM)} now={2800} repoRoot={ROOT} onAnswer={() => {}} />);

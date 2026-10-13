@@ -788,3 +788,20 @@ test('a plan whose every step is ticked or parked is still refused — nothing t
   assert.ok(!out.ok);
   assert.strictEqual(out.reason, 'nothing_open');
 });
+
+test('a Stop pressed during the completion audit stays stopped_by_hand: the audit verdict does not overwrite it', async () => {
+  const repo = freshRepo();
+  const { id } = seed(repo, [['Read the parser', 'open']]);
+  const h = harness(repo, id, ({ aiming, plan, audit }) => {
+    if (audit) {
+      stopGoalRun(repo, id);
+      return { text: 'VERDICT: PASS — all verified' };
+    }
+    return { plan: ticked(plan, aiming!) };
+  });
+  await run(h);
+  const row = readGoalRun(repo, id)!;
+  assert.strictEqual(row.running, false);
+  assert.strictEqual(row.lastStopReason, 'stopped_by_hand');
+  assert.strictEqual(row.lastVerdict, undefined);
+});

@@ -80,6 +80,11 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
   const [signDone, setSignDone] = useState<null | 'finished' | 'disconnected'>(null);
   /* The one setup button: the bridge install in flight (its latest npm line) or its failure, for one agent. */
   const [bridge, setBridge] = useState<{ for: string; state: 'running' | 'failed'; line?: string; error?: string } | null>(null);
+  /* The agent's own CLI install (claims-audit 4.2): the vendor installer's latest line, or its failure verbatim. */
+  const [cli, setCli] = useState<{ for: string; state: 'running' | 'failed'; line?: string; error?: string } | null>(null);
+  /* A model already on this machine that fits it (GET /api/local/setup says `ready`): offered first, saved only on Use it. */
+  const [fit, setFit] = useState<string | null>(null);
+  const touched = useRef(false);
   const lastProbe = useRef(0);
   signingId.current = signing?.id ?? null;
   const rawProvidersRef = useRef<ProviderStatus[] | null>(null);
@@ -94,6 +99,22 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
       live.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof wire.localPlan !== 'function') return;
+    void wire.localPlan().then((r) => {
+      if (live.current && r.outcome === 'ok' && r.body.outcome === 'ready') setFit(r.body.model);
+    }).catch(() => undefined);
+  }, [wire]);
+
+  /* With a fitting local model here and no agent ready, open the Local route with that model chosen. Nothing is saved
+     until Use it, and Back returns to the list. Once, and never after the person has clicked something. */
+  useEffect(() => {
+    if (!fit || touched.current || step.at !== 'pick' || providers === null) return;
+    if (providers.some((p) => p.state === 'ready')) return;
+    touched.current = true;
+    setStep({ at: 'route', route: 'local' });
+  }, [fit, providers, step.at]);
 
   /* A modal dialog: the shell behind it is inert while it is up (restored on leave). */
   useEffect(() => {
@@ -287,6 +308,37 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
     }
   };
 
+  /* Install button: the vendor's native installer on the server, polled like the bridge; then look at the machine again. */
+  const installCli = async (p: ProviderStatus) => {
+    if (!client.installCli) return;
+    setCli({ for: p.id, state: 'running' });
+    const started = await client.installCli(p.id);
+    if (!started.ok) {
+      if (live.current) setCli({ for: p.id, state: 'failed', error: started.message });
+      return;
+    }
+    let st = started.body;
+    while (st && st.state === 'running' && live.current) {
+      setCli({ for: p.id, state: 'running', line: st.output?.length ? st.output[st.output.length - 1] : undefined });
+      await new Promise((r) => setTimeout(r, BRIDGE_POLL_MS));
+      const polled = client.cliStatus ? await client.cliStatus(p.id) : null;
+      if (!polled) break;
+      if (!polled.ok) {
+        st = { state: 'failed', error: polled.message };
+        break;
+      }
+      st = polled.body;
+    }
+    if (!live.current) return;
+    if (!st || st.state !== 'done') {
+      setCli({ for: p.id, state: 'failed', error: st?.error ?? 'The install did not finish.', line: st?.output?.[st.output.length - 1] });
+      return;
+    }
+    setCli(null);
+    const again = await client.providers(true);
+    if (live.current && again.ok) setProviders(again.body);
+  };
+
   /* The app cannot install or update an agent's CLI itself: the setup goes to the chat as a ready prompt, and first run ends there. */
   const promptFor = (p: ProviderStatus, need: SetupNeed): string =>
     agentSetupPrompt({ need, id: p.id, label: p.label, version: p.version, installHint: p.installHint, signInCommand: p.signInCommand, ...(p.minVersion ? { minVersion: p.minVersion } : {}) });
@@ -300,6 +352,8 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
   const provider = route === 'claude' || route === 'codex' ? (providers ?? []).find((p) => p.id === route) : undefined;
   const opt = OPTIONS.find((o) => o.route === route);
   const myBridge = bridge && provider && bridge.for === provider.id ? bridge : null;
+  const myCli = cli && provider && cli.for === provider.id ? cli : null;
+  const cliInstallable = Boolean(client.installCli) && provider?.state === 'install';
 
   const back = () => {
     setStep({ at: 'pick' });
@@ -332,10 +386,13 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
             <ul className="fr-options" data-testid="first-run-options" aria-busy={providers === null}>
               {OPTIONS.map((o) => {
                 const p = (providers ?? []).find((x) => x.id === o.route);
-                const pill = p ? providerPill(p) : null;
+                const pill = p ? providerPill(p) : o.route === 'local' && fit ? { text: `${fit} fits`, tone: 'done' as const } : null;
                 return (
                   <li key={o.route} className="fr-opt-li">
-                    <button type="button" className="fr-option" data-testid="first-run-option" data-option={o.route} data-state={p?.state} onClick={() => setStep({ at: 'route', route: o.route })}>
+                    <button type="button" className="fr-option" data-testid="first-run-option" data-option={o.route} data-state={p?.state} data-recommended={o.route === 'local' && fit ? 'true' : undefined} onClick={() => {
+                      touched.current = true;
+                      setStep({ at: 'route', route: o.route });
+                    }}>
                       <span className="fr-option-ic" aria-hidden="true">
                         <ProviderIcon provider={providerOf(o.provider, o.name)} />
                       </span>
@@ -410,8 +467,18 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
                         Sign in
                       </button>
                     ) : null}
+                    {cliInstallable ? (
+                      <button type="button" className="fr-btn fr-primary" data-testid="first-run-install" disabled={myCli?.state === 'running'} onClick={() => void installCli(provider)}>
+                        {myCli?.state === 'failed' ? 'Try again' : `Install ${provider.label}`}
+                      </button>
+                    ) : null}
                     {onAskAgent && canAnswer && (provider.state === 'install' || provider.state === 'update') ? (
-                      <button type="button" className="fr-btn fr-primary" data-testid="first-run-install" onClick={() => setUpInChat(provider, provider.state === 'update' ? 'update' : 'install')}>
+                      <button
+                        type="button"
+                        className={cliInstallable ? 'fr-btn' : 'fr-btn fr-primary'}
+                        data-testid={cliInstallable ? 'first-run-install-chat' : 'first-run-install'}
+                        onClick={() => setUpInChat(provider, provider.state === 'update' ? 'update' : 'install')}
+                      >
                         {provider.state === 'update' ? 'Update in chat' : 'Set up in chat'}
                       </button>
                     ) : null}
@@ -434,6 +501,16 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
                       </button>
                     ) : null}
                   </div>
+                  {myCli?.state === 'running' ? (
+                    <p className="fr-agent-say" role="status" data-testid="first-run-cli-progress">
+                      <AsciiSpinner /> Installing {provider.label}{myCli.line ? `: ${myCli.line}` : '...'}
+                    </p>
+                  ) : null}
+                  {myCli?.state === 'failed' ? (
+                    <p className="fr-note fr-row-error" role="alert" data-testid="first-run-cli-failed">
+                      {provider.label} did not install. {myCli.error} You can also run <code>{provider.installHint}</code> yourself.
+                    </p>
+                  ) : null}
                   {myBridge?.state === 'running' ? (
                     <p className="fr-agent-say" role="status" data-testid="first-run-bridge-progress">
                       <AsciiSpinner /> Installing the bridge{myBridge.line ? `: ${myBridge.line}` : '...'}
@@ -473,7 +550,7 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
               <>
                 {modelReady === null ? (
                   route === 'local' ? (
-                    <LocalPanel settings={wire} onReady={(label) => {
+                    <LocalPanel settings={wire} {...(fit ? { preferred: fit } : {})} onReady={(label) => {
                       onConnected?.();
                       setModelReady(label);
                     }} />

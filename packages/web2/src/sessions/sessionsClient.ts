@@ -31,12 +31,26 @@ import type {
   GetRecentResponse,
 } from '@sequence/api-types';
 
+export interface ChatSearchHit {
+  chatId: string;
+  title: string;
+  snippet: string;
+  at: string;
+}
+
+export interface ChatSearchResponse {
+  hits: ChatSearchHit[];
+  truncated: boolean;
+}
+
 export type WireResult<T> =
   | { outcome: 'ok'; body: T }
   | { outcome: 'error'; status: number; message: string };
 
 export interface SessionsClient {
   list(signal?: AbortSignal): Promise<WireResult<GetSessionsResponse>>;
+  /** Chats whose words (turns and agent replies) contain `q`; the server scans, newest chat first, on a time budget. */
+  search?(q: string, signal?: AbortSignal): Promise<WireResult<ChatSearchResponse>>;
   /**
    * `repoPath` names a catalogued repo OTHER than the active root — the rail's
    * per-workspace "+", which starts a chat in a section without attaching it.
@@ -296,6 +310,7 @@ function createSessionsClientImpl(fetchImpl: typeof fetch): SessionsClient {
     /* Shared: the store's index hydrate (connect.tsx) and the rail both read
        this at mount, in the same tick. */
     list: (signal) => goShared<GetSessionsResponse>('/api/sessions', signal),
+    search: (q, signal) => go<ChatSearchResponse>(`/api/sessions/search?q=${encodeURIComponent(q)}`, signal ? { signal } : undefined),
     create: (mode, repoPath) =>
       go<PostSessionsResponse>('/api/sessions', {
         method: 'POST',

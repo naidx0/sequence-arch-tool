@@ -169,7 +169,8 @@ describe('D. the minimum window, the three dots, the empty context', () => {
     expect(menu.querySelector('.s2-menu-h')?.textContent).toBe('More options');
     /* Every row is an icon, a name and a line saying what it does. */
     const rows = [...menu.querySelectorAll<HTMLElement>('.s2-mi')];
-    expect(rows.length).toBeGreaterThanOrEqual(5);
+    /* 0.1.8 G8: search, review and rewind moved to header icons; Help and Agents stay. */
+    expect(rows.map((r) => r.getAttribute('data-testid'))).toEqual(['s2-chat-menu-overlay.help', 'v3-agents-toggle']);
     for (const row of rows) {
       expect(row.querySelector('svg')).not.toBeNull();
       expect(row.querySelector('.s2-mi-d')?.textContent?.length ?? 0).toBeGreaterThan(8);

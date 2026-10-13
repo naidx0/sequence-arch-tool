@@ -2,8 +2,8 @@
    FIRST RUN, PART TWO: THE SWIPE-STYLE SETUP
    packages/web2/src/onboarding/FirstRunSetup.tsx
 
-   Four cards on a sliding track: connect a project (optional), trust and
-   auto mode, bring skills (optional, FirstRunSkills), done. Each card is one tap (Yes or No) or Skip; nothing else is
+   Five cards on a sliding track: connect a project (optional), trust and
+   auto mode, the architecture map (with an On / Off example), bring skills (optional, FirstRunSkills), done. Each card is one tap (Yes or No) or Skip; nothing else is
    asked and nobody should need to search Settings afterwards. Left arrow or
    a swipe to the right goes back one card.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } fr
 
 import { Icon } from '../chat/Icon';
 import { writeAutoEditEnabled } from '../settings/autonomyPreference';
+import { FirstRunMapExample } from './FirstRunMapExample';
 import { FirstRunSkills } from './FirstRunSkills';
 import type { OnboardingClient } from './onboardingClient';
 
@@ -29,6 +30,8 @@ export interface FirstRunSetupProps {
   /** An agent was connected on this screen; "Ask my agent" in the skills step hands its prompt to onAskAgent and finishes. */
   agentConnected?: boolean;
   onAskAgent?: (prompt: string) => void;
+  /** For the map step's token count and its answer; defaults to the page's fetch. */
+  fetchImpl?: typeof fetch;
 }
 
 type Answer = 'yes' | 'no' | 'skip' | null;
@@ -48,11 +51,20 @@ const CARDS = [
     yes: 'Turn on auto mode',
     no: 'Keep asking me',
   },
+  {
+    id: 'map',
+    title: 'Give agents the architecture map?',
+    sub: 'A compact text map of your services and how they connect, added to the agent’s context on every turn (one message from you and the reply). Here is what it takes of a 500k window.',
+    yes: 'Yes, include the map',
+    no: 'No, leave it out',
+  },
 ] as const;
 
-export function FirstRunSetup({ client, onFinish, agentConnected, onAskAgent }: FirstRunSetupProps) {
+export function FirstRunSetup({ client, onFinish, agentConnected, onAskAgent, fetchImpl }: FirstRunSetupProps) {
   const [at, setAt] = useState(0);
-  const [answers, setAnswers] = useState<Answer[]>([null, null]);
+  const [answers, setAnswers] = useState<Answer[]>(CARDS.map(() => null));
+  /* The server's own count of the map block, when it has one for this project; else the example uses the default map budget. */
+  const [mapTokens, setMapTokens] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const downX = useRef<number | null>(null);
   /* After the two questions comes the skills step, then done. */
@@ -70,9 +82,42 @@ export function FirstRunSetup({ client, onFinish, agentConnected, onAskAgent }: 
     rootRef.current?.querySelector<HTMLElement>(`[data-card="${at}"] input, [data-card="${at}"] button`)?.focus({ preventScroll: true });
   }, [at]);
 
+  useEffect(() => {
+    const f = fetchImpl ?? (typeof fetch === 'function' ? fetch : undefined);
+    if (!f) return undefined;
+    let live = true;
+    void (async () => {
+      try {
+        const r = await f('/api/agent-settings', { headers: { accept: 'application/json' } });
+        if (!r.ok) return;
+        const v = (await r.json()) as { map?: { tokens?: number } | null };
+        if (live && typeof v?.map?.tokens === 'number') setMapTokens(v.map.tokens);
+      } catch {
+        /* no server answer: the example says it is an example */
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [fetchImpl]);
+
+  const [mapSaveFailed, setMapSaveFailed] = useState(false);
+  const saveMap = (on: boolean) => {
+    const f = fetchImpl ?? (typeof fetch === 'function' ? fetch : undefined);
+    if (!f) return;
+    setMapSaveFailed(false);
+    void Promise.resolve(f('/api/agent-settings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ includeArchitectureMap: on }) })).then(
+      (r) => {
+        if (!r.ok) setMapSaveFailed(true);
+      },
+      () => setMapSaveFailed(true),
+    );
+  };
+
   const answer = (a: Answer) => {
     setAnswers((cur) => cur.map((v, i) => (i === at ? a : v)));
     if (a === 'yes' && CARDS[at]?.id === 'trust') writeAutoEditEnabled(true);
+    if (CARDS[at]?.id === 'map' && (a === 'yes' || a === 'no')) saveMap(a === 'yes');
     setAt((n) => Math.min(SKILLS_AT, n + 1));
   };
 
@@ -101,6 +146,7 @@ export function FirstRunSetup({ client, onFinish, agentConnected, onAskAgent }: 
             <section key={c.id} className="fr-card" data-card={i} data-testid={`first-run-setup-${c.id}`} aria-hidden={at !== i}>
               <h2 className="fr-card-t">{c.title}</h2>
               <p className="fr-card-sub">{c.sub}</p>
+              {c.id === 'map' ? <FirstRunMapExample tokens={mapTokens} /> : null}
               <div className="fr-card-acts">
                 <button type="button" className="fr-btn fr-primary" data-testid={`first-run-setup-${c.id}-yes`} onClick={() => answer('yes')}>
                   {c.yes}
@@ -134,6 +180,7 @@ export function FirstRunSetup({ client, onFinish, agentConnected, onAskAgent }: 
             <p className="fr-card-sub">
               {answers[0] === 'yes' ? 'The project picker opens next. ' : ''}
               {answers[1] === 'yes' ? 'Auto mode is on. ' : ''}
+              {mapSaveFailed ? 'The map choice could not be saved; change it in Settings, Workspace. ' : answers[2] === 'yes' ? 'The architecture map is on. ' : answers[2] === 'no' ? 'The architecture map is off. ' : ''}
               Everything else lives in Settings.
             </p>
             <div className="fr-card-acts">
@@ -145,7 +192,7 @@ export function FirstRunSetup({ client, onFinish, agentConnected, onAskAgent }: 
         </div>
       </div>
       <div className="fr-dots" role="group" aria-label="Setup progress">
-        {[0, 1, 2, 3].map((i) => (
+        {Array.from({ length: DONE_AT + 1 }, (_, i) => i).map((i) => (
           <span key={i} className="fr-dot" data-on={i === at ? 'true' : undefined} aria-current={i === at ? 'step' : undefined} />
         ))}
         {at > 0 ? (

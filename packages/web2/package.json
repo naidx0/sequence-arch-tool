@@ -1,6 +1,6 @@
 {
   "name": "@sequence/web2",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "private": true,
   "license": "MIT",
@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build && node scripts/prerender-shell.mjs",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:e2e": "node e2e/shell-boot.mjs && node e2e/board-grounded.mjs && node e2e/board-lod.mjs && node e2e/board-fit.mjs && node e2e/visual-mode.mjs && node e2e/shell-overlay.mjs && node e2e/app-mounted.mjs && node e2e/flow-plays.mjs && node e2e/composer-reachable.mjs && node e2e/composer-over-board.mjs && node e2e/whiteboard-to-ask.mjs && node e2e/board-furniture.mjs && node e2e/terminal-pane.mjs && node e2e/browser-pane.mjs && node e2e/anatomy-reached.mjs && node e2e/icons-centred.mjs && node e2e/rails-match.mjs && node e2e/popovers-share.mjs && node e2e/multi-chat.mjs && node e2e/cross-workspace.mjs && node e2e/board-tags-narrow.mjs && node e2e/workflow-editor-sizes.mjs",
+    "test:e2e": "node e2e/shell-boot.mjs && node e2e/board-grounded.mjs && node e2e/board-lod.mjs && node e2e/board-fit.mjs && node e2e/visual-mode.mjs && node e2e/shell-overlay.mjs && node e2e/app-mounted.mjs && node e2e/flow-plays.mjs && node e2e/composer-reachable.mjs && node e2e/composer-over-board.mjs && node e2e/whiteboard-to-ask.mjs && node e2e/board-furniture.mjs && node e2e/terminal-pane.mjs && node e2e/browser-pane.mjs && node e2e/anatomy-reached.mjs && node e2e/icons-centred.mjs && node e2e/rails-match.mjs && node e2e/popovers-share.mjs && node e2e/multi-chat.mjs && node e2e/cross-workspace.mjs && node e2e/g2-chat-only-width.mjs && node e2e/board-tags-narrow.mjs && node e2e/workflow-editor-sizes.mjs",
     "test:e2e:shell": "node e2e/shell-boot.mjs",
     "test:e2e:board": "node e2e/board-grounded.mjs",
     "test:e2e:overlay": "node e2e/shell-overlay.mjs",

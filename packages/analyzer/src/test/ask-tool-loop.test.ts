@@ -185,7 +185,7 @@ function collect(events: AskStreamEvent[]): {
  * for a fenced seqd block that no code parsed. It writes nothing to disk and
  * is in `ASK_MUTATING_TOOLS` anyway, so plan mode refuses it.
  */
-test('ASK_TOOL_ALLOWLIST is exactly these twenty-two, and widening it is deliberate', () => {
+test('ASK_TOOL_ALLOWLIST is exactly these twenty-three, and widening it is deliberate', () => {
   /*
    *   `write_plan` / `mark_step_done` — added 2026-09-17. `update_todos` below
    *   owns a list that dies with the TURN, and says so in `todoList.ts`'s first
@@ -315,6 +315,7 @@ test('ASK_TOOL_ALLOWLIST is exactly these twenty-two, and widening it is deliber
     'call_mcp',
     'call_plugin',
     'fetch_url',
+    'web_search',
     'report_harness',
   ]);
 });
@@ -1762,6 +1763,7 @@ test('executeAskTool fetch_url: works without attached repo', async () => {
       resolveReadable: () => null,
       repoRoot: null,
       designMode: true,
+      webFetchImpl: (i: string | URL, init?: RequestInit) => globalThis.fetch(i, init),
     });
     assert.ok(r.ok, r.evidence);
     assert.match(r.content ?? '', /Hello web/);
@@ -7709,4 +7711,82 @@ test('askPipeline teach, product sections: an answer with every part is not sent
 test('askPipeline teach, product sections off: no answer is sent back for missing parts', async () => {
   const { sectionBounces } = await sectionTurn(undefined, [PARTIAL, PARTIAL, PARTIAL]);
   assert.equal(sectionBounces, 0);
+});
+
+test('executeAskTool fetch_url: HTML becomes markdown and a long page names the offset to continue', async () => {
+  const prev = process.env.SEQUENCE_RESEARCH_ALLOW_LOOPBACK;
+  process.env.SEQUENCE_RESEARCH_ALLOW_LOOPBACK = 'http://127.0.0.1:9/long';
+  const prevFetch = globalThis.fetch;
+  const lines = Array.from({ length: 4000 }, (_, i) => 'row ' + i + ' ' + 'y'.repeat(30));
+  globalThis.fetch = async (input) =>
+    String(input).includes('/long')
+      ? new Response('<html><title>Long</title><body><h1>Big</h1><pre>' + lines.join('\n') + '</pre></body></html>', { status: 200, headers: { 'content-type': 'text/html' } })
+      : prevFetch(input);
+  try {
+    const ctx = { resolveReadable: () => null, repoRoot: null, designMode: true, webFetchImpl: (i: string | URL, init?: RequestInit) => globalThis.fetch(i, init) };
+    const r = await executeAskTool('fetch_url', { url: 'http://127.0.0.1:9/long' }, ctx);
+    assert.ok(r.ok, r.evidence);
+    assert.match(r.content ?? '', /# Big/);
+    const m = /call again with offset=(\d+)/.exec(r.content ?? '');
+    assert.ok(m, 'truncation note names the offset');
+    const next = await executeAskTool('fetch_url', { url: 'http://127.0.0.1:9/long', offset: Number(m![1]) }, ctx);
+    assert.ok(next.ok);
+    assert.doesNotMatch(next.content ?? '', /# Big/);
+    assert.match(next.content ?? '', /row \d+ y+/);
+  } finally {
+    if (prev === undefined) delete process.env.SEQUENCE_RESEARCH_ALLOW_LOOPBACK;
+    else process.env.SEQUENCE_RESEARCH_ALLOW_LOOPBACK = prev;
+    globalThis.fetch = prevFetch;
+  }
+});
+
+test('executeAskTool web_search: keyless Exa answer becomes wrapped untrusted results; outage is an honest failure', async () => {
+  const prevFetch = globalThis.fetch;
+  let body: { params: { name: string } } | undefined;
+  globalThis.fetch = async (_input, init) => {
+    body = JSON.parse(String(init?.body));
+    return new Response('event: message\ndata: ' + JSON.stringify({ result: { content: [{ type: 'text', text: 'Title: Alpha\nURL: https://a.example/x\nHighlights:\nAlpha is first.' }] } }) + '\n\n');
+  };
+  try {
+    const ctx = { resolveReadable: () => null, repoRoot: null, designMode: true, webFetchImpl: (i: string | URL, init?: RequestInit) => globalThis.fetch(i, init) };
+    const r = await executeAskTool('web_search', { query: 'alpha' }, ctx);
+    assert.ok(r.ok, r.evidence);
+    assert.equal(body!.params.name, 'web_search_exa');
+    assert.match(r.content ?? '', /<untrusted_repo_content>/);
+    assert.match(r.content ?? '', /1\. Alpha\n {3}https:\/\/a\.example\/x/);
+    globalThis.fetch = async () => new Response('down', { status: 502 });
+    const bad = await executeAskTool('web_search', { query: 'alpha' }, ctx);
+    assert.ok(!bad.ok);
+    assert.match(bad.evidence, /502/);
+    assert.ok(!(await executeAskTool('web_search', {}, ctx)).ok);
+  } finally {
+    globalThis.fetch = prevFetch;
+  }
+});
+
+test('executeAskTool fetch_url: web.enabled=false refuses without touching the network', async () => {
+  const { userStoreDir } = await import('../server/store.js');
+  const file = path.join(userStoreDir(), 'agent-settings.json');
+  const had = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ 'web.enabled': false }));
+  const prevFetch = globalThis.fetch;
+  let called = false;
+  globalThis.fetch = async () => {
+    called = true;
+    return new Response('x');
+  };
+  try {
+    const ctx = { resolveReadable: () => null, repoRoot: null, designMode: true, webFetchImpl: (i: string | URL, init?: RequestInit) => globalThis.fetch(i, init) };
+    for (const [name, args] of [['fetch_url', { url: 'https://example.com/' }], ['web_search', { query: 'q' }]] as const) {
+      const r = await executeAskTool(name, args, ctx);
+      assert.ok(!r.ok);
+      assert.match(r.evidence, /web\.enabled/);
+    }
+    assert.equal(called, false);
+  } finally {
+    if (had === null) fs.rmSync(file, { force: true });
+    else fs.writeFileSync(file, had);
+    globalThis.fetch = prevFetch;
+  }
 });

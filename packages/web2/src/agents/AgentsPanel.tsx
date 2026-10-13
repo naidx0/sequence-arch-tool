@@ -134,8 +134,8 @@ function TreeItem({ node, state, now, store, isOpen, toggle }: { node: AgentNode
       >
         <span className="ag-caret" aria-hidden="true">{kids.length ? (expanded ? '▾' : '▸') : ''}</span>
         <span className="ag-dot" aria-label={word} />
-        <span className="ag-name" title={node.kind === 'session' ? undefined : node.title}>
-          {node.kind === 'session' ? 'Main agent' : node.kind === 'tool_call' ? describeStep(node) : node.kind === 'subagent' ? `Sub-agent: ${node.title}` : node.title}
+        <span className={`ag-name${node.kind === 'tool_call' && splitPathLabel(describeStep(node)) ? ' is-path' : ''}`} title={node.kind === 'session' ? undefined : node.title}>
+          {node.kind === 'session' ? 'Main agent' : node.kind === 'tool_call' ? <NameText text={describeStep(node)} /> : node.kind === 'subagent' ? `Sub-agent: ${node.title}` : node.title}
         </span>
         <span className="ag-elapsed">
           {metaOf([
@@ -447,6 +447,26 @@ export function AgentTimeline({ state, now, store }: { state: AgentStreamState; 
 }
 
 export type AgentView = 'tree' | 'timeline';
+
+/** A step label that ends in a path ("Edited a/b/c.ts"): the folders in front, and the file name, which tells two rows apart. */
+export function splitPathLabel(text: string): { head: string; tail: string } | null {
+  const i = Math.max(text.lastIndexOf('/'), text.lastIndexOf(String.fromCharCode(92)));
+  /* Only a label that ends in a path splits: "Ran git log origin/main --oneline" ends in arguments, not a file. */
+  if (i < 0 || i === text.length - 1 || /\s/.test(text.slice(i + 1))) return null;
+  return { head: text.slice(0, i + 1), tail: text.slice(i + 1) };
+}
+
+/* 0.1.8: a long path is cut in the MIDDLE (the folders give way, the file name stays), the full text on the title. */
+function NameText({ text }: { text: string }) {
+  const p = splitPathLabel(text);
+  if (!p) return <>{text}</>;
+  return (
+    <>
+      <span className="ag-name-head">{p.head}</span>
+      <span className="ag-name-tail">{p.tail}</span>
+    </>
+  );
+}
 
 /** S2b: the empty panel's one action, loaded only while the panel is empty (startWithHooks.tsx). */
 const StartWithHooks = lazy(() => import('./startWithHooks'));

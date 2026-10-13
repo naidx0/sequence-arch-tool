@@ -326,6 +326,7 @@ export interface DeleteSessionResponse {
  *   `provider_failed`             the connection failed twice in a row
  *   `the_model_stopped_answering` four empty replies running
  *   `the_model_only_narrated`     four turns that announced a move and called no tool
+ *   `no_progress`                 agent engine: three turns left the plan untouched
  *   `turn_failed`                 the pipeline threw
  *   `engine_restarted`            the server died mid-run; never reported as running
  *   `not_building`                refused at the door: Plan mode does not run steps
@@ -341,6 +342,8 @@ export type GoalRunStopReason =
   | 'provider_failed'
   | 'the_model_stopped_answering'
   | 'the_model_only_narrated'
+  /** An agent engine: three turns in a row left the plan exactly as it was (no tick through the tool, none in its text). */
+  | 'no_progress'
   | 'turn_failed'
   | 'engine_restarted'
   | 'not_building'
@@ -404,6 +407,11 @@ export interface PostGoalRunRequest {
   permission?: 'plan' | 'build';
   /** Work | Code, as the ask routes take it. Absent ⇒ the server's default. */
   jobMode?: 'work' | 'code';
+  /**
+   * Work the plan with this registered coding agent (Claude, Codex) instead of
+   * Sequence's own model. Needs no AI key. Absent => the built-in model.
+   */
+  agentRef?: string;
 }
 
 export interface PostGoalRunResponse {

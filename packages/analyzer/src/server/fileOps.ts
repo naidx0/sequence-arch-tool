@@ -69,7 +69,7 @@ export function duplicateName(jail: string, rel: string): string {
   return `${dir === '.' ? '' : `${dir}/`}${base} copy ${Date.now()}${ext}`;
 }
 
-function defaultReveal(abs: string): void {
+export function defaultReveal(abs: string): void {
   const dir = (() => {
     try {
       return fs.statSync(abs).isDirectory() ? abs : path.dirname(abs);

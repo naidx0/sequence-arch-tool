@@ -1,0 +1,21 @@
+{
+  "id": "design/prefer-container-queries",
+  "group": "design",
+  "label": "Prefer Container Queries",
+  "summary": "Enforce Tailwind container queries over viewport breakpoints for responsive components.",
+  "triggers": [
+    "container queries",
+    "responsive component",
+    "replace breakpoints",
+    "tailwind container query",
+    "component responsive layout"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "flornkm/skills",
+    "commit": "cf1c0094e1826230623ecdb6e7b3c44bdfc593c3",
+    "path": "skills/prefer-container-queries"
+  },
+  "url": "https://github.com/flornkm/skills/tree/cf1c0094e1826230623ecdb6e7b3c44bdfc593c3/skills/prefer-container-queries"
+}

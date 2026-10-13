@@ -20,7 +20,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { ConfirmDialog } from '../../shell2/ConfirmDialog';
 import { S2Icon } from '../../shell2/icons';
-import { ARCH_BOARD_ID, type BoardMeta, type BoardsIndex } from './boardsModel';
+import { ARCH_BOARD_ID, boardLabel, type BoardMeta, type BoardsIndex } from './boardsModel';
 import './boards.css';
 
 export interface BoardTabsProps {
@@ -39,6 +39,8 @@ export interface BoardTabsProps {
    * its own content (the architecture toolbar's, which folds on the board's width in board.css).
    */
   measureFold?: boolean;
+  /** The strip's own name: "Boards" beside the architecture board, "Spaces" on the Spaces surface. */
+  caption?: string;
 }
 
 const ARCH_PLACEHOLDER: BoardMeta = {
@@ -50,8 +52,9 @@ const ARCH_PLACEHOLDER: BoardMeta = {
   updatedAt: '',
 };
 
-export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete, itemCount, measureFold = false }: BoardTabsProps) {
-  const boards = index?.boards ?? [ARCH_PLACEHOLDER];
+export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete, itemCount, measureFold = false, caption = 'Boards' }: BoardTabsProps) {
+  /* The names are the ones the reader sees: a stored default "Whiteboard" displays as Space (boardLabel). */
+  const boards = (index?.boards ?? [ARCH_PLACEHOLDER]).map((b) => ({ ...b, name: boardLabel(b) }));
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [confirm, setConfirm] = useState<BoardMeta | null>(null);
   const input = useRef<HTMLInputElement | null>(null);
@@ -136,7 +139,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
       ref={strip}
       className="board-tabs"
       role="tablist"
-      aria-label="Boards"
+      aria-label={caption}
       data-testid="board-tabs"
       data-solo={boards.length === 1 ? 'true' : undefined}
       data-many={boards.length > 2 ? 'true' : undefined}
@@ -144,7 +147,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
     >
       {/* The strip's own name (round 0.1.5): the window bar above lists SURFACES (Architecture, Whiteboard...); this lists the
           BOARDS inside, so the same word in both places reads as two different things. Folded away when the pane is narrow. */}
-      <span className="btag-cap" aria-hidden="true">Boards</span>
+      <span className="btag-cap" aria-hidden="true">{caption}</span>
       {boards.map((b) => {
         const on = b.id === current;
         if (editing?.id === b.id) {
@@ -180,7 +183,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
               data-board-kind={b.kind}
               /* The name is the accessible name and the tooltip even when a narrow board folds the tag to its icon (board.css). */
               aria-label={b.name}
-              title={b.kind === 'architecture' ? `${b.name}: the scanned architecture, with a drawing layer on top` : `${b.name}: a whiteboard (double-click to rename)`}
+              title={b.kind === 'architecture' ? `${b.name}: the scanned architecture, with a drawing layer on top` : `${b.name}: a space (double-click to rename)`}
               onClick={() => onOpen(b)}
               onDoubleClick={() => {
                 /* The architecture board is named by what it is; whiteboards are named by you. */
@@ -209,8 +212,8 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
         type="button"
         className="btag-add"
         data-testid="board-tab-new"
-        aria-label="New whiteboard"
-        title="New whiteboard"
+        aria-label="New space"
+        title="New space"
         disabled={index === null}
         onClick={onCreate}
       >
@@ -231,7 +234,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
           <S2Icon name="chev" small />
         </button>
         {foldOpen ? (
-          <div className="bview-list btag-fold-list" role="menu" aria-label="Boards" data-testid="board-tab-fold-list" onKeyDown={foldKeys}>
+          <div className="bview-list btag-fold-list" role="menu" aria-label={caption} data-testid="board-tab-fold-list" onKeyDown={foldKeys}>
             {boards.map((b) => (
               <span className="btag-fold-row" key={b.id} role="none">
                 <button
@@ -278,7 +281,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
               }}
             >
               <S2Icon name="plus" small />
-              <span className="bview-item-t">New whiteboard</span>
+              <span className="bview-item-t">New space</span>
             </button>
           </div>
         ) : null}
@@ -293,7 +296,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
             const n = itemCount?.(confirm.id) ?? null;
             return n === null ? undefined : [{ label: confirm.name, meta: n === 1 ? '1 mark' : `${n} marks` }];
           })()}
-          confirmLabel="Delete board"
+          confirmLabel="Delete space"
           testId="board-delete-confirm"
           okTestId="board-delete-ok"
           cancelTestId="board-delete-cancel"

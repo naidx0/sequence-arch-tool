@@ -195,6 +195,48 @@ export function statusTone(status: FileStatus | null, inProgress = false): FileT
   }
 }
 
+/** One file of `GET /api/git/branch-changes`, structurally (git/gitClient.ts owns the full type). */
+export interface BranchChangeLike {
+  path: string;
+  /** Source path when status is R. */
+  oldPath?: string;
+  status: 'A' | 'M' | 'D' | 'R';
+}
+
+const BRANCH_STATUS: Record<BranchChangeLike['status'], FileStatus> = {
+  A: 'added',
+  M: 'modified',
+  D: 'deleted',
+  R: 'renamed',
+};
+
+/**
+ * THE MARKS FOR "THIS BRANCH": what the branch changed against its base (A/M/D/R,
+ * with the same tones and letters the working-tree marks use), plus the
+ * working-tree marks for files the branch has not touched (a scratch file is
+ * still a scratch file on this branch). The branch's word wins over the working
+ * tree's for the same path, except a conflict, which is never hidden.
+ */
+export function branchStatusMap(
+  files: readonly BranchChangeLike[],
+  working: ReadonlyMap<RepoPath, FileStatus> | null,
+): Map<RepoPath, FileStatus> {
+  const map = new Map<RepoPath, FileStatus>(working ?? []);
+  for (const file of files) {
+    const path = toRepoPath(file.path);
+    if (map.get(path) === 'conflicted') continue;
+    map.set(path, BRANCH_STATUS[file.status] ?? 'unknown');
+  }
+  return map;
+}
+
+/** Renamed path -> the path it was renamed from, for the row's title. */
+export function branchRenames(files: readonly BranchChangeLike[]): Map<RepoPath, string> {
+  const map = new Map<RepoPath, string>();
+  for (const file of files) if (file.status === 'R' && file.oldPath) map.set(toRepoPath(file.path), toRepoPath(file.oldPath));
+  return map;
+}
+
 export function strongestTone(tones: readonly (FileTone | null)[]): FileTone | null {
   for (const tone of TONE_ORDER) if (tones.includes(tone)) return tone;
   return null;
@@ -520,6 +562,8 @@ export interface FileRow {
   dirty: boolean;
   /** The file's own status. `null` for a clean file and for every directory. */
   status: FileStatus | null;
+  /** Directories: how many files at or below it changed (0 for a file and for a clean folder). */
+  changedCount: number;
   /** The colour this row wears; for a directory, the strongest beneath it. */
   tone: FileTone | null;
 }
@@ -588,6 +632,11 @@ export function flattenFileTree(nodes: FileTreeNode[], options: FlattenOptions):
     return node.children.some(dirtyUnder);
   };
 
+  const changedUnder = (node: FileTreeNode): number => {
+    if (node.kind === 'file') return status?.has(node.path) === true || progress?.has(node.path) === true ? 1 : 0;
+    return node.children.reduce((n, child) => n + changedUnder(child), 0);
+  };
+
   const walk = (list: FileTreeNode[], depth: number) => {
     for (const node of list) {
       if (node.kind === 'file') {
@@ -601,6 +650,7 @@ export function flattenFileTree(nodes: FileTreeNode[], options: FlattenOptions):
           fileCount: 1,
           dirty: own !== null || progress?.has(node.path) === true,
           status: own,
+          changedCount: 0,
           tone: fileTone(node.path),
         });
         continue;
@@ -615,6 +665,7 @@ export function flattenFileTree(nodes: FileTreeNode[], options: FlattenOptions):
         fileCount: node.fileCount,
         dirty: dirtyUnder(node),
         status: null,
+        changedCount: changedUnder(node),
         tone: toneUnder(node),
       });
       if (open) walk(node.children, depth + 1);

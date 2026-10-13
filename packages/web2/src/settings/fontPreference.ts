@@ -1,3 +1,4 @@
+import { prefStorage } from '../boot/prefStorage';
 /* INTERFACE FONT. Same shape as themePreference.ts: one localStorage key, one apply function, one write that also
    notifies. The choice lands as three CSS custom properties on <html> (--font-sans, --font-ui, --font-display), which every face in
    tokens/graphite.css already reads. Inter, the default, REMOVES the properties instead of setting them, so a user
@@ -48,7 +49,7 @@ export function applyFont(font: FontId = readFont()): void {
 }
 
 export function writeFont(font: FontId): void {
-  try { localStorage.setItem(FONT_KEY, font); } catch { /* The current window still changes. */ }
+  try { prefStorage.setItem(FONT_KEY, font); } catch { /* The current window still changes. */ }
   applyFont(font);
   window.dispatchEvent(new CustomEvent(FONT_EVENT, { detail: font }));
 }

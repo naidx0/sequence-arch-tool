@@ -31,11 +31,34 @@ import './refineNote.css';
 /** The server writes a turn's signals just after it ends; look a moment later. */
 const LOOK_AFTER_MS = 700;
 
-export function RefineNoteCard({ sessionId, fetchImpl = fetch, lookAfterMs = LOOK_AFTER_MS }: { sessionId: string | null; fetchImpl?: Fetch; lookAfterMs?: number }) {
+export function RefineNoteCard({
+  sessionId,
+  lastEndedKey,
+  busy: turnBusy,
+  fetchImpl = fetch,
+  lookAfterMs = LOOK_AFTER_MS,
+}: {
+  sessionId: string | null;
+  /** The chat's last ended turn of either kind (the parent reads both stores); null: none yet. Absent: read the agent runs here. */
+  lastEndedKey?: string | null;
+  /** A turn of either kind is running: no look until it ends. */
+  busy?: boolean;
+  fetchImpl?: Fetch;
+  lookAfterMs?: number;
+}) {
   const runs = useSyncExternalStore(agentRuns.subscribe, agentRuns.get, agentRuns.get);
   const last = [...runs.runs].reverse().find((r) => r.sessionId === sessionId);
-  /* One look per ended turn (and one on mount): the key changes when a run ends. */
-  const settled = last && last.status !== 'running' && !last.queued ? `${last.id}:${last.status}` : last ? 'busy' : 'none';
+  /* One look per ended turn (and one on mount): the key changes when a turn ends. */
+  const settled =
+    lastEndedKey !== undefined
+      ? turnBusy
+        ? 'busy'
+        : (lastEndedKey ?? 'none')
+      : last && last.status !== 'running' && !last.queued
+        ? `${last.id}:${last.status}`
+        : last
+          ? 'busy'
+          : 'none';
   const [cards, setCards] = useState<NoteCardData[]>([]);
   const [done, setDone] = useState<{ id: string; what: 'accepted' | 'removed' } | null>(null);
   const [open, setOpen] = useState(false);

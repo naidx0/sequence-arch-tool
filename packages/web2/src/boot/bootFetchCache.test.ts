@@ -24,6 +24,23 @@ describe('the boot GET cache', () => {
     await f('/api/skills');
     expect(base).toHaveBeenCalledTimes(2);
   });
+  it('a POST that only computes (annotate) neither drops the cache nor bypasses it while in flight', async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => (release = r));
+    const base = vi.fn(async (i: unknown, init?: RequestInit) => {
+      if (init?.method === 'POST') await gate;
+      return json({});
+    });
+    const f = bootFetchCache(base as unknown as typeof fetch);
+    await f('/api/acp/agents');
+    const annotate = f('/api/annotate', { method: 'POST' });
+    await f('/api/acp/agents');
+    expect(base.mock.calls.filter(([i]) => i === '/api/acp/agents')).toHaveLength(1);
+    release();
+    await annotate;
+    await f('/api/acp/agents');
+    expect(base.mock.calls.filter(([i]) => i === '/api/acp/agents')).toHaveLength(1);
+  });
   it('a write to the route family drops it: the next read is fresh', async () => {
     const base = vi.fn(async () => json({}));
     const f = bootFetchCache(base as unknown as typeof fetch);

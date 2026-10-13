@@ -63,7 +63,63 @@ export interface BoardWireNodeRef {
  * One agent mark on Sequence's spatial canvas (SeqDraw / whiteboard).
  * Closed set — no freehand strokes from the model (those stay human-only).
  */
-export type BoardWireItem = BoardWireText | BoardWireShape | BoardWireNodeRef;
+export type BoardWireItem = BoardWireText | BoardWireShape | BoardWireNodeRef | BoardWireSvg | BoardWireVideo | BoardWireScene;
+
+/** Sanitized SVG hosted on the board, drawn in the w x h box at `at` (the board store's `svg` item). */
+export interface BoardWireSvg {
+  kind: 'svg';
+  id: string;
+  group?: string;
+  at: BoardWirePoint;
+  w: number;
+  h: number;
+  svg: string;
+  label?: string;
+}
+
+/** A rendered clip: `src` is project-relative (.mp4/.webm/.gif); the player URL is `/api/media?path=<src>`. */
+export interface BoardWireVideo {
+  kind: 'video';
+  id: string;
+  group?: string;
+  at: BoardWirePoint;
+  w: number;
+  h: number;
+  src: string;
+  poster?: string;
+  label?: string;
+}
+
+/** One keyframe of a scene: at `t` ms the item `target` (another item's id on the board) takes these values. */
+export interface BoardWireKeyframe {
+  t: number;
+  target: string;
+  x?: number;
+  y?: number;
+  scale?: number;
+  opacity?: number;
+  stroke?: string;
+  fill?: string;
+  text?: string;
+  easing?: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+}
+
+/** A native animated scene: a stage frame (`at`, `w`, `h`) playing keyframes over other items. */
+export interface BoardWireScene {
+  kind: 'scene';
+  id: string;
+  group?: string;
+  at: BoardWirePoint;
+  w: number;
+  h: number;
+  /** Milliseconds, 100..600000. */
+  duration: number;
+  fps?: number;
+  easing?: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+  title?: string;
+  ownTheme?: boolean;
+  keyframes: BoardWireKeyframe[];
+}
 
 /* ------------------------------- the request ------------------------------ */
 
@@ -209,6 +265,8 @@ export interface AskHistoryEvidence {
 export interface AskHistoryTurn {
   role: 'user' | 'assistant';
   text: string;
+  /** The agent ("claude", "codex") that said this assistant turn, when it is carried over from an agent run; the prompt labels it. */
+  agent?: string;
   /** Compact prior work verbs (assistant only). */
   work?: string[];
   /** Compact prior evidence (assistant only). */
@@ -344,6 +402,8 @@ export interface PostAskRequest {
    * client-driven turn sequence, never a text dump. Absent means off.
    */
   teach?: boolean;
+  /** Component ids the reader attached from the + menu or `/components` (docs/requests/components-ui-contract.md). */
+  components?: string[];
   /**
    * What the learner already knows about this subject — ONE CLICK, never a form.
    *
@@ -816,6 +876,15 @@ export type AskStreamEvent =
       output: string;
       ok: boolean;
     }
+  /**
+   * A COMPONENT THE MODEL WANTS TO USE, in `approve` mode (docs/requests/components-ui-contract.md).
+   * The client shows "Use <name>?" and answers `POST /api/components/offer/:offerId`.
+   */
+  | { type: 'component:offer'; turnId: string; offerId: string; componentId: string; name: string; reason: string }
+  /** A component the turn ran (`auto` mode, or after an accepted offer): drawn as a tool row. */
+  | { type: 'component:used'; turnId: string; componentId: string; name: string }
+  /** The model chose not to use a component it was offered or had available; drawn as a quiet tool row. */
+  | { type: 'component:skipped'; turnId: string; componentId: string; reason: string }
   | { type: 'provider:start' }
   | { type: 'provider:done' }
   | { type: 'advisor'; severity: AdvisorSeverity; note: string }

@@ -28,6 +28,11 @@ import { stopFromKey, type EffortStop } from './EffortSlider';
 /** Off sorts first, then Auto, then the levels in the order given. */
 const rank = (s: EffortStop) => (s.key === 'none' || s.key === 'minimal' ? 0 : s.key === 'default' || s.key === 'auto' ? 1 : 2);
 
+/** The rail sits this far in from each end of the track (modelMenu.css `.s2-rt-rail`). */
+const RAIL_INSET = 14;
+/** A press that moves less than this is a click. */
+const DRAG_SLOP = 3;
+
 /** Where stop i of n sits along the track, as a fraction (one stop sits in the middle). */
 export const stopAt = (i: number, n: number) => (n <= 1 ? 0.5 : i / (n - 1));
 
@@ -46,6 +51,15 @@ export function ReasoningTrack({
   const stops = given.map((s, i) => ({ s, i })).sort((a, b) => rank(a.s) - rank(b.s) || a.i - b.i).map((x) => x.s);
   const hitRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState(false);
+  const pressX = useRef<number | null>(null);
+  const release = () => {
+    pressX.current = null;
+    setDragging(false);
+    setDragX(null);
+  };
+  /* 0.1.8 F1: while a hand is on the track the thumb and the blue follow the pointer (0..1 along the rail); on release this
+     clears and the pair settles on the nearest stop with the CSS transition. */
+  const [dragX, setDragX] = useState<number | null>(null);
   const count = stops.length;
   const on = stops.findIndex((s) => s.on);
   const current = Math.max(0, on);
@@ -63,12 +77,14 @@ export function ReasoningTrack({
     if (i !== on && stops[i]) stops[i]!.pick();
   };
   /* The pointer picks the nearest dot. */
-  const fromPointer = (ev: PointerEvent) => {
+  const fromPointer = (ev: PointerEvent, follow: boolean) => {
     const r = hitRef.current?.getBoundingClientRect();
     if (!r || r.width <= 0 || count < 1) return;
     const t = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
+    if (follow && count > 1) setDragX(Math.min(1, Math.max(0, (ev.clientX - r.left - RAIL_INSET) / Math.max(1, r.width - 2 * RAIL_INSET))));
     move(count <= 1 ? 0 : Math.round(t * (count - 1)));
   };
+  const x = dragX ?? stopAt(current, count);
 
   if (count === 0) return null;
   return (
@@ -81,25 +97,31 @@ export function ReasoningTrack({
         className="s2-rt-track"
         ref={hitRef}
         onPointerDown={(ev) => {
-          setDragging(true);
+          /* A press is not yet a drag: the thumb glides to the nearest stop (a click is a pick, and it animates). It becomes a
+             drag, following the pointer with no transition, once the pointer has travelled DRAG_SLOP px. */
+          pressX.current = ev.clientX;
           try {
             ev.currentTarget.setPointerCapture?.(ev.pointerId);
           } catch {
             /* capture is a nicety; dragging still works inside the track */
           }
-          fromPointer(ev);
+          fromPointer(ev, false);
         }}
         onPointerMove={(ev) => {
-          if (dragging) fromPointer(ev);
+          if (pressX.current === null) return;
+          if (!dragging && Math.abs(ev.clientX - pressX.current) < DRAG_SLOP) return;
+          if (!dragging) setDragging(true);
+          fromPointer(ev, true);
         }}
-        onPointerUp={() => setDragging(false)}
-        onPointerCancel={() => setDragging(false)}
+        onPointerUp={release}
+        onPointerCancel={release}
+        onLostPointerCapture={release}
       >
         <span className="s2-rt-rail">
           <span
             className="s2-rt-fill"
             aria-hidden="true"
-            style={{ '--rt-x': stopAt(current, count) } as CSSProperties}
+            style={{ '--rt-x': x } as CSSProperties}
             data-empty={empty ? 'true' : 'false'}
             data-testid="s2-effort-fill"
           />
@@ -128,7 +150,7 @@ export function ReasoningTrack({
             aria-valuemax={count - 1}
             aria-valuenow={current}
             aria-valuetext={stops[current]?.label ?? ''}
-            style={{ '--rt-x': stopAt(current, count) } as CSSProperties}
+            style={{ '--rt-x': x } as CSSProperties}
             data-testid="s2-effort-thumb"
             onKeyDown={(ev: KeyboardEvent) => {
               const next = stopFromKey(ev.key, current, count);

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { createRepoServer } from '../server/repoServer.js';
 import { addAgent } from '../server/agentsStore.js';
 import { parseAgentMap } from '../agentMap.js';
+import { AGENT_MAP_HEADER, writeAgentSettings } from '../server/askAgentMap.js';
 
 /**
  * "Ask an agent about this" from a board node (S4): POST /api/acp/run-node
@@ -22,7 +23,7 @@ const REPO_ROOT = path.resolve(here, '..', '..', '..', '..');
 const MOCK_AGENT = path.join(REPO_ROOT, 'packages', 'acp', 'src', 'test', 'fixtures', 'mock-agent.mjs');
 const SHOPFRONT = path.join(REPO_ROOT, 'packages', 'analyzer', 'test', 'fixtures', 'shopfront');
 
-async function start(): Promise<{ port: number; close: () => Promise<void> }> {
+async function start(): Promise<{ port: number; cfg: string; close: () => Promise<void> }> {
   const userConfigDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-ask-node-cfg-')));
   addAgent(userConfigDir, { id: 'mock', command: process.execPath, args: [MOCK_AGENT] });
   const repo = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-ask-node-')));
@@ -32,6 +33,7 @@ async function start(): Promise<{ port: number; close: () => Promise<void> }> {
   const addr = server.address();
   return {
     port: typeof addr === 'object' && addr ? addr.port : 0,
+    cfg: userConfigDir,
     close: () =>
       new Promise<void>((r) => {
         server.close(() => r());
@@ -87,6 +89,26 @@ test('without contextNodeId the prompt is passed through untouched; an unknown n
     const bad = await runNode(srv.port, { agentRef: 'mock', prompt: 'x', contextNodeId: 'svc:nope' });
     assert.strictEqual(bad.status, 400);
     assert.match(bad.json.error ?? '', /svc:nope/);
+  } finally {
+    await srv.close();
+  }
+});
+
+/* The map to agents is OFF by default, so the tests above see no whole-map block. With it on, a node ask carries the node slice and not the whole map on top, and a reused chat-less session is told the map once. */
+test('with the map sent to agents, a node ask carries the node slice and not the whole map; a reused session is told once', async () => {
+  const srv = await start();
+  try {
+    writeAgentSettings(srv.cfg, { mapToAgents: true });
+    const a = await runNode(srv.port, { agentRef: 'mock', prompt: 'what breaks?', contextNodeId: 'svc:payments', sessionKey: 'ask-node::svc:payments::mock' });
+    const text = a.json.text ?? '';
+    assert.strictEqual(text.split(AGENT_MAP_HEADER).length - 1, 0, 'no whole map on top of the slice');
+    assert.strictEqual(text.split('# map ').length - 1, 1, 'the slice, once');
+    const counts: number[] = [];
+    for (const q of ['q1', 'q2', 'q3']) {
+      const r = await runNode(srv.port, { agentRef: 'mock', prompt: q, sessionKey: 'ask-plain::mock' });
+      counts.push((r.json.text ?? '').split(AGENT_MAP_HEADER).length - 1);
+    }
+    assert.deepStrictEqual(counts, [1, 0, 0], 'the same provider session is told the map once');
   } finally {
     await srv.close();
   }

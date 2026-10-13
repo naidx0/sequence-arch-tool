@@ -77,11 +77,11 @@ const SURFACES: readonly { name: string; does: string }[] = [
       'a coding assistant normally cannot tell you. The default workspace opens here alone.',
   },
   {
-    name: 'Files, Architecture, Whiteboard and Terminal, on the right',
+    name: 'Files, Architecture, Spaces and Terminal, on the right',
     does:
       'The tabs along the top open a surface beside the chat, or two side by side. Files is the project tree, and Terminal is a shell in the project folder. Architecture starts with a ' +
       'scanned layer derived from a parser, with file-and-line evidence. Proposed and drawn parts ' +
-      'are not scan evidence, which is why they look different. The whiteboard is yours, and ' +
+      'are not scan evidence, which is why they look different. Spaces is yours, and ' +
       'nothing on it is a claim about your code. Files & functions sit in the index rail inside ' +
       'this pane — click a function and the board plays the flow it belongs to.',
   },

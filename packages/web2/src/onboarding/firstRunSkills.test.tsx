@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { FirstRunSkills } from './FirstRunSkills';
+import { FirstRunSkills, lookedLine } from './FirstRunSkills';
 import { createOnboardingClient, type OnboardingClient, type SkillsFound } from './onboardingClient';
 import { seqdFromGraph } from '../canvas/seqdFromGraph';
 import { createStore, StoreProvider } from '../state';
@@ -10,7 +10,7 @@ import { SKILLS_PROMPT } from './skillsPrompt';
 import { pendingNotice, readPendingSkills, runPendingSkills, savePendingSkills } from './skillsPending';
 
 const cand = (shown: string, kind: 'skill' | 'instructions' = 'skill') => ({ path: `/h/${shown}`, shown, kind, folder: kind === 'skill', slug: shown.split('/').pop()!, bytes: 2048 });
-const DEFAULT: SkillsFound = { mode: 'default', looked: ['~/.claude/skills'], unknown: [], truncated: false, skipped: [], candidates: [cand('~/.claude/skills/demo'), cand('~/proj/AGENTS.md', 'instructions')] };
+const DEFAULT: SkillsFound = { mode: 'default', looked: ['~/.claude/skills', '~/.codex/skills', '~/.cursor/rules', '~/proj/AGENTS.md'], unknown: [], truncated: false, skipped: [], candidates: [cand('~/.claude/skills/demo'), cand('~/proj/AGENTS.md', 'instructions')] };
 
 function fake(over: Partial<OnboardingClient> = {}) {
   const find = vi.fn(async (_t: string) => ({ ok: true as const, body: DEFAULT }));
@@ -19,13 +19,28 @@ function fake(over: Partial<OnboardingClient> = {}) {
   return { client, find, imp };
 }
 
+describe('First run, skills step: the Looks-in line comes from the server list', () => {
+  it('names exactly the tools in `looked`, so a place the server does not read is never claimed', () => {
+    expect(lookedLine(['~/.claude/skills', '~/.codex/skills'], false)).toBe('Looks in Claude and Codex.');
+    expect(lookedLine(['~/.claude/skills', '~/.codex/skills', '~/.cursor/rules', '~/work/p/.cursor/rules'], false)).toBe('Looks in Claude, Codex and Cursor.');
+    expect(lookedLine(['~/.cursor/rules'], true)).toBe('Nothing found in Cursor.');
+    expect(lookedLine(null, false)).toBe('Looking in your agent folders.');
+  });
+
+  it('the rendered line follows the places the server returns', async () => {
+    const f = fake({ skillsFind: async () => ({ ok: true as const, body: { ...DEFAULT, looked: ['~/.claude/skills', '~/.codex/skills'] } }) });
+    render(<FirstRunSkills client={f.client} active onNext={() => {}} />);
+    expect((await screen.findByTestId('first-run-skills-where')).textContent).toBe('Looks in Claude and Codex.');
+  });
+});
+
 describe('First run, skills step: a compact pop-up', () => {
   it('shows a short title, one line, and Bring them, Skip, Choose which; no text field and no path', async () => {
     const f = fake();
     render(<FirstRunSkills client={f.client} active onNext={() => {}} />);
     await waitFor(() => expect(f.find).toHaveBeenCalled());
-    expect(screen.getByRole('heading').textContent).toBe('Bring your skills?');
-    expect(screen.getByTestId('first-run-skills-where').textContent).toBe('Looks in Claude, Codex and Cursor.');
+    expect((await screen.findByRole('heading')).textContent).toBe('Bring your skills?');
+    expect((await screen.findByTestId('first-run-skills-where')).textContent).toBe('Looks in Claude, Codex, Cursor and this project.');
     expect(screen.getByTestId('first-run-skills-bring').className).toContain('fr-primary');
     expect(screen.getByTestId('first-run-skills-skip').className).toContain('fr-ghost');
     expect(screen.getByTestId('first-run-skills-choose').textContent).toBe('Choose which');
@@ -76,7 +91,7 @@ describe('First run, skills step: a compact pop-up', () => {
   it('nothing found says so and Bring them is off; a refused import shows the server words', async () => {
     const none = fake({ skillsFind: async () => ({ ok: true as const, body: { ...DEFAULT, candidates: [] } }) });
     const { unmount } = render(<FirstRunSkills client={none.client} active onNext={() => {}} />);
-    expect((await screen.findByTestId('first-run-skills-where')).textContent).toBe('Nothing found in Claude, Codex or Cursor.');
+    expect((await screen.findByTestId('first-run-skills-where')).textContent).toBe('Nothing found in Claude, Codex, Cursor or this project.');
     expect((screen.getByTestId('first-run-skills-bring') as HTMLButtonElement).disabled).toBe(true);
     unmount();
     const refused = fake({ skillsImport: async () => ({ ok: false as const, message: 'Open a project first.' }) });

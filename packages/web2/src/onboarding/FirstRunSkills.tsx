@@ -5,7 +5,7 @@
    A small pop-up card, click click click: "Bring your skills?" Bring them
    (search the known folders, import everything found at once), Skip, or Choose
    which (a compact checklist to deselect first). No typing, no path: the server
-   looks in the known Claude, Codex and Cursor places on its own.
+   looks in the known places on its own (the line names the ones the server reports).
    Self-contained, so Settings > Skills mounts the same card.
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -38,6 +38,25 @@ const CAP_MESSAGE = /press Import again/;
 
 /** Which tool a found skill came from, in words; no folder is shown. */
 export const sourceOf = (c: FoundSkill): string => (/\.claude/.test(c.shown) ? 'Claude' : /\.codex/.test(c.shown) ? 'Codex' : /\.cursor/.test(c.shown) ? 'Cursor' : 'This project');
+
+/** The tools the server's places belong to, in the order it looked ("this project" for AGENTS.md and the like). */
+export function lookedTools(looked: readonly string[]): string[] {
+  const out: string[] = [];
+  const add = (n: string) => {
+    if (!out.includes(n)) out.push(n);
+  };
+  for (const p of looked) add(/(^|\/)\.claude(\/|$)/.test(p) ? 'Claude' : /(^|\/)\.codex(\/|$)/.test(p) ? 'Codex' : /(^|\/)\.cursor(\/|$)/.test(p) ? 'Cursor' : 'this project');
+  return out;
+}
+
+/** "Claude, Codex and Cursor": the list is the server's, so the words cannot name a place it does not read. */
+export function lookedLine(looked: readonly string[] | null, none: boolean): string {
+  const names = looked ? lookedTools(looked) : [];
+  if (names.length === 0) return none ? 'Nothing found.' : 'Looking in your agent folders.';
+  const word = none ? 'or' : 'and';
+  const list = names.length === 1 ? names[0]! : `${names.slice(0, -1).join(', ')} ${word} ${names[names.length - 1]}`;
+  return none ? `Nothing found in ${list}.` : `Looks in ${list}.`;
+}
 
 export function FirstRunSkills({ client, active, card, onNext, agentConnected, onAskAgent, modal }: FirstRunSkillsProps) {
   const [found, setFound] = useState<SkillsFound | null>(null);
@@ -237,7 +256,7 @@ export function FirstRunSkills({ client, active, card, onNext, agentConnected, o
         <p className="fr-card-sub">Untick the ones to drop.</p>
       ) : (
         <p className="fr-card-sub" data-testid="first-run-skills-where">
-          {none ? 'Nothing found in Claude, Codex or Cursor.' : 'Looks in Claude, Codex and Cursor.'}
+          {lookedLine(found?.looked ?? null, none)}
         </p>
       )}
       {brought && !editing && problems.length > 0 ? (

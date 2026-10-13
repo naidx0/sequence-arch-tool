@@ -345,7 +345,7 @@ export function toolCardTitle(name: string): string {
     return 'Drawing architecture board';
   }
   if (name === 'propose_chart') return 'Drawing a chart';
-  if (name.startsWith('board.')) return 'Drawing on Whiteboard';
+  if (name.startsWith('board.')) return 'Drawing on Spaces';
   if (name.startsWith('canvas.write_') || name === 'canvas.set_story_route') {
     return 'Drawing on AI Canvas';
   }

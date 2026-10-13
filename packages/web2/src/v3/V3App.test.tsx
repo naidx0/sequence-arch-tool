@@ -92,7 +92,7 @@ describe('V3 harness smoke', () => {
   it('exposes exactly the shipped workspace surface pills (the chat is a column, not a pill)', () => {
     render(<V3App appStore={freshStore()} />);
     const bar = screen.getByRole('navigation', { name: 'Workspace' });
-    for (const label of ['Files', 'Architecture', 'Whiteboard', 'Terminal']) {
+    for (const label of ['Files', 'Architecture', 'Spaces', 'Terminal']) {
       expect(within(bar).getByRole('button', { name: new RegExp(`^${label}$`) })).toBeTruthy();
     }
     /* Hidden (SHIPPED_SURFACES, 2026-10-05). */
@@ -110,7 +110,7 @@ describe('V3 harness smoke', () => {
 
   it('opens two surfaces side by side with a divider between, and closes one from its pane head', () => {
     const { container } = render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Whiteboard$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }));
     const panes = [...container.querySelectorAll('.s2-pane[data-surface-pane]')];
     expect(panes.map((p) => p.getAttribute('data-surface-pane'))).toEqual(['architecture', 'whiteboard']);
     expect(panes[0]!.nextElementSibling?.getAttribute('data-testid')).toBe('s2-split-divider');
@@ -184,7 +184,7 @@ describe('V3 harness smoke', () => {
 
   it('fills the stage when only one surface remains after close', () => {
     const { container } = render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Whiteboard$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }));
     expect((container.querySelector('.s2-pane[data-surface-pane="architecture"]') as HTMLElement).style.flex).toMatch(/^0\.5 1 0/);
     fireEvent.click(screen.getByTestId('v3-tab-close-whiteboard'));
     const alone = container.querySelector('.s2-pane[data-surface-pane="architecture"]') as HTMLElement;
@@ -198,7 +198,7 @@ describe('V3 harness smoke', () => {
     const { container } = render(<V3App appStore={freshStore()} />);
     fireEvent.click(screen.getByRole('button', { name: /^Terminal$/ }));
     expect(container.querySelector('.terminal-pane, .v3-terminal-pane, .v3-terminal')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /^Whiteboard$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }));
     expect(container.querySelector('.whiteboard, [data-surface="whiteboard"]')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^Files$/ }));
     expect(container.querySelector('[data-surface="files"]')).toBeTruthy();

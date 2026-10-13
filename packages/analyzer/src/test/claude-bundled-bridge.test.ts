@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { BRIDGE_ENV, BUNDLED_BRIDGE_FILE, bundledBridgePath, bundledBridgeUsable, executableFromResolved, resolveClaudeExecutable } from '../server/claudeCli.js';
 import { agentLaunch, createProviderProbe, defaultExtraDirs, rememberBinDir, type ProviderStatus } from '../server/providerProbe.js';
 import { compareVersions, defaultClaudeDirs, LAUNCHER_FILE, launcherPath, MIN_CLAUDE_VERSION } from '../server/claudeCli.js';
+import { makeNativeShim } from './helpers/nativeShim.js';
 import type { BridgeProvisioner, BridgeSetupStatus } from '../server/claudeBridgeInstall.js';
 
 /**
@@ -16,19 +17,12 @@ import type { BridgeProvisioner, BridgeSetupStatus } from '../server/claudeBridg
  */
 
 const CAP = 15_000;
-/** On Windows `claude` must be a real npm shim around a native binary (see executableFromResolved); a fake that answers `auth status --json` cannot be one, so the Ready-path tests that need it run where a script can stand in. */
-const NO_FAKE_CLAUDE_ON_WINDOWS = process.platform === 'win32' ? 'a fake claude cannot be a native binary on Windows' : false;
 const tmp = (p: string): string => fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), p)));
 
 function fakeClaude(dir: string, signedIn: boolean): void {
   const answer = signedIn ? JSON.stringify({ loggedIn: true, authMethod: 'claude.ai', subscriptionType: 'max' }) : JSON.stringify({ loggedIn: false, authMethod: 'none' });
   fs.writeFileSync(path.join(dir, 'fake.mjs'), `const a = process.argv.slice(2).join(' ');\nif (a === '--version') console.log('2.1.280 (Claude Code)');\nelse if (a === 'auth status --json') { console.log(${JSON.stringify(answer)}); process.exitCode = ${signedIn ? 0 : 1}; }\nelse { console.error('unknown ' + a); process.exitCode = 2; }\n`);
-  if (process.platform === 'win32') fs.writeFileSync(path.join(dir, 'claude.cmd'), `@"${process.execPath}" "%~dp0fake.mjs" %*\r\n`);
-  else {
-    const p = path.join(dir, 'claude');
-    fs.writeFileSync(p, `#!/bin/sh\nexec "${process.execPath}" "${path.join(dir, 'fake.mjs')}" "$@"\n`);
-    fs.chmodSync(p, 0o755);
-  }
+  makeNativeShim(dir, 'claude', path.join(dir, 'fake.mjs'));
 }
 
 function fakeBundle(dir: string): string {
@@ -38,11 +32,8 @@ function fakeBundle(dir: string): string {
 }
 
 function fakeGlobalBridge(dir: string): void {
-  if (process.platform === 'win32') fs.writeFileSync(path.join(dir, 'claude-agent-acp.cmd'), '@exit /b 0\r\n');
-  else {
-    fs.writeFileSync(path.join(dir, 'claude-agent-acp'), '#!/bin/sh\nexit 0\n');
-    fs.chmodSync(path.join(dir, 'claude-agent-acp'), 0o755);
-  }
+  fs.writeFileSync(path.join(dir, 'noop.mjs'), '');
+  makeNativeShim(dir, 'claude-agent-acp', path.join(dir, 'noop.mjs'));
 }
 
 const claudeOf = (list: ProviderStatus[]): ProviderStatus => list.find((p) => p.id === 'claude')!;
@@ -103,18 +94,14 @@ test('Claude Code before 2.1.40 has no `auth status --json`: the card says Updat
   assert.equal(MIN_CLAUDE_VERSION, '2.1.113');
   const bin = tmp('seq-nojson-');
   fs.writeFileSync(path.join(bin, 'fake.mjs'), `const a = process.argv.slice(2).join(' ');\nif (a === '--version') console.log('2.1.30 (Claude Code)');\nelse { console.error("error: unknown option '--json'"); process.exitCode = 1; }\n`);
-  if (process.platform === 'win32') fs.writeFileSync(path.join(bin, 'claude.cmd'), `@"${process.execPath}" "%~dp0fake.mjs" %*\r\n`);
-  else {
-    fs.writeFileSync(path.join(bin, 'claude'), `#!/bin/sh\nexec "${process.execPath}" "${path.join(bin, 'fake.mjs')}" "$@"\n`);
-    fs.chmodSync(path.join(bin, 'claude'), 0o755);
-  }
+  makeNativeShim(bin, 'claude', path.join(bin, 'fake.mjs'));
   const c = claudeOf((await createProviderProbe({ pathValue: bin, extraDirs: [], capMs: CAP, bundledBridge: fakeBundle(tmp('seq-nojson-b-')), bridgeProvisioner: null }).get()).providers);
   assert.equal(c.state, 'update');
   assert.equal(c.minVersion, '2.1.113');
   fs.rmSync(bin, { recursive: true, force: true });
 });
 
-test('onboarding states: signed-in claude + bundled bridge is Ready with NO install step; signed-out is only "Sign in"', { skip: NO_FAKE_CLAUDE_ON_WINDOWS }, async () => {
+test('onboarding states: signed-in claude + bundled bridge is Ready with NO install step; signed-out is only "Sign in"', async () => {
   const bin = tmp('seq-ready-');
   const bundle = fakeBundle(tmp('seq-ready-bundle-'));
   fakeClaude(bin, true);
@@ -147,7 +134,7 @@ test('onboarding states: no bundle and no global bridge is still "adapter" (inst
   fs.rmSync(bin, { recursive: true, force: true });
 });
 
-test('launch path: bundled bridge runs under this process\'s node by absolute path; the global bridge is the fallback; neither says what is missing', { skip: NO_FAKE_CLAUDE_ON_WINDOWS }, () => {
+test('launch path: bundled bridge runs under this process\'s node by absolute path; the global bridge is the fallback; neither says what is missing', () => {
   const bin = tmp('seq-launch-');
   const bundle = fakeBundle(tmp('seq-launch-bundle-'));
   fakeClaude(bin, true);
@@ -161,7 +148,7 @@ test('launch path: bundled bridge runs under this process\'s node by absolute pa
   assert.equal(fallback.ok, true);
   if (fallback.ok && process.platform !== 'win32') assert.equal(fallback.command, path.join(bin, 'claude-agent-acp'));
 
-  fs.rmSync(path.join(bin, process.platform === 'win32' ? 'claude-agent-acp.cmd' : 'claude-agent-acp'));
+  fs.rmSync(path.join(bin, process.platform === 'win32' ? 'claude-agent-acp.exe' : 'claude-agent-acp'));
   const neither = agentLaunch('claude', { pathValue: bin, extraDirs: [], bundledBridge: null, bridgeProvisioner: null });
   assert.equal(neither.ok, false);
   /* a bundle with no claude to drive is not a launch either */
@@ -190,7 +177,7 @@ test('the launcher is built with the analyzer (a missing build fails here, it is
   assert.ok(launcherPath(), `${LAUNCHER_FILE} is missing from dist/: pnpm --filter @sequence/analyzer build`);
 });
 
-test('onboarding: a downloaded bridge makes a signed-in claude Ready with no install step, launched through the launcher by absolute paths', { skip: NO_FAKE_CLAUDE_ON_WINDOWS }, async () => {
+test('onboarding: a downloaded bridge makes a signed-in claude Ready with no install step, launched through the launcher by absolute paths', async () => {
   const bin = tmp('seq-dl-ready-');
   fakeClaude(bin, true);
   const entry = path.join(tmp('seq-dl-tree-'), 'index.js');
@@ -207,7 +194,7 @@ test('onboarding: a downloaded bridge makes a signed-in claude Ready with no ins
   fs.rmSync(bin, { recursive: true, force: true });
 });
 
-test('onboarding: with nothing downloaded yet the fetch starts by itself and the card reads "preparing" with the bytes so far; signed out still says only Sign in', { skip: NO_FAKE_CLAUDE_ON_WINDOWS }, async () => {
+test('onboarding: with nothing downloaded yet the fetch starts by itself and the card reads "preparing" with the bytes so far; signed out still says only Sign in', async () => {
   const bin = tmp('seq-dl-fetch-');
   fakeClaude(bin, true);
   const prov = fakeProvisioner({ status: { state: 'running', receivedBytes: 12_400_000, files: 40 } });
@@ -224,7 +211,7 @@ test('onboarding: with nothing downloaded yet the fetch starts by itself and the
   fs.rmSync(bin, { recursive: true, force: true });
 });
 
-test('onboarding: a failed download falls back to the global install (Install bridge) and says why', { skip: NO_FAKE_CLAUDE_ON_WINDOWS }, async () => {
+test('onboarding: a failed download falls back to the global install (Install bridge) and says why', async () => {
   const bin = tmp('seq-dl-fail-');
   fakeClaude(bin, true);
   const prov = fakeProvisioner({ status: { state: 'failed', error: 'the registry answered 503', failedAt: Date.now() } });
@@ -256,7 +243,7 @@ test('a claude older than the minimum is "Update Claude Code", not Ready, for th
   fs.rmSync(bin, { recursive: true, force: true });
 });
 
-test('the probe and the bridge search the same folders: a claude only in an npm dir learned after an install is not "Ready" for a bridge that cannot find it', { skip: NO_FAKE_CLAUDE_ON_WINDOWS }, async () => {
+test('the probe and the bridge search the same folders: a claude only in an npm dir learned after an install is not "Ready" for a bridge that cannot find it', async () => {
   for (const d of defaultClaudeDirs()) assert.ok(defaultExtraDirs().includes(d), `${d} is searched by both`);
   const learned = tmp('seq-learned-');
   fakeClaude(learned, true);

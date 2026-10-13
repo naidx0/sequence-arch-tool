@@ -13,6 +13,7 @@ import path from 'node:path';
 
 import { parse } from 'yaml';
 
+import { defaultReveal } from './fileOps.js';
 import { canonicalRoot, realpathContained } from './jail.js';
 
 export const MAX_SKILL_FILES = 40;
@@ -134,6 +135,46 @@ function ensureRealDirs(from: string, rel: string[], make: boolean): string | nu
     }
   }
   return null;
+}
+
+/**
+ * Remove one WORKSPACE skill: the folder `<root>/.sequence/skills/<slug>`. Only that folder is ever touched (never a user-global
+ * skill, never anything outside it): the slug must be a plain segment, the skills folder and the slug folder must be real
+ * directories (a link is refused, never followed), and the slug folder must resolve inside the skills folder.
+ */
+export function removeWorkspaceSkill(root: string, slug: string): { removed: string } | { missing: string } | { refused: string } {
+  if (!SEGMENT.test(slug) || RESERVED.test(slug) || slug === '.' || slug === '..') return { refused: `not a skill name: ${slug.slice(0, 80)}` };
+  const rootReal = canonicalRoot(root);
+  const bad = ensureRealDirs(rootReal, ['.sequence', 'skills'], false);
+  if (bad) return { refused: `.sequence/skills: ${bad}` };
+  const base = path.join(rootReal, '.sequence', 'skills');
+  if (!lstat(base)) return { missing: slug };
+  if (realpathContained(base) !== base) return { refused: '.sequence/skills leads outside the workspace' };
+  const dir = path.join(base, slug);
+  const st = lstat(dir);
+  if (!st) return { missing: slug };
+  if (st.isSymbolicLink() || !st.isDirectory()) return { refused: `${slug} is a link or not a folder` };
+  if (!realpathContained(dir).startsWith(base + path.sep)) return { refused: `${slug} leads outside the skills folder` };
+  fs.rmSync(dir, { recursive: true, force: true });
+  return { removed: slug };
+}
+
+/**
+ * Show one workspace skill's SKILL.md in the file manager. The Files surface hides `.sequence` (a reserved root), so this is the
+ * way to open a skill for editing. Same checks as the removal: a plain slug, real folders, a real file, inside the skills folder.
+ */
+export function revealWorkspaceSkill(root: string, slug: string, reveal: (abs: string) => void = defaultReveal): { revealed: string } | { missing: string } | { refused: string } {
+  if (!SEGMENT.test(slug) || RESERVED.test(slug)) return { refused: `not a skill name: ${slug.slice(0, 80)}` };
+  const rootReal = canonicalRoot(root);
+  const bad = ensureRealDirs(rootReal, ['.sequence', 'skills', slug], false);
+  if (bad) return lstat(path.join(rootReal, '.sequence', 'skills', slug)) ? { refused: bad } : { missing: slug };
+  const file = path.join(rootReal, '.sequence', 'skills', slug, 'SKILL.md');
+  const st = lstat(file);
+  if (!st) return { missing: slug };
+  if (st.isSymbolicLink() || !st.isFile()) return { refused: `${slug}/SKILL.md is a link or not a file` };
+  if (!realpathContained(file).startsWith(path.join(rootReal, '.sequence', 'skills') + path.sep)) return { refused: `${slug} leads outside the skills folder` };
+  reveal(file);
+  return { revealed: slug };
 }
 
 /**

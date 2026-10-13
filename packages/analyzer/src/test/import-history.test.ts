@@ -1,3 +1,4 @@
+import { bound } from './load-scale.js';
 import assert from 'node:assert';
 import { test } from 'node:test';
 import crypto from 'node:crypto';
@@ -178,6 +179,36 @@ test('the server lists and imports over HTTP for the opened project', async () =
   }
 });
 
+/** Runs `fn` while a 10 ms timer watches the event loop; returns fn's result and the largest gap between ticks. */
+async function withLoopGapMonitor<T>(fn: () => Promise<T>): Promise<{ result: T; worst: number }> {
+  let worst = 0;
+  let last = Date.now();
+  const tick = setInterval(() => {
+    worst = Math.max(worst, Date.now() - last);
+    last = Date.now();
+  }, 10);
+  try {
+    const result = await fn();
+    /* The last stall ends when the continuation runs, so it counts too (a timer that never got to fire is not a clean gap). */
+    worst = Math.max(worst, Date.now() - last);
+    return { result, worst };
+  } finally {
+    clearInterval(tick);
+  }
+}
+
+const STALL_BOUND = (): number => bound(50, 125);
+
+test('the loop-gap monitor reads a thread-blocking job as far above the stall bound (control for the import check)', async () => {
+  const { worst } = await withLoopGapMonitor(async () => {
+    await new Promise((r) => setTimeout(r, 30));
+    const until = Date.now() + 400;
+    while (Date.now() < until) { /* blocks the loop thread, as an import done synchronously would */ }
+  });
+  assert.ok(worst >= 300, `monitor read ${worst} ms for a 400 ms block`);
+  assert.ok(worst > STALL_BOUND() * 2, `the block (${worst} ms) is not clearly over the bound (${STALL_BOUND()} ms)`);
+});
+
 test('a large import is written once, fast, off the request thread, and nothing is hidden: older turns page in', async () => {
   const w = world();
   const sid = 'cccccccc-2222-3333-4444-555555555555';
@@ -193,23 +224,15 @@ test('a large import is written once, fast, off the request thread, and nothing 
   assert.ok(fs.statSync(path.join(proj, `${sid}.jsonl`)).size > 14 * 1024 * 1024);
 
   /* The event loop keeps turning while the import runs (largest gap between ticks stays small). */
-  let worst = 0;
-  let last = Date.now();
-  const tick = setInterval(() => {
-    worst = Math.max(worst, Date.now() - last);
-    last = Date.now();
-  }, 10);
   const t0 = Date.now();
-  const out = await importSession(w.repo, 'claude', sid, w.homes);
+  const { result: out, worst } = await withLoopGapMonitor(() => importSession(w.repo, 'claude', sid, w.homes));
   const took = Date.now() - t0;
-  /* The last stall ends when the import's continuation runs, so it counts too (a timer that never got to fire is not a clean gap). */
-  worst = Math.max(worst, Date.now() - last);
-  clearInterval(tick);
   assert.ok(out.ok);
   if (!out.ok) return;
   assert.strictEqual(out.turns, 400);
-  assert.ok(took < 2000, `import took ${took} ms`);
-  assert.ok(worst < 50, `event loop stalled ${worst} ms`);
+  /* Both bounds move with the machine's load (load-scale.ts, capped at x2.5); the control test below proves the monitor reads a blocked loop as far above the stall bound. */
+  assert.ok(took < bound(2000, 5000), `import took ${took} ms`);
+  assert.ok(worst < STALL_BOUND(), `event loop stalled ${worst} ms`);
   const runs = readAgentRuns(w.repo, out.chatId);
   assert.strictEqual(runs.length, 200);
   /* The 200 turns not on screen are reachable: 100 a page, newest first. */

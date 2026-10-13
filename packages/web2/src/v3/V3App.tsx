@@ -34,6 +34,7 @@ import { createBootTransport, onDesktopHelp } from '../boot';
 import { openRepoSession, openWorkspaceSession } from '../sessions/openRepoSession';
 import { clearSessionFlush, flushAndReload, flushSessionMemory } from '../sessions/sessionPersist';
 import { sessionsClient } from '../sessions/sessionsClient';
+import { inPlaceSwitchEnabled, switchWorkspaceInPlace } from '../sessions/workspaceSwitch';
 import {
   readAutoEditEnabled,
   readFullAccessEnabled,
@@ -101,6 +102,13 @@ const leaveChat = async (): Promise<void> => {
  * them unclickable — the browse jail refuses the home directory by name.
  */
 async function openWorkspace(target: Store, sessionId: string): Promise<string | null> {
+  if (inPlaceSwitchEnabled()) {
+    const moved = await switchWorkspaceInPlace({ store: target, transport, sessions: sessionsClient, leave: leaveChat }, null, sessionId);
+    if (moved.outcome === 'ok') return null;
+    if (moved.outcome === 'refused') return moved.message;
+    await flushAndReload();
+    return null;
+  }
   const result = await openWorkspaceSession(transport, sessionsClient, sessionId, leaveChat);
   if (result.outcome !== 'ok') {
     return result.message;
@@ -117,6 +125,13 @@ async function openWorkspace(target: Store, sessionId: string): Promise<string |
 }
 
 async function openProject(target: Store, repoPath: string, sessionId: string): Promise<string | null> {
+  if (inPlaceSwitchEnabled()) {
+    const moved = await switchWorkspaceInPlace({ store: target, transport, sessions: sessionsClient, leave: leaveChat }, repoPath, sessionId);
+    if (moved.outcome === 'ok') return null;
+    if (moved.outcome === 'refused') return moved.message;
+    await flushAndReload();
+    return null;
+  }
   const result = await openRepoSession(transport, sessionsClient, repoPath, sessionId, leaveChat);
   if (result.outcome !== 'ok') {
     return result.message;

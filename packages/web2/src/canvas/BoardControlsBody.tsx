@@ -3,6 +3,7 @@
 
 import type { BoardControlsProps } from './BoardControls.js';
 import { BOARD_KEYS } from './boardKeysHint.js';
+import { ExportRows } from '../export/ExportRows.js';
 
 function Segmented<T extends string | number>({
   label,
@@ -162,6 +163,7 @@ export function BoardControlsBody(props: BoardControlsProps) {
           </span>
         ) : null}
       </div>
+      <ExportRows />
     </div>
   );
 }

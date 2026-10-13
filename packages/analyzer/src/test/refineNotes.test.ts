@@ -144,7 +144,7 @@ test('agent block: the first turn of a thread carries the notes and the skill po
   const root = repoWithNotes();
   const ledger = new ThreadNoteLedger();
   const first = buildAgentBlock(root, 'fix the parser', 'chat::c::claude', 'th1', ledger);
-  assert.match(first.text, /^\[Added by the app, not typed by the person/);
+  assert.match(first.text, /^\[Sequence added these project notes/);
   assert.match(first.text, /- "add a test for the missing file case" was reported not done before/);
   assert.match(first.text, /\.sequence\/skills\/impact\/SKILL\.md/);
   assert.ok(first.tokens > 0 && first.tokens < 250, `${first.tokens} tokens`);
@@ -221,12 +221,12 @@ test('Claude/Codex turn through the real server: the notes reach the agent once 
   try {
     const first = await run('fix the parser please');
     assert.ok(first.indexOf('add a test for the missing file case') < first.indexOf('fix the parser please'), 'notes come first');
-    assert.match(first, /not typed by the person/);
+    assert.match(first, /Sequence added these project notes/);
     const second = await run('and the lexer too');
     assert.ok(second.includes('and the lexer too') && !second.includes('add a test for the missing file case'), 'the thread already has them');
     await new Promise((r) => setTimeout(r, 150));
     const saved = readAgentRuns(repo, chatId);
-    assert.ok(saved.length >= 2 && saved.every((r) => !r.prompt.includes('add a test for the missing file case') && !r.prompt.includes('Added by the app')), 'the saved turn holds the person’s words only');
+    assert.ok(saved.length >= 2 && saved.every((r) => !r.prompt.includes('add a test for the missing file case') && !r.prompt.includes('Sequence added')), 'the saved turn holds the person’s words only');
     assert.equal(saved[0]!.prompt, 'fix the parser please');
     /* Edit from here cuts the turns that carried the notes: the thread is told again on the next one. */
     const rw = await fetch(`${srv.base}/api/sessions/${chatId}/rewind`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ fromTurnId: saved[0]!.id }) });
@@ -280,4 +280,58 @@ test('undo keeps the person’s own prose: the file is removed only when nothing
   const mine = `# Repo memory\n\nmy own words about this repo\n\n${line('x1', 'Tip one for this repo.')}\n`;
   assert.equal(isEmptyNotes(removeNoteLine(mine, 'x1')!), false);
   assert.equal(isEmptyNotes(removeNoteLine(addNoteLine('', line('x1', 'Tip one.'), 'x1'), 'x1')!), true);
+});
+
+/* ------------------- context sync (0.1.8 C): a thread's prefix does not follow later words ------------------- */
+
+function repoWithManyNotes(): string {
+  const root = tmp();
+  fs.mkdirSync(path.join(root, '.sequence', 'memory'), { recursive: true });
+  const lines = Array.from({ length: 40 }, (_, i) => line(`n${i}`, `"ask number ${i} about topic${i} widget${i}" had to be asked twice. Finish all of it the first time.`));
+  /* Two more that only the words of a prompt can pull in. */
+  lines.push(line('rf', '"add a retry to the fetch helper" was reported not done before: the helper wraps every call. Retry there.'));
+  fs.writeFileSync(path.join(root, '.sequence', 'memory', 'NOTES.md'), notesFile(...lines));
+  return root;
+}
+
+test('thread prefix: a later turn adds no word-selected note, however its words differ; only a changed note set adds', () => {
+  const root = repoWithManyNotes();
+  const key = 'chat::c::claude';
+  const ledger = new ThreadNoteLedger();
+  const first = buildAgentBlock(root, 'add a retry to the fetch helper', key, 'th1', ledger);
+  markAgentBlock(root, key, 'th1', ledger, first);
+  /* Near-identical wording, and words that would match another note (topic3 widget3): the thread was already told its notes. */
+  for (const q of ['add a retry to the fetch helpers please', 'look at ask number 3 about topic3 widget3 again', 'add a retry to the fetch helper']) {
+    const next = buildAgentBlock(root, q, key, 'th1', ledger);
+    assert.equal(next.text, '', `no new prefix for: ${q}`);
+    assert.equal(next.tokens, 0);
+    markAgentBlock(root, key, 'th1', ledger, next);
+  }
+  /* A real change to the note set still reaches the thread. */
+  const file = path.join(root, '.sequence', 'memory', 'NOTES.md');
+  fs.appendFileSync(file, `${line('zz', '"rename the cache module" was reported not done before: update the imports as well.')}\n`);
+  const changed = buildAgentBlock(root, 'add a retry to the fetch helper', key, 'th1', ledger);
+  assert.match(changed.text, /rename the cache module/);
+  assert.ok(!changed.text.includes('topic3'), 'a matched note is still not pulled in by words');
+});
+
+test('thread prefix: a first turn that carried nothing still opens the thread, so a later question cannot add a matched note', () => {
+  const root = tmp();
+  fs.mkdirSync(path.join(root, '.sequence', 'memory'), { recursive: true });
+  const key = 'chat::c::claude';
+  const ledger = new ThreadNoteLedger();
+  const first = buildAgentBlock(root, 'hello', key, 'th1', ledger);
+  assert.equal(first.text, '');
+  markAgentBlock(root, key, 'th1', ledger, first);
+  fs.writeFileSync(path.join(root, '.sequence', 'memory', 'NOTES.md'), notesFile(...Array.from({ length: 20 }, (_, i) => line(`m${i}`, `"ask number ${i} about topic${i} widget${i}" had to be asked twice. Finish all of it the first time.`))));
+  const next = buildAgentBlock(root, 'topic3 widget3 please', key, 'th1', ledger);
+  assert.ok(!next.text.includes('topic3'), 'matched notes belong to a thread\'s first turn');
+});
+
+test('the injected notes block is labelled as what it is and never tells the agent to hide it', () => {
+  const root = repoWithNotes();
+  const first = buildAgentBlock(root, 'fix the parser', 'chat::c::label', 'th-label', new ThreadNoteLedger());
+  assert.match(first.text, /^\[Sequence added these project notes/);
+  assert.match(first.text, /did not type/);
+  assert.doesNotMatch(first.text, /do not mention|don't mention|do not reveal|secret|hide/i);
 });

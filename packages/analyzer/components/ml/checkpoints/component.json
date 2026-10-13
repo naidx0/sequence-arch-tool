@@ -1,0 +1,31 @@
+{
+  "id": "ml/checkpoints",
+  "group": "ml",
+  "label": "Checkpoints",
+  "summary": "Turn a finished Halo training run into a usable artifact, and resume correctly.",
+  "triggers": [
+    "training checkpoint",
+    "resume training",
+    "export a model artifact",
+    "finished training run",
+    "checkpoint artifact"
+  ],
+  "status": "ready",
+  "license": "Apache-2.0 + Halo supplemental terms",
+  "source": {
+    "repo": "whitecircle/halo",
+    "commit": "41da0838499a2459b236252ba1200a31957d3606",
+    "path": "skills/checkpoints"
+  },
+  "url": "https://github.com/whitecircle/halo/tree/41da0838499a2459b236252ba1200a31957d3606/skills/checkpoints",
+  "externalRefs": [
+    "agent-docs/parallelism/pipeline-parallelism.md",
+    "agent-docs/reference/checkpoints.md",
+    "src/training/environment.py",
+    "src/checkpoint/tool_io.py",
+    "src/distributed/checkpoint/ep_save.py",
+    "src/distributed/expert_parallel/expert_weights.py",
+    "src/distributed/checkpoint/tp_save.py"
+  ],
+  "preamble": "SEQUENCE.md"
+}

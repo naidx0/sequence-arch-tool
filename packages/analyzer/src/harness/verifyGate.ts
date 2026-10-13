@@ -15,8 +15,9 @@
  * and ONLY `passed` counts. There is no "best-effort pass".
  */
 
-import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
+import { spawn, spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 import {
   validateHarnessSkill,
   type HarnessSkillFrontmatter,
@@ -118,9 +119,15 @@ export interface VerifyResult {
 export function spawnVerifyBin(
   bin: string,
   args: readonly string[],
-  opts: { cwd: string; timeout: number },
+  opts: { cwd: string; timeout: number; maxBuffer?: number },
 ): SpawnSyncReturns<string> {
-  const base = { cwd: opts.cwd, encoding: 'utf8' as const, timeout: opts.timeout, shell: false };
+  const base = {
+    cwd: opts.cwd,
+    encoding: 'utf8' as const,
+    timeout: opts.timeout,
+    shell: false,
+    ...(opts.maxBuffer !== undefined ? { maxBuffer: opts.maxBuffer } : {}),
+  };
   /* windowsHide: the packaged app has no console, so a bare child would open a window. */
   const direct = spawnSync(bin, [...args], { ...base, windowsHide: true });
   // A command that STARTED and failed is a real verify failure. Only a failure to
@@ -480,17 +487,33 @@ export interface AllowlistedCmdRun {
    * of `docs/research/trust-boundary-verification.md` §2.
    */
   resolved?: string;
+  /** The command was killed at its deadline. `output` is what it had printed by then. */
+  timedOut?: boolean;
+  /** The command printed more than the capture buffer holds and was stopped. `output` is what was captured. */
+  bufferExceeded?: boolean;
+  /** The caller's AbortSignal fired: the command was killed (tree included). `output` is what it had printed. */
+  aborted?: boolean;
 }
+
+/** Capture buffer for an allowlisted run (spawnSync's own default is 1 MB, which a test suite can exceed). */
+export const ALLOWLISTED_CMD_MAX_BUFFER = 16 * 1024 * 1024;
 
 /**
  * Run one exact allowlisted verify-gate command under `repoRoot` (no ambient
  * shell). Reused by ask `run_command` and program `command` nodes so neither
  * invents a second allowlist.
  */
-export function runAllowlistedRepoCommand(
+type VerifySpawn = (
+  bin: string,
+  args: readonly string[],
+  opts: { cwd: string; timeout: number; maxBuffer?: number; signal?: AbortSignal },
+) => SpawnSyncReturns<string>;
+
+function runAllowlistedCore(
   cmd: string,
   repoRoot: string,
-  opts?: { timeoutMs?: number; outputCap?: number; widenToRunnerBins?: boolean },
+  opts: { timeoutMs?: number; outputCap?: number; widenToRunnerBins?: boolean; signal?: AbortSignal } | undefined,
+  exec: VerifySpawn,
 ): AllowlistedCmdRun {
   /*
    * `cd <repo> && <cmd>` IS `<cmd>` — models write it reflexively, and every
@@ -543,7 +566,7 @@ export function runAllowlistedRepoCommand(
     const rootNorm = repoRoot.replace(/\\/g, '/').replace(/\/+$/, '');
     const targetNorm = target.replace(/\\/g, '/').replace(/\/+$/, '');
     if (targetNorm === '.' || targetNorm === rootNorm) {
-      return runAllowlistedRepoCommand(cdPrefix[2]!, repoRoot, opts);
+      return runAllowlistedCore(cdPrefix[2]!, repoRoot, opts, exec);
     }
     return {
       ok: false,
@@ -631,12 +654,19 @@ export function runAllowlistedRepoCommand(
   const args = parts.slice(1);
   const timeout = opts?.timeoutMs ?? ALLOWLISTED_CMD_TIMEOUT_MS;
   const outputCap = opts?.outputCap ?? ALLOWLISTED_CMD_OUTPUT_CAP;
-  const result = spawnVerifyBin(bin, args, { cwd: repoRoot, timeout });
+  const result = exec(bin, args, { cwd: repoRoot, timeout, maxBuffer: ALLOWLISTED_CMD_MAX_BUFFER, ...(opts?.signal ? { signal: opts.signal } : {}) });
   if (result.error) {
+    /* A deadline, a full buffer or an abort is a RUN that was stopped, not a failure to start: hand back what it printed. */
+    const code = (result.error as NodeJS.ErrnoException).code;
+    const stopped = code === 'ETIMEDOUT' || code === 'ENOBUFS' || code === 'ABORT_ERR';
+    const partial = stopped ? `${(result.stdout ?? '').toString()}${result.stderr ? `\n${result.stderr.toString()}` : ''}` : '';
     return {
       ok: false,
       exitCode: null,
-      output: result.error.message,
+      output: stopped ? partial : result.error.message,
+      ...(code === 'ETIMEDOUT' ? { timedOut: true } : {}),
+      ...(code === 'ENOBUFS' ? { bufferExceeded: true } : {}),
+      ...(code === 'ABORT_ERR' ? { aborted: true } : {}),
       ...(resolved !== undefined ? { resolved } : {}),
       refuseReason: `failed to start: ${result.error.message}`,
     };
@@ -665,6 +695,113 @@ export function runAllowlistedRepoCommand(
        shown only on refusal teaches nobody what the green run actually ran. */
     ...(resolved !== undefined ? { resolved } : {}),
   };
+}
+
+export function runAllowlistedRepoCommand(
+  cmd: string,
+  repoRoot: string,
+  opts?: { timeoutMs?: number; outputCap?: number; widenToRunnerBins?: boolean },
+): AllowlistedCmdRun {
+  return runAllowlistedCore(cmd, repoRoot, opts, spawnVerifyBin);
+}
+
+/** Thrown by the probe pass of {@link runAllowlistedRepoCommandAsync}; never escapes it. */
+const PROBE_SIGNAL = { probe: true };
+
+/**
+ * The same gate and the same result as {@link runAllowlistedRepoCommand}, without blocking the event loop.
+ * Every check runs in the shared core; the first pass stops at the spawn and hands back what would run, that is
+ * spawned asynchronously, and the second pass lets the core turn the result into an AllowlistedCmdRun. One
+ * allowlist, one place it is enforced.
+ */
+export async function runAllowlistedRepoCommandAsync(
+  cmd: string,
+  repoRoot: string,
+  opts?: { timeoutMs?: number; outputCap?: number; widenToRunnerBins?: boolean; signal?: AbortSignal },
+): Promise<AllowlistedCmdRun> {
+  let probe: { bin: string; args: readonly string[]; o: { cwd: string; timeout: number; maxBuffer?: number; signal?: AbortSignal } } | undefined;
+  try {
+    return runAllowlistedCore(cmd, repoRoot, opts, (bin, args, o) => {
+      probe = { bin, args, o };
+      throw PROBE_SIGNAL;
+    });
+  } catch (e) {
+    if (e !== PROBE_SIGNAL || !probe) throw e;
+  }
+  const result = await spawnVerifyBinAsync(probe.bin, probe.args, probe.o);
+  return runAllowlistedCore(cmd, repoRoot, opts, () => result);
+}
+
+/**
+ * Async twin of {@link spawnVerifyBin}: same direct-then-cmd.exe lookup fallback, same ETIMEDOUT / ENOBUFS error
+ * codes (so the core treats them alike), partial output kept on a stop, and on Windows the whole process tree
+ * killed at the deadline (a bare kill leaves `pnpm`'s child holding the pipe).
+ */
+export function spawnVerifyBinAsync(
+  bin: string,
+  args: readonly string[],
+  opts: { cwd: string; timeout: number; maxBuffer?: number; signal?: AbortSignal },
+): Promise<SpawnSyncReturns<string>> {
+  const max = opts.maxBuffer ?? 1024 * 1024;
+  const once = (command: string, argv: readonly string[]): Promise<SpawnSyncReturns<string>> =>
+    new Promise((resolve) => {
+      let stdout = '';
+      let stderr = '';
+      let size = 0;
+      let done = false;
+      let timer: NodeJS.Timeout | undefined;
+      const finish = (status: number | null, error?: Error): void => {
+        if (done) return;
+        done = true;
+        if (timer) clearTimeout(timer);
+        resolve({ status, signal: null, stdout, stderr, pid: 0, output: [null, stdout, stderr], ...(error ? { error } : {}) } as SpawnSyncReturns<string>);
+      };
+      let child: ReturnType<typeof spawn>;
+      try {
+        child = spawn(command, [...argv], { cwd: opts.cwd, shell: false, windowsHide: true });
+      } catch (e) {
+        finish(null, e as Error);
+        return;
+      }
+      const kill = (): void => {
+        if (process.platform === 'win32' && child.pid) {
+          try {
+            /* The System32 copy by absolute path, as ptyShell.ts does: a bare name is searched in the cwd first on Windows. */
+            const taskkill = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'taskkill.exe');
+            spawnSync(taskkill, ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true });
+          } catch {
+            /* best effort */
+          }
+        } else child.kill('SIGKILL');
+      };
+      const stop = (code: string): void => {
+        if (done) return;
+        kill();
+        finish(null, Object.assign(new Error(`spawn ${command} ${code}`), { code }));
+      };
+      timer = setTimeout(() => stop('ETIMEDOUT'), opts.timeout);
+      if (opts.signal) {
+        if (opts.signal.aborted) stop('ABORT_ERR');
+        else opts.signal.addEventListener('abort', () => stop('ABORT_ERR'), { once: true });
+      }
+      const sink = (which: 'out' | 'err') => (b: string): void => {
+        if (done) return;
+        size += Buffer.byteLength(b);
+        if (size > max) return stop('ENOBUFS');
+        if (which === 'out') stdout += b;
+        else stderr += b;
+      };
+      child.stdout?.setEncoding('utf8');
+      child.stderr?.setEncoding('utf8');
+      child.stdout?.on('data', sink('out'));
+      child.stderr?.on('data', sink('err'));
+      child.on('error', (e) => finish(null, e));
+      child.on('close', (code) => finish(code));
+    });
+  return once(bin, args).then((direct) => {
+    if (!isSpawnLookupFailure(direct.error) || process.platform !== 'win32') return direct;
+    return once('cmd.exe', ['/d', '/s', '/c', bin, ...args]);
+  });
 }
 
 /**

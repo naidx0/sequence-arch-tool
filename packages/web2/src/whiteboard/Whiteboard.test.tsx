@@ -1300,6 +1300,7 @@ describe('THE TOOLBAR IS ONE FLOATING PILL, ONE LINE (jsdom has no layout: the D
       'wb-tool-draw',
       'wb-shapes-trigger',
       'wb-annotate-trigger',
+      'wb-color-trigger',
       'wb-tool-erase',
       'wb-undo',
       'wb-fit',
@@ -1604,7 +1605,9 @@ describe('THE BOARD EDGE (the browser run measures it; this locks the CSS that m
   it('draws the SAME field as the architecture board: board ground, strong-hairline dots every --sp-20, moving with the camera', () => {
     render(<Whiteboard repoRoot="r" storage={memoryStore()} />);
     expect(document.querySelector('pattern')).toBeNull();
-    const field = rule('.wb-canvas');
+    /* The dots are the person's choice now (data-grid), so the field is the plain rule plus the grid rule. */
+    const field = `${rule('.wb-canvas')}
+${rule(".wb-canvas[data-grid='true']")}`;
     const arch = readFileSync(path.resolve(__dirname, '../canvas/board.css'), 'utf8');
     const archField = arch.slice(arch.indexOf('--board-field-ink: var(--edge-strong)'), arch.indexOf('/* C4.1'));
     for (const piece of [

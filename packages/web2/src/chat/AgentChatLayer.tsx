@@ -23,6 +23,8 @@ import { composerPropsFrom } from '../state';
 import { groundedRepoRoot, useAppState, useStore } from '../state/connect';
 import type { AppState } from '../state/types';
 import { ChatStarters, starterActions, type StarterAction, type StarterEdge, type StarterNode } from './ChatStarters';
+/* Static on purpose: it looks for a waiting note on mount, so it is on the first page anyway, and a chunk of its own cost two more boot requests (script and style) and a module. */
+import { RefineNoteCard } from './RefineNoteCard';
 
 /* The cards and toasts load with the first run, not at boot. */
 const AgentRunsPane = lazy(() => import('./AgentRunsPane'));
@@ -153,6 +155,10 @@ export function AgentChatLayer({ empty, runs = agentRuns, cards = true }: { empt
     return () => window.removeEventListener(CHAT_TITLE_EVENT, onTitle);
   }, [store]);
   const mine = useMemo(() => all.runs.filter((r) => r.sessionId === sessionId), [all.runs, sessionId]);
+  /* The note card belongs to every chat, whichever model answered: a turn of either kind ends it. */
+  const lastRun = mine[mine.length - 1];
+  const turnBusy = state.session.inFlight !== null || (lastRun !== undefined && (lastRun.status === 'running' || lastRun.queued === true));
+  const lastEndedKey = lastRun || state.session.turns.length > 0 ? `${lastRun ? `${lastRun.id}:${lastRun.status}` : ''}|${state.session.turns.length}` : null;
   const selection = useBoardSelection();
   const graph = graphOf(state);
   const actions = useMemo(() => starterActions(graph.nodes, graph.edges, selection), [graph.nodes, graph.edges, selection]);
@@ -197,6 +203,7 @@ export function AgentChatLayer({ empty, runs = agentRuns, cards = true }: { empt
           <AgentRunsPane runs={mine} store={runs} repoRoot={repoRoot} cards={cards} sessionId={sessionId} />
         </Suspense>
       ) : null}
+      <RefineNoteCard sessionId={sessionId} lastEndedKey={lastEndedKey} busy={turnBusy} />
     </>
   );
 }

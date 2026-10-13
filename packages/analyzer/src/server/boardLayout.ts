@@ -149,6 +149,8 @@ const FRAME_HEAD = 24;
 const LABEL_EM = 12;
 /** A flow with more ranks than this runs top to bottom. */
 const MAX_LR_RANKS = 3;
+/** `maxLrRanks: 0` (the "short flows top to bottom" setting, claims V05) sends every flow top to bottom. */
+export const DEFAULT_MAX_LR_RANKS = MAX_LR_RANKS;
 
 export const BOX_ID_SUFFIX = ':box';
 export const SEGMENT_ID_SEP = ':s';
@@ -313,6 +315,8 @@ export interface LayoutOptions {
   origin: BoardPoint;
   /** Centres of items that are on the board but not part of this turn, for connectors that land on them. */
   external: ReadonlyMap<string, { x: number; y: number; box?: boolean }>;
+  /** Flows with more ranks than this run top to bottom. Default {@link DEFAULT_MAX_LR_RANKS}; 0 = every flow top to bottom. */
+  maxLrRanks?: number;
 }
 
 export function layoutTurn(turn: BoardTurn, options: LayoutOptions): BoardItem[] {
@@ -342,7 +346,7 @@ export function layoutTurn(turn: BoardTurn, options: LayoutOptions): BoardItem[]
     return emit(turn, boxes, links, outside, options, gridPlace(boxes));
   }
 
-  const leftToRight = rankCount <= MAX_LR_RANKS;
+  const leftToRight = rankCount <= (options.maxLrRanks ?? MAX_LR_RANKS);
   for (const b of boxes) {
     b.sf = leftToRight ? b.w : b.h;
     b.sc = leftToRight ? b.h : b.w;

@@ -99,8 +99,8 @@
   min-width: var(--gv-cell);
   height: var(--gv-cell);
   padding: 0;
-  border-right: var(--w-hair) solid var(--edge-faint);
-  border-bottom: var(--w-hair) solid var(--edge-faint);
+  border-right: var(--w-hair) solid var(--edge);
+  border-bottom: var(--w-hair) solid var(--edge);
   text-align: center;
   font-family: var(--font-mono);
   font-size: var(--t-12);
@@ -325,10 +325,10 @@
   line-height: 1;
   text-align: center;
 }
-.board-view .is-added .dv-glyph { color: var(--fits); }
+.board-view .is-added .dv-glyph { color: var(--diff-add-gutter); }
 .board-view .is-changed .dv-glyph,
 .board-view .is-renamed .dv-glyph { color: var(--spills); }
-.board-view .is-removed .dv-glyph { color: var(--wont); }
+.board-view .is-removed .dv-glyph { color: var(--diff-del-gutter); }
 .hotview .hv-key { margin: 0 0 var(--sp-12); color: var(--ink-3); font-size: var(--t-11); }
 .diffview .dv-files { flex: 1 0 100%; min-width: 0; margin: 0; padding: 0 0 0 calc(20px + var(--sp-6)); list-style: none; font-family: var(--font-mono); font-size: var(--t-11); line-height: var(--lh-11, 1.45); color: var(--ink-3); }
 .diffview .dv-file { display: flex; align-items: baseline; gap: var(--sp-6); min-width: 0; }
@@ -351,3 +351,47 @@
 .hotview .hv-bar { flex: 1 1 120px; height: 6px; border-radius: var(--r-full); background: var(--board-card); overflow: hidden; }
 .hotview .hv-fill { display: block; height: 100%; background: var(--spills); }
 .diffview .dv-more { padding: 0; border: 0; background: none; font: inherit; color: var(--ink-2); text-decoration: underline; cursor: pointer; }
+
+/* ── keeping track (E3/E4): header fixed, changes scroll on their own ──── */
+.board-view.diffview { display: flex; flex-direction: column; overflow: hidden; }
+.diffview .dv-top { display: flex; justify-content: flex-end; margin-bottom: var(--sp-8); }
+.diffview .dv-headline {
+  margin: 0 0 var(--sp-8);
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  font-variant-numeric: tabular-nums;
+}
+.diffview .dv-jump {
+  display: flex; align-items: center; gap: var(--sp-6); min-width: 0; margin-bottom: var(--sp-8);
+  height: var(--row-h); padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--glass-ctl-edge); border-radius: var(--r-full); background: var(--glass-ctl); color: var(--ink-3);
+}
+.diffview .dv-jump select {
+  flex: 1 1 auto; min-width: 0; border: 0; outline: none; background: transparent; color: var(--ink-1);
+  font-family: var(--font-mono); font-size: var(--t-11); text-overflow: ellipsis;
+}
+.diffview .dv-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: var(--sp-4);
+  scrollbar-gutter: stable;
+}
+.diffview .dv-scroll:focus { outline: none; }
+/* The box's own line sticks while its files scroll under it. */
+.diffview .dv-row-hd {
+  position: sticky; top: calc(var(--sp-6) * -1); z-index: 1;
+  display: flex; align-items: center; gap: var(--sp-8); flex: 1 0 100%;
+  margin: calc(var(--sp-6) * -1) calc(var(--sp-10) * -1) 0; padding: var(--sp-6) var(--sp-10);
+  border-radius: var(--r-14) var(--r-14) 0 0; background: var(--board-card);
+}
+.diffview .dv-file { padding: 1px var(--sp-4); border-radius: var(--r-8); }
+.diffview .dv-file[data-current='true'] { background: var(--accent-wash); color: var(--ink-1); box-shadow: inset 2px 0 0 var(--accent); }
+.diffview .dv-fcounts { flex: none; margin-left: auto; padding-left: var(--sp-6); font-size: var(--t-10); white-space: nowrap; }
+.diffview .dv-cadd { color: var(--diff-add-gutter); }
+.diffview .dv-cdel { color: var(--diff-del-gutter); }
+.diffview .dv-fstatus.is-added { color: var(--diff-add-gutter); }
+.diffview .dv-fstatus.is-removed { color: var(--diff-del-gutter); }
+.diffview .dv-fstatus.is-changed, .diffview .dv-fstatus.is-renamed { color: var(--spills); }

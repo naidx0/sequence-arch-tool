@@ -1,0 +1,21 @@
+{
+  "id": "workflow/grilling",
+  "group": "workflow",
+  "label": "Grilling",
+  "summary": "Grill the user relentlessly about a plan, decision, or idea.",
+  "triggers": [
+    "grill me",
+    "stress test a plan",
+    "challenge my decision",
+    "question my design",
+    "pressure test an idea"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "mattpocock/skills",
+    "commit": "49dd158d1076134a641b33efb035946536778336",
+    "path": "skills/productivity/grilling"
+  },
+  "url": "https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336/skills/productivity/grilling"
+}

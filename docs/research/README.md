@@ -162,5 +162,7 @@ writing it down first.
 | [`draft-v3-macos-harness.md`](draft-v3-macos-harness.md) | **Draft V3** — from-scratch Apple liquid-glass harness mock, then Graphite skin toggle (`ui-drafts/draft-v3-macos-harness.html`) |
 | [`v3-hd-ui-gate-t3.md`](v3-hd-ui-gate-t3.md) | **HD UI gate** — Sequence V3 vs sibling `t3code` clone; locking harness + checklist (not a bakeoff %) |
 | [`overhaul-formats-v2.md`](overhaul-formats-v2.md) | Overhaul formats v2 (2026-10-05): ontology v2 (api, external, tags), composite board view state, map.md grammar and budget, agent-event schema |
+| [`pi-and-opencode-study.md`](pi-and-opencode-study.md) | Pi coding agent vs Sequence (2026-10-12): gap map, six ranked trust changes, and OpenCode's keyless web tools |
+| [`rea-security-review.md`](rea-security-review.md) | Security review of the bundled Reverse Engineer Anything component: ship with edits and a safety preamble |
 
 Do not invent “50% cheaper” or “beats LangGraph.” Live 200k accuracy % is UNFINISHED.

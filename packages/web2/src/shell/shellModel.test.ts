@@ -371,7 +371,7 @@ describe('the command surface (round 11: every door of the UI)', () => {
     expect(label('surface.files')).toBe('Open Files');
     expect(label('surface.terminal')).toBe('Open Terminal');
     expect(label('surface.agents')).toBe('Open Agents');
-    expect(label('canvas.whiteboard')).toBe('Open Whiteboard');
+    expect(label('canvas.whiteboard')).toBe('Open Spaces');
     expect(label('canvas.board')).toBe('Open Architecture');
     expect(label('chat.new')).toBe('New chat');
     expect(label('overlay.attach')).toBe('Open a project');
@@ -509,10 +509,10 @@ describe('the whiteboard is reachable from anywhere', () => {
    * opens - it is a canvas tab, not a floating pane over the board. Making it
    * float is a redesign of "ONE live canvas" and needs a ruling, not a patch.
    */
-  it('offers Open Whiteboard with no precondition', () => {
+  it('offers Open Spaces with no precondition', () => {
     const command = SHELL_COMMANDS.find((c) => c.id === 'canvas.whiteboard');
     expect(command).toBeTruthy();
-    expect(command?.label).toBe('Open Whiteboard');
+    expect(command?.label).toBe('Open Spaces');
   });
 
   it('survives filtering by the words a reader would actually type', () => {

@@ -1,0 +1,22 @@
+{
+  "id": "design/better-typography",
+  "group": "design",
+  "label": "Better Typography",
+  "summary": "Sets and reviews how text renders in your product, from the type scale and spacing to font features, wrapping, truncation and punctuation.",
+  "triggers": [
+    "fix typography",
+    "type scale",
+    "text wrapping and truncation",
+    "font features",
+    "improve text rendering"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/better-typography"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/better-typography"
+}

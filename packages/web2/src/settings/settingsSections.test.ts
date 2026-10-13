@@ -289,3 +289,23 @@ describe('with nothing attached', () => {
     expect(s.purpose).not.toMatch(/what you can make it forget/i);
   });
 });
+
+describe('Memory from the memory summary (M1)', () => {
+  const memory = { notes: 3, notesPath: '.sequence/memory/NOTES.md', findFilesLabels: 41, findFilesModel: 'repo' as const, agentThreads: 2 };
+
+  it('detail names NOTES.md with its count and says a new session does not clear it', () => {
+    const s = settingsSections({ ...ATTACHED, memory }).find((row) => row.id === 'memory')!;
+    expect(s.state.kind).toBe('ready');
+    if (s.state.kind !== 'ready') return;
+    expect(s.state.detail).toContain('3 repo notes in .sequence/memory/NOTES.md');
+    expect(s.state.detail).toMatch(/A new session does not clear what persists across chats/);
+    expect(s.state.detail).toContain('41 labelled queries');
+    expect(s.state.detail).toContain('2 Claude and Codex conversations');
+  });
+
+  it('without the summary it still says only what it knows', () => {
+    const s = settingsSections(ATTACHED).find((row) => row.id === 'memory')!;
+    if (s.state.kind !== 'ready') throw new Error('ready');
+    expect(s.state.detail).not.toMatch(/NOTES\.md/);
+  });
+});

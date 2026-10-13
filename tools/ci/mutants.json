@@ -306,7 +306,7 @@
     {
       "id": "whiteboard-drops-the-not-evidence-line",
       "file": "packages/web2/src/whiteboard/whiteboardAsk.ts",
-      "find": "lines.push('This is from a whiteboard sketch, not from the scan \u2014 nothing on it is evidence.');",
+      "find": "lines.push('This is from a Space sketch, not from the scan \u2014 nothing on it is evidence.');",
       "replace": "",
       "suite": "whiteboard",
       "why": "Grounded-not-guessed is the product's first non-negotiable. A sketch arriving without that sentence is indistinguishable, to the model, from something the scanner found."

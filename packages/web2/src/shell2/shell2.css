@@ -2383,6 +2383,31 @@ span.s2-brand > svg {
   box-sizing: border-box;
 }
 
+/* ── 0.1.8 C1: macOS keeps its traffic lights (titleBarStyle hiddenInset, main.ts places them at x 18, y 14).
+   The lights are the OS's, drawn over the web view, so whatever sits at the top-left of the window has to leave them
+   clear or the "Sequence" title blends into them (owner). The sidebar's title row drops below the lights' own row
+   (a 208 px sidebar cannot hold the 78 px strip beside the name and its two buttons without cutting "Sequence");
+   when the sidebar is folded the chat header (or the narrow bar) leaves the 78 px strip beside the lights instead. ── */
+:root {
+  --mac-lights-w: 78px;
+  /* The lights' row inside the sidebar: lights at y 14 + 16 tall = 30, minus the panel's 12 px padding, plus 6 px clear. */
+  --mac-lights-row: 24px;
+  /* The rail card starts 8 px down; lights end at 30 px; its first button starts 10 px clear of them. */
+  --mac-lights-rail: 32px;
+}
+.s2[data-platform='mac'] .s2-ph {
+  padding-top: var(--mac-lights-row);
+}
+.s2[data-platform='mac']:has(.s2-panel-slot[data-collapsed='true']):not(:has(.s2-iconrail)) .s2-ch,
+.s2[data-platform='mac'] .s2-narrowbar {
+  padding-left: var(--mac-lights-w);
+}
+/* With the icon rail showing (a window too narrow for the sidebar), the header does not start at the window edge: the rail
+   does, so the rail's buttons drop below the lights' row instead and the chat title keeps its room. */
+.s2[data-platform='mac'] .s2-iconrail {
+  padding-top: var(--mac-lights-rail);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    ROUND 14 (Jaden): THE SURFACE BAR
    "Surfaces are not centered with the actual chat." The bar's row is as tall
@@ -2549,10 +2574,14 @@ span.s2-brand > svg {
    and the branch "H..." in a 420px chat column). State and model first, then
    the workspace name (at least about 12 characters), the branch last: it gives
    way first and shows only when there is room. Full values are in the titles.
+   0.1.8 (Jaden: the state symbol and its word need spacing help): the state's word is never cut mid-word at any width a real
+   state takes ("Waiting on you", "Running a subagent"): its box keeps its whole text up to 20ch, and only a longer one fades.
    ══════════════════════════════════════════════════════════════════════════ */
+/* It does not shrink at all: its width is its content, capped at 20ch (min() cannot take max-content; Chromium dropped it). */
 .s2-status > .s2-sb-x:has(.s2-sb-state) {
-  flex: 0 3 auto;
-  min-width: 9ch;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 20ch;
 }
 .s2-status > .s2-sb-x:has([data-testid='s2-status-workspace']) {
   flex: 0 2 auto;
@@ -2604,11 +2633,23 @@ span.s2-brand > svg {
 .s2-ch .r9-title-wrap {
   align-self: stretch;
   justify-content: center;
+  /* 0.1.8 G8: the wrap takes the header's free room, so the title's percentage cap below is of the real space and not of a
+     box sized by the title itself (which cut every title by the reserve: "New c…"). */
+  flex: 1 1 auto;
 }
 .s2-ch .r9-title {
   align-self: flex-start;
   flex: none;
-  max-width: calc(100% - 132px);
+  /* 0.1.8 G8: the title leaves 48 px of its own box as the window's handle (it was 132 px, back when the row was empty
+     beside it); the quick icons now sit outside this box, so the title gets all the rest; a box narrower than 160 px is given whole to the title (no handle is carved out of it). */
+  max-width: max(calc(100% - 48px), min(100%, 160px));
+}
+/* 0.1.8 G8: the header's quick icons (undo, working tree, find) sit close, as one group, in the shared s2-ibtn style. */
+.s2-ch .s2-chat-quick {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
 }
 .s2-sp:not(.is-focused):hover {
   background: var(--b-glass-hover);
@@ -2645,7 +2686,9 @@ span.s2-brand > svg {
 @container s2main (max-width: 760px) {
   .s2-sp-main {
     padding: 0 var(--sp-8);
-    gap: var(--sp-4);
+    /* 0.1.8 C2 (owner: "make sure you're not condensing those too much"): the icon-to-name gap keeps its full --sp-6 here;
+       only the pill's side padding gives room. */
+    gap: var(--sp-6);
   }
   .s2-sp.is-on .s2-sp-main {
     padding-right: var(--sp-2);
@@ -2729,4 +2772,32 @@ span.s2-brand > svg {
 /* 0.1.7 R1: the model name fades like the rest (it was an ellipsis in H4); its 12ch cap is above. */
 .s2-status .s2-sb-x > span[data-testid='s2-status-model']:not(.s2-sb-dot):not(.s2-sb-icon):not(.s2-sb-ring) {
   text-overflow: clip;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   0.1.8: THE STATE SYMBOL'S SLOT. The idle dot (7px) and the working loader are different widths, so the word started at a
+   different x in each state. Both sit in one 12px slot, centred, and the word follows at the same gap (--sp-6) in every state.
+   The slot never shrinks and never clips the dot's glow.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2-sb-sym {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sp-12);
+  height: var(--sp-12);
+}
+.s2-status .s2-sb-x > span.s2-sb-sym:not(.s2-sb-dot):not(.s2-sb-icon):not(.s2-sb-ring) {
+  min-width: var(--sp-12);
+  overflow: visible;
+}
+/* The update notice is a bare text button in the status bar; the look is the UX pass's to set. */
+.s2-sb-update {
+  all: unset;
+  cursor: pointer;
+  white-space: nowrap;
+  color: inherit;
+}
+.s2-sb-update:focus-visible {
+  outline: 1px solid currentColor;
 }

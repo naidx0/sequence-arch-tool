@@ -9,6 +9,7 @@
      GET    /api/workflows/:id        one workflow (+ program, notes, validator verdict); ?chat=<id> hides another chat's
      POST   /api/workflows/:id/ops    {ops:[add|update|move|remove|rename]}  edit (the same ops the MCP tool sends)
      DELETE /api/workflows/:id
+     GET    /api/workflows/:id/render.svg  the workflow (blocks, loops and their way back) as themed SVG, for inline display
 
    Running one is the existing `POST /api/program/run` with the compiled `program`;
    this route family stores and edits, it does not start anything.
@@ -18,6 +19,7 @@ import type http from 'node:http';
 
 import { checkWorkflow, workflowNotes, type WorkflowDoc, type WorkflowOp } from '@sequence/schema';
 
+import { renderWorkflowSvg } from '../boards/workflowRender.js';
 import { WorkflowError, adoptWorkflow, applyWorkflowEdit, createWorkflow, deleteWorkflow, ensureChatWorkflow, listWorkflows, liveChatIds, readWorkflow, unownedWorkflows, workflowForChat } from '../workflows/workflowStore.js';
 
 export interface WorkflowsRouteDeps {
@@ -95,6 +97,19 @@ export async function handleWorkflowsRoute(
         deleteWorkflow(root, id);
         return void deps.sendJson(res, 200, { ok: true }), true;
       }
+    }
+    if (rest.length === 2 && rest[1] === 'render.svg' && method === 'GET') {
+      const doc = readWorkflow(root, id);
+      if (!doc || (chatQuery !== null && doc.chatId !== undefined && doc.chatId !== chatQuery)) return void deps.sendError(res, 404, `no workflow "${id}"`), true;
+      const out = renderWorkflowSvg(doc);
+      res.statusCode = 200;
+      res.setHeader('content-type', 'image/svg+xml; charset=utf-8');
+      res.setHeader('cache-control', 'no-store');
+      res.setHeader('x-content-type-options', 'nosniff');
+      res.setHeader('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'");
+      res.setHeader('x-workflow-rev', String(doc.rev));
+      res.end(out.svg);
+      return true;
     }
     if (rest.length === 2 && rest[1] === 'adopt' && method === 'POST') {
       const b = await body();

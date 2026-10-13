@@ -60,6 +60,9 @@ import type { FileMenuAction, FileMenuTarget } from './FileContextMenu';
 import { canMoveInto, baseName, parentDir, validName } from './fileOpsModel';
 import type { FileTreeOps } from './fileOpsModel';
 import { FilesIcon } from './FilesIcon';
+import { useBranchUi } from './branchUi';
+import { useSymbolsUi } from './symbolsUi';
+import type { SymbolsUi } from './symbolsUi';
 import { FILE_ROW_CAP, flattenFileTree, statusLetter, treeKeyAction } from './filesModel';
 import type { FileRow, FileStatus, FileTreeNode, RepoPath, TreeKey } from './filesModel';
 
@@ -124,6 +127,14 @@ export interface FileTreeProps {
    * exactly as before.
    */
   ops?: FileTreeOps;
+}
+
+/** At most this many function rows per file before an "N more" row. */
+const SYMBOL_CAP = 200;
+
+/** A DOM id per function row (or its "more" row), for `aria-activedescendant`. */
+function symbolId(key: string): string {
+  return `files-fn-${key}`;
 }
 
 /** A DOM id per row, for `aria-activedescendant`. */
@@ -234,6 +245,34 @@ export function FileTree({
     () => flattenFileTree(nodes, { expanded, status, progress, cap }),
     [nodes, expanded, status, progress, cap],
   );
+
+  /* ── functions under a file: keyboard state ────────────────────────────── */
+  const symbolsUi = useSymbolsUi();
+  /* The function row the keyboard is on (a function id, or `more:<file>`), or null when it is on a file row. */
+  const [symSel, setSymSel] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState<ReadonlySet<string>>(() => new Set());
+  const visibleSymbols = (path: string) => {
+    const all = symbolsUi?.byFile.get(path) ?? [];
+    return moreOpen.has(path) ? all : all.slice(0, SYMBOL_CAP);
+  };
+  const select = (path: RepoPath) => {
+    setSymSel(null);
+    onSelect(path);
+  };
+  /** Every keyboard stop in order: file rows, with the open files' functions between them. */
+  const navItems = useMemo(() => {
+    const items: { type: 'row' | 'sym' | 'more'; path: string; key: string }[] = [];
+    for (const row of rows) {
+      items.push({ type: 'row', path: row.path, key: row.path });
+      if (row.kind === 'file' && symbolsUi?.open.has(row.path)) {
+        const all = symbolsUi.byFile.get(row.path) ?? [];
+        const shown = moreOpen.has(row.path) ? all : all.slice(0, SYMBOL_CAP);
+        for (const s of shown) items.push({ type: 'sym', path: row.path, key: s.id });
+        if (shown.length < all.length) items.push({ type: 'more', path: row.path, key: `more:${row.path}` });
+      }
+    }
+    return items;
+  }, [rows, symbolsUi, moreOpen]);
 
   /* ── organising: menu, inline edit, delete confirm, drag ───────────────── */
   const [menu, setMenu] = useState<FileMenuTarget | null>(null);
@@ -382,6 +421,7 @@ export function FileTree({
         return;
       }
     }
+    if (symbolsUi !== null && handleSymbolKey(event)) return;
     if (!NAV_KEYS.has(event.key)) return;
     const action = treeKeyAction(rows, selected, event.key as TreeKey);
     /* Nothing happened, so nothing is swallowed. Calling preventDefault on a
@@ -390,10 +430,56 @@ export function FileTree({
     if (action === null) return;
     event.preventDefault();
 
-    if (action.kind === 'select') onSelect(action.path);
+    if (action.kind === 'select') select(action.path);
     else if (action.kind === 'open') onOpen(action.path);
     else onToggle(action.path);
   };
+
+  /** Arrow, Enter and Space across files AND their functions. True when the key was used. */
+  function handleSymbolKey(event: KeyboardEvent<HTMLDivElement>): boolean {
+    if (!symbolsUi) return false;
+    const at = navItems.findIndex((i) => (symSel === null ? i.type === 'row' && i.path === selected : i.key === symSel));
+    if (at < 0) return false;
+    const here = navItems[at]!;
+    const go = (item: (typeof navItems)[number]) => {
+      if (item.type === 'row') select(item.path);
+      else setSymSel(item.key);
+    };
+    const used = () => event.preventDefault();
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const next = navItems[at + (event.key === 'ArrowDown' ? 1 : -1)];
+      if (!next) return false;
+      used();
+      go(next);
+      return true;
+    }
+    if (event.key === 'ArrowRight' && here.type === 'row' && (symbolsUi.byFile.get(here.path)?.length ?? 0) > 0) {
+      used();
+      if (!symbolsUi.open.has(here.path)) symbolsUi.onToggle(here.path);
+      else if (navItems[at + 1]?.path === here.path) go(navItems[at + 1]!);
+      return true;
+    }
+    if (event.key === 'ArrowLeft') {
+      if (here.type !== 'row') {
+        used();
+        select(here.path);
+        return true;
+      }
+      if (symbolsUi.open.has(here.path)) {
+        used();
+        symbolsUi.onToggle(here.path);
+        return true;
+      }
+      return false;
+    }
+    if ((event.key === 'Enter' || event.key === ' ') && here.type !== 'row') {
+      used();
+      if (here.type === 'more') setMoreOpen((prev) => new Set(prev).add(here.path));
+      else symbolsUi.onPlay(here.key);
+      return true;
+    }
+    return false;
+  }
 
   const overlays = (
     <>
@@ -489,11 +575,48 @@ export function FileTree({
           setEditing(null);
           setNote(null);
         }}
-        onSelect={onSelect}
+        onSelect={select}
         onToggle={onToggle}
         onOpen={onOpen}
       />,
     );
+    if (row.kind === 'file' && symbolsUi?.open.has(row.path)) {
+      const all = symbolsUi.byFile.get(row.path) ?? [];
+      const shown = visibleSymbols(row.path);
+      for (const sym of shown) {
+        rendered.push(
+          <SymbolRow
+            key={`${row.path}#${sym.id}`}
+            sym={sym}
+            depth={row.depth + 1}
+            ui={symbolsUi}
+            kbd={symSel === sym.id}
+            onPlay={() => {
+              setSymSel(sym.id);
+              symbolsUi.onPlay(sym.id);
+            }}
+          />,
+        );
+      }
+      if (shown.length < all.length) {
+        rendered.push(
+          <RailRow
+            key={`${row.path}#more`}
+            id={symbolId(`more:${row.path}`)}
+            depth={Math.min(row.depth + 1, MAX_INDENT)}
+            selected={symSel === `more:${row.path}`}
+            className="files-row files-row-symbol"
+            data-testid="files-symbols-more"
+            role="treeitem"
+            aria-level={row.depth + 2}
+            aria-selected={symSel === `more:${row.path}`}
+            onClick={() => setMoreOpen((prev) => new Set(prev).add(row.path))}
+          >
+            <span className="files-name">{`+${all.length - shown.length} more`}</span>
+          </RailRow>,
+        );
+      }
+    }
     if (index === parentIndex && newRow) rendered.push(newRow);
   });
 
@@ -504,7 +627,7 @@ export function FileTree({
       role="tree"
       aria-label={label}
       tabIndex={0}
-      aria-activedescendant={selected === null ? undefined : rowId(selected)}
+      aria-activedescendant={symSel !== null ? symbolId(symSel) : selected === null ? undefined : rowId(selected)}
       onKeyDown={onKeyDown}
       onContextMenu={(event) => openMenu(event, '', 'root')}
       onDragOver={(event) => {
@@ -526,7 +649,46 @@ export function FileTree({
       ) : null}
       {noteEl}
       {overlays}
+      {symbolsUi?.footer ? <div className="rail-scope files-flowfoot">{symbolsUi.footer}</div> : null}
     </div>
+  );
+}
+
+/** One function under its file: click plays its flow on the board. */
+function SymbolRow({
+  sym,
+  depth,
+  ui,
+  kbd,
+  onPlay,
+}: {
+  sym: { id: string; name: string; line: number };
+  depth: number;
+  ui: SymbolsUi;
+  kbd: boolean;
+  onPlay: () => void;
+}) {
+  const playing = ui.playingId === sym.id;
+  const untraced = ui.untracedId === sym.id;
+  return (
+    <RailRow
+      depth={Math.min(depth, MAX_INDENT)}
+      id={symbolId(sym.id)}
+      selected={playing || kbd}
+      icon={<span className="files-symglyph mono">ƒ</span>}
+      className="files-row files-row-symbol"
+      data-testid="files-symbol"
+      data-function-id={sym.id}
+      data-playing={playing ? 'true' : undefined}
+      role="treeitem"
+      aria-level={depth + 1}
+      aria-selected={playing || kbd}
+      title={untraced ? `${sym.name}: not traced beyond its own file, so there is no flow to play` : `${sym.name} (line ${sym.line}): play its flow on the board`}
+      onClick={onPlay}
+    >
+      <FitName label={sym.name} />
+      {untraced ? <span className="files-mark mono" data-testid="files-symbol-untraced">Not traced</span> : <span className="files-mark mono">{sym.line}</span>}
+    </RailRow>
   );
 }
 
@@ -643,6 +805,12 @@ function Row({
   onOpen,
 }: RowProps) {
   const isDir = row.kind === 'dir';
+  /* This branch's renames say where the file came from. */
+  const renamedFrom = useBranchUi()?.renamedFrom?.get(row.path);
+  /* A file the function index knows opens a list of its functions. */
+  const symbols = useSymbolsUi();
+  const fnCount = !isDir ? (symbols?.byFile.get(row.path)?.length ?? 0) : 0;
+  const fnOpen = fnCount > 0 && symbols?.open.has(row.path) === true;
   /* A collapsed chain's label carries separators, and the identity of
      `packages/web2/src/files` is its TAIL — so it truncates at the FRONT. The
      recipe is rail.css's, `direction: rtl` with an inner <bdi>, and it is the
@@ -657,7 +825,26 @@ function Row({
       onContextMenu={onContextMenu}
       depth={Math.min(row.depth, MAX_INDENT)}
       selected={selected}
-      twist={isDir ? <FilesIcon name={row.expanded ? 'chevdown' : 'chevright'} size={12} /> : null}
+      twist={
+        isDir ? (
+          <FilesIcon name={row.expanded ? 'chevdown' : 'chevright'} size={12} />
+        ) : fnCount > 0 ? (
+          <span
+            role="button"
+            className="files-symtwist"
+            data-testid="files-symbols-toggle"
+            aria-expanded={fnOpen}
+            aria-label={`${fnOpen ? 'Hide' : 'Show'} ${fnCount} ${fnCount === 1 ? 'function' : 'functions'} in ${row.label}`}
+            title={`${fnCount} ${fnCount === 1 ? 'function' : 'functions'}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              symbols?.onToggle(row.path);
+            }}
+          >
+            <FilesIcon name={fnOpen ? 'chevdown' : 'chevright'} size={12} />
+          </span>
+        ) : null
+      }
       icon={<FilesIcon name={isDir ? 'folder' : 'file'} size={14} />}
       id={rowId(row.path)}
       className={`files-row files-row-${row.kind}${row.tone === null ? '' : ` files-tone-${row.tone}`}${dropOn ? ' is-drop' : ''}${dragging ? ' is-dragging' : ''}`}
@@ -678,7 +865,11 @@ function Row({
                aloud; the status word is the whole point of having one. */
             `${row.path}, ${row.status ?? 'being edited'}`
       }
-      title={row.status === null && row.tone !== 'progress' ? row.path : `${row.path} — ${row.status ?? 'being edited'}`}
+      title={
+        row.status === null && row.tone !== 'progress'
+          ? row.path
+          : `${row.path} — ${row.status ?? 'being edited'}${renamedFrom ? ` (renamed from ${renamedFrom})` : ''}`
+      }
       onClick={() => {
         if (renaming) return;
         /* A FOLDER CLICK OPENS THE FOLDER, and nothing else (owner photo,
@@ -718,8 +909,15 @@ function Row({
       {row.status === null && row.dirty ? (
         /* A directory says only THAT something under it changed, never what:
            rolling seven files' statuses into one letter would have to pick a
-           winner, and any pick is a claim the panel cannot support. */
-        <span className="files-mark files-mark-dot" aria-hidden="true" />
+           winner, and any pick is a claim the panel cannot support. It does
+           say HOW MANY: a count is a fact, a letter would be a pick. */
+        row.changedCount > 0 ? (
+          <span className="files-mark files-mark-count mono" aria-hidden="true" title={`${row.changedCount} changed`}>
+            {row.changedCount}
+          </span>
+        ) : (
+          <span className="files-mark files-mark-dot" aria-hidden="true" />
+        )
       ) : null}
     </RailRow>
   );

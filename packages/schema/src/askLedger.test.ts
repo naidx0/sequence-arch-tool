@@ -67,3 +67,8 @@ test('the follow-up names the requests and is never ledgered again', () => {
   assert.ok(isAskAgain(t));
   assert.ok(!isAskAgain('fix the login redirect, and add a test'));
 });
+
+test('the appended instruction says what it is and never tells the agent to hide it', () => {
+  assert.match(ASK_LEDGER_INSTRUCTION, /Sequence added this/);
+  assert.doesNotMatch(ASK_LEDGER_INSTRUCTION, /do not mention|don't mention|do not reveal|secret|hide/i);
+});

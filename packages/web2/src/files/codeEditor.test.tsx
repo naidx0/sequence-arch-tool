@@ -136,3 +136,10 @@ describe('in the panel (the editor is its own chunk, off the boot path)', () => 
     expect((await screen.findByTestId('files-ed-state')).textContent).toBe('Saved');
   });
 });
+
+describe('B11: a path:line followed from the chat', () => {
+  it('puts the caret at the start of that line', () => {
+    const { field } = editor({ revealLine: 3 });
+    expect(caretAt(TS, field.selectionStart)).toEqual({ line: 3, col: 1 });
+  });
+});

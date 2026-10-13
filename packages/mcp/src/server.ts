@@ -22,10 +22,19 @@ import { createServer, type CreateServerOptions } from './index.js';
  */
 export function optionsFromEnv(env: NodeJS.ProcessEnv = process.env): CreateServerOptions {
   const repo = env.SEQUENCE_REPO?.trim();
-  return { tools: env.SEQUENCE_MCP_TOOLS === 'core' ? 'core' : 'all', ...(repo ? { repo } : {}) };
+  const goalUrl = env.SEQUENCE_GOAL_URL?.trim();
+  const goalKey = env.SEQUENCE_GOAL_KEY?.trim();
+  const goalChat = env.SEQUENCE_GOAL_CHAT?.trim();
+  return { ...(goalUrl && goalKey && goalChat ? { goal: { url: goalUrl, key: goalKey, chat: goalChat } } : {}), tools: env.SEQUENCE_MCP_TOOLS === 'core' ? 'core' : 'all', ...(repo ? { repo } : {}), ...(env.SEQUENCE_MCP_COMPONENTS === 'off' ? { components: false } : {}) };
 }
 
 export async function main(): Promise<void> {
+  /* `<this entry> --listing`: print the tool counts and listing tokens as one JSON line and exit. The analyzer's Settings payload reads it, because the analyzer cannot import this package. */
+  if (process.argv.includes('--listing')) {
+    const { toolsSummary } = await import('./toolListing.js');
+    process.stdout.write(`${JSON.stringify(await toolsSummary())}\n`, () => process.exit(0));
+    return;
+  }
   /* `<this entry> --find-files-host <repo>`: this process is the one shared find_files index for that repo (analyzer findFilesHost.ts), not an MCP server. */
   if (maybeRunFindFilesHost()) return;
   /* Sessions start the host with this same entry (here, or the packaged sequence-mcp.cjs), by absolute path. */

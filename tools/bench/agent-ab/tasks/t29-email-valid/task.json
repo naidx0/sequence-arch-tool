@@ -1,0 +1,23 @@
+{
+  "id": "t29-email-valid",
+  "prompt": "isEmail(s) should accept \"a@b.co\" and reject strings without a single \"@\", without a dot in the domain, or with spaces. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "isEmail"
+    ]
+  }
+}

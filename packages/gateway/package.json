@@ -1,6 +1,6 @@
 {
   "name": "@sequence/gateway",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "private": true,
   "description": "Standalone OpenRouter-backed model gateway for Sequence's free default tier — holds the funded key, enforces the global spend backstop.",

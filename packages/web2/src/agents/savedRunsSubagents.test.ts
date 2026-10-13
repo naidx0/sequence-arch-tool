@@ -30,3 +30,11 @@ describe('saved runs keep subagents, parents and step times', () => {
     expect(run.items[0]).not.toHaveProperty('parentId');
   });
 });
+
+describe('saved runs keep what they read', () => {
+  const base = { id: 'a', agentRef: 'claude', prompt: 'p', text: 'done', status: 'done', startedAt: 1_000, endedAt: 9_000, model: null, nodeId: null, tools: [] };
+  it('restores readPaths, and an old record has none', () => {
+    expect(fromSavedRun({ ...base, readPaths: ['orders/a.ts', 3] }, 'chat')!.readPaths).toEqual(['orders/a.ts']);
+    expect(fromSavedRun(base, 'chat')!.readPaths).toBeUndefined();
+  });
+});

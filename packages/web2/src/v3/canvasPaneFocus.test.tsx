@@ -178,6 +178,6 @@ describe('switching threads never brings the AI Canvas to the front', () => {
     await act(async () => {
       requestHostCommand('canvas.whiteboard');
     });
-    expect(selectedPill()).toBe('Whiteboard');
+    expect(selectedPill()).toBe('Spaces');
   });
 });

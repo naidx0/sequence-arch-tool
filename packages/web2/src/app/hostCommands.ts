@@ -9,6 +9,7 @@
 export type HostCommandId =
   | 'canvas.board'
   | 'canvas.whiteboard'
+  | 'whiteboard.close'
   | 'canvas.ai'
   | 'files.open'
   | 'rail.focus'

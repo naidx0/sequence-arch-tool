@@ -24,7 +24,7 @@ export interface ModelPanelProps {
 const LOCAL = PROVIDER_PRESETS.filter((p) => p.local);
 const REMOTE = PROVIDER_PRESETS.filter((p) => !p.local);
 
-export function LocalPanel({ settings, onReady }: ModelPanelProps) {
+export function LocalPanel({ settings, onReady, preferred }: ModelPanelProps & { preferred?: string }) {
   const [found, setFound] = useState<DetectedLocal[] | null | undefined>(undefined);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export function LocalPanel({ settings, onReady }: ModelPanelProps) {
     <ul className="fr-lines" data-testid="first-run-local">
       {LOCAL.map((p) => {
         const d = (found ?? []).find((x) => x.name === p.probeName && x.models.length > 0);
-        const model = d ? (pick[d.name] ?? d.models[0]!) : '';
+        const model = d ? (pick[d.name] ?? (p.probeName === 'Ollama' && preferred && d.models.includes(preferred) ? preferred : d.models[0]!)) : '';
         return (
           <li key={p.id} className="fr-line" data-testid="first-run-local-row" data-preset={p.id} data-found={d ? 'true' : 'false'}>
             <span className="fr-line-name">{p.label}</span>

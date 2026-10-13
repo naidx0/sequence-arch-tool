@@ -1,0 +1,23 @@
+{
+  "id": "t28-range-step",
+  "prompt": "range(start, end, step = 1) returns numbers from start up to but excluding end, and supports negative steps; it loops forever for a negative step. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "range"
+    ]
+  }
+}

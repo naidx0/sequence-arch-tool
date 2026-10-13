@@ -344,6 +344,7 @@ export function layoutBounds(layout: AgentLayout): Rect | null {
     else if (it.kind === 'text') take(noteFootprint(it.at, layout.noteLines.get(it.id) ?? it.text.split('\n'), 13));
     else if (it.kind === 'stroke') for (const p of it.points) take({ x: p.x, y: p.y, w: 0, h: 0 });
     else if (it.kind === 'artifact') take({ x: it.at.x, y: it.at.y, w: it.size.w, h: it.size.h });
+    else if (it.kind === 'svg' || it.kind === 'scene' || it.kind === 'video') take({ x: it.at.x, y: it.at.y, w: it.w, h: it.h });
     else take({ x: it.at.x, y: it.at.y - 11, w: measureLine(it.label, 11) * 1.1, h: 22 });
   }
   for (const e of layout.edgeLabels.values()) take({ x: e.x - e.w / 2, y: e.y - e.h / 2, w: e.w, h: e.h });

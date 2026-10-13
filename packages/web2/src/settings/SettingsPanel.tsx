@@ -68,7 +68,9 @@ import { AskLedgerSetting } from './AskLedgerSetting';
 import { SETTINGS_PANES, resolvePane, tabOf, type SettingsPane, type SettingsSectionId, type SettingsTab } from './settingsPanes';
 /* Loaded when Settings > Workspace opens, not in the boot bundle (perf ratchet: bootJsBytes). */
 const AgentMapSetting = lazy(() => import('./AgentMapSetting'));
+const ComponentsSetting = lazy(() => import('./ComponentsSetting'));
 const WorktreeSettings = lazy(() => import('../worktree/WorktreeSettings'));
+const MemorySetting = lazy(() => import('./MemorySetting'));
 /* S5: lazy like the map setting; the boot bundle is ratcheted and nobody needs
    this pane at first paint. */
 const AttentionSetting = lazy(() => import('./AttentionSetting'));
@@ -238,6 +240,9 @@ export function SettingsPanel({ client, facts, pane, onAutonomyChange, onLeaveRe
      agree about. */
   const [current, setCurrent] = useState<SettingsTab>(() => resolvePane(pane));
   const [skills, setSkills] = useState<SkillsView | null>(null);
+  /* 0.1.8: a skill row's Remove asks once; `skillNote` says what the last Edit or Remove did. */
+  const [skillConfirm, setSkillConfirm] = useState<string | null>(null);
+  const [skillNote, setSkillNote] = useState<string | null>(null);
   /* The found-local list starts CLOSED — see the disclosure below. */
   const [localOpen, setLocalOpen] = useState(false);
 
@@ -1959,6 +1964,9 @@ export function SettingsPanel({ client, facts, pane, onAutonomyChange, onLeaveRe
           <Suspense>
             <AgentMapSetting />
           </Suspense>
+          <Suspense>
+            <MemorySetting />
+          </Suspense>
           {/* S7: chat worktrees (the limit, the setup command shown and never run); its own chunk, so the map setting never waits on it. */}
           <Suspense>
             <WorktreeSettings />
@@ -2206,16 +2214,64 @@ export function SettingsPanel({ client, facts, pane, onAutonomyChange, onLeaveRe
               ) : (
                 <ul className="sb-list" data-testid="settings-skills-list">
                   {skills.skills.map((sk) => (
-                    <li key={sk.slug} className="sb-row" data-testid="settings-skill-row">
-                      <span className="sb-row-hd">
-                        <span className="sb-row-t">{sk.name}</span>
-                        <span className="mono sb-profile-model">{sk.slug}</span>
+                    <li key={sk.slug} className="sb-row sb-skill" data-testid="settings-skill-row" data-slug={sk.slug} title={`${sk.name} (${sk.slug})`}>
+                      <span className="sb-skill-txt">
+                        <span className="sb-row-t sb-skill-name" data-testid="settings-skill-name">{sk.name}</span>
+                        <span className="sb-skill-desc" data-testid="settings-skill-desc" title={sk.description}>{sk.description}</span>
                       </span>
-                      <p className="sb-meta">{sk.description}</p>
+                      <span className="sb-skill-act" data-testid="settings-skill-actions">
+                        <button
+                          type="button"
+                          className="sb-pill sb-pill-quiet"
+                          data-testid="settings-skill-edit"
+                          aria-label={`Edit ${sk.name}`}
+                          title="Show this skill's SKILL.md to edit it"
+                          onClick={() => {
+                            setSkillNote(null);
+                            void client.revealSkill(sk.slug).then((a) => {
+                              if (a.outcome !== 'ok') setSkillNote(`Could not open ${sk.name}: ${a.message}`);
+                            });
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="sb-pill sb-pill-quiet"
+                          data-testid="settings-skill-remove"
+                          data-armed={skillConfirm === sk.slug ? 'true' : undefined}
+                          aria-label={skillConfirm === sk.slug ? `Confirm: remove ${sk.name} from this workspace` : `Remove ${sk.name} from workspace`}
+                          title="Remove this skill from the workspace (user-wide skills are not touched)"
+                          onBlur={() => setSkillConfirm((cur) => (cur === sk.slug ? null : cur))}
+                          onClick={() => {
+                            if (skillConfirm !== sk.slug) {
+                              setSkillConfirm(sk.slug);
+                              return;
+                            }
+                            setSkillConfirm(null);
+                            setSkillNote(null);
+                            void client.removeSkill(sk.slug).then((a) => {
+                              if (a.outcome !== 'ok') {
+                                setSkillNote(`Could not remove ${sk.name}: ${a.message}`);
+                                return;
+                              }
+                              setSkills((prev) => (prev ? { ...prev, skills: prev.skills.filter((x) => x.slug !== sk.slug) } : prev));
+                            });
+                          }}
+                        >
+                          {skillConfirm === sk.slug ? 'Confirm remove' : 'Remove'}
+                        </button>
+                      </span>
                     </li>
                   ))}
                 </ul>
               )}
+
+              {skillNote ? (
+                <p className="sb-note" role="status" data-testid="settings-skill-note">
+                  {skillNote}
+                </p>
+              ) : null}
 
               {/* A SKILL THAT DID NOT PARSE IS THE ONE WORTH SAYING OUT LOUD:
                   it is on disk, the author believes it is live, and it is not. */}
@@ -2238,6 +2294,8 @@ export function SettingsPanel({ client, facts, pane, onAutonomyChange, onLeaveRe
           </div>
         </section>
       ) : null}
+
+      {showing('components') ? <Suspense><ComponentsSetting /></Suspense> : null}
 
       {showing('permissions') ? (
         <section className="sb-group" data-testid="settings-permissions">

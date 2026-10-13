@@ -3,9 +3,12 @@
  * print literal `**markdown**`. Same rules as Transcript's ProseBlockView,
  * including tool-dump fences → ToolCallCard (not wide `<pre>`).
  */
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { createElement, Fragment, lazy, memo, Suspense, useContext, useMemo, useRef } from 'react';
 
 import { CodeBlock } from './CodeBlock';
+import { parseWorkflowFence } from './workflowFence';
+import { WorkflowLoopCard } from './WorkflowLoopCard';
 import { DiagramBlock, isDiagramLanguage, StreamingContext } from './DiagramBlock';
 import { HtmlBlock } from './VisualBlock';
 
@@ -15,7 +18,9 @@ import { DrawingContext, type DrawingOrigin } from './drawingContext';
 import { VisualFile, visualFilesIn } from './VisualFile';
 import './r9.css';
 import { withMath } from './MathText';
-import { growSegments, isLocalPath, proseBlocks, type ProseBlock, type ProseSpan } from './proseBlocks';
+import { useStoreIfAny, groundedRepoRoot } from '../state/connect';
+import { PATH_IN_TEXT, refFromCode, refFromLink, refFromProse, type RepoPathRef } from './repoPathRef';
+import { growSegments, proseBlocks, type ProseBlock, type ProseSpan } from './proseBlocks';
 import { isToolDumpCode, toolNameFromDump } from './stripToolProse';
 import { ToolCallCard } from './ToolCallCard';
 
@@ -39,17 +44,65 @@ import { ToolCallCard } from './ToolCallCard';
  * that dropped maths inside emphasis would be a second, quieter place the two
  * surfaces disagreed.
  */
+/* A file the answer names: a button that opens it in the Files surface (at the line, when it has one). */
+function PathButton({ refPath, label, title, tick = false }: { refPath: RepoPathRef; label: string; title: string; tick?: boolean }) {
+  const store = useStoreIfAny();
+  return (
+    <button
+      type="button"
+      className="prose-path"
+      data-testid="chat-path"
+      data-path={refPath.path}
+      {...(refPath.line ? { 'data-line': refPath.line } : {})}
+      title={title}
+      onClick={() => {
+        if (!store) return;
+        store.dispatch({ type: 'files/open', path: refPath.path, ...(refPath.line ? { line: refPath.line } : {}) });
+      }}
+    >
+      {tick ? (
+        <code className="prose-tick" data-testid="chat-tick">
+          {label}
+        </code>
+      ) : (
+        label
+      )}
+    </button>
+  );
+}
+
+/* Plain prose with file paths in it: the paths become buttons, the rest stays text. */
+function textWithPaths(text: string, key: string, root: string | null): ReactNode {
+  const out: ReactNode[] = [];
+  let last = 0;
+  let n = 0;
+  for (const m of text.matchAll(PATH_IN_TEXT)) {
+    const at = m.index ?? 0;
+    const ref = refFromProse(m[1]!, m[2] ?? m[3], root);
+    if (!ref) continue;
+    if (at > last) out.push(<span key={`${key}t${n}`}>{withMath(text.slice(last, at), `${key}m${n}`, 'prose')}</span>);
+    out.push(
+      <PathButton key={`${key}p${n}`} refPath={ref} label={m[0]} title={m[1]!} />,
+    );
+    last = at + m[0].length;
+    n++;
+  }
+  if (n === 0) return withMath(text, key, 'prose');
+  if (last < text.length) out.push(<span key={`${key}tail`}>{withMath(text.slice(last), `${key}z`, 'prose')}</span>);
+  return out;
+}
+
 function Spans({ spans }: { spans: ProseSpan[] }) {
+  const store = useStoreIfAny();
+  const root = store ? groundedRepoRoot(store.getState()) : null;
   return (
     <>
       {spans.map((span, i) =>
         span.link !== undefined ? (
-          isLocalPath(span.link) ? (
-            /* A file on this machine: its name as the agent labelled it, the
-               full path on hover (never a 70-character path in the sentence). */
-            <span key={i} className="prose-path" data-testid="chat-path" data-path={span.link} title={span.link}>
-              {span.text}
-            </span>
+          refFromLink(span.link, root) ? (
+            /* A file: its name as the agent labelled it, the full path on hover
+               (never a 70-character path in the sentence). Opens in Files. */
+            <PathButton key={i} refPath={refFromLink(span.link, root)!} label={span.text} title={span.link} />
           ) : /^https?:\/\//i.test(span.link) ? (
             <a key={i} className="prose-link" href={span.link} title={span.link} target="_blank" rel="noopener noreferrer">
               {span.text}
@@ -59,6 +112,8 @@ function Spans({ spans }: { spans: ProseSpan[] }) {
               {span.text}
             </span>
           )
+        ) : span.code && !span.strong && refFromCode(span.text, root) ? (
+          <PathButton key={i} refPath={refFromCode(span.text, root)!} label={span.text} title={span.text} tick />
         ) : span.code && span.strong ? (
           /* Code inside a bold sentence — see `inlineSpans`. */
           <strong key={i} data-testid="chat-strong">
@@ -83,7 +138,7 @@ function Spans({ spans }: { spans: ProseSpan[] }) {
             {withMath(span.text, `s${i}`, 'prose')}
           </em>
         ) : (
-          <span key={i}>{withMath(span.text, `s${i}`, 'prose')}</span>
+          <span key={i}>{textWithPaths(span.text, `s${i}`, root)}</span>
         ),
       )}
     </>
@@ -100,6 +155,11 @@ export function ProseBlockView({ block }: { block: ProseBlock }) {
             <VisualKitBlock source={block.text} open={block.open === true} drawingId={block.drawingId} />
           </Suspense>
         );
+      }
+      /* A workflow loop fence is a small spec the chat draws; invalid or still-open JSON stays a code block. */
+      if (block.language === 'workflow' && block.open !== true) {
+        const spec = parseWorkflowFence(block.text);
+        if (spec) return <WorkflowLoopCard spec={spec} />;
       }
       if (isToolDumpCode(block.language, block.text)) {
         const name = toolNameFromDump(block.text);
@@ -225,7 +285,38 @@ const ProseSegment = memo(function ProseSegment({ source }: { source: string }) 
   );
 });
 
-export function ProseMessage({ text, className, streaming = false, drawing = null }: { text: string; className?: string; streaming?: boolean; drawing?: DrawingOrigin | null }) {
+/* One bad message must never take the chat down: it falls back to its plain text. */
+class ProseGuard extends Component<{ text: string; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error('ProseMessage failed to render', error, info.componentStack);
+  }
+  componentDidUpdate(prev: { text: string }): void {
+    if (this.state.failed && prev.text !== this.props.text) this.setState({ failed: false });
+  }
+  render(): ReactNode {
+    return this.state.failed ? (
+      <div className="prose" data-testid="v3-prose-fallback">
+        {this.props.text}
+      </div>
+    ) : (
+      this.props.children
+    );
+  }
+}
+
+export function ProseMessage(props: { text: string; className?: string; streaming?: boolean; drawing?: DrawingOrigin | null }) {
+  return (
+    <ProseGuard text={props.text}>
+      <ProseMessageInner {...props} />
+    </ProseGuard>
+  );
+}
+
+function ProseMessageInner({ text, className, streaming = false, drawing = null }: { text: string; className?: string; streaming?: boolean; drawing?: DrawingOrigin | null }) {
   /* The finished pieces are kept across chunks; only the text after them is
      scanned again (`growSegments`). */
   const scan = useRef<ReturnType<typeof growSegments> | null>(null);

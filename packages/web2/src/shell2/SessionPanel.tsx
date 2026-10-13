@@ -19,7 +19,7 @@ import { createPortal } from 'react-dom';
 
 import type { RepoSessionsSection, SessionIndexEntry } from '@sequence/api-types';
 
-import { sessionsClient, type SessionsClient } from '../sessions/sessionsClient';
+import { sessionsClient, type ChatSearchHit, type SessionsClient } from '../sessions/sessionsClient';
 import { groundedRepoName, groundedRepoRoot, useAppState, useStore } from '../state/connect';
 import { agentRuns } from '../agents/agentRuns';
 import { useChatRunMarks, useRailRuns } from '../agents/railRuns';
@@ -133,7 +133,7 @@ function writeOrder(order: readonly string[]): void {
    working in, chats, skills and so on. Everything transparent, scrollable
    and animated." Projects, Chats and Skills are sections of one scroller;
    each header folds its section (remembered), and the fold animates. */
-export type PanelSection = 'pinned' | 'workspaces' | 'projects' | 'chats' | 'skills' | 'worktrees';
+export type PanelSection = 'messages' | 'pinned' | 'workspaces' | 'projects' | 'chats' | 'skills' | 'worktrees';
 const SECTIONS_KEY = 's2.sections';
 
 export function readSectionFolds(): Partial<Record<PanelSection, boolean>> {
@@ -413,6 +413,27 @@ export function SessionPanel({ client = sessionsClient, skillsSource = defaultSk
   /* Every chat's agent run (running, or finished while the reader was elsewhere), not only the open chat's. */
   const runMarks = useChatRunMarks(activeId || null);
   const needle = query.trim().toLowerCase();
+  /* Words inside chats: asked of the server once the query is three letters long and has rested for a moment. */
+  const [found, setFound] = useState<ChatSearchHit[]>([]);
+  const [cutShort, setCutShort] = useState(false);
+  useEffect(() => {
+    /* Hits belong to the workspace they were found in: a switch (or a new query) drops them at once. */
+    setFound([]);
+    setCutShort(false);
+    if (needle.length < 3 || !client.search) return;
+    const ctl = new AbortController();
+    const timer = window.setTimeout(() => {
+      void client.search!(needle, ctl.signal).then((r) => {
+        if (ctl.signal.aborted) return;
+        setFound(r.outcome === 'ok' ? r.body.hits : []);
+        setCutShort(r.outcome === 'ok' && r.body.truncated);
+      });
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      ctl.abort();
+    };
+  }, [needle, client, repoPath]);
   const matches = (e: SessionIndexEntry) =>
     !needle || sessionTitle(e).toLowerCase().includes(needle) || (e.goal ?? '').toLowerCase().includes(needle);
   /* The newest agent run per chat: a run's reply does not stamp the chat's `updatedAt` on the server (only a sent
@@ -852,6 +873,19 @@ export function SessionPanel({ client = sessionsClient, skillsSource = defaultSk
         <p className="s2-live-note" role="status" aria-live="polite">
           {moved}
         </p>
+        {needle.length >= 3 && (found.length > 0 || cutShort) ? (
+          <PanelGroup id="messages" label="In messages (this project)" count={found.length} folded={!!sections.messages} onFold={() => foldSection('messages')}>
+            {found.map((hit) => (
+              <RailRow key={hit.chatId} className="s2-it" data-testid="s2-hit" data-session-id={hit.chatId}>
+                <button type="button" className="s2-it-hit s2-rail-hit" title={hit.snippet} onClick={() => void activateSession(store, hit.chatId, client)}>
+                  <span className="s2-t">{hit.title}</span>
+                  <span className="s2-meta" data-testid="s2-hit-snippet">{hit.snippet}</span>
+                </button>
+              </RailRow>
+            ))}
+            {cutShort ? <p className="s2-empty" data-testid="s2-hits-truncated">Searched the newest chats. Refine the search to look further back.</p> : null}
+          </PanelGroup>
+        ) : null}
         {pinnedRows.length > 0 ? (
           <PanelGroup id="pinned" label="Pinned" count={chatCountLabel(pinnedRows.length) ?? undefined} folded={!needle && !!sections.pinned} onFold={() => foldSection('pinned')}>
             {pinnedRows.map(({ p, entry }) => chatRow(p, entry, false, true))}
@@ -1134,7 +1168,7 @@ export function SessionPanel({ client = sessionsClient, skillsSource = defaultSk
             ) : null}
           </PanelGroup>
         )}
-        {needle && !anyChat ? <p className="s2-empty">No chat matches</p> : null}
+        {needle && !anyChat && found.length === 0 ? <p className="s2-empty">No chat matches</p> : null}
         {chatNote ? <p className="s2-empty" data-testid="s2-new-chat-note" role={chatNote.kind === 'error' ? 'alert' : 'status'}>{chatNote.text}</p> : null}
       </div>
       {removing ? (

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { WbItem } from '../../whiteboard/whiteboardModel';
-import { arrowEnds, diffOps, nextBoardName, placeItem, resolveItems, type Box } from './boardsModel';
+import { arrowEnds, diffOps, nextBoardName,
+  boardLabel, placeItem, resolveItems, type Box } from './boardsModel';
 
 /* Round 8: the geometry that makes an annotation follow the real system. */
 
@@ -64,9 +65,23 @@ describe('a change becomes ops', () => {
   });
 
   it('names a new board after the ones there are', () => {
-    expect(nextBoardName(null)).toBe('Whiteboard');
+    expect(nextBoardName(null)).toBe('Space');
     const index = { version: 1 as const, boards: [{ id: 'whiteboard', name: 'Whiteboard', kind: 'whiteboard' as const, rev: 0, createdAt: '', updatedAt: '' }] };
-    expect(nextBoardName(index)).toBe('Whiteboard 2');
+    /* The stored default "Whiteboard" is DISPLAYED as Space, so the next one is Space 2, not a second "Space". */
+    expect(nextBoardName(index)).toBe('Space 2');
+    const named = (name: string, id = 'x') => ({ id, name, kind: 'whiteboard' as const, rev: 0, createdAt: '', updatedAt: '' });
+    expect(nextBoardName({ version: 1 as const, boards: [named('Space', 'space')] })).toBe('Space 2');
+    expect(nextBoardName({ version: 1 as const, boards: [named('Whiteboard', 'whiteboard'), named('Space 2', 'space-2')] })).toBe('Space 3');
+    /* a board the person called Whiteboard on another id is theirs, and still counts as that name */
+    expect(nextBoardName({ version: 1 as const, boards: [named('Whiteboard', 'mine')] })).toBe('Space');
+  });
+
+  it('shows an untouched default Whiteboard as Space, and keeps any name the person chose', () => {
+    const b = (id: string, name: string, kind: 'whiteboard' | 'architecture' = 'whiteboard') => ({ id, name, kind });
+    expect(boardLabel(b('whiteboard', 'Whiteboard'))).toBe('Space');
+    expect(boardLabel(b('whiteboard', 'Roadmap'))).toBe('Roadmap');
+    expect(boardLabel(b('mine', 'Whiteboard'))).toBe('Whiteboard');
+    expect(boardLabel(b('architecture', 'Architecture', 'architecture'))).toBe('Architecture');
   });
 });
 

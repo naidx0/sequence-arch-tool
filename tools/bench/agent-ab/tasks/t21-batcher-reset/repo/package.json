@@ -1,0 +1,6 @@
+{
+  "name": "t21-batcher-reset",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

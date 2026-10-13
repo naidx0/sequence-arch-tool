@@ -1,3 +1,4 @@
+import { eventually } from './load-scale.js';
 import assert from 'node:assert';
 import { test } from 'node:test';
 import fs from 'node:fs';
@@ -124,7 +125,8 @@ test('a person-stopped turn the bridge honours with cancelled is saved as stoppe
     const t = turn(srv.base, { prompt: 'do it SLOW', chatId: s.chatId, sessionKey: k });
     await t.waitFor((e) => e.type === 'acp:update');
     t.stop();
-    await sleep(900);
+    /* Waits for the saved state, not 900 ms: still proves the stopped turn ends up saved as 'stopped'. */
+    await eventually(() => readAgentRuns(s.root, s.chatId).some((r) => r.status === 'stopped'));
     const runs = readAgentRuns(s.root, s.chatId);
     assert.strictEqual(runs.length, 1);
     assert.strictEqual(runs[0]!.status, 'stopped');

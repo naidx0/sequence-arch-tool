@@ -1,0 +1,6 @@
+{
+  "name": "t30-binary-search",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

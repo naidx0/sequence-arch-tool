@@ -2,13 +2,14 @@ import { organizeFile, FileOperationError } from './fileOrganization.js';
 import { ASK_LEDGER_INSTRUCTION, isAskAgain, parseAskLine, stripAskLine } from '@sequence/schema';
 import { PLAN_SURFACE, parsePlanCommand, readPlanDocument, writePlanDocument } from './planTurn.js';
 import { handleBoardsRoute } from './boardsRoutes.js';
+import { handleServicesRoute } from './servicesRoutes.js';
 import { handleWorkflowsRoute } from './workflowsRoutes.js';
 import { handleDrawingsRoute } from './drawingsRoutes.js';
 import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { planSkillImport, writeSkillImport } from './skillsImport.js';
+import { planSkillImport, removeWorkspaceSkill, revealWorkspaceSkill, writeSkillImport } from './skillsImport.js';
 import crypto from 'node:crypto';
 import {
   checkScaffoldability,
@@ -136,7 +137,8 @@ import {
   unfiredHookWarning,
 } from './hooks.js';
 import { applyAskFileWrites } from './applyAskFileWrites.js';
-import { startRepoWatch, type RepoWatchHandle } from './repoWatch.js';
+import { startRepoWatch, startHeadWatch, type RepoWatchHandle } from './repoWatch.js';
+import { GitEventHub, HeadTracker, handleGitBranchRoute } from './gitBranchRoutes.js';
 import {
   emptyPermissionDocument,
   parsePermissionsDocument,
@@ -157,16 +159,21 @@ import { attachTerminal, isOriginAllowed, TERMINAL_PATH } from './terminal.js';
 import { handleOnboardingRoute } from './onboardingRoutes.js';
 import { handleSkillsDiscoverRoute } from './skillsDiscover.js';
 import { handleAppRoute } from './appUpdateRoutes.js';
+import { API_EXPORT_FORMATS, EXPORT_FORMATS, exportFilename } from './exportFormats.js';
 import { contextWindowFast, handleModelListRoute } from './modelListRoutes.js';
 import { agentLaunch, createProviderProbe, defaultProviderProbe, signInLaunch, type ProbeOptions } from './providerProbe.js';
 import { createAdapterInstaller } from './adapterInstall.js';
+import { createCliInstaller, type SpawnFn as CliSpawnFn } from './cliInstall.js';
 import { warmAskFileIndex } from '../explain/askFileIndex.js';
 import { claudeHooksLaunch, HooksLaunches } from './hooksLaunch.js';
 import { clearUsageLimit, recordUsageLimit } from './agentLimits.js';
 import { AgentEventHub, handleAgentEventRoute } from './agentEvents.js';
 import { RunNodeEventFeed } from './runNodeAgentEvents.js';
 import { writeClaudeSession } from './agentHookSettings.js';
-import { agentMapLinesFor, handleAgentSettingsRoute, readAgentSettings } from './askAgentMap.js';
+import { findFilesShared } from '../explain/findFilesHost.js';
+import { FIND_FILES_DEFAULT_BUDGET, FIND_FILES_DEFAULT_K } from '../explain/findFiles.js';
+import { memorySummary } from './memorySummary.js';
+import { agentMapBlockForThread, agentMapLinesFor, handleAgentSettingsRoute, markMapBlock, readAgentSettings } from './askAgentMap.js';
 import { referencedDrawingIds, sequenceMcpServer } from './sequenceMcp.js';
 import { resolveRunNodeAttachments } from './runNodeAttachments.js';
 import { PR_ROUTE, handlePrRoute } from './prRoutes.js';
@@ -215,6 +222,8 @@ import { createAcpSessionCache, type AcpSessionCache } from './acpSessionCache.j
 import { AgentTurnRuntime } from './agentTurnRuntime.js';
 import { claimAutoResume, declineAutoResume } from './autoResume.js';
 import { importSession, listImportable } from './importHistory.js';
+import { searchChats } from './sessionsSearch.js';
+import { patchUiPrefs, readUiPrefs } from './uiPrefs.js';
 import { listInterruptedChats, readAgentRuns, readAgentRunsChecked, readArchivePage, readTurnLog, runOwnedElsewhere, runsForWire } from './agentChatStore.js';
 import { DEFAULT_DETACH_GRACE_MS, TurnChannel, TurnChannels } from './turnChannels.js';
 import { bootMark, reportBootOnce } from './bootMarks.js';
@@ -290,12 +299,23 @@ import { pathTokensIn, skeletonFromGoal, validatePlan } from './goalPlan.js';
 import { resolveRepoFileLoose } from './askResolve.js';
 import {
   goalRunState,
+  readGoalRun,
   reapGoalRuns,
   goalRunDoorRefusal,
   startGoalRun,
   stopGoalRun,
   type GoalRunnerDeps,
 } from './goalRunner.js';
+import { makeAcpTakeTurn } from './goalAgentTurn.js';
+import { goalToolCall } from './goalAgentTools.js';
+import { peerIsLoopback } from './agentEvents.js';
+
+/** Constant-time comparison of a presented run key. */
+function sameKey(a: string, b: string): boolean {
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
 import { readCarry, writeCarry } from './carryStore.js';
 import { beginTeachTurn } from './teachTurn.js';
 import { buildStamp } from './buildStamp.js';
@@ -454,6 +474,10 @@ import {
 } from '../harness/skillLoader.js';
 import { distillSkillsFromTrajectories } from '../harness/skillDistill.js';
 import { planRefineFromTrajectories } from '../harness/refinePlanner.js';
+import { OfferBook, COMPONENTS_OFF_MESSAGE, componentEvents, markComponents, planComponents } from '../components/inject.js';
+import { bundledCatalogRoot, loadMergedCatalog } from '../components/catalog.js';
+import { handleComponentsRoute } from '../components/routes.js';
+import { componentsLaunchOpts, readComponentSettings } from '../components/settings.js';
 import { ThreadNoteLedger, buildAgentBlock, markAgentBlock, readNotes, renderNoteLines, selectNotes, NOTES_MATCHED_HEADER } from '../harness/refineNotes.js';
 import { acceptProposal, dismissProposal, undoProposal } from '../harness/refineApply.js';
 import { evaluateOutcome, worseNoteIds, markKept } from '../harness/refineOutcome.js';
@@ -599,7 +623,15 @@ const MAX_WRITE_TOTAL_BYTES = 20_000_000; // 20 MB across the whole response
  * (auth off) leaves it public + harmless exactly as before.
  */
 const SENSITIVE_EXACT: ReadonlySet<string> = new Set([
+  /* Mirrored UI preferences, held prompt queues included (uiPrefs.ts). */
+  '/api/ui-prefs',
   '/api/file-op',
+  /* The scanned graph rendered as Mermaid, CSV or Markdown: the same content as /archgraph.json. */
+  '/api/export',
+  /* What persists across chats (note count, finder learning, agent threads): the repo owner's, like sessions. */
+  '/api/memory/summary',
+  /* Binary reads under the same jail as /api/file: a clip or poster of the repository. */
+  '/api/media',
   '/archgraph.json',
   '/api/status',
   '/api/browse',
@@ -660,6 +692,12 @@ const SENSITIVE_EXACT: ReadonlySet<string> = new Set([
   // P12 — branch creation and worktree handoff mutate the repository, so they
   // are session-gated exactly like commit.
   '/api/git/branch',
+  /* Branch workflow: list, switch (mutates HEAD and the tree), per-branch file
+     status, and the HEAD event stream. Same gate as commit. */
+  '/api/git/branches',
+  '/api/git/switch',
+  '/api/git/branch-changes',
+  '/api/git/events',
   '/api/git/worktree',
   '/api/git/worktrees',
   // P10 — checkpoints hold file CONTENT from the repo, and a restore
@@ -690,13 +728,49 @@ const SENSITIVE_EXACT: ReadonlySet<string> = new Set([
   '/api/ask/events',
   /* S6: the whole of a tool output, diff or file body a stream event cut. */
   '/api/stream-body',
+  '/api/goal-tick',
 ]);
+
+/**
+ * A path as the file system compares it. Windows and macOS are case-insensitive: realpath keeps the caller's
+ * casing there, so `.SEQUENCE/ai.json` is the reserved `.sequence/ai.json` and must be judged as such.
+ */
+export function foldPath(p: string): string {
+  const slashed = p.replace(/\\/g, '/');
+  return process.platform === 'win32' || process.platform === 'darwin' ? slashed.toLowerCase() : slashed;
+}
+
+/** The clips GET /api/file?raw=1 serves with Range, by extension. */
+const MEDIA_TYPES: Record<string, string> = { '.mp4': 'video/mp4', '.webm': 'video/webm', '.gif': 'image/gif' };
+/** GET /api/media also serves the stills a Space shows (a poster). */
+const MEDIA_ROUTE_TYPES: Record<string, string> = { ...MEDIA_TYPES, '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
+const MAX_MEDIA_BYTES = 2 * 1024 * 1024 * 1024;
+
+/** `Range: bytes=a-b` (also `a-` and the suffix form `-n`) against a file of `size` bytes. Null: no usable header, serve it whole. */
+export function parseByteRange(header: string | undefined, size: number): [number, number] | 'unsatisfiable' | null {
+  const m = /^bytes=(\d*)-(\d*)$/.exec((header ?? '').trim());
+  if (!m || (m[1] === '' && m[2] === '')) return null;
+  let start: number;
+  let end: number;
+  if (m[1] === '') {
+    const n = Number(m[2]);
+    if (n === 0) return 'unsatisfiable';
+    start = Math.max(0, size - n);
+    end = size - 1;
+  } else {
+    start = Number(m[1]);
+    end = m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);
+  }
+  if (size === 0 || start >= size || start > end) return 'unsatisfiable';
+  return [start, end];
+}
 
 /** True when `pathname` requires a valid session under auth (the SENSITIVE set). */
 function isSensitivePath(pathname: string): boolean {
   if (SENSITIVE_EXACT.has(pathname)) return true;
   // /api/github and every subpath (repos, clone) are all session-gated.
   if (pathname === '/api/github' || pathname.startsWith('/api/github/')) return true;
+  if (pathname === '/api/components' || pathname.startsWith('/api/components/')) return true;
   if (pathname === '/api/sessions' || pathname.startsWith('/api/sessions/')) return true;
   if (pathname === '/api/fanout' || pathname.startsWith('/api/fanout/')) return true;
   if (pathname === '/api/trajectory' || pathname.startsWith('/api/trajectory/')) return true;
@@ -728,6 +802,10 @@ function isSensitivePath(pathname: string): boolean {
   if (pathname === '/api/program' || pathname.startsWith('/api/program/')) return true;
   /* Round 13: saved workflows hold the prompts a run will hand an agent; gated like the program family. */
   if (pathname === '/api/workflows' || pathname.startsWith('/api/workflows/')) return true;
+  /* A skill's folder can be removed through /api/skills/<slug>: the same door as the list. */
+  if (pathname.startsWith('/api/skills/')) return true;
+  /* Generating a service flow writes a Space from the scan: gated like the boards it writes to. */
+  if (pathname === '/api/services' || pathname.startsWith('/api/services/')) return true;
   /* Drawings are agent output kept in the repository: gated like the files. */
   if (pathname === '/api/drawings' || pathname.startsWith('/api/drawings/')) return true;
   return false;
@@ -921,6 +999,8 @@ export interface RepoServerOptions {
    * a temp dir of fake binaries so no real CLI is run.
    */
   providerSearch?: Pick<ProbeOptions, 'pathValue' | 'extraDirs' | 'capMs'>;
+  /** Test seam (with providerSearch): the spawn the agent-CLI installer (kind: 'cli') uses, so no vendor installer ever runs. */
+  cliInstallSpawn?: CliSpawnFn;
   /**
    * v10 Phase 4 — THE AUTH-MIDDLEWARE SLOT. Resolves a per-request identity for
    * metering. Returns undefined (the default) ⇒ single-user local mode, so
@@ -1018,6 +1098,12 @@ export interface UsageStore {
   read(identity: string): MeterUsage;
   /** Persist the identity's usage. */
   write(identity: string, usage: MeterUsage): void;
+}
+
+/** The component ids a run-node body asks for (the + menu, /components <id>, an accepted card). */
+function forcedComponentIds(body: object): string[] {
+  const c = (body as { components?: unknown }).components;
+  return Array.isArray(c) ? [...new Set(c.filter((x): x is string => typeof x === 'string' && x !== ''))].slice(0, 8) : [];
 }
 
 function sendJson(res: http.ServerResponse, status: number, body: unknown): void {
@@ -1719,6 +1805,11 @@ export async function createRepoServer(
           onboardingProbe?.invalidate?.();
         },
       }) : undefined;
+  const cliInstaller = opts.providerSearch ? createCliInstaller({
+        ...(opts.cliInstallSpawn ? { spawnFn: opts.cliInstallSpawn } : {}),
+        binDirs: () => [],
+        onDone: () => onboardingProbe?.invalidate?.(),
+      }) : undefined;
   const recentStoreDir = opts.recentStoreDir ?? userStoreDir();
   const userConfigDir = opts.userConfigDir ?? userStoreDir();
   /*
@@ -1832,6 +1923,11 @@ export async function createRepoServer(
     getRoot: () => repoRoot,
     /* S3: a prompt starts a snapshot; an edit waits for it, then its paths are recorded before it lands. */
     snapshots: snapshotGate,
+    /* Claims-audit 2.6 (F3): off unless the setting findFilesFirst is on. */
+    findFilesFirst: {
+      enabled: () => readAgentSettings(userConfigDir).findFilesFirst,
+      run: async (root, query) => (await findFilesShared(root, query, { k: FIND_FILES_DEFAULT_K, budgetTokens: FIND_FILES_DEFAULT_BUDGET })).text,
+    },
   });
 
   /* ===================== WAVE 1 ITEM 1.5 — STALENESS ==========================
@@ -1851,8 +1947,25 @@ export async function createRepoServer(
   let staleSince: string | null = null;
   const stalePaths: string[] = [];
   let staleTruncated = false;
-  /** P5 — recursive fs.watch on the attached root; null when detached. */
-  let repoWatcher: RepoWatchHandle | null = null;
+  /**
+   * ATTACHED-REPO CONTEXTS (P14 stage 1). Switching workspaces used to re-scan the signature of the repo it came
+   * back to every time. The last MAX_REPO_CONTEXTS repos keep their graph and their watchers, so coming back is O(1)
+   * when nothing changed. A watcher stays open on every parked context and marks it `changed` at once, undebounced,
+   * on any event; a context is reused only if its graph is held, it is unchanged, and both watchers are active (a
+   * platform that refused the watch tells us nothing by being quiet). Anything else takes the full signature path.
+   * Watchers are torn down when a context is evicted, replaced, or the server closes.
+   */
+  interface RepoContext {
+    root: string;
+    graph: ArchGraph | null;
+    /** Any file or HEAD event since the graph was last loaded from disk by an attach. */
+    changed: boolean;
+    repoWatcher: RepoWatchHandle;
+    headWatcher: RepoWatchHandle;
+  }
+  const MAX_REPO_CONTEXTS = 3;
+  const repoContexts = new Map<string, RepoContext>();
+  let activeCtx: RepoContext | null = null;
 
   /** Record that `relPath` changed under the graph currently being served. */
   function markGraphStale(relPath: string): void {
@@ -1866,18 +1979,93 @@ export async function createRepoServer(
     stalePaths.push(posix);
   }
 
-  function stopRepoWatch(): void {
-    repoWatcher?.stop();
-    repoWatcher = null;
+  /** `GET /api/git/events` subscribers: `git:head` and `graph:updated`. */
+  const gitEvents = new GitEventHub();
+  /**
+   * One funnel for "HEAD moved", fed by POST /api/git/switch AND the .git
+   * watcher below, so a switch from a terminal rescans the board the same way
+   * and a switch through the route rescans it exactly once. The rescan is the
+   * same forceScan + setCurrentGraph that POST /api/scan runs.
+   */
+  const headTracker = new HeadTracker({
+    getRoot: () => repoRoot,
+    rescan: async (root) => {
+      const graph = await forceScan(root);
+      if (repoRoot !== root) return undefined; /* detached or re-attached while scanning */
+      setCurrentGraph(graph);
+      return graph.scannedAt;
+    },
+    emit: (ev) => gitEvents.emit(ev),
+    onError: () => {
+      /* A failed rescan leaves the stale marker (set by the file watch) in place. */
+    },
+  });
+
+  function disposeContext(ctx: RepoContext): void {
+    ctx.repoWatcher.stop();
+    ctx.headWatcher.stop();
+    if (repoContexts.get(ctx.root) === ctx) repoContexts.delete(ctx.root);
+    if (activeCtx === ctx) activeCtx = null;
   }
 
-  function armRepoWatch(root: string): void {
-    stopRepoWatch();
-    repoWatcher = startRepoWatch(root, {
+  /** Stop every watcher (server close). */
+  function stopRepoWatch(): void {
+    for (const ctx of [...repoContexts.values()]) disposeContext(ctx);
+    activeCtx = null;
+  }
+
+  /** The active context stops being active but keeps its graph and its watchers. */
+  function parkActiveContext(): void {
+    const ctx = activeCtx;
+    if (!ctx) return;
+    ctx.graph = currentGraph;
+    /* A graph already behind the disk is not one to hand back later. */
+    if (staleSince !== null) ctx.changed = true;
+    activeCtx = null;
+  }
+
+  /** Open watchers for `root`. Armed BEFORE the scan that follows, so a change during it marks the context changed. */
+  function openContext(root: string): RepoContext {
+    const ctx: RepoContext = {
+      root,
+      graph: null,
+      changed: false,
+      repoWatcher: null as unknown as RepoWatchHandle,
+      headWatcher: null as unknown as RepoWatchHandle,
+    };
+    ctx.repoWatcher = startRepoWatch(root, {
+      onActivity: () => {
+        ctx.changed = true;
+      },
       onChange: (paths) => {
-        for (const p of paths) markGraphStale(p);
+        if (activeCtx === ctx) for (const p of paths) markGraphStale(p);
       },
     });
+    ctx.headWatcher = startHeadWatch(root, {
+      onActivity: () => {
+        ctx.changed = true;
+      },
+      onMaybeChanged: () => {
+        if (activeCtx === ctx) void headTracker.check();
+      },
+    });
+    return ctx;
+  }
+
+  const contextReusable = (ctx: RepoContext): boolean =>
+    ctx.graph !== null && !ctx.changed && ctx.repoWatcher.active && ctx.headWatcher.active;
+
+  /** Make `ctx` the active context and keep at most MAX_REPO_CONTEXTS, evicting the least recently used parked one. */
+  function activateContext(ctx: RepoContext): void {
+    if (activeCtx && activeCtx !== ctx) parkActiveContext();
+    repoContexts.delete(ctx.root);
+    repoContexts.set(ctx.root, ctx);
+    activeCtx = ctx;
+    for (const old of [...repoContexts.values()]) {
+      if (repoContexts.size <= MAX_REPO_CONTEXTS) break;
+      if (old !== ctx) disposeContext(old);
+    }
+    headTracker.prime();
   }
 
   /** The staleness fields to merge into a graph response; empty when fresh. */
@@ -2049,6 +2237,19 @@ export async function createRepoServer(
     // SKIP the full re-crawl. A cache-loaded graph is identical to a fresh scan
     // of the same content — the signature guarantees any relevant change forces
     // a re-scan below. Otherwise scan once and persist for the next open.
+    const prior = repoContexts.get(root);
+    let ctx: RepoContext;
+    let graph: ArchGraph;
+    if (prior && contextReusable(prior)) {
+      /* Nothing under it has moved since it was loaded, and both watchers have been awake the whole time. */
+      ctx = prior;
+      graph = prior === activeCtx && currentGraph ? currentGraph : prior.graph!;
+      bootMark('graphFromContext');
+    } else {
+      if (prior) disposeContext(prior);
+      ctx = openContext(root);
+      try {
+        graph = await (async (): Promise<ArchGraph> => {
     const signature = await computeSignature(root, opts.scan);
     bootMark('signature');
     const cached = readCachedGraph(root);
@@ -2110,6 +2311,13 @@ export async function createRepoServer(
         } as unknown as ArchGraph;
       }
     }
+          return graph;
+        })();
+      } catch (e) {
+        disposeContext(ctx);
+        throw e;
+      }
+    }
     /* A `--repo` launch is never recorded (below), so the folder he started in
        is in no catalog. The first time he leaves it, file it ONCE at the end of
        the list (never re-added, never reordered: a removed or dragged list stays
@@ -2118,14 +2326,18 @@ export async function createRepoServer(
       if (repoRoot !== null && repoRoot === bootRoot && root !== bootRoot) appendRecentIfAbsent(recentStoreFor(undefined), repoRoot);
       if (repoRoot === bootRoot || root === bootRoot) bootRootPending = false;
     }
+    /* The context being left takes the graph it was serving, BEFORE the new graph replaces it. */
+    if (activeCtx && activeCtx !== ctx) parkActiveContext();
     repoRoot = root;
     setCurrentGraph(graph);
     repoOwner = owner;
+    gitEvents.dropNotOwnedBy(owner);
     /* A successful attach retires the startup reason. Keeping it would leave
        the status route explaining a folder the reader has moved on from. */
     startupAttachFailure = null;
     /* P5 — external edits must mark stale the same as PUT /api/file. */
-    armRepoWatch(root);
+    ctx.graph = graph;
+    activateContext(ctx);
     /* S2b — build the shadow index while nothing runs, so the first turn's snapshot is warm. */
     if (shadowWarmOn) shadowWarmer.schedule(root);
     // Only runtime attaches touch the user-level recent store — starting with
@@ -2401,8 +2613,15 @@ export async function createRepoServer(
    * thread (a restart, a reseed after Edit from here) is told again.
    */
   const noteLedger = new ThreadNoteLedger();
+  /* Components offered to a thread and not yet answered, or accepted and not yet sent (components/inject.ts). */
+  const componentOffers = new OfferBook();
+  /* The running turn of each thread key, so an offer the agent raises (components load) shows on that turn's stream. */
+  const componentTurns = new Map<string, (event: Record<string, unknown>) => void>();
   const noteThreads = new Map<string, string>();
   const liveChatTurns = new Map<string, number>();
+  /* A goal run on an agent, by chat: the key its `goal` tool presents to POST /api/goal-tick, the root its plan lives
+     under, and what Stop aborts. Present only while the run is. */
+  const goalLeases = new Map<string, { key: string; root: string; abort: AbortController; sessionKey: string }>();
   /** A live agent turn is running (or queued) in this chat, for any agent: the server's answer, not the page's. */
   const chatBusy = (root: string, chatId: string): boolean => {
     const entry = readSessionIndex(root)?.sessions.find((s) => s.id === chatId);
@@ -2547,7 +2766,8 @@ export async function createRepoServer(
         // run is about THIS repo. Same containment the /api/acp/run-node route
         // enforces; a program node must not be the looser door.
         /* S2a: a program's agent node sees the board too. */
-        const board = sequenceMcpServer(ctx.repoRoot, { allTools: readAgentSettings(userConfigDir).allBoardTools });
+        const compSettings = readComponentSettings(userConfigDir);
+        const board = sequenceMcpServer(ctx.repoRoot, { allTools: readAgentSettings(userConfigDir).allBoardTools, ...componentsLaunchOpts(compSettings) });
         const client = createAgentClient({
           command: entry.command,
           ...(entry.args ? { args: entry.args } : {}),
@@ -3071,7 +3291,8 @@ export async function createRepoServer(
 
     // ---- POST /api/detach — leave the attached repo; board becomes unattached ----
     if (pathname === '/api/detach' && method === 'POST') {
-      stopRepoWatch();
+      parkActiveContext();
+      gitEvents.closeAll();
       repoRoot = null;
       setCurrentGraph(null);
       repoOwner = null;
@@ -3113,7 +3334,7 @@ export async function createRepoServer(
     // ---- GET /api/onboarding/{providers,repos} (local-only first-run probes; see onboardingRoutes.ts) ----
     if (
       pathname.startsWith('/api/onboarding/') &&
-      (await handleOnboardingRoute({ req, res, url, method, authOn, browseRoot: browseRootFor(sessionId), recentStoreDir: recentStoreFor(sessionId), probe: onboardingProbe, installer: adapterInstaller, limitsStoreDir: userConfigDir, ...(opts.agentLimitsNow ? { now: opts.agentLimitsNow } : {}) }))
+      (await handleOnboardingRoute({ req, res, url, method, authOn, browseRoot: browseRootFor(sessionId), recentStoreDir: recentStoreFor(sessionId), probe: onboardingProbe, installer: adapterInstaller, cliInstaller, limitsStoreDir: userConfigDir, ...(opts.agentLimitsNow ? { now: opts.agentLimitsNow } : {}) }))
     ) {
       return;
     }
@@ -3135,11 +3356,29 @@ export async function createRepoServer(
       return;
     }
 
+    // ---- /api/components*: bundled skills offered when a prompt matches (components/routes.ts) ----
+    if (
+      (pathname === '/api/components' || pathname.startsWith('/api/components/')) &&
+      (await handleComponentsRoute({ req, res, method, pathname, storeDir: userConfigDirFor(sessionId), repoRoot, offers: componentOffers, emit: (key, ev) => { const t = componentTurns.get(key); if (t) t(ev); return !!t; }, readBody: () => readBody(req, MAX_BODY_BYTES) }))
+    ) {
+      return;
+    }
+
     // ---- GET/PUT /api/agent-settings: the architecture map in the agent's context (askAgentMap.ts) ----
     if (
       pathname === '/api/agent-settings' &&
       (await handleAgentSettingsRoute({ req, res, method, storeDir: userConfigDirFor(sessionId), repoRoot }))
     ) {
+      return;
+    }
+
+    // ---- GET /api/memory/summary: what persists across chats, counted live (memorySummary.ts) ----
+    if (pathname === '/api/memory/summary' && method === 'GET') {
+      if (requireOwner()) return;
+      res.statusCode = 200;
+      res.setHeader('content-type', 'application/json; charset=utf-8');
+      res.setHeader('cache-control', 'no-store');
+      res.end(JSON.stringify(memorySummary(repoRoot ?? sessionsRoot())));
       return;
     }
 
@@ -3163,8 +3402,9 @@ export async function createRepoServer(
         return;
       }
       /* S2a: with a repository attached, that Claude gets the board server too (--mcp-config). */
-      const board = repoRoot ? sequenceMcpServer(repoRoot, { allTools: readAgentSettings(userConfigDir).allBoardTools }) : null;
-      const session = writeClaudeSession(`http://127.0.0.1:${port}`, board);
+      const compSettings = readComponentSettings(userConfigDirFor(sessionId));
+      const board = repoRoot ? sequenceMcpServer(repoRoot, { allTools: readAgentSettings(userConfigDir).allBoardTools, ...componentsLaunchOpts(compSettings, { url: `http://127.0.0.1:${port}` }) }) : null;
+      const session = writeClaudeSession(`http://127.0.0.1:${port}`, board, undefined, { findFilesFirst: readAgentSettings(userConfigDir).findFilesFirst });
       /* Round 7 (A5): the panel opens its own terminal on this launch; the server starts claude with argv. */
       sendJson(res, 200, { ...session, launchId: hooksLaunches.add(session) });
       return;
@@ -3441,6 +3681,19 @@ export async function createRepoServer(
       return;
     }
 
+    // ---- /api/services (U14: "generate workflow" on a service node; draws the scan-grounded flow on a Space) ----
+    if (pathname === '/api/services' || pathname.startsWith('/api/services/')) {
+      if (requireOwner()) return;
+      await handleServicesRoute(req, res, pathname, {
+        root: fileJailRoot(),
+        graph: () => currentGraph,
+        readBody: (r) => readBody(r, MAX_BODY_BYTES),
+        sendJson,
+        sendError: (r, status, message) => sendError(r, status, message),
+      });
+      return;
+    }
+
     // ---- /api/drawings (lane visual: svg/html blocks kept as named assets) ----
     if (pathname === '/api/drawings' || pathname.startsWith('/api/drawings/')) {
       if (requireOwner()) return;
@@ -3628,6 +3881,49 @@ export async function createRepoServer(
     }
   }
 
+  /* GET/PUT /api/ui-prefs — the page's mirrored localStorage preferences (uiPrefs.ts). Per user, not per repo. */
+  if (pathname === '/api/ui-prefs') {
+    if (requireOwner()) return;
+    if (method === 'GET') {
+      sendJson(res, 200, { prefs: readUiPrefs(userConfigDirFor(sessionId)) });
+      return;
+    }
+    if (method === 'PUT') {
+      if (!isJsonRequest(req)) {
+        sendError(res, 415, 'expected content-type application/json');
+        return;
+      }
+      let body: unknown;
+      try {
+        body = JSON.parse(await readBody(req, MAX_BODY_BYTES));
+      } catch {
+        sendError(res, 400, 'invalid JSON body');
+        return;
+      }
+      const done = patchUiPrefs(userConfigDirFor(sessionId), body);
+      if (!done.ok) {
+        sendError(res, 400, done.error);
+        return;
+      }
+      sendJson(res, 200, { prefs: done.prefs });
+      return;
+    }
+    sendError(res, 405, 'method not allowed');
+    return;
+  }
+
+  /* GET /api/sessions/search?q= — the words in the active root's chats (sessionsSearch.ts). Before the `:id` block below. */
+  if (pathname === '/api/sessions/search' && method === 'GET') {
+    if (requireOwner()) return;
+    const q = (url.searchParams.get('q') ?? '').slice(0, 200);
+    if (q.trim().length < 2) {
+      sendJson(res, 200, { hits: [], truncated: false });
+      return;
+    }
+    sendJson(res, 200, searchChats(sessionsRoot(), q, { limit: 50, maxBytes: 2 * 1024 * 1024 }));
+    return;
+  }
+
   if (pathname === '/api/sessions/active' && method === 'PUT') {
     if (requireOwner()) return;
     const body = await readBody(req, MAX_BODY_BYTES);
@@ -3781,6 +4077,7 @@ export async function createRepoServer(
       await Promise.all(Object.keys(entry.agentThreads ?? {}).map((a) => acpSessions.dispose(`chat::${threadId}::${a}`).catch(() => {})));
       /* The cut turns may be the ones that carried the repo's notes: each agent thread is told again. */
       noteLedger.forget(`chat::${threadId}::`);
+      componentOffers.forget(`chat::${threadId}::`);
       const out = rewindChat(rwRoot.root, threadId, body.fromTurnId);
       if (!out) {
         sendError(res, 409, 'This chat has no saved turn with that id. Reload the chat and try again.');
@@ -3789,6 +4086,28 @@ export async function createRepoServer(
       sendJson(res, 200, out);
       return;
     }
+  }
+  /* The `goal` tool of an agent on a goal run ticks its plan here (mcp goalTools.ts): ONE process writes the plan, so
+     a tick cannot be lost to a second writer. The key is per run and only that run's agent session holds it. */
+  if (pathname === '/api/goal-tick' && method === 'POST') {
+    if (!isOriginAllowed(req) || !peerIsLoopback(req)) {
+      sendError(res, 403, 'goal ticks are local-only');
+      return;
+    }
+    let b: { key?: unknown; chat?: unknown; op?: unknown; step?: unknown; steps?: unknown } = {};
+    try {
+      b = JSON.parse((await readBody(req, MAX_BODY_BYTES)) || '{}');
+    } catch {
+      sendError(res, 400, 'Body must be JSON.');
+      return;
+    }
+    const lease = typeof b.chat === 'string' ? goalLeases.get(b.chat) : undefined;
+    if (!lease || typeof b.key !== 'string' || !sameKey(b.key, lease.key)) {
+      sendError(res, 403, 'no goal run is working that chat');
+      return;
+    }
+    sendJson(res, 200, goalToolCall(lease.root, b.chat as string, { op: typeof b.op === 'string' ? b.op : undefined, step: b.step, steps: b.steps }));
+    return;
   }
   {
     const goalRunMatch = /^\/api\/sessions\/([^/]+)\/goal-run(\/stop)?$/.exec(pathname);
@@ -3814,7 +4133,14 @@ export async function createRepoServer(
         return;
       }
       if (method === 'POST' && stopPath) {
-        sendJson(res, 200, { ok: true, state: stopGoalRun(runRoot.root, threadId) });
+        const stopped = stopGoalRun(runRoot.root, threadId);
+        /* Stop reaches the agent: its in-flight turn is cancelled and its process ended, not left to finish the step. */
+        const lease = goalLeases.get(threadId);
+        if (lease) {
+          lease.abort.abort();
+          void acpSessions.dispose(lease.sessionKey).catch(() => {});
+        }
+        sendJson(res, 200, { ok: true, state: stopped });
         return;
       }
       if (method === 'POST') {
@@ -3826,10 +4152,19 @@ export async function createRepoServer(
           sendError(res, 400, 'invalid JSON');
           return;
         }
-        const b = raw as { permission?: unknown; jobMode?: unknown };
+        const b = raw as { permission?: unknown; jobMode?: unknown; agentRef?: unknown };
         const permission = b.permission === 'build' || b.permission === 'plan' ? b.permission : undefined;
         const jobMode = parseAskJobMode(b.jobMode);
-        const deps = goalRunDeps(runRoot.root, threadId, permission ?? 'plan', jobMode, identity);
+        /* A run on a coding agent (Claude, Codex) names it; absent, the run is the built-in model's. */
+        const agentRef = typeof b.agentRef === 'string' && b.agentRef.trim() !== '' ? b.agentRef.trim() : undefined;
+        const agentSide =
+          agentRef === undefined
+            ? null
+            : goalAgentDeps(runRoot.root, threadId, permission ?? 'plan', jobMode, identity, agentRef, {
+                port: req.socket.localPort ?? 0,
+                ...(typeof req.headers.cookie === 'string' ? { cookie: req.headers.cookie } : {}),
+              });
+        const deps = agentSide ? agentSide.deps : goalRunDeps(runRoot.root, threadId, permission ?? 'plan', jobMode, identity);
         /*
          * THE DOOR REFUSALS COME FIRST, BEFORE THE PROVIDER AND REPO CHECKS.
          *
@@ -3844,8 +4179,23 @@ export async function createRepoServer(
           sendJson(res, refused.status, { error: refused.message, reason: refused.reason, state: refused.state });
           return;
         }
-        const cfg = loadAiConfig();
-        if (!cfg) {
+        if (agentRef !== undefined) {
+          /* An agent run needs no AI key: the agent has its own sign-in. It needs the local ACP bridge, a registered
+             agent, and the chat's sessions under the root the agent works in (its tick tool reads them there). */
+          const gate = acpGate();
+          if (!gate.available) {
+            sendError(res, 403, gate.reason ?? 'ACP is not available');
+            return;
+          }
+          if (!getAgent(userConfigDir, agentRef)) {
+            sendError(res, 400, `unknown agentRef '${agentRef}' — register it with: sequence agent add ${agentRef} --command <bin>`);
+            return;
+          }
+          if (repoRoot === null || path.resolve(runRoot.root) !== path.resolve(sessionsRoot()) || !req.socket.localPort) {
+            sendError(res, 400, "A goal run on an agent works in the open project: open this chat's project first.");
+            return;
+          }
+        } else if (!loadAiConfig()) {
           sendError(res, 400, 'AI provider not configured — connect your AI key in Settings to chat', { fix: 'provider' });
           return;
         }
@@ -3872,6 +4222,15 @@ export async function createRepoServer(
         void started.done.catch((e: unknown) => {
           process.stderr.write(`sequence: goal run ${threadId} threw: ${(e as Error).message}\n`);
         });
+        /* The run's agent process (it carries the `goal` tool) ends with the run. */
+        if (agentSide) {
+          const lease = agentSide.lease;
+          goalLeases.set(threadId, lease);
+          void started.done.finally(() => {
+            if (goalLeases.get(threadId) === lease) goalLeases.delete(threadId);
+            void acpSessions.dispose(lease.sessionKey).catch(() => {});
+          });
+        }
         sendJson(res, 200, { ok: true, state: started.state });
         return;
       }
@@ -4235,6 +4594,22 @@ export async function createRepoServer(
     }
 
     // ---- current scanned graph (canvas source) ----
+    // ---- GET /api/export?format=mermaid-flow|matrix-csv|arch-md (claim V35: export from the app) ----
+    // The renderers are the ones `sequence export` runs (exportFormats.ts). 409 before a repo is attached,
+    // 400 for a format outside the list; the body carries the text and a file name to save it under.
+    if (pathname === '/api/export' && method === 'GET') {
+      if (requireRepo(res)) return;
+      if (requireOwner()) return;
+      const format = url.searchParams.get('format') ?? '';
+      if (!API_EXPORT_FORMATS.includes(format)) {
+        sendError(res, 400, `unknown format '${format}'. expected one of: ${API_EXPORT_FORMATS.join(', ')}`);
+        return;
+      }
+      const f = EXPORT_FORMATS[format]!;
+      sendJson(res, 200, { format, filename: exportFilename(currentGraph!.repoName, format), mime: f.mime, content: f.render(currentGraph!) });
+      return;
+    }
+
     if (pathname === '/archgraph.json' && method === 'GET') {
       if (requireRepo(res)) return;
       if (requireOwner()) return;
@@ -4364,11 +4739,17 @@ export async function createRepoServer(
     }
 
     // ---- GET /api/file?path=<repo-relative> ----
-    if (pathname === '/api/file' && method === 'GET') {
+    // ---- GET /api/media?path=<repo-relative>: the same jail, a clip or image as its own bytes with Range ----
+    if ((pathname === '/api/file' || pathname === '/api/media') && (method === 'GET' || (method === 'HEAD' && pathname === '/api/media'))) {
       const root = requireFileJail(res);
       if (root === null) return;
       if (repoRoot !== null && requireOwner()) return;
       let rel = url.searchParams.get('path') ?? '';
+      /* An NTFS alternate data stream (`clip.mp4:payload`) names other bytes under a name the checks above would pass. */
+      if (rel.replace(/^[A-Za-z]:[\\/]/, '').includes(':')) {
+        sendError(res, 400, 'path must not contain ":"');
+        return;
+      }
       /* Lane visual: a chat that works in its own worktree links files that live THERE. `chat=<id>` makes that
          worktree the jail for this read, and an absolute path is accepted only when it lies inside it (it is cut
          to a relative one and then goes through the same jail as any other). */
@@ -4412,7 +4793,9 @@ export async function createRepoServer(
           } catch {
             /* absent */
           }
-          if (roots.some((r) => canonical === r || canonical.startsWith(r + path.sep) || resolved === r || resolved.startsWith(r + path.sep))) return true;
+          const c = foldPath(canonical);
+          const rs = foldPath(resolved);
+          if (roots.some((r) => c === foldPath(r) || c.startsWith(foldPath(r) + '/') || rs === foldPath(r) || rs.startsWith(foldPath(r) + '/'))) return true;
         }
         return false;
       };
@@ -4429,7 +4812,8 @@ export async function createRepoServer(
           !isDecisionRecordReadPath(resolved) &&
           !isPolicyReadPath(resolved) &&
           !isSeqDiagramReadPath(resolved) &&
-          !isPlanReadPath(resolved)
+          !isPlanReadPath(resolved) &&
+          !isMediaReadPath(resolved)
         )
           return null;
         return resolved;
@@ -4454,6 +4838,44 @@ export async function createRepoServer(
       }
       if (stat.isDirectory()) {
         sendError(res, 400, 'path is a directory');
+        return;
+      }
+      /* raw=1 on a clip a Space shows (.mp4 .webm .gif): its own bytes, with HTTP Range so a player can seek.
+         A video outgrows MAX_FILE_BYTES, so it has its own ceiling and is answered before that check. */
+      const ext = path.extname(abs).toLowerCase();
+      const mediaType = pathname === '/api/media' ? MEDIA_ROUTE_TYPES[ext] : url.searchParams.get('raw') === '1' ? MEDIA_TYPES[ext] : undefined;
+      if (pathname === '/api/media' && !mediaType) {
+        sendError(res, 415, `not a media type this route serves (${Object.keys(MEDIA_ROUTE_TYPES).join(', ')})`);
+        return;
+      }
+      if (mediaType) {
+        if (stat.size > MAX_MEDIA_BYTES) {
+          sendError(res, 413, `media too large (>${MAX_MEDIA_BYTES} bytes)`);
+          return;
+        }
+        const range = parseByteRange(req.headers.range, stat.size);
+        res.setHeader('content-type', mediaType);
+        res.setHeader('x-content-type-options', 'nosniff');
+        res.setHeader('accept-ranges', 'bytes');
+        res.setHeader('cache-control', 'no-cache');
+        if (range === 'unsatisfiable') {
+          res.statusCode = 416;
+          res.setHeader('content-range', `bytes */${stat.size}`);
+          res.end();
+          return;
+        }
+        const [start, end] = range ?? [0, Math.max(0, stat.size - 1)];
+        res.statusCode = range ? 206 : 200;
+        if (range) res.setHeader('content-range', `bytes ${start}-${end}/${stat.size}`);
+        res.setHeader('content-length', String(stat.size === 0 ? 0 : end - start + 1));
+        if (stat.size === 0 || method === 'HEAD') {
+          res.end();
+          return;
+        }
+        const stream = fs.createReadStream(abs, { start, end });
+        stream.on('error', () => res.destroy());
+        res.on('close', () => stream.destroy());
+        stream.pipe(res);
         return;
       }
       if (stat.size > MAX_FILE_BYTES) {
@@ -4789,6 +5211,56 @@ export async function createRepoServer(
         return;
       }
       sendJson(res, 200, { imported: done.written });
+      return;
+    }
+
+    /* DELETE /api/skills/<slug>: remove one WORKSPACE skill (the folder under .sequence/skills). User-global skills are not on
+       this list and are never touched. Same door and owner check as the GET. */
+    /* POST /api/skills/<slug>/reveal: show that workspace skill's SKILL.md in the file manager (the Files surface hides .sequence). */
+    const skillOpen = method === 'POST' ? /^\/api\/skills\/([^/]+)\/reveal$/.exec(pathname) : null;
+    if (skillOpen) {
+      if (requireRepo(res)) return;
+      if (requireOwner()) return;
+      let slug: string;
+      try {
+        slug = decodeURIComponent(skillOpen[1]!);
+      } catch {
+        sendError(res, 400, 'not a skill name');
+        return;
+      }
+      const done = revealWorkspaceSkill(activeRoot(), slug);
+      if ('refused' in done) {
+        sendError(res, 400, done.refused);
+        return;
+      }
+      if ('missing' in done) {
+        sendError(res, 404, `no skill named ${done.missing} in this workspace`);
+        return;
+      }
+      sendJson(res, 200, { revealed: done.revealed });
+      return;
+    }
+    const skillDel = method === 'DELETE' ? /^\/api\/skills\/([^/]+)$/.exec(pathname) : null;
+    if (skillDel) {
+      if (requireRepo(res)) return;
+      if (requireOwner()) return;
+      let slug: string;
+      try {
+        slug = decodeURIComponent(skillDel[1]!);
+      } catch {
+        sendError(res, 400, 'not a skill name');
+        return;
+      }
+      const done = removeWorkspaceSkill(activeRoot(), slug);
+      if ('refused' in done) {
+        sendError(res, 400, done.refused);
+        return;
+      }
+      if ('missing' in done) {
+        sendError(res, 404, `no skill named ${done.missing} in this workspace`);
+        return;
+      }
+      sendJson(res, 200, { removed: done.removed });
       return;
     }
 
@@ -6297,6 +6769,7 @@ export async function createRepoServer(
           notesLines: skillLines.noteLines,
           notesMatchedLines: skillLines.noteMatchedLines,
           agentMapLines: agentMapLinesFor({ storeDir: userConfigDirFor(sessionId), repoRoot, designMode: !!designMode }),
+          boardFlowTopDown: readAgentSettings(userConfigDirFor(sessionId)).boardFlowsTopDown,
           surfaceAnswer: undefined,
           graph: designMode ? null : currentGraph,
           digest,
@@ -7041,6 +7514,7 @@ export async function createRepoServer(
             notesLines: skillLines.noteLines,
             notesMatchedLines: skillLines.noteMatchedLines,
             agentMapLines: agentMapLinesFor({ storeDir: userConfigDirFor(sessionId), repoRoot, designMode: !!designMode }),
+            boardFlowTopDown: readAgentSettings(userConfigDirFor(sessionId)).boardFlowsTopDown,
             surfaceAnswer: undefined,
             graph: designMode ? null : currentGraph,
             digest,
@@ -8245,6 +8719,7 @@ export async function createRepoServer(
         const feed = chatId ? new RunNodeEventFeed({ sink: agentEvents, sessionId: chatId, source: provider === 'codex' ? 'codex' : 'acp', root: turnRoot, cwd, title: shown }) : null;
         turnFeed = feed;
         feed?.start();
+        let componentKey: string | null = null;
         try {
           turnRt?.sent();
           const seed = seedOwed;
@@ -8261,12 +8736,24 @@ export async function createRepoServer(
           let done: Awaited<ReturnType<typeof client.prompt>>;
           /* The repo's accepted notes and skills go in FRONT of the person's message, once per thread:
              the first turn carries them, later turns carry only what is new. */
-          const noteKey = chatId ? `chat::${chatId}::${agentRef}` : `adhoc::${agentRef}::${turnRt?.turnId ?? ''}`;
+          /* A chat-less turn on a reused ACP session (a board node ask) is keyed by that session, so the same provider thread is not told everything again each turn. */
+          const adhocSession = typeof body.sessionKey === 'string' && body.sessionKey !== '' ? body.sessionKey : null;
+          const noteKey = chatId ? `chat::${chatId}::${agentRef}` : adhocSession ? `adhoc::${adhocSession}` : `adhoc::${agentRef}::${turnRt?.turnId ?? ''}`;
           const noteThread = noteThreads.get(noteKey) ?? null;
+          componentKey = noteKey;
+          componentTurns.set(noteKey, (ev) => emitAcp({ ...ev, turnId: turnRt?.turnId ?? '' }));
           const noteBlock = repoRoot
             ? buildAgentBlock(repoRoot, asked, noteKey, noteThread, noteLedger, worseNoteIds(repoRoot, listRefineProposals(repoRoot)))
             : { text: '', sent: [], tokens: 0, skillsSent: false };
-          if (noteBlock.text) turnRt?.injected(noteBlock.tokens, noteBlock.sent.length);
+          /* The architecture map (only when "Also send it to Claude and Codex" is on): once per thread, resent only when its hash changes (askAgentMap.ts).
+             A node ask already carries that node's slice of it, so the whole map is not added on top. Its tokens are added to the notes entry of the turn log (injected() is a log record, not the ring). */
+          const mapBlock = agentMapBlockForThread({ storeDir: userConfigDirFor(sessionId), repoRoot: repoRoot ?? null, designMode: !repoRoot || !!contextNodeId, key: noteKey, thread: noteThread, ledger: noteLedger });
+          if (noteBlock.text || mapBlock) turnRt?.injected(noteBlock.tokens + (mapBlock?.tokens ?? 0), noteBlock.sent.length);
+          /* Components: matched or asked for, never there by default (components/inject.ts). Offers and uses are announced to the chat. */
+          const componentSettings = readComponentSettings(userConfigDirFor(sessionId));
+          const componentCatalog = loadMergedCatalog(repoRoot ?? null, bundledCatalogRoot());
+          const componentPlan = planComponents({ catalog: componentCatalog, prompt: asked, enabled: componentSettings.enabled, mode: componentSettings.mode, forced: forcedComponentIds(body), noteKey, thread: noteThread, ledger: noteLedger, offers: componentOffers });
+          for (const ev of componentEvents(componentPlan, turnRt?.turnId ?? '')) emitAcp(ev);
           try {
             const body = seed ? seededPrompt(seed, prompt) : owed ? handoffPrompt(owed.text, prompt, owed.kind) : prompt;
             /* Told only now, as the prompt that carries it goes out; the record keeps it for a reload. */
@@ -8274,8 +8761,11 @@ export async function createRepoServer(
               turnRt?.handoff({ chars: owed.text.length, kind: owed.kind });
               emitAcp({ type: 'acp:handoff', agentRef, chars: owed.text.length, kind: owed.kind });
             }
-            done = await client.prompt(noteBlock.text ? `${noteBlock.text}${body}` : body, { signal, ...(promptAttachments.length ? { attachments: promptAttachments } : {}) });
-            if (noteBlock.text && repoRoot) markAgentBlock(repoRoot, noteKey, noteThread, noteLedger, noteBlock);
+            const lead = `${mapBlock?.text ?? ''}${componentPlan.text}${noteBlock.text}`;
+            done = await client.prompt(lead ? `${lead}${body}` : body, { signal, ...(promptAttachments.length ? { attachments: promptAttachments } : {}) });
+            if (repoRoot) markAgentBlock(repoRoot, noteKey, noteThread, noteLedger, noteBlock);
+            if (mapBlock) markMapBlock(noteKey, noteThread, noteLedger, mapBlock.hash);
+            markComponents(componentPlan, noteKey, noteThread, noteLedger, componentOffers, componentCatalog);
           } finally {
             noteProviderTurn();
           }
@@ -8297,9 +8787,18 @@ export async function createRepoServer(
           throw e;
         } finally {
           if (turnFeed === feed) turnFeed = null;
+          if (componentKey) {
+            componentTurns.delete(componentKey);
+            /* A chat-less run has no next prompt to carry an answer: its offers die with it. */
+            if (!chatId) componentOffers.forget(componentKey);
+          }
         }
       };
       let promptAttachments: PromptAttachment[] = [];
+      if (forcedComponentIds(body).length > 0 && !readComponentSettings(userConfigDirFor(sessionId)).enabled) {
+        sendError(res, 409, COMPONENTS_OFF_MESSAGE);
+        return;
+      }
       const contextNodeId = typeof body.contextNodeId === 'string' && body.contextNodeId !== '' ? body.contextNodeId : null;
       if (contextNodeId && !currentGraph?.nodes.some((n) => n.id === contextNodeId)) {
         sendError(res, 400, `"contextNodeId" ${contextNodeId} is not a node of the attached repository's graph`);
@@ -8672,7 +9171,7 @@ export async function createRepoServer(
       /* S2a: the agent sees the board: Sequence's MCP server for this turn's
          repository (the chat's worktree when it has one), core tools unless
          the "all board tools" setting is on. */
-      const board = turnRoot ? sequenceMcpServer(turnRoot, { allTools: readAgentSettings(userConfigDir).allBoardTools, ...(root ? { drawings: { root, chat: boundChat, referenced: referencedDrawingIds(asked) } } : {}) }) : null;
+      const board = turnRoot ? sequenceMcpServer(turnRoot, { allTools: readAgentSettings(userConfigDir).allBoardTools, ...componentsLaunchOpts(readComponentSettings(userConfigDirFor(sessionId)), { ...(req.socket.localPort ? { url: `http://127.0.0.1:${req.socket.localPort}` } : {}), ...(chatId ? { key: `chat::${chatId}::${agentRef}` } : {}) }), ...(root ? { drawings: { root, chat: boundChat, referenced: referencedDrawingIds(asked) } } : {}), ...(chatId && goalLeases.has(chatId) && readGoalRun(sessionsRoot(), chatId)?.running === true && req.socket.localPort ? { goal: { chat: chatId, url: `http://127.0.0.1:${req.socket.localPort}`, key: goalLeases.get(chatId)!.key } } : {}) }) : null;
       const launch = {
         command: entry.command,
         ...(entry.args ? { args: entry.args } : {}),
@@ -8709,7 +9208,10 @@ export async function createRepoServer(
           threadId = settled.threadId;
           if (root && chatId) settledRewind(root, chatId);
           /* The turns that carried the notes may be the ones cut: tell the thread again. */
-          if (chatId) noteLedger.forget(`chat::${chatId}::${agentRef}`);
+          if (chatId) {
+            noteLedger.forget(`chat::${chatId}::${agentRef}`);
+            componentOffers.forget(`chat::${chatId}::${agentRef}`);
+          }
           emitAcp({ type: 'acp:session', resumed: settled.how === 'rolled-back', threadId, rewound: settled.how, ...(settled.reason ? { reason: settled.reason } : {}) });
           if (settled.how === 'reseeded') owedSeed = { dropTurns: 0, seed: settled.seed };
           turnRt?.session(settled.how === 'rolled-back');
@@ -8740,6 +9242,7 @@ export async function createRepoServer(
         seedOwed = owedSeed?.seed ?? '';
         turnRt?.setThread(threadId);
         if (chatId) noteThreads.set(`chat::${chatId}::${agentRef}`, threadId);
+        else if (typeof body.sessionKey === 'string' && body.sessionKey !== '') noteThreads.set(`adhoc::${body.sessionKey}`, threadId);
         if (root && chatId) {
           try {
             writeAgentThread(root, chatId, agentRef, { id: threadId, kind: agentKind === 'codex-cli' ? 'codex' : 'acp', ...(owedSeed ? { rewind: owedSeed } : {}) });
@@ -8768,6 +9271,7 @@ export async function createRepoServer(
         askLedger: ledgerOn,
         /* The refine loop reads every finished turn, whichever provider ran it. */
         refine: repoRoot ? { root: repoRoot, auto: readAgentSettings(userConfigDir).autoRefine } : null,
+        pathRoot: chatWorktree ? chatWorktree.path : repoRoot ?? null,
         nodeId: contextNodeId,
         sessionsRoot: chatId ? sessionsRoot() : null,
         userConfigDir,
@@ -9798,6 +10302,42 @@ export async function createRepoServer(
     // caller-supplied path through resolveInRepo via gitWorkspace. No ambient
     // shell — only `git` child_processes with cwd=repoRoot.
 
+    /* ---- GET /api/git/events, GET /api/git/branches, GET /api/git/branch-changes,
+       POST /api/git/switch (gitBranchRoutes.ts) ---- */
+    if (pathname === '/api/git/events' && method === 'GET') {
+      if (requireRepo(res)) return;
+      if (requireOwner()) return;
+      gitEvents.attach(req, res, authOn ? sessionId : null);
+      return;
+    }
+    if (
+      (pathname === '/api/git/branches' && method === 'GET') ||
+      (pathname === '/api/git/branch-changes' && method === 'GET') ||
+      (pathname === '/api/git/switch' && method === 'POST')
+    ) {
+      if (requireRepo(res)) return;
+      if (requireOwner()) return;
+      if (method === 'POST' && !isJsonRequest(req)) {
+        sendError(res, 415, 'expected content-type application/json');
+        return;
+      }
+      try {
+        const routed = await handleGitBranchRoute(
+          pathname,
+          method,
+          url.searchParams,
+          async () => JSON.parse(await readBody(req, MAX_BODY_BYTES)),
+          activeRoot(),
+          headTracker,
+        );
+        if (routed) sendJson(res, routed.status, routed.body);
+        else sendError(res, 404, `no such git route: ${method} ${pathname}`);
+      } catch (e) {
+        sendError(res, 500, (e as Error).message);
+      }
+      return;
+    }
+
     if (pathname === '/api/git/status' && method === 'GET') {
       /* Nothing attached yet (first run) is "no git here", not a 409 the console logs. */
       if (repoRoot === null || currentGraph === null) {
@@ -9835,7 +10375,7 @@ export async function createRepoServer(
        */
       const scopeParam = url.searchParams.get('scope') ?? 'worktree';
       let scope: GitDiffScope;
-      if (scopeParam === 'worktree' || scopeParam === 'staged') {
+      if (scopeParam === 'worktree' || scopeParam === 'staged' || scopeParam === 'unstaged') {
         scope = { kind: scopeParam };
       } else if (scopeParam === 'commit') {
         const rev = url.searchParams.get('rev') ?? '';
@@ -9845,17 +10385,14 @@ export async function createRepoServer(
         }
         scope = { kind: 'commit', rev };
       } else if (scopeParam === 'branch') {
+        /* `base` is optional: absent means the repo's default branch. */
         const base = url.searchParams.get('base') ?? '';
-        if (base === '') {
-          sendError(res, 400, 'scope "branch" requires the query parameter "base"');
-          return;
-        }
-        scope = { kind: 'branch', base };
+        scope = base === '' ? { kind: 'branch' } : { kind: 'branch', base };
       } else {
         sendError(
           res,
           400,
-          `unknown scope ${JSON.stringify(scopeParam)} — expected worktree, staged, commit or branch`,
+          `unknown scope ${JSON.stringify(scopeParam)} — expected worktree, staged, unstaged, commit or branch`,
         );
         return;
       }
@@ -11186,7 +11723,8 @@ export async function createRepoServer(
    */
   function isReservedResolved(abs: string): boolean {
     const canonical = realpathContained(abs);
-    return reservedRoots().some((r) => canonical === r || canonical.startsWith(r + path.sep));
+    const c = foldPath(canonical);
+    return reservedRoots().some((r) => c === foldPath(r) || c.startsWith(foldPath(r) + '/'));
   }
 
   /** Repo- or workspace-relative posix path for reserved-hole checks. */
@@ -11308,6 +11846,22 @@ export async function createRepoServer(
       return true;
     }
     return st.isFile() && st.nlink === 1;
+  }
+
+  /**
+   * A clip a Space shows: `.sequence/media/<name>.mp4|.webm|.gif` (where the Remotion skill renders to).
+   * Same discipline as the plan files: judged on the realpath, a regular file, no hard-link alias.
+   */
+  function isMediaReadPath(abs: string): boolean {
+    const canonical = realpathContained(abs);
+    const rel = jailRelPosix(canonical);
+    if (rel === null || !rel.startsWith('.sequence/media/') || !MEDIA_ROUTE_TYPES[path.extname(rel).toLowerCase()]) return false;
+    try {
+      const st = fs.lstatSync(canonical);
+      return st.isFile() && st.nlink === 1;
+    } catch {
+      return true;
+    }
   }
 
   function isPlanReadPath(abs: string): boolean {
@@ -11715,6 +12269,7 @@ export async function createRepoServer(
               return { notesLines: n.noteLines, notesMatchedLines: n.noteMatchedLines };
             })(),
             agentMapLines: agentMapLinesFor({ storeDir: userConfigDir, repoRoot, designMode: !repoAttached }),
+            boardFlowTopDown: readAgentSettings(userConfigDir).boardFlowsTopDown,
             /* `work` / `evidence` on a stored turn are typed `unknown` on disk
                (the server does not re-validate the client's WorkRow shape), and
                the renderer only ever reads `role` and `text`. Narrowing to
@@ -11784,6 +12339,53 @@ export async function createRepoServer(
         }
       },
     };
+  }
+
+  /**
+   * THE GOAL RUN'S DEPS WITH A CODING AGENT TAKING THE TURNS (goalAgentTurn.ts).
+   *
+   * Everything but `takeTurn` is the built-in run's own (the plan store, the file
+   * reads, the skeleton). The turn goes through the SAME `POST /api/acp/run-node`
+   * a typed agent message takes, called on this server's own port with the caller's
+   * cookie, so permissions, the live-session cache, the agent record in the chat and
+   * the Agents pane all come from that one path. The chat is busy while a turn runs
+   * (the route counts it by chat id); the run uses its own session key, so the agent
+   * process it starts carries the `goal` tool (run-node adds it while a run is live).
+   */
+  function goalAgentDeps(
+    root: string,
+    threadId: string,
+    permission: 'plan' | 'build',
+    jobMode: AskJobMode | undefined,
+    identity: string,
+    agentRef: string,
+    self: { port: number; cookie?: string },
+  ): { deps: GoalRunnerDeps; lease: { key: string; root: string; abort: AbortController; sessionKey: string } } {
+    const base = goalRunDeps(root, threadId, permission, jobMode, identity);
+    const sessionKey = `goal::${threadId}::${agentRef}`;
+    const abort = new AbortController();
+    const lease = { key: crypto.randomUUID(), root, abort, sessionKey };
+    const deps: GoalRunnerDeps = {
+      ...base,
+      takeTurn: makeAcpTakeTurn({
+        readPlan: base.readPlan,
+        writePlan: base.writePlan,
+        goal: () => readSessionGoal(root, threadId).goal,
+        signal: abort.signal,
+        runNode: async (prompt, signal, label) => {
+          const res = await fetch(`http://127.0.0.1:${self.port}/api/acp/run-node`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', ...(self.cookie ? { cookie: self.cookie } : {}) },
+            body: JSON.stringify({ agentRef, prompt, display: label, chatId: threadId, sessionKey, permissionMode: 'autoEdit' }),
+            signal,
+          });
+          const out = (await res.json().catch(() => ({}))) as { text?: string; stopReason?: string; error?: string };
+          if (!res.ok) throw new Error(out.error ?? `the agent turn failed (${res.status})`);
+          return { text: out.text ?? '', stopReason: out.stopReason ?? 'end_turn' };
+        },
+      }),
+    };
+    return { deps, lease };
   }
 
   /**
@@ -12191,8 +12793,18 @@ export async function createRepoServer(
     enabled: !process.env.SEQUENCE_DISABLE_TERMINAL && (opts.terminalEnabled ?? true),
   });
 
+  /* Hook close() itself, not just the 'close' event: that event only fires once
+     every connection is gone, and an open SSE stream would hold the server up
+     forever (and the watchers with it). */
+  const closeServer = server.close.bind(server) as typeof server.close;
+  server.close = ((cb?: (err?: Error) => void) => {
+    stopRepoWatch();
+    gitEvents.closeAll();
+    return closeServer(cb);
+  }) as typeof server.close;
   server.on('close', () => {
     stopRepoWatch();
+    gitEvents.closeAll();
   });
 
   bootMark('routesReady');

@@ -99,6 +99,8 @@ export interface StoredAgentRun {
   thread?: string;
   /** The ask ledger's closing line, read from the reply (the agent's own report). */
   askLedger?: AskLedgerResult;
+  /** Repo-relative files and folders the run's Read, search and map calls named (and `svc:` ids from the map tool). Absent on older records and runs that read nothing. */
+  readPaths?: string[];
 }
 
 export interface RunOwner {
@@ -169,6 +171,7 @@ function cleanRun(raw: unknown): StoredAgentRun | null {
     ...(typeof r.pturn === 'string' && r.pturn ? { pturn: r.pturn } : r.pturn === null ? { pturn: null } : {}),
     ...(typeof r.thread === 'string' && r.thread ? { thread: r.thread } : {}),
     ...(cleanLedger(r.askLedger) ? { askLedger: cleanLedger(r.askLedger)! } : {}),
+    ...(Array.isArray(r.readPaths) && r.readPaths.some((p) => typeof p === 'string') ? { readPaths: r.readPaths.filter((p): p is string => typeof p === 'string').slice(0, 400) } : {}),
   };
 }
 
@@ -379,6 +382,11 @@ export function readArchivePage(root: string, chatId: string, offset: number, li
 /* Finished turns whose closing write failed (a locked file, a full disk). They are served from memory as finished
    and written with the chat's next successful write, so a later turn clears a stuck `running` record. */
 const unsaved = new Map<string, Map<string, StoredAgentRun>>();
+
+/** Finished turns held in memory only (their write failed): a search of the files alone would miss them. */
+export function hasUnsavedRuns(root: string, chatId: string): boolean {
+  return (unsaved.get(cacheKey(root, chatId))?.size ?? 0) > 0;
+}
 
 function withUnsaved(root: string, chatId: string, runs: StoredAgentRun[]): StoredAgentRun[] {
   const held = unsaved.get(cacheKey(root, chatId));

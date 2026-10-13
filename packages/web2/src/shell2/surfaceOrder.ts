@@ -56,3 +56,12 @@ export function writeOrder(order: readonly string[]): void {
     /* the order still holds for this session */
   }
 }
+
+/**
+ * Surfaces in the order of their visible names (0.1.8, C3, owner: "surfaces should open according to their titles ...
+ * it shouldn't sort on the recency of windows ... it should sort based off of the surface names"). The label is read
+ * at runtime, so a renamed surface sorts under its new name.
+ */
+export function sortByTitle<T extends string>(ids: readonly T[], labelOf: (id: T) => string): T[] {
+  return [...ids].sort((a, b) => labelOf(a).localeCompare(labelOf(b), 'en', { sensitivity: 'base' }));
+}

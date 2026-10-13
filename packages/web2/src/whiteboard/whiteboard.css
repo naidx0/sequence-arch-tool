@@ -224,6 +224,9 @@
   --board-field-ink: var(--edge-strong);
   --board-field-pitch: var(--sp-20);
   background-color: var(--board-ground);
+}
+/* THE GROUND IS PLAIN BY DEFAULT (Spaces): the board token and nothing on it. The dots are the person's choice (More > Show grid). */
+.wb-canvas[data-grid='true'] {
   background-image: radial-gradient(
     color-mix(in srgb, var(--board-field-ink) calc(var(--board-field-fade, 1) * 100%), transparent) var(--board-field-dot),
     transparent var(--board-field-dot)
@@ -769,6 +772,113 @@
     color: var(--accent);
   }
 }
+/* ── THE DRAWING PALETTE (palette.ts): a mark's colour is a NAME the theme maps to one of its own tokens ───────────── */
+[data-color='ink'] { --wb-c: var(--ink-1); }
+[data-color='muted'] { --wb-c: var(--ink-3); }
+[data-color='accent'] { --wb-c: var(--accent); }
+[data-color='positive'] { --wb-c: var(--fits); }
+[data-color='warning'] { --wb-c: var(--spills); }
+[data-color='danger'] { --wb-c: var(--wont); }
+[data-color='info'] { --wb-c: var(--info); }
+[data-color='chart1'] { --wb-c: var(--viz-1); }
+[data-color='chart2'] { --wb-c: var(--viz-2); }
+[data-color='chart3'] { --wb-c: var(--viz-3); }
+[data-color='chart4'] { --wb-c: var(--viz-4); }
+[data-color='chart5'] { --wb-c: var(--viz-5); }
+[data-color='chart6'] { --wb-c: var(--viz-6); }
+[data-fill='ink'] { --wb-f: var(--ink-1); }
+[data-fill='muted'] { --wb-f: var(--ink-3); }
+[data-fill='accent'] { --wb-f: var(--accent); }
+[data-fill='positive'] { --wb-f: var(--fits); }
+[data-fill='warning'] { --wb-f: var(--spills); }
+[data-fill='danger'] { --wb-f: var(--wont); }
+[data-fill='info'] { --wb-f: var(--info); }
+[data-fill='chart1'] { --wb-f: var(--viz-1); }
+[data-fill='chart2'] { --wb-f: var(--viz-2); }
+[data-fill='chart3'] { --wb-f: var(--viz-3); }
+[data-fill='chart4'] { --wb-f: var(--viz-4); }
+[data-fill='chart5'] { --wb-f: var(--viz-5); }
+[data-fill='chart6'] { --wb-f: var(--viz-6); }
+[data-fill='surface'] { --wb-f: var(--surface-2); }
+[data-fill='none'] { --wb-f: transparent; }
+/* A named colour is drawn as the token; an own-theme hex is an inline style on the mark. Fills are the token as is. */
+.wb-ink[data-color] { stroke: var(--wb-c); }
+.wb-ink[data-fill] { fill: var(--wb-f); }
+.wb-ink.wb-box[data-fill] { fill: var(--wb-f); }
+.wb-text[data-color] { fill: var(--wb-c); }
+.wb-sticky[data-color] { border-color: var(--wb-c); }
+.wb-sticky[data-fill] { background-image: linear-gradient(color-mix(in srgb, var(--wb-f) 26%, transparent), color-mix(in srgb, var(--wb-f) 26%, transparent)); }
+.wb-frame-band { fill: none; stroke: inherit; }
+.wb-shape-label { fill: var(--ink-1); font-family: var(--font-sans); pointer-events: none; }
+.wb-shape-label[data-color] { fill: var(--wb-c); }
+.wb-svg-label { fill: var(--ink-3); font-family: var(--font-sans); font-size: var(--t-11); pointer-events: none; }
+.wb-swatch {
+  width: var(--sp-12);
+  height: var(--sp-12);
+  justify-self: center;
+  border-radius: 50%;
+  background: var(--wb-c, var(--ink-1));
+  box-shadow: 0 0 0 var(--w-hair) var(--edge-strong);
+}
+.wb-swatch[data-tint] {
+  background: color-mix(in srgb, var(--wb-c, var(--ink-2)) 30%, transparent);
+  border: var(--w-hair) solid var(--wb-c, var(--ink-2));
+  box-shadow: none;
+}
+
+/* ── A SCENE (scene.ts): the stage frame, and the player under it in the board's own pill colours ── */
+.wb-scene-frame { fill: none; stroke: var(--edge-strong); stroke-width: 1.5; stroke-dasharray: 8 5; pointer-events: stroke; }
+.wb-scene-frame[data-selected='true'] { stroke: var(--accent); }
+.wb-scene-title { fill: var(--ink-3); font-family: var(--font-sans); font-size: var(--t-12); font-weight: var(--fw-head); pointer-events: none; }
+.wb-scene-bar-back { fill: var(--wb-card); stroke: var(--edge-strong); stroke-width: var(--w-hair); }
+.wb-scene-btn { fill: var(--accent-wash); cursor: pointer; }
+.wb-scene-btn-t { fill: var(--accent-ink); font-family: var(--font-sans); font-size: var(--t-11); pointer-events: none; }
+.wb-scene-glyph { stroke: var(--accent-ink); stroke-width: 2; stroke-linecap: round; fill: none; pointer-events: none; }
+.wb-scene-glyph-fill { fill: var(--accent-ink); stroke: none; }
+.wb-scene-track { fill: var(--edge-strong); cursor: pointer; }
+.wb-scene-progress { fill: var(--accent); pointer-events: none; }
+.wb-scene-tick { stroke: var(--ink-3); stroke-width: 1.5; pointer-events: none; }
+.wb-scene-head { fill: var(--accent); stroke: var(--wb-card); stroke-width: 2; pointer-events: none; }
+.wb-scene-time { fill: var(--ink-3); font-family: var(--font-mono); font-size: var(--t-11); pointer-events: none; }
+.wb-scene-note { fill: var(--ink-3); font-family: var(--font-sans); font-size: var(--t-11); pointer-events: none; }
+
+/* ── A VIDEO (videoItem.tsx) ── */
+.wb-video { box-sizing: border-box; overflow: hidden; border-radius: 10px; background: var(--surface-2); border: var(--w-hair) solid var(--edge-strong); }
+.wb-video-gone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-4); height: 100%; color: var(--ink-3); font-family: var(--font-sans); font-size: var(--t-12); }
+.wb-video-name { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-4); max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The classes the scene player, the frame and the dot head render: each has its rule. */
+.wb-scene-bar { pointer-events: all; }
+.wb-frame { stroke-linejoin: round; }
+.wb-frame-title { font-weight: var(--fw-head); }
+.wb-ink.wb-head-fill { fill: var(--wb-c, var(--ink-1)); }
+.scene-preview { display: grid; gap: var(--sp-8); }
+.scene-preview-bar { display: flex; align-items: center; gap: var(--sp-8); }
+
+/* ── A HOSTED SVG (svgItem.ts): the agent's drawing, themed by the ink it inherits, with a corner handle when selected ── */
+.wb-svg {
+  color: var(--ink-2);
+}
+.wb-svg[data-selected='true'] {
+  outline: none;
+}
+.wb-svg-bad rect {
+  fill: none;
+  stroke: var(--edge-strong);
+  stroke-dasharray: 4 3;
+}
+.wb-svg-bad text {
+  fill: var(--ink-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+}
+.wb-resize-handle {
+  fill: var(--accent);
+  stroke: var(--board-ground);
+  stroke-width: 2;
+  cursor: nwse-resize;
+}
+
 /* ── TIDY-UP OFFER (snapSession.ts) ──────────────────────────────────────
    LAYOUT ONLY. This block sets position and spacing and nothing else; the look
    belongs to the kit. The chip is .s2-chipbtn (glass, the app's chip type), the
@@ -843,4 +953,3 @@
 .wb-boards > .board-tabs {
   padding-right: calc(var(--target-min) * 2 + var(--sp-16));
 }
-

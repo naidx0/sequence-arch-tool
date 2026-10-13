@@ -211,7 +211,7 @@ export type Getter = (url: string, o: { signal: AbortSignal; onBytes: (n: number
 
 /** True when `host` matches a NO_PROXY entry: `*`, `host`, `.host`, `*.host`, `host:port`, or an IPv4 CIDR. */
 export function noProxyMatches(host: string, port: string, list: string): boolean {
-  const h = host.toLowerCase();
+  const h = host.toLowerCase().replace(/^\[|\]$/g, '');
   const ip4 = (x: string): number | null => {
     const m = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(x);
     return m ? (((+m[1]! << 24) | (+m[2]! << 16) | (+m[3]! << 8) | +m[4]!) >>> 0) : null;
@@ -231,15 +231,31 @@ export function noProxyMatches(host: string, port: string, list: string): boolea
       }
       continue;
     }
-    const pm = /^(.*):(\d+)$/.exec(e);
-    if (pm && !e.includes(']')) {
-      if (pm[2] !== port) continue;
-      e = pm[1]!;
+    /* IPv6: "[::1]", "[::1]:8080" or a bare "::1". Only a single colon, or a bracketed address, carries a port. */
+    const br = /^\[([^\]]+)\](?::(\d+))?$/.exec(e);
+    if (br) {
+      if (br[2] !== undefined && br[2] !== port) continue;
+      e = br[1]!;
+    } else if ((e.match(/:/g) ?? []).length === 1) {
+      const pm = /^(.*):(\d+)$/.exec(e);
+      if (pm) {
+        if (pm[2] !== port) continue;
+        e = pm[1]!;
+      }
     }
     e = e.replace(/^\*?\./, '');
     if (h === e || h.endsWith('.' + e)) return true;
   }
   return false;
+}
+
+/**
+ * Request options for a GET over an already-open CONNECT tunnel. With createConnection and no port, Node builds the Host
+ * header as "api.github.com:80" (the port it never connects to), which some servers reject. The port is the URL's own
+ * (443 for https) and the default is 443, so a standard port gives a bare Host and any other keeps its ":port".
+ */
+export function tunnelPort(u: URL): { port: number; defaultPort: number } {
+  return { port: Number(u.port) || 443, defaultPort: 443 };
 }
 
 export type ProxyChoice = { proxy: URL } | { unsupported: string } | null;
@@ -284,7 +300,7 @@ function readBody(res: http.IncomingMessage, o: { signal: AbortSignal; onBytes: 
 }
 
 /** Roots to trust: node's own, plus the PEM file named by SEQUENCE_EXTRA_CA_CERTS (a corporate proxy's CA). */
-function trustedRoots(): string[] | undefined {
+export function trustedRoots(): string[] | undefined {
   const f = process.env.SEQUENCE_EXTRA_CA_CERTS?.trim();
   if (!f) return undefined;
   try {
@@ -353,7 +369,7 @@ export const coreGet: Getter = (url, o) =>
       watch(socket);
       if (res.statusCode !== 200) return done(proxyError(`the proxy answered ${res.statusCode}`, 'EPROXY'));
       /* No `agent: false`: with it Node ignores createConnection and goes direct, bypassing the tunnel. */
-      const req = https.get(u, { signal: o.signal, headers, ca: trustedRoots(), createConnection: () => tls.connect({ socket, servername: net.isIP(u.hostname) ? undefined : u.hostname, ca: trustedRoots() }) }, respond);
+      const req = https.get(u, { ...tunnelPort(u), signal: o.signal, headers, ca: trustedRoots(), createConnection: () => tls.connect({ socket, servername: net.isIP(u.hostname) ? undefined : u.hostname, ca: trustedRoots() }) }, respond);
       req.on('error', (e) => done(e));
     });
     connect.end();

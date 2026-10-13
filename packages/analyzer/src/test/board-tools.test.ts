@@ -523,7 +523,7 @@ describe('the restated item types still match the document they are written into
       "kind: 'text';",
       "kind: 'shape';",
       "kind: 'noderef';",
-      "shape: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow';",
+      "shape: 'rect' | 'ellipse' | 'diamond' | 'line' | 'arrow' | 'path' | 'frame';",
       'at: Point;',
       'from: Point;',
       'to: Point;',

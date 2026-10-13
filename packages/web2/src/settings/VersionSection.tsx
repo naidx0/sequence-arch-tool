@@ -20,6 +20,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import { desktopBridge } from '../boot/desktopBridge';
 import { useStoreIfAny } from '../state/connect';
 
 import { copyText, describeUpdate, noteBlocks, noteHighlight, platformLabel, updateHelpPrompt, type NoteBlock } from './versionModel';
@@ -79,6 +80,8 @@ export function VersionSection({ client }: { client?: VersionClient }) {
   const [notes, setNotes] = useState<ReleaseNote[]>([]);
   const [copied, setCopied] = useState<'idle' | 'done' | 'failed'>('idle');
   const [checking, setChecking] = useState(false);
+  /* The automatic-check switch: null until the server answers (then it is hidden, not guessed). */
+  const [autoCheck, setAutoCheck] = useState<boolean | null>(null);
   /* The update check got no answer from the app at all (not the same as GitHub being offline). */
   const [unreachable, setUnreachable] = useState(false);
 
@@ -101,6 +104,7 @@ export function VersionSection({ client }: { client?: VersionClient }) {
       if (!live) return;
       setNotes(n);
     });
+    void api.current.updateCheck?.().then((v) => live && setAutoCheck(v));
     void refresh(false);
     return () => {
       live = false;
@@ -144,6 +148,9 @@ export function VersionSection({ client }: { client?: VersionClient }) {
       });
     } else if (view.action.kind === 'check') {
       void refresh(true);
+    } else if (view.action.kind === 'restart') {
+      /* In-place installs (mac swap, Windows portable zip) finish when the app quits; main logs this one as the update restart. */
+      void Promise.resolve(desktopBridge()?.shell?.('restart-for-update')).catch((e: Error) => setStartError(`Could not restart: ${e.message}`));
     }
   };
   /* Puts a ready prompt in the chat composer and closes Settings so it can be seen. It sends nothing and runs nothing. */
@@ -193,13 +200,24 @@ export function VersionSection({ client }: { client?: VersionClient }) {
             <span className="sb-row-sub" data-testid="settings-update-sub" role="status">
               {view.sub}
             </span>
+            {view.detail ? (
+              <span className="sb-row-sub" data-testid="settings-update-detail">
+                {view.detail}
+              </span>
+            ) : null}
             {view.progress !== null ? (
               <progress className="sb-update-bar" data-testid="settings-update-progress" max={1} value={view.progress} aria-label="Download progress" />
             ) : view.busy ? (
               <progress className="sb-update-bar" data-testid="settings-update-progress" data-indeterminate="yes" aria-label="Working" />
             ) : null}
           </span>
-          {view.action.kind === 'update' ? (
+          {view.action.kind === 'restart' ? (
+            typeof desktopBridge()?.shell === 'function' ? (
+              <button type="button" className="sb-pill sb-pill-solid" data-testid="settings-update-restart" onClick={onAction}>
+                {view.action.label}
+              </button>
+            ) : null
+          ) : view.action.kind === 'update' ? (
             <button type="button" className="sb-pill sb-pill-solid" data-testid="settings-update-go" onClick={onAction}>
               {view.action.label}
             </button>
@@ -213,6 +231,29 @@ export function VersionSection({ client }: { client?: VersionClient }) {
             </button>
           ) : null}
         </div>
+        {autoCheck !== null ? (
+          <label className="sb-row sb-row-switch">
+            <input
+              type="checkbox"
+              role="switch"
+              className="sb-switch"
+              data-testid="settings-update-auto"
+              checked={autoCheck}
+              onChange={(e) => {
+                const on = e.currentTarget.checked;
+                setAutoCheck(on);
+                void api.current.setUpdateCheck?.(on).then((v) => {
+                  if (v === null) setAutoCheck(!on);
+                  else void refresh(false);
+                });
+              }}
+            />
+            <span className="sb-row-txt">
+              <span>Check for updates</span>
+              <span className="sb-row-sub">Off: Sequence only looks when you press Check now.</span>
+            </span>
+          </label>
+        ) : null}
         {error ? (
           <div className="sb-fail sb-fail-row" data-testid="settings-update-error" role="alert">
             <span className="sb-fail-t">{error}</span>
