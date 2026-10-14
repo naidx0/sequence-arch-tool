@@ -44,6 +44,7 @@ export function AskAgentMenuItem({
   fetchImpl,
   access,
   question,
+  label = 'Ask an agent about this',
   runs = agentRuns,
 }: {
   nodeId: string;
@@ -55,6 +56,8 @@ export function AskAgentMenuItem({
   onDone?: (r: AskResult) => void;
   fetchImpl?: Fetch;
   access?: AccessMode;
+  /** The row's words; the board's node menu calls it "Explain" beside its one ask row (0.1.8.1 C7). */
+  label?: string;
   runs?: AgentRunStore;
 }): JSX.Element {
   const f = fetchImpl ?? ((input: string, init?: RequestInit) => fetch(input, init));
@@ -77,7 +80,7 @@ export function AskAgentMenuItem({
         onDone?.({ ok: true, text: HANDED_OFF_NOTE, handedOff: true });
       }}
     >
-      Ask an agent about this
+      {label}
     </button>
   );
 }

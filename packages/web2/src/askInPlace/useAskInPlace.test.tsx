@@ -134,7 +134,7 @@ describe('trigger: right-click', () => {
     const notPrevented = fireEvent.contextMenu(screen.getByTestId('item-r2').querySelector('rect')!, { clientX: 20, clientY: 30 });
     expect(notPrevented).toBe(false); // the browser's own menu is replaced
     expect(select).toHaveBeenCalledWith(['r2']);
-    expect(screen.getByTestId('ask-menu-ask').textContent).toBe('Ask about this');
+    expect(screen.getByTestId('ask-menu-ask').textContent).toBe('Ask agent about this'); // 0.1.8.1 C7: one ask row, one name
   });
 
   it('on a member of a multi-selection asks about the whole selection', () => {

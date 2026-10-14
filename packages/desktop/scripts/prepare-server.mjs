@@ -36,7 +36,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { pnpmInvocation } from './pnpm-invocation.mjs';
 import { createRequire } from 'node:module';
 
-const { pruneAnalyzerBundle } = createRequire(import.meta.url)('./prune-bundle.cjs');
+const { pruneAnalyzerBundle, pruneShippedServer } = createRequire(import.meta.url)('./prune-bundle.cjs');
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DESKTOP_DIR = path.resolve(here, '..'); // packages/desktop
@@ -158,8 +158,8 @@ try {
   }
 }
 
-if (!fs.existsSync(path.join(ANALYZER_OUT, 'dist', 'cli.js'))) {
-  fail(`deploy did not produce ${path.join(ANALYZER_OUT, 'dist', 'cli.js')} — inspect the deploy output.`);
+if (!fs.existsSync(path.join(ANALYZER_OUT, 'dist', 'sequence-server-entry.cjs'))) {
+  fail(`deploy did not produce ${path.join(ANALYZER_OUT, 'dist', 'sequence-server-entry.cjs')} — run \`pnpm --filter @sequence/analyzer build\` and inspect the deploy output.`);
 }
 if (!fs.existsSync(path.join(ANALYZER_OUT, 'node_modules'))) {
   fail('deploy did not produce a node_modules in the analyzer bundle — the child process would have no deps.');
@@ -224,6 +224,11 @@ import { spawnSync } from 'node:child_process';
      the proof nothing the server needs went with them. */
   const pruned = pruneAnalyzerBundle(ANALYZER_OUT);
   log(`pruned ${pruned.removed.length} non-runtime entries (${(pruned.bytes / 1e6).toFixed(1)} MB)`);
+  /* 0.1.8.1 D2: sources, the unbundled dist (the bundle runs), unused grammars,
+     dependency sources, pg. The grammar list is the scanner's own table. */
+  const { LOADED_GRAMMARS } = await import(pathToFileURL(path.join(ANALYZER_DIST_SRC, 'parse', 'treesitter.js')).href);
+  const shipped = pruneShippedServer(ANALYZER_OUT, { keepGrammars: [...LOADED_GRAMMARS] });
+  log(`pruned ${shipped.removed.length} entries the installed server never loads (${(shipped.bytes / 1e6).toFixed(1)} MB): ${shipped.removed.join(', ')}`);
 
   const links = [];
   (function walk(dir) {
@@ -238,7 +243,8 @@ import { spawnSync } from 'node:child_process';
   }
   const probe = fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-bundle-probe-'));
   fs.cpSync(ANALYZER_OUT, path.join(probe, 'analyzer'), { recursive: true, dereference: true });
-  const r = spawnSync(process.execPath, [path.join(probe, 'analyzer', 'dist', 'cli.js'), '--help'], {
+  /* The entry the desktop runs (D2: the unbundled dist/cli.js is not shipped). */
+  const r = spawnSync(process.execPath, [path.join(probe, 'analyzer', 'dist', 'sequence-server-entry.cjs'), '--help'], {
     encoding: 'utf8',
     timeout: 60_000,
   });
@@ -387,7 +393,7 @@ fs.cpSync(WEB_DIST_SRC, WEB_OUT, { recursive: true });
 }
 
 log(`done. server bundle ready at ${BUNDLE}`);
-log('  analyzer: ' + path.join(ANALYZER_OUT, 'dist', 'cli.js'));
+log('  analyzer: ' + path.join(ANALYZER_OUT, 'dist', 'sequence-server-entry.cjs'));
 log('  web:      ' + path.join(WEB_OUT, 'index.html'));
 log('  bridge:   launcher ' + path.join(ANALYZER_OUT, 'dist', 'claude-agent-acp-launch.mjs') + (BUNDLE_BRIDGE ? ' + full bundle' : ' (bridge downloaded on first use)'));
 log('  board:    ' + path.join(ANALYZER_OUT, 'dist', 'sequence-mcp.cjs'));

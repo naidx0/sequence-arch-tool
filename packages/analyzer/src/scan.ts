@@ -121,6 +121,13 @@ export interface ScanOptions {
    * changes nothing.
    */
   onServiceFacts?: (perService: readonly ServiceFiles[], discovery: Discovery) => void;
+  /**
+   * 0.1.8.1 B1: parse progress, `done` of `total` source files. When set, the
+   * parse pass also YIELDS to the event loop every ~25 ms, so a server that
+   * scans in the background keeps answering `/api/status` during the scan.
+   * Omitted (every other caller): no precount, no yields, unchanged timing.
+   */
+  onProgress?: (done: number, total: number) => void;
 }
 
 export interface ServiceFiles {
@@ -615,6 +622,28 @@ export async function scanRepo(repoRoot: string, opts: ScanOptions = {}): Promis
       .map((d) => path.join(abs, d) + path.sep);
   };
 
+  /* B1: the progress denominator — the same filter the loop below applies, so
+     `done` reaches `total` on an ordinary scan. Only when someone is listening. */
+  const onProgress = opts.onProgress;
+  let progressTotal = 0;
+  let progressDone = 0;
+  let lastYield = performance.now();
+  if (onProgress) {
+    for (const service of discovery.services) {
+      if (service.role !== 'app' || !service.dir) continue;
+      const dirAbs = path.join(abs, service.dir);
+      if (!withinRoot(dirAbs)) continue;
+      const excluded = excludedPrefixesFor(service.dir);
+      for (const fileAbs of walkFiles(dirAbs)) {
+        if (excluded.some((p) => fileAbs.startsWith(p))) continue;
+        if (!LANG_BY_EXT[path.extname(fileAbs)] || isGenerated(fileAbs)) continue;
+        progressTotal += 1;
+      }
+    }
+    progressTotal = Math.min(progressTotal, maxFiles);
+    onProgress(0, progressTotal);
+  }
+
   for (const service of discovery.services) {
     if (service.role !== 'app' || !service.dir) continue;
     const facts: FileFacts[] = [];
@@ -681,11 +710,20 @@ export async function scanRepo(repoRoot: string, opts: ScanOptions = {}): Promis
         }
         warnings.push(`${rel}: failed to parse (${(e as Error).message}) — skipped`);
       }
+      if (onProgress) {
+        progressDone += 1;
+        if (performance.now() - lastYield > 25) {
+          onProgress(Math.min(progressDone, progressTotal), progressTotal);
+          await new Promise<void>((resolve) => setImmediate(resolve));
+          lastYield = performance.now();
+        }
+      }
       tWalk = performance.now();
     }
     perService.push({ service, facts });
   }
   opts.onServiceFacts?.(perService, discovery);
+  onProgress?.(progressTotal, progressTotal);
   mark('06 parse pass (total)');
   count('files parsed', fileCount);
   // Every file this scan read is now captured; hand it to the next

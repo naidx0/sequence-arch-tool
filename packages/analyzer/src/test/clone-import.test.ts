@@ -6,8 +6,9 @@ import path from 'node:path';
 import childProcess from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRepoServer } from '../server/repoServer.js';
-import { gitClone } from '../server/gitClone.js';
-import type { CloneRepoFn } from '../server/gitClone.js';
+import { gitClone, parseGitRemoteUrl } from '../server/gitClone.js';
+import type { CloneRepoFn, LsRemoteFn } from '../server/gitClone.js';
+import { pathToFileURL } from 'node:url';
 import type { GithubFetch } from '../server/github.js';
 
 /**
@@ -53,8 +54,13 @@ async function startServer(opts: {
   userConfigDir: string;
   cloneRepo?: CloneRepoFn;
   githubFetch?: GithubFetch;
+  lsRemote?: LsRemoteFn;
 }): Promise<{ base: string; close: () => Promise<void> }> {
-  const server = await createRepoServer(null, { webDist: undefined, ...opts });
+  /* C4: a clone address must pass `git ls-remote`. Where a test fakes the clone
+     through the seam (a github.com address served from a local origin), it fakes
+     the probe too; `lsRemote: undefined` keeps the real one. */
+  const lsRemote: LsRemoteFn | undefined = 'lsRemote' in opts ? opts.lsRemote : async () => ({ ok: true });
+  const server = await createRepoServer(null, { webDist: undefined, ...opts, lsRemote });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
   const addr = server.address();
   const port = typeof addr === 'object' && addr ? addr.port : 0;
@@ -250,8 +256,10 @@ test('/api/github/clone: a clone whose realpath ESCAPES the browse root is refus
   try {
     const res = await postClone(base, { cloneUrl: 'https://github.com/acme/widget.git' });
     assert.strictEqual(res.status, 403);
-    const body = (await res.json()) as { error: string };
-    assert.match(body.error, /escapes the browse root/i);
+    const body = (await res.json()) as { error: string; action?: string };
+    /* C5: one plain sentence, no internal names. */
+    assert.strictEqual(body.error, 'Sequence can only open folders inside your home folder.');
+    assert.strictEqual(body.action, 'choose-folder');
 
     // Never attached, and the escaping symlink was removed.
     const status = (await (await fetch(`${base}/api/status`)).json()) as { attached: boolean };
@@ -270,29 +278,40 @@ test('/api/github/clone: a clone whose realpath ESCAPES the browse root is refus
 
 /* ============================================ non-github SSRF refused ========= */
 
-test('/api/github/clone: a non-github.com host / scheme is refused (400) BEFORE any clone runs (SSRF guard)', async () => {
+test('/api/github/clone: an address that is not https/ssh git is refused (400) BEFORE any probe or clone runs', async () => {
   const browseRoot = tempDir('seq-browse-');
   const userDir = tempDir('seq-home-');
   let cloneCalls = 0;
+  let probeCalls = 0;
   const cloneRepo: CloneRepoFn = async () => {
     cloneCalls++;
     throw new Error('the clone must NOT run for a rejected URL');
   };
+  const lsRemote: LsRemoteFn = async () => {
+    probeCalls++;
+    return { ok: true };
+  };
 
-  const { base, close } = await startServer({ browseRoot, userConfigDir: userDir, cloneRepo });
+  const { base, close } = await startServer({ browseRoot, userConfigDir: userDir, cloneRepo, lsRemote });
   try {
+    /* C4: any https or ssh git address is now ACCEPTED (and then probed with
+       `git ls-remote`). What is still refused before anything runs: */
     const rejected = [
-      'https://gitlab.com/acme/widget.git', // wrong host
-      'https://github.com.evil.tld/acme/widget.git', // look-alike host (exact-match guard)
-      'http://github.com/acme/widget.git', // wrong scheme (http)
-      'ssh://git@github.com/acme/widget.git', // wrong scheme (ssh)
-      'file:///etc/passwd', // file scheme (local exfil)
+      'http://github.com/acme/widget.git', // plain http
       'https://user:pass@github.com/acme/widget.git', // embedded credentials
+      'ext::sh -c touch% /tmp/pwned', // ext transport runs a command
+      '-uhoh', // read by git as an option
+      'git://github.com/acme/widget.git', // unauthenticated git protocol
+      'not an address',
     ];
     for (const cloneUrl of rejected) {
       const res = await postClone(base, { cloneUrl });
       assert.strictEqual(res.status, 400, `must reject ${cloneUrl}`);
+      const body = (await res.json()) as { error: string; action: string };
+      assert.strictEqual(body.action, 'check-url');
+      assert.match(body.error, /^That isn't a git address Sequence can clone\./);
     }
+    assert.strictEqual(probeCalls, 0, 'no ls-remote for a rejected address');
     assert.strictEqual(cloneCalls, 0, 'no clone subprocess is reached for a rejected URL');
 
     // No body at all → 400 too.
@@ -306,4 +325,221 @@ test('/api/github/clone: a non-github.com host / scheme is refused (400) BEFORE 
     fs.rmSync(browseRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     fs.rmSync(userDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
+});
+
+/* ════════════════════ 0.1.8.1 C4: any git address, the chosen folder ════════ */
+
+/** A real local BARE repository (plainapp, one commit) → its file:// URL. */
+function makeBareOrigin(): { url: string; dir: string } {
+  const { originUrl: _u, originDir } = makeLocalOrigin();
+  const bare = path.join(originDir, 'origin.git');
+  childProcess.execFileSync('git', ['clone', '-q', '--bare', path.join(originDir, 'origin'), bare], { stdio: 'ignore' });
+  return { url: pathToFileURL(bare).href, dir: originDir };
+}
+
+test('C4: parseGitRemoteUrl takes any https/ssh git address; file:// only when allowed', () => {
+  for (const ok of [
+    'https://github.com/acme/widget.git',
+    'https://gitlab.com/group/sub/widget',
+    'https://bitbucket.org/acme/widget.git',
+    'ssh://git@github.com/acme/widget.git',
+    'git@gitlab.com:acme/widget.git',
+  ]) {
+    const t = parseGitRemoteUrl(ok);
+    assert.ok(t, `accepts ${ok}`);
+    assert.strictEqual(t.repo, 'widget');
+  }
+  assert.strictEqual(parseGitRemoteUrl('https://github.com/acme/widget.git')?.isGithubHttps, true);
+  assert.strictEqual(parseGitRemoteUrl('https://github.com.evil.tld/acme/widget.git')?.isGithubHttps, false, 'the token never goes to a look-alike');
+  assert.strictEqual(parseGitRemoteUrl('git@github.com:acme/widget.git')?.isGithubHttps, false);
+  assert.strictEqual(parseGitRemoteUrl('file:///tmp/x.git'), null, 'file:// refused by default');
+  assert.ok(parseGitRemoteUrl('file:///tmp/x.git', { allowFile: true }));
+  for (const bad of ['http://h/x.git', 'https://u:p@h/x.git', 'ext::sh -c x', '-oProxyCommand=x', 'https://h', '']) {
+    assert.strictEqual(parseGitRemoteUrl(bad), null, `refuses ${JSON.stringify(bad)}`);
+  }
+});
+
+test('C4: a clone from a local bare repository lands EXACTLY in the chosen folder (real ls-remote, real git clone)', async () => {
+  const origin = makeBareOrigin();
+  const browseRoot = tempDir('seq-browse-');
+  const userDir = tempDir('seq-home-');
+  const chosen = path.join(browseRoot, 'Projects', 'my-widget');
+  fs.mkdirSync(path.dirname(chosen), { recursive: true });
+  const { base, close } = await startServer({ browseRoot, userConfigDir: userDir, lsRemote: undefined });
+  try {
+    const res = await postClone(base, { cloneUrl: origin.url, destination: chosen });
+    const body = (await res.json()) as { attached?: boolean; clonedTo?: string; error?: string };
+    assert.strictEqual(res.status, 200, JSON.stringify(body));
+    assert.strictEqual(body.clonedTo, fs.realpathSync(chosen), 'the clone is the chosen folder itself');
+    assert.ok(fs.existsSync(path.join(chosen, '.git')), 'a real checkout in the chosen folder');
+    assert.ok(!fs.existsSync(path.join(browseRoot, 'sequence-workspaces')), 'nothing went to the default folder');
+    assert.strictEqual(body.attached, true);
+
+    /* An existing EMPTY folder is fine too, and is used as is. */
+    const empty = path.join(browseRoot, 'Projects', 'empty');
+    fs.mkdirSync(empty);
+    const res2 = await postClone(base, { cloneUrl: origin.url, destination: empty });
+    assert.strictEqual(res2.status, 200);
+    assert.ok(fs.existsSync(path.join(empty, '.git')));
+  } finally {
+    await close();
+    for (const d of [origin.dir, browseRoot, userDir]) fs.rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  }
+});
+
+test('C4: refusals are plain sentences with an action: no repo there, not empty, outside home, private GitHub', async () => {
+  const browseRoot = tempDir('seq-browse-');
+  const userDir = tempDir('seq-home-');
+  const outside = tempDir('seq-outside-');
+  const notARepo = tempDir('seq-notrepo-');
+  let cloneCalls = 0;
+  const cloneRepo: CloneRepoFn = async () => {
+    cloneCalls++;
+    return { ok: false, error: 'must not run' };
+  };
+  const { base, close } = await startServer({ browseRoot, userConfigDir: userDir, cloneRepo, lsRemote: undefined });
+  const INTERNAL = /jail|boundary|browse ?root|browseRoot|escapes/i;
+  try {
+    /* A real `git ls-remote` against a folder that is not a repository. */
+    const none = await postClone(base, { cloneUrl: pathToFileURL(notARepo).href });
+    assert.strictEqual(none.status, 400);
+    const noneBody = (await none.json()) as { error: string; action: string };
+    assert.strictEqual(noneBody.error, "Sequence couldn't find a git repository at that address. Check the address, and that you have access to it.");
+    assert.strictEqual(noneBody.action, 'check-url');
+
+    const full = path.join(browseRoot, 'full');
+    fs.mkdirSync(full);
+    fs.writeFileSync(path.join(full, 'keep.txt'), 'mine');
+    const notEmpty = await postClone(base, { cloneUrl: 'https://github.com/acme/widget.git', destination: full });
+    assert.strictEqual(notEmpty.status, 409);
+    const neBody = (await notEmpty.json()) as { error: string; action: string };
+    assert.strictEqual(neBody.action, 'choose-folder');
+    assert.match(neBody.error, /^That folder isn't empty\./);
+    assert.strictEqual(fs.readFileSync(path.join(full, 'keep.txt'), 'utf8'), 'mine', 'the folder is untouched');
+
+    const out = await postClone(base, { cloneUrl: 'https://github.com/acme/widget.git', destination: path.join(outside, 'w') });
+    assert.strictEqual(out.status, 403);
+    const outBody = (await out.json()) as { error: string; action: string };
+    assert.strictEqual(outBody.error, 'Sequence can only open folders inside your home folder.');
+    assert.strictEqual(outBody.action, 'choose-folder');
+
+    for (const b of [noneBody, neBody, outBody]) assert.doesNotMatch(b.error, INTERNAL);
+    assert.strictEqual(cloneCalls, 0, 'nothing was cloned for a refusal');
+  } finally {
+    await close();
+    for (const d of [browseRoot, userDir, outside, notARepo]) fs.rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  }
+
+  /* A github.com address that does not answer, with no GitHub connected: connect is the action. */
+  const b2 = tempDir('seq-browse-');
+  const u2 = tempDir('seq-home-');
+  const s2 = await startServer({ browseRoot: b2, userConfigDir: u2, lsRemote: async () => ({ ok: false, error: 'exit 128' }) });
+  try {
+    const priv = await postClone(s2.base, { cloneUrl: 'https://github.com/acme/private-thing.git' });
+    assert.strictEqual(priv.status, 400);
+    const pb = (await priv.json()) as { error: string; action: string };
+    assert.strictEqual(pb.action, 'connect-github');
+    assert.match(pb.error, /connect GitHub/);
+  } finally {
+    await s2.close();
+    for (const d of [b2, u2]) fs.rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  }
+});
+
+/* ── review B: hosted clones are GitHub-only; local ssh is honest about failures ── */
+
+import { loadAuthConfig } from '../server/auth.js';
+import { signSession, verifySession, SESSION_COOKIE } from '../server/session.js';
+import { gitLsRemote, sshFailureReason, SEQUENCE_SSH_COMMAND } from '../server/gitClone.js';
+import type http from 'node:http';
+
+test('review B: a hosted (auth) server clones only from https://github.com', async () => {
+  const authConfig = loadAuthConfig({
+    GOOGLE_CLIENT_ID: 'g-id',
+    GOOGLE_CLIENT_SECRET: 'g-secret',
+    SESSION_SECRET: 'sess-secret-c4',
+    PUBLIC_BASE_URL: 'https://app.example.com',
+  } as NodeJS.ProcessEnv);
+  const browseRoot = tempDir('seq-browse-');
+  const userDir = tempDir('seq-home-');
+  let probes = 0;
+  const server = await createRepoServer(null, {
+    webDist: undefined,
+    browseRoot,
+    userConfigDir: userDir,
+    authConfig,
+    resolveIdentity: (req: http.IncomingMessage) => verifySession(req.headers.cookie, authConfig.sessionSecret)?.userId,
+    lsRemote: async () => {
+      probes += 1;
+      return { ok: true };
+    },
+    cloneRepo: async () => ({ ok: false, error: 'not in this test' }),
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+  const addr = server.address();
+  const base = `http://127.0.0.1:${typeof addr === 'object' && addr ? addr.port : 0}`;
+  const cookie = `${SESSION_COOKIE}=${encodeURIComponent(signSession({ userId: 'google:AAA', provider: 'google' }, authConfig.sessionSecret))}`;
+  try {
+    for (const cloneUrl of ['https://gitlab.com/acme/widget.git', 'git@github.com:acme/widget.git', 'ssh://git@github.com/acme/widget.git', 'file:///etc']) {
+      const res = await fetch(`${base}/api/github/clone`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ cloneUrl }) });
+      assert.strictEqual(res.status, 400, cloneUrl);
+      const body = (await res.json()) as { error: string; action: string };
+      assert.strictEqual(body.action, 'check-url');
+    }
+    assert.strictEqual(probes, 0, 'nothing was probed from the server for a refused address');
+    const gh = await fetch(`${base}/api/github/clone`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ cloneUrl: 'https://github.com/acme/widget.git' }) });
+    assert.notStrictEqual(gh.status, 400, 'https://github.com is still accepted');
+    assert.strictEqual(probes, 1);
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+    for (const d of [browseRoot, userDir]) fs.rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  }
+});
+
+test('review B: local ssh trusts a new host once (accept-new) and never prompts', async () => {
+  let env: NodeJS.ProcessEnv = {};
+  const prevCmd = process.env.GIT_SSH_COMMAND;
+  const prevSsh = process.env.GIT_SSH;
+  delete process.env.GIT_SSH_COMMAND;
+  delete process.env.GIT_SSH;
+  try {
+    await gitLsRemote('ssh://git@example.invalid/x.git', undefined, {
+      timeoutMs: 1000,
+      spawn: ((cmd: string, args: readonly string[], o: { env: NodeJS.ProcessEnv }) => {
+        env = o.env;
+        return childProcess.spawn(process.execPath, ['-e', 'process.exit(2)'], { stdio: ['ignore', 'ignore', 'pipe'] });
+      }) as unknown as typeof childProcess.spawn,
+    });
+  } finally {
+    if (prevCmd !== undefined) process.env.GIT_SSH_COMMAND = prevCmd;
+    if (prevSsh !== undefined) process.env.GIT_SSH = prevSsh;
+  }
+  assert.strictEqual(env.GIT_SSH_COMMAND, SEQUENCE_SSH_COMMAND);
+  assert.match(SEQUENCE_SSH_COMMAND, /StrictHostKeyChecking=accept-new/);
+  assert.match(SEQUENCE_SSH_COMMAND, /BatchMode=yes/);
+});
+
+test('review B: ssh host-key and key-refused failures get their own plain sentence', async () => {
+  assert.strictEqual(sshFailureReason('@@@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @@@\nHost key verification failed.'), 'ssh-hostkey');
+  assert.strictEqual(sshFailureReason('git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.'), 'ssh-auth');
+  assert.strictEqual(sshFailureReason('fatal: unable to access: Could not resolve host'), undefined);
+
+  const browseRoot = tempDir('seq-browse-');
+  const userDir = tempDir('seq-home-');
+  for (const [reason, pattern] of [
+    ['ssh-hostkey', /SSH host key has changed/],
+    ['ssh-auth', /didn't accept your SSH key/],
+  ] as const) {
+    const { base, close } = await startServer({ browseRoot, userConfigDir: userDir, lsRemote: async () => ({ ok: false, error: 'exit 128', reason }) });
+    try {
+      const res = await postClone(base, { cloneUrl: 'git@gitlab.com:acme/widget.git' });
+      assert.strictEqual(res.status, 400);
+      const body = (await res.json()) as { error: string; action: string };
+      assert.match(body.error, pattern);
+      assert.strictEqual(body.action, 'check-url');
+    } finally {
+      await close();
+    }
+  }
+  for (const d of [browseRoot, userDir]) fs.rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });

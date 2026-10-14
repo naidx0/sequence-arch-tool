@@ -728,3 +728,45 @@
 .fr-mapex .ctxring-meter { display: flex; height: var(--sp-6); border-radius: var(--r-full); background: var(--edge); overflow: hidden; }
 .fr-mapex .ctxring-seg { display: block; flex: none; height: 100%; background: var(--ink-2); min-width: 2px; }
 @media (max-width: 560px) { .fr-mapex { grid-template-columns: minmax(0, 1fr); } }
+
+/* P0-4: the same connect flow inline, inside the chat's "Connect a model to run this" card (chat/ConnectToRun.tsx). */
+.fr-root.fr-inline {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  display: block;
+  overflow: visible;
+  padding: 0;
+  background: none;
+}
+.fr-inline .fr-col { max-width: none; margin-block: 0; }
+.fr-inline .fr-col > * + * { margin-top: var(--sp-12); }
+.fr-inline .fr-options { grid-template-columns: minmax(0, 1fr); gap: var(--sp-8); }
+.fr-inline .fr-option { min-height: 0; padding: var(--sp-8) var(--sp-12); }
+/* The card itself is the chat's notice (.s2-notice); open, it gives the flow room and a quiet top rule. */
+.ctr-card { align-items: flex-start; }
+.ctr-card[data-open='true'] { padding-bottom: var(--sp-12); }
+.ctr-card[data-open='true'] .ctr-flow { border-top: var(--w-hair) solid var(--edge); padding-top: var(--sp-12); }
+.ctr-flow {
+  flex: 1 1 100%;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  padding-left: 34px;
+}
+
+/* P0-2: sign-in in the browser: one waiting line, Cancel, and the command's output only behind Show details. */
+.fr-browser-signin { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); padding: var(--sp-12); }
+.fr-signin-state { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); }
+.fr-signin-state .fr-input { min-width: 220px; }
+.fr-signin-log {
+  align-self: stretch;
+  max-height: 160px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--sp-8);
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}

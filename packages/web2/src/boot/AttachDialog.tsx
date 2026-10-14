@@ -5,7 +5,7 @@ import './boot.css';
 import type { BrowseEntry, GetBrowseResponse, PostAttachResponse, RecentRepo } from '@sequence/api-types';
 
 import type { AttachFailure } from '../state/types';
-import { attachFailureCopy } from './attachFailure';
+import { attachFailureCopy, type FailureAction } from './attachFailure';
 import { classifyWireFailure, readScannedGraph } from './bootSequence';
 import type { BootTransport, ScannedRepoDraft } from './bootSequence';
 import { desktopBridge } from './desktopBridge';
@@ -64,9 +64,24 @@ export interface AttachDialogProps {
   transport: BootTransport;
   onAttached: (repo: ScannedRepoDraft) => void;
   onClose?: () => void;
+  /** Where "Connect GitHub" goes when a refusal names it (0.1.8.1 C4). Without it the strip offers no such button. */
+  onConnectGithub?: () => void;
 }
 
-export function AttachDialog({ transport, onAttached, onClose }: AttachDialogProps) {
+/** The repository's name in a git URL (https, ssh or scp-like), or null: what the default checkout folder is called. */
+export function repoNameOf(url: string): string | null {
+  const last = url.trim().replace(/[\\/]+$/, '').split(/[\\/:]/).pop() ?? '';
+  const name = last.replace(/\.git$/i, '');
+  return /^[A-Za-z0-9._-]+$/.test(name) && name !== '.' && name !== '..' ? name : null;
+}
+
+/** `dir` joined with one name, in the separator `dir` already uses. */
+function joinPath(dir: string, name: string): string {
+  const sep = dir.includes('\\') && !dir.includes('/') ? '\\' : '/';
+  return dir.endsWith(sep) ? `${dir}${name}` : `${dir}${sep}${name}`;
+}
+
+export function AttachDialog({ transport, onAttached, onClose, onConnectGithub }: AttachDialogProps) {
   const [listing, setListing] = useState<GetBrowseResponse | null>(null);
   const [recents, setRecents] = useState<RecentRepo[]>([]);
   const [failure, setFailure] = useState<AttachFailure | null>(null);
@@ -83,6 +98,12 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
   const held = useRef(transport);
   held.current = transport;
 
+  /*
+   * WHAT "ALLOW THIS FOLDER" ALLOWS, AND WHAT IT TRIES AGAIN (0.1.8.1 C5, review S3). Each request that can be
+   * refused for being outside home records the folder it asked about and how to ask again: an attach its path, a
+   * browse its folder, a clone its destination. The refusal's own `path` wins when it names one.
+   */
+  const allowTarget = useRef<{ path: string; again: () => void } | null>(null);
   const navigate = useCallback(async (path: string | null) => {
     const answer = await held.current.browse(path);
     if (answer.outcome === 'ok') {
@@ -90,6 +111,7 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
       setFailure(null);
       return;
     }
+    if (path !== null) allowTarget.current = { path, again: () => void navigate(path) };
     /*
      * The browse route shares the attach route's jail and its status
      * vocabulary, so it shares the classifier. One mapping for both is the
@@ -161,9 +183,31 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
    */
   const [cloneUrl, setCloneUrl] = useState('');
   const [cloneOpen, setCloneOpen] = useState(false);
+  /*
+   * WHERE THE CLONE GOES (0.1.8.1 C4, audit P1-7: "clone ignores the target dir"). `destination` is the folder the
+   * checkout BECOMES (new or empty, the server checks): by default the repository's own name inside the folder being
+   * browsed; the field can be edited, and the desktop app's folder dialog can choose it. Empty sends none.
+   */
+  const [cloneDest, setCloneDest] = useState<string | null>(null);
+  const defaultDest = listing?.path && repoNameOf(cloneUrl) ? joinPath(listing.path, repoNameOf(cloneUrl)!) : (listing?.path ?? '');
+  const destShown = cloneDest ?? defaultDest;
+  const cloneUrlRef = useRef<HTMLInputElement | null>(null);
+  const cloneDestRef = useRef<HTMLInputElement | null>(null);
+  const chooseDest = async () => {
+    const pick = desktopBridge()?.pickFolder;
+    if (typeof pick !== 'function') {
+      setCloneOpen(true);
+      cloneDestRef.current?.focus();
+      return;
+    }
+    const picked = await pick().catch(() => null);
+    if (picked) setCloneDest(picked);
+  };
+  const lastTry = useRef<(() => void) | null>(null);
   const clone = async () => {
     const url = cloneUrl.trim();
     if (url.length === 0 || busy !== null) return;
+    lastTry.current = () => void clone();
     setBusy(url);
     setFailure(null);
     try {
@@ -171,7 +215,9 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
         setFailure({ kind: 'transport', status: null, message: 'cloning is not available in this build' });
         return;
       }
-      const cloned = await held.current.clone(url);
+      const destination = destShown.trim();
+      if (destination.length > 0) allowTarget.current = { path: destination, again: () => void clone() };
+      const cloned = await held.current.clone(url, destination.length > 0 ? destination : undefined);
       if (cloned.outcome !== 'ok') {
         setFailure(classifyWireFailure(cloned));
         return;
@@ -184,7 +230,12 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
     }
   };
 
+  /* The folder the last attach asked for: what "Allow this folder" allows (0.1.8.1 C5). */
+  const lastPath = useRef<string | null>(null);
   const attach = async (path: string) => {
+    lastTry.current = () => void attach(path);
+    lastPath.current = path;
+    allowTarget.current = { path, again: () => void attach(path) };
     setBusy(path);
     setFailure(null);
 
@@ -293,9 +344,44 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
    */
   const hasRecents = recents.length > 0;
   /* In a tab there is no OS dialog, so "Open folder" reveals the browser. With
-     no recents the browser is the whole screen, so it starts open. */
+     no recents the browser is the whole screen, so it starts open. In the desktop
+     app the OS dialog IS the way in (0.1.8.1 C5, audit P1-8): the browser stays
+     folded until "Browse here" asks for it. */
   const [browseOpen, setBrowseOpen] = useState(false);
-  const showBrowse = browseOpen || !hasRecents;
+  const showBrowse = browseOpen || (!hasRecents && native === undefined);
+
+  /*
+   * "ALLOW THIS FOLDER" (0.1.8.1 C5). A folder outside the home folder is refused; the reader may add it to the
+   * folders Sequence opens (POST /api/allowed-folders { path }) and the request it refused is tried again at once. A
+   * transport without the route says so in the strip rather than doing nothing.
+   */
+  const allowPath = (): string | null =>
+    (failure?.kind === 'outside-browse-root' ? failure.path : undefined) ?? allowTarget.current?.path ?? null;
+  const allowFolder = async () => {
+    const path = allowPath();
+    if (path === null || busy !== null) return;
+    const target = allowTarget.current;
+    if (held.current.allowFolder === undefined) {
+      setFailure({ kind: 'transport', status: null, message: 'allowing another folder is not available in this build' });
+      return;
+    }
+    setBusy(path);
+    const answer = await held.current.allowFolder(path).catch((error: Error) => ({ outcome: 'unreachable' as const, message: error.message }));
+    setBusy(null);
+    if (answer.outcome !== 'ok') {
+      setFailure(classifyWireFailure(answer));
+      return;
+    }
+    setFailure(null);
+    /* The request that was refused is the one asked again (the refusal's path may be its realpath). */
+    if (target) target.again();
+    else await attach(path);
+  };
+  const chooseAnother = () => {
+    setFailure(null);
+    if (native !== undefined) void pickNative();
+    else setBrowseOpen(true);
+  };
 
   return (
     <section className="attach" role="dialog" aria-label="Open a project" data-testid="attach">
@@ -347,6 +433,18 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
             Open folder
           </button>
         )}
+        {native !== undefined ? (
+          <button
+            type="button"
+            className="attach-secondary"
+            data-testid="attach-browse-here"
+            aria-expanded={showBrowse}
+            onClick={() => setBrowseOpen((v) => !v)}
+          >
+            <Glyph name="folder" size={16} />
+            Browse here
+          </button>
+        ) : null}
         <button
           type="button"
           className="attach-secondary"
@@ -355,18 +453,19 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
           onClick={() => setCloneOpen((v) => !v)}
         >
           <Glyph name="git" size={16} />
-          Clone from GitHub
+          Clone a repository
         </button>
       </div>
 
       {cloneOpen && (
         <div className="attach-pathrow" data-testid="attach-clone">
           <input
+            ref={cloneUrlRef}
             type="text"
             className="attach-path-input"
             data-testid="attach-clone-url"
-            aria-label="GitHub repository URL"
-            placeholder="https://github.com/owner/repo"
+            aria-label="Repository URL"
+            placeholder="https://… or git@host:owner/repo.git"
             spellCheck={false}
             autoComplete="off"
             autoFocus
@@ -388,8 +487,55 @@ export function AttachDialog({ transport, onAttached, onClose }: AttachDialogPro
           </button>
         </div>
       )}
+      {cloneOpen && (
+        <div className="attach-pathrow" data-testid="attach-clone-destrow">
+          <input
+            ref={cloneDestRef}
+            type="text"
+            className="attach-path-input"
+            data-testid="attach-clone-dest"
+            aria-label="Clone into this folder"
+            title="Clone into this folder (a new or empty folder)"
+            placeholder="Clone into (a new or empty folder)"
+            spellCheck={false}
+            autoComplete="off"
+            value={destShown}
+            disabled={busy !== null}
+            onChange={(event) => setCloneDest(event.target.value)}
+          />
+          {typeof desktopBridge()?.pickFolder === 'function' ? (
+            <button type="button" className="attach-native" data-testid="attach-clone-choose" disabled={busy !== null} onClick={() => void chooseDest()}>
+              Choose
+            </button>
+          ) : null}
+        </div>
+      )}
 
-      {failure !== null && <FailureStrip failure={failure} />}
+      {failure !== null && (
+        <FailureStrip
+          failure={failure}
+          onAction={(intent) => {
+            if (intent === 'retry') lastTry.current?.();
+            else if (intent === 'check-url') {
+              setCloneOpen(true);
+              cloneUrlRef.current?.focus();
+              cloneUrlRef.current?.select();
+            } else if (intent === 'choose-folder') void chooseDest();
+            else if (intent === 'connect-github') onConnectGithub?.();
+            else if (intent === 'go-up') {
+              setBrowseOpen(true);
+              if (listing?.parent) void navigate(listing.parent);
+            } else if (intent === 'pick-another') chooseAnother();
+            else if (intent === 'allow-folder') void allowFolder();
+          }}
+          canAct={(intent) =>
+            intent !== 'attach-anyway' &&
+            (intent !== 'connect-github' || onConnectGithub !== undefined) &&
+            (intent !== 'retry' || lastTry.current !== null) &&
+            (intent !== 'allow-folder' || (allowPath() !== null && held.current.allowFolder !== undefined))
+          }
+        />
+      )}
 
       <div className="attach-scroll">
         {hasRecents && (
@@ -591,8 +737,17 @@ function EntryRow({
  * asserts the tone is asserting the paint, which a test asserting the sentence
  * is not.
  */
-function FailureStrip({ failure }: { failure: AttachFailure }) {
+function FailureStrip({
+  failure,
+  onAction,
+  canAct = () => false,
+}: {
+  failure: AttachFailure;
+  onAction?: (intent: FailureAction['intent']) => void;
+  canAct?: (intent: FailureAction['intent']) => boolean;
+}) {
   const copy = attachFailureCopy(failure);
+  const act = onAction !== undefined && canAct(copy.action.intent);
   const glyph = copy.tone === 'fault' ? 'alert' : copy.tone === 'note' ? 'info' : 'x';
 
   return (
@@ -620,6 +775,23 @@ function FailureStrip({ failure }: { failure: AttachFailure }) {
           </span>
         )}
       </span>
+      {/* The one thing to do about it, as a control (0.1.8.1 C4): "Connect GitHub" when the refusal named it. */}
+      {act ? (
+        <button type="button" className="attach-native" data-testid="attach-failure-action" data-intent={copy.action.intent} onClick={() => onAction?.(copy.action.intent)}>
+          {copy.action.label}
+        </button>
+      ) : null}
+      {copy.secondary && onAction !== undefined && canAct(copy.secondary.intent) ? (
+        <button
+          type="button"
+          className="attach-native"
+          data-testid="attach-failure-secondary"
+          data-intent={copy.secondary.intent}
+          onClick={() => copy.secondary && onAction(copy.secondary.intent)}
+        >
+          {copy.secondary.label}
+        </button>
+      ) : null}
     </div>
   );
 }

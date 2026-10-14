@@ -101,13 +101,24 @@ export function __forceParserAbortedForTest(detail: string | undefined): void {
   abortedWith = detail;
 }
 
-const WASM_BY_LANG: Record<Lang, string> = {
+/** The grammar per language (tsx below). See {@link LOADED_GRAMMARS} for the full loaded list. */
+export const WASM_BY_LANG: Readonly<Record<Lang, string>> = {
   ts: 'tree-sitter-typescript.wasm',
   js: 'tree-sitter-javascript.wasm',
   py: 'tree-sitter-python.wasm',
   go: 'tree-sitter-go.wasm',
   java: 'tree-sitter-java.wasm',
 };
+
+/** tsx has its own grammar, loaded beside the table above. */
+const TSX_WASM = 'tree-sitter-tsx.wasm';
+
+/**
+ * EVERY grammar file `initParser` loads — the one list the desktop installer
+ * keeps (0.1.8.1 D2); every other `tree-sitter-*.wasm` is pruned. Add a
+ * grammar to the loader and it is here, because the loader reads these names.
+ */
+export const LOADED_GRAMMARS: readonly string[] = [...new Set([...Object.values(WASM_BY_LANG), TSX_WASM])];
 
 export async function initParser(): Promise<void> {
   if (parser) return;
@@ -134,7 +145,7 @@ export async function initParser(): Promise<void> {
     languages.set(lang, await Language.load(path.join(pkgDir, 'wasm', wasm)));
   }
   // tsx uses a separate grammar
-  languages.set('tsx', await Language.load(path.join(pkgDir, 'wasm', 'tree-sitter-tsx.wasm')));
+  languages.set('tsx', await Language.load(path.join(pkgDir, 'wasm', TSX_WASM)));
   parser = new Parser();
 }
 

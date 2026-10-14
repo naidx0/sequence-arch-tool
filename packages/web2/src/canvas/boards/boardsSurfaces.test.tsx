@@ -149,17 +149,17 @@ describe('the whiteboard on the boards store', () => {
     mountWhiteboard();
     await waitFor(() => expect(screen.getByTestId('board-tab-whiteboard')).toBeTruthy());
     fireEvent.click(screen.getByTestId('board-tab-new'));
-    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('space-2'));
-    expect(screen.getByTestId('board-tab-space-2').getAttribute('aria-selected')).toBe('true');
+    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('board-2'));
+    expect(screen.getByTestId('board-tab-board-2').getAttribute('aria-selected')).toBe('true');
     fireEvent.click(screen.getByTestId('board-tab-whiteboard'));
     await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('whiteboard'));
-    fireEvent.doubleClick(screen.getByTestId('board-tab-space-2'));
+    fireEvent.doubleClick(screen.getByTestId('board-tab-board-2'));
     fireEvent.change(screen.getByTestId('board-tab-rename'), { target: { value: 'Sketches' } });
     fireEvent.keyDown(screen.getByTestId('board-tab-rename'), { key: 'Enter' });
     await waitFor(() => expect(within(screen.getByTestId('board-tabs')).getByText('Sketches')).toBeTruthy());
-    fireEvent.click(screen.getByTestId('board-tab-delete-space-2'));
+    fireEvent.click(screen.getByTestId('board-tab-delete-board-2'));
     fireEvent.click(screen.getByTestId('board-delete-ok'));
-    await waitFor(() => expect(screen.queryByTestId('board-tab-space-2')).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId('board-tab-board-2')).toBeNull());
     expect(server.boards().map((b) => b.id)).toEqual(['architecture', 'whiteboard']);
   });
 

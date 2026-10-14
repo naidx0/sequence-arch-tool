@@ -85,3 +85,119 @@ test('keeps everything that loads at runtime', () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+/* ── 0.1.8.1 D2: what the installed server never loads ───────────────────── */
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { pruneShippedServer } = require(path.resolve(__dirname, '..', '..', 'scripts', 'prune-bundle.cjs')) as {
+  pruneShippedServer: (dir: string, opts: { keepGrammars: string[] }) => { removed: string[]; bytes: number };
+};
+
+function shippedFixture(): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'seq-prune-d2-'));
+  const pkg = (deps: Record<string, string>) => JSON.stringify({ dependencies: deps });
+  const files: Record<string, string> = {
+    'package.json': pkg({ ws: '1', pg: '8', 'node-pty': '1', zod: '3' }),
+    'src/scan.ts': 'source',
+    'test/fixtures/x.ts': 'test',
+    'tsconfig.json': '{}',
+    'components/groups.json': '{}',
+    'dist/cli.js': 'unbundled',
+    'dist/server/repoServer.js': 'unbundled',
+    'dist/sequence-server.cjs': 'bundle',
+    'dist/sequence-server-entry.cjs': 'entry',
+    'dist/sequence-mcp.cjs': 'mcp',
+    'dist/sequence-html-worker.cjs': 'html worker',
+    'dist/claude-agent-acp-launch.mjs': 'launcher',
+    'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.js': 'runtime',
+    'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.wasm': 'runtime',
+    'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-typescript.wasm': 'grammar',
+    'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-rust.wasm': 'grammar',
+    'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-php.wasm': 'grammar',
+    'node_modules/zod/index.js': 'runtime',
+    'node_modules/zod/src/index.ts': 'source',
+    'node_modules/node-pty/lib/index.js': 'runtime',
+    'node_modules/node-pty/deps/winpty/x.cc': 'source',
+    'node_modules/node-pty/third_party/conpty/x.dll': 'source',
+    'node_modules/node-pty/src/unix/pty.cc': 'source',
+    'node_modules/pg/package.json': pkg({ 'pg-protocol': '1', shared: '1' }),
+    'node_modules/pg-protocol/package.json': pkg({}),
+    'node_modules/shared/package.json': pkg({}),
+    'node_modules/ws/package.json': pkg({ shared: '1' }),
+  };
+  for (const [rel, body] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), body);
+  }
+  return root;
+}
+
+test('D2: drops sources, the unbundled dist, unused grammars, dependency sources and pg', () => {
+  const root = shippedFixture();
+  try {
+    const out = pruneShippedServer(root, { keepGrammars: ['tree-sitter-typescript.wasm'] });
+    for (const gone of [
+      'src',
+      'test',
+      'tsconfig.json',
+      'dist/cli.js',
+      'dist/server',
+      'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-rust.wasm',
+      'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-php.wasm',
+      'node_modules/zod/src',
+      'node_modules/node-pty/deps',
+      'node_modules/node-pty/third_party',
+      'node_modules/node-pty/src',
+      'node_modules/pg',
+      'node_modules/pg-protocol',
+    ]) {
+      assert.ok(!exists(root, gone), `${gone} should have been pruned`);
+      assert.ok(out.removed.includes(gone), `${gone} is not reported as removed`);
+    }
+    for (const kept of [
+      'components/groups.json',
+      'dist/sequence-server.cjs',
+      'dist/sequence-server-entry.cjs',
+      'dist/sequence-mcp.cjs',
+      /* review B: the bundle runs the HTML converter in a worker beside itself */
+      'dist/sequence-html-worker.cjs',
+      'dist/claude-agent-acp-launch.mjs',
+      'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.js',
+      'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.wasm',
+      'node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-typescript.wasm',
+      'node_modules/zod/index.js',
+      'node_modules/node-pty/lib/index.js',
+      /* pg needs it, and so does ws: it stays */
+      'node_modules/shared/package.json',
+    ]) {
+      assert.ok(exists(root, kept), `${kept} was pruned but the installed server needs it`);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('D2: refuses to prune when the bundle is missing or a loaded grammar is absent', () => {
+  const root = shippedFixture();
+  try {
+    assert.throws(() => pruneShippedServer(root, { keepGrammars: [] }), /keepGrammars is empty/);
+    assert.throws(() => pruneShippedServer(root, { keepGrammars: ['tree-sitter-cobol.wasm'] }), /does not have/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+  const bare = shippedFixture();
+  try {
+    fs.rmSync(path.join(bare, 'dist', 'sequence-server.cjs'));
+    assert.throws(() => pruneShippedServer(bare, { keepGrammars: ['tree-sitter-typescript.wasm'] }), /no server bundle/);
+    assert.ok(exists(bare, 'dist/cli.js'), 'the unbundled dist is kept when it is the only server');
+  } finally {
+    fs.rmSync(bare, { recursive: true, force: true });
+  }
+});
+
+test('D2: prepare-server keeps exactly the grammars the scanner loads (its own table), and boots the entry it ships', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', '..', 'scripts', 'prepare-server.mjs'), 'utf8');
+  assert.match(src, /pruneShippedServer\(ANALYZER_OUT, \{ keepGrammars: \[\.\.\.LOADED_GRAMMARS\] \}\)/);
+  assert.match(src, /'parse', 'treesitter\.js'/);
+  assert.match(src, /'dist', 'sequence-server-entry\.cjs'\), '--help'\]/);
+});

@@ -296,12 +296,21 @@ export type RepoSlice =
  */
 export type AttachFailure =
   | { kind: 'no-manifests'; repoName: string; message: string }
-  | { kind: 'outside-browse-root'; message: string }
+  /** `path`: what the refusal names to allow (`OutsideHomeRefusal.path`, 0.1.8.1 C5), when it names one. */
+  | { kind: 'outside-browse-root'; message: string; path?: string }
   | { kind: 'home-directory-itself'; message: string }
   | { kind: 'not-found'; message: string }
   | { kind: 'not-a-directory'; message: string }
   | { kind: 'scan-threw'; message: string }
-  | { kind: 'transport'; message: string; status: number | null };
+  | {
+      kind: 'transport';
+      message: string;
+      status: number | null;
+      /** True when `message` is the server's own sentence (its body's `error`), not one written for the status. */
+      said?: boolean;
+      /** The action the refusal named (its body's `action`, e.g. 'connect-github'). 0.1.8.1 C4. */
+      serverAction?: string;
+    };
 
 /**
  * The attach dialog. Unsheeted (§5.6) and designed by 2.4.

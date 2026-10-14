@@ -183,7 +183,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
               data-board-kind={b.kind}
               /* The name is the accessible name and the tooltip even when a narrow board folds the tag to its icon (board.css). */
               aria-label={b.name}
-              title={b.kind === 'architecture' ? `${b.name}: the scanned architecture, with a drawing layer on top` : `${b.name}: a space (double-click to rename)`}
+              title={b.kind === 'architecture' ? `${b.name}: the scanned architecture, with a drawing layer on top` : `${b.name}: a board (double-click to rename)`}
               onClick={() => onOpen(b)}
               onDoubleClick={() => {
                 /* The architecture board is named by what it is; whiteboards are named by you. */
@@ -212,8 +212,8 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
         type="button"
         className="btag-add"
         data-testid="board-tab-new"
-        aria-label="New space"
-        title="New space"
+        aria-label="New board"
+        title="New board"
         disabled={index === null}
         onClick={onCreate}
       >
@@ -281,7 +281,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
               }}
             >
               <S2Icon name="plus" small />
-              <span className="bview-item-t">New space</span>
+              <span className="bview-item-t">New board</span>
             </button>
           </div>
         ) : null}
@@ -296,7 +296,7 @@ export function BoardTabs({ index, current, onOpen, onCreate, onRename, onDelete
             const n = itemCount?.(confirm.id) ?? null;
             return n === null ? undefined : [{ label: confirm.name, meta: n === 1 ? '1 mark' : `${n} marks` }];
           })()}
-          confirmLabel="Delete space"
+          confirmLabel="Delete board"
           testId="board-delete-confirm"
           okTestId="board-delete-ok"
           cancelTestId="board-delete-cancel"

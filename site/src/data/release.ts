@@ -14,7 +14,7 @@
  * rot a release behind.
  */
 export const PUBLIC_REPO = 'https://github.com/naidx0/sequence-arch-tool';
-export const VERSION = '0.1.7';
+export const VERSION = '0.1.8';
 export const RELEASE_TAG = `v${VERSION}`;
 export const RELEASE_URL = `${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
 
@@ -27,19 +27,19 @@ export const RELEASE_URL = `${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
  * '0.1.4', update the sizes below from the published assets, and set
  * `NEXT_BUILDS_PUBLISHED` to true. Nothing else on the page needs to change.
  */
-export const NEXT_VERSION = '0.1.7';
+export const NEXT_VERSION = '0.1.8';
 export const NEXT_BUILDS_PUBLISHED = (VERSION as string) === NEXT_VERSION;
 
 /** Short notes for the release, in the order a person meets them. */
 export const RELEASE_NOTES = [
-  'Workspaces tree: chats under each workspace, and New chat lands in the open one.',
-  'Whiteboard: select and drag by default; ask for a diagram and it lays itself out.',
-  'Ask in place: point at a box on the whiteboard or the map and ask about exactly that.',
-  'Architecture board with one view menu; Files with a one-line breadcrumb and rendered Markdown; a one-line terminal prompt.',
-  'Reasoning slider; Agents show Context and Output as reported.',
-  'Claude sets itself up from an 8.2 MB download; restart and continue; import old Claude Code and Codex chats.',
-  'Edit from here, several agents at once with compare and merge, open a pull request.',
-  'Drawings and chart cards inline in chat.',
+  'Components: 38 ready-made skills ship inside the app and load only when a chat needs one, with an approval card.',
+  'Spaces: agents draw with colours, lines, frames, SVG, scenes and video, shown inline with Open on surface.',
+  'Free web search and fetch for Claude, Codex and Sequence’s own model, with no key.',
+  'Branch switching from the app; the board rescans after any switch, and files show branch status.',
+  'Updates check at launch and finish on restart; Mac downloads only what changed after the first update.',
+  'The context meter shows the real window, the same in the status bar and the Agents pane.',
+  'Chat search looks inside messages; switching projects no longer reloads the page.',
+  '/goal runs on Claude and Codex; Cmd+C and Cmd+V work on Mac.',
 ] as const;
 
 /**
@@ -75,7 +75,7 @@ export type Installer = {
 };
 
 /**
- * 0.1.7 sizes from `gh release view v0.1.7` (2026-10-12), decimal megabytes.
+ * 0.1.8 sizes from `gh release view v0.1.8` (2026-10-13), decimal megabytes.
  * The Intel Mac files are on the release but not offered (owner, 2026-10-10).
  */
 export const INSTALLERS: Installer[] = [
@@ -84,7 +84,7 @@ export const INSTALLERS: Installer[] = [
     os: 'Windows',
     short: 'Windows',
     file: `Sequence Setup ${VERSION}.exe`,
-    size: '93 MB',
+    size: '96 MB',
     href: asset(`Sequence Setup ${VERSION}.exe`),
     ready: true,
   },
@@ -93,7 +93,7 @@ export const INSTALLERS: Installer[] = [
     os: 'macOS · Apple silicon',
     short: 'macOS',
     file: `Sequence-${VERSION}-arm64.dmg`,
-    size: '116 MB',
+    size: '120 MB',
     href: asset(`Sequence-${VERSION}-arm64.dmg`),
     ready: true,
   },
@@ -102,7 +102,7 @@ export const INSTALLERS: Installer[] = [
     os: 'Linux · AppImage',
     short: 'Linux',
     file: `Sequence-${VERSION}.AppImage`,
-    size: '117 MB',
+    size: '120 MB',
     href: asset(`Sequence-${VERSION}.AppImage`),
     ready: true,
   },

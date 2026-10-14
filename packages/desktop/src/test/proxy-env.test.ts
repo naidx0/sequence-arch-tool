@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { parseScutilProxy, parseWindowsInternetSettings, proxyEnvFromResolve, systemProxyEnv } from '../proxyEnv';
+import os from 'node:os';
+import { applyProxyEnv, parseScutilProxy, parseWindowsInternetSettings, proxyEnvFromResolve, proxyForFirstSpawn, readCachedProxyEnv, startProxyProbe, systemProxyEnv } from '../proxyEnv';
 
 /* Stubbed command output: nothing here runs reg, scutil or touches the machine's real proxy setting. */
 
@@ -104,13 +105,18 @@ test('systemProxyEnv: a PAC script is resolved through Electron for the registry
   assert.equal(out.NO_PROXY, 'localhost,127.0.0.1,::1');
 });
 
-test('main.ts reads the system proxy before the server is first started, hidden, and merges it into the child env', () => {
+test('B2: main.ts starts the proxy probe before the spawn but never awaits it; cached answer goes into the child env', () => {
   const main = fs.readFileSync(path.resolve(__dirname, '..', '..', 'src', 'main.ts'), 'utf8').replace(/\r\n/g, '\n');
-  const at = main.indexOf('await systemProxyEnv(');
+  const at = main.indexOf('startProxyProbe(');
   const start = main.indexOf('await controller.start(');
-  assert.ok(at > 0 && start > at, 'systemProxyEnv is awaited before controller.start');
+  assert.ok(at > 0 && start > at, 'the probe is started before controller.start');
+  assert.ok(!main.includes('await systemProxyEnv('), 'the spawn does not wait for the probe');
+  assert.ok(!/await proxy\.fresh/.test(main), 'the live probe is not awaited');
   assert.match(main, /env: serverEnv,/);
-  assert.match(main, /Object\.assign\(\s*serverEnv,/);
+  /* Review B: main.ts moves to `await proxyForFirstSpawn(proxy)` (first launch waits up to 1.5 s); either form is the cached-first spawn. */
+  assert.match(main, /applyProxyEnv\(serverEnv, (proxy\.cached|await proxyForFirstSpawn\(proxy\))\)/);
+  assert.match(main, /proxy\.fresh\.then\(\(fresh\) => applyProxyEnv\(serverEnv, fresh\)\)/);
+  assert.match(main, /path\.join\(userDataDir, 'system-proxy\.json'\)/);
   assert.match(main, /execFile\(cmd, args, \{ windowsHide: true/, 'reg and scutil run hidden');
   assert.match(main, /session\.defaultSession\.resolveProxy/);
 });
@@ -147,4 +153,76 @@ test('a PAC script that never answers is given up on after the timeout and appli
   assert.deepEqual(out, {});
   assert.ok(Date.now() - t0 < 2000);
   assert.match(logs.join('\n'), /did not answer in time/);
+});
+
+/* ── 0.1.8.1 B2: cached in userData, probed in parallel ── */
+
+test('B2: startProxyProbe hands back the cached answer at once while a slow probe is still running', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'seq-proxy-'));
+  const file = path.join(dir, 'system-proxy.json');
+  fs.writeFileSync(file, JSON.stringify({ HTTPS_PROXY: 'http://cached:8080', HTTP_PROXY: 'http://cached:8080', NO_PROXY: 'localhost' }));
+  let release!: (v: { HTTPS_PROXY?: string }) => void;
+  const slow = new Promise<{ HTTPS_PROXY?: string }>((r) => (release = r));
+  let probed = 0;
+  const t0 = Date.now();
+  const p = startProxyProbe({ file, env: {}, probe: () => { probed += 1; return slow; } });
+  assert.ok(Date.now() - t0 < 50, 'returns synchronously; nothing waits on the probe');
+  assert.deepEqual(p.cached, { HTTPS_PROXY: 'http://cached:8080', HTTP_PROXY: 'http://cached:8080', NO_PROXY: 'localhost' });
+  await new Promise((r) => setImmediate(r));
+  assert.strictEqual(probed, 1, 'the live probe runs in parallel');
+  release({ HTTPS_PROXY: 'http://fresh:3128', HTTP_PROXY: 'http://fresh:3128', NO_PROXY: 'localhost,127.0.0.1,::1' } as never);
+  const fresh = await p.fresh;
+  assert.strictEqual(fresh.HTTPS_PROXY, 'http://fresh:3128');
+  assert.strictEqual(JSON.parse(fs.readFileSync(file, 'utf8')).HTTPS_PROXY, 'http://fresh:3128', 'the cache is refreshed for the next launch');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('B2: no cache yet gives {}; variables the person set win over a cached proxy; a failed probe caches {}', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'seq-proxy-'));
+  const file = path.join(dir, 'system-proxy.json');
+  assert.deepEqual(readCachedProxyEnv(file, {}), {}, 'first launch: no cache');
+  fs.writeFileSync(file, JSON.stringify({ HTTPS_PROXY: 'http://cached:8080' }));
+  assert.deepEqual(readCachedProxyEnv(file, { HTTPS_PROXY: 'http://mine:1' }), {}, 'the person set one: the cache is not applied');
+  const p = startProxyProbe({ file, env: {}, probe: () => Promise.reject(new Error('reg failed')) });
+  assert.deepEqual(await p.fresh, {});
+  assert.deepEqual(readCachedProxyEnv(file, {}), {}, 'the stale proxy is gone from the cache');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('B2: applyProxyEnv replaces the proxy keys, so a fresh {} clears a stale cached proxy', () => {
+  const env: NodeJS.ProcessEnv = { ELECTRON_RUN_AS_NODE: '1', HTTPS_PROXY: 'http://stale:1', HTTP_PROXY: 'http://stale:1', NO_PROXY: 'x' };
+  applyProxyEnv(env, {});
+  assert.deepEqual(env, { ELECTRON_RUN_AS_NODE: '1' });
+  applyProxyEnv(env, { HTTPS_PROXY: 'http://h:1', HTTP_PROXY: 'http://h:1', NO_PROXY: 'localhost' });
+  assert.strictEqual(env.HTTPS_PROXY, 'http://h:1');
+});
+
+/* ── review B: the first launch (no cache) waits briefly for the live probe ── */
+
+test('review B: with no cache the first spawn waits for the live probe (up to the limit)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'seq-proxy-'));
+  const file = path.join(dir, 'system-proxy.json');
+  const quick = startProxyProbe({ file, env: {}, probe: () => new Promise((r) => setTimeout(() => r({ HTTPS_PROXY: 'http://live:1', HTTP_PROXY: 'http://live:1' }), 30)) });
+  assert.strictEqual(quick.hadCache, false);
+  assert.strictEqual((await proxyForFirstSpawn(quick, 1500)).HTTPS_PROXY, 'http://live:1', 'the first spawn gets the live answer');
+  await quick.fresh;
+
+  const cached = startProxyProbe({ file, env: {}, probe: () => new Promise(() => {}) });
+  assert.strictEqual(cached.hadCache, true);
+  const t0 = Date.now();
+  assert.strictEqual((await proxyForFirstSpawn(cached, 1500)).HTTPS_PROXY, 'http://live:1', 'with a cache: the cached answer');
+  assert.ok(Date.now() - t0 < 100, 'and no wait at all');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('review B: a first-launch probe slower than the limit does not hold the spawn; its answer is cached for next time', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'seq-proxy-'));
+  const file = path.join(dir, 'system-proxy.json');
+  const slow = startProxyProbe({ file, env: {}, probe: () => new Promise((r) => setTimeout(() => r({ HTTPS_PROXY: 'http://late:1', HTTP_PROXY: 'http://late:1' }), 300)) });
+  const t0 = Date.now();
+  assert.deepEqual(await proxyForFirstSpawn(slow, 50), {}, 'spawned without a proxy at the limit');
+  assert.ok(Date.now() - t0 < 250);
+  await slow.fresh;
+  assert.strictEqual(readCachedProxyEnv(file, {}).HTTPS_PROXY, 'http://late:1', 'the late answer is there for the next spawn');
+  fs.rmSync(dir, { recursive: true, force: true });
 });

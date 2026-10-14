@@ -197,6 +197,28 @@ function readTabs(): ChromeTabState {
   }
 }
 
+/** Where the maximized surface is remembered (0.1.8.1 C8). */
+export const FULL_PANE_KEY = 'v3.fullPane';
+
+/** The remembered maximized surface, if it is still open on the stage; else none. */
+export function readFullPane(tabs: ChromeTabState): ChromeTabId | null {
+  try {
+    const id = localStorage.getItem(FULL_PANE_KEY) as ChromeTabId | null;
+    return id && (LIVE_PILLS as readonly string[]).includes(id) && isVisible(tabs, id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeFullPane(id: ChromeTabId | null): void {
+  try {
+    if (id) localStorage.setItem(FULL_PANE_KEY, id);
+    else localStorage.removeItem(FULL_PANE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Open (or focus) a surface; one more than `max` on the stage retires the least recently focused other (it stays a pill). */
 export function openOnStage(state: ChromeTabState, id: ChromeTabId, max: number = STAGE_MAX): ChromeTabState {
   let next = activateTab(state, id);
@@ -211,6 +233,20 @@ export function openOnStage(state: ChromeTabState, id: ChromeTabId, max: number 
     next = { ...next, active: id };
   }
   return next;
+}
+
+/**
+ * A plain click on a surface's name (0.1.8.1 C1, audit P1-5: "tabs add panes instead of switching"): an open surface
+ * comes forward and the stage keeps its panes; a closed one takes the stage alone. A split is opened only on purpose:
+ * Ctrl/Cmd+click (`openOnStage`), the pane's Split button, or a drag.
+ */
+export function switchOnStage(state: ChromeTabState, id: ChromeTabId): ChromeTabState {
+  /* A surface that is not shipped (AI Canvas, Browser) is not a stage to switch to: nothing changes. */
+  if (!(LIVE_PILLS as readonly ChromeTabId[]).includes(id)) return state;
+  if (isVisible(state, id)) return activateTab(state, id);
+  let next = openOnStage(state, id, Number.MAX_SAFE_INTEGER);
+  for (const other of LIVE_PILLS) if (other !== id && isVisible(next, other)) next = minimizeTab(next, other);
+  return { ...next, active: id };
 }
 
 /** Retire the oldest surfaces until the stage fits `max` (a resize below the narrow width does this too). */
@@ -455,7 +491,9 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
   useEffect(() => {
     setTabs((prev) => fitStage(prev, stageMax));
   }, [stageMax]);
-  const [full, setFull] = useState<ChromeTabId | null>(null);
+  /* A maximized surface is remembered (0.1.8.1 C8, audit P2-5): it comes back maximized when it is still open. */
+  const [full, setFull] = useState<ChromeTabId | null>(() => readFullPane(tabs));
+  useEffect(() => writeFullPane(full), [full]);
   const [mac, setMac] = useState(false);
   const [chatMenu, setChatMenu] = useState(false);
   const chatMenuRef = useRef<HTMLDivElement | null>(null);
@@ -526,7 +564,8 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
       const tab = map[id];
       /* A surface opened from anywhere is shown: out of a full-screen pane, and out of narrow Chat. */
       if (tab) {
-        setTabs((prev) => openOnStage(prev, tab, stageMaxRef.current));
+        /* A command opens a surface the way a plain click on its name does: it switches (0.1.8.1 C1, review S8). */
+        setTabs((prev) => switchOnStage(prev, tab));
         setFull(null);
         setView('stage');
       }
@@ -1176,7 +1215,9 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
   const agentsSwap = !narrow && agentsOpen && room.agentsOverlay;
   /* Folded for room (narrow, or a dock needs the width): the stored choice
      stands aside, and opening it peeks over the content. */
-  const forced = narrow || room.foldRail;
+  /* Maximize folds the sidebar too (0.1.8.1 C8, audit P2-5: "Maximize reopens the sidebar"): the stored choice stands
+     aside, as it does when a dock needs the room, and the surface strip stays. */
+  const forced = narrow || room.foldRail || (full !== null && shown.length === 1 && shown[0] === full);
   forcedRef.current = forced;
   const railShut = forced ? !peek : collapsed;
   const peeking = forced && peek;
@@ -1627,7 +1668,9 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
                       setFull(null);
                       /* The name opens a closed surface or brings an open one forward;
                          only the × closes (round 7, B1: "closing is unclear"). */
-                      if (!focused) setTabs((prev) => openOnStage(prev, id, stageMaxRef.current));
+                      /* A plain click switches; Ctrl/Cmd+click opens the surface beside what is showing (C1). */
+                      const beside = e.ctrlKey || e.metaKey;
+                      if (!focused) setTabs((prev) => (beside ? openOnStage(prev, id, stageMaxRef.current) : switchOnStage(prev, id)));
                       /* "Open new surfaces large": the name just clicked is the large one. */
                       setLargeId(id);
                       setFocusManual(false);
@@ -1795,7 +1838,8 @@ export function Shell2({ onOpenSettings, onOpenProject, onOpenWorkspace, openFai
           const surface: ChromeTabId | null =
             id === 'canvas.whiteboard' ? 'whiteboard' : id === 'canvas.board' ? 'architecture' : id === 'surface.files' ? 'files' : id === 'surface.terminal' ? 'terminal' : id === 'surface.agents' ? 'agents' : null;
           if (surface) {
-            setTabs((prev) => openOnStage(prev, surface, stageMaxRef.current));
+            /* The palette opens a surface the way a plain click on its name does: it switches (0.1.8.1 C1, review S8). */
+            setTabs((prev) => switchOnStage(prev, surface));
             setFull(null);
             setView('stage');
           }

@@ -94,11 +94,16 @@ async function choose(route: string) {
 }
 
 describe('<FirstRun>', () => {
-  it('Welcome to Sequence: four big options in order, no project picker, no profile names', async () => {
+  it('Welcome to Sequence: four big options, the ready one first (P0-3), no project picker, no profile names', async () => {
     render(<FirstRun client={fakeClient()} onDone={() => {}} />);
-    const opts = await screen.findAllByTestId('first-run-option');
-    expect(opts.map((o) => o.getAttribute('data-option'))).toEqual(['claude', 'codex', 'local', 'key']);
-    expect(opts.map((o) => o.querySelector('.fr-option-name')!.textContent)).toEqual(['Claude Code', 'Codex', 'Local model', 'API key']);
+    /* Codex is the ready one in PROVIDERS: it moves ahead of Claude Code; the rest keep their order. */
+    await waitFor(() => expect(screen.getAllByTestId('first-run-option')[0]!.getAttribute('data-option')).toBe('codex'));
+    const opts = screen.getAllByTestId('first-run-option');
+    expect(opts.map((o) => o.getAttribute('data-option'))).toEqual(['codex', 'claude', 'local', 'key']);
+    expect(opts.map((o) => o.querySelector('.fr-option-name')!.textContent)).toEqual(['Codex', 'Claude Code', 'Local model', 'API key']);
+    /* Exactly one is ready: it is the preselected one, and the one primary button names it. */
+    expect(opts.filter((o) => o.getAttribute('data-preselected') === 'true').map((o) => o.getAttribute('data-option'))).toEqual(['codex']);
+    expect(screen.getByTestId('first-run-use-ready').textContent).toBe('Use Codex');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Welcome to Sequence');
     expect(screen.getByTestId('first-run').getAttribute('aria-label')).toBe('Add an agent');
     expect(screen.queryByTestId('first-run-repos')).toBeNull();
@@ -129,7 +134,7 @@ describe('<FirstRun>', () => {
       fireEvent.click(await screen.findByTestId('first-run-start'));
       expect(await screen.findByTestId('first-run-setup')).toBeTruthy();
       expect(onDone).not.toHaveBeenCalled();
-      expect(calls).toEqual(['GET /api/local/setup', 'GET /api/acp/agents', 'POST /api/acp/agents/connect', 'GET /api/agent-settings']);
+      expect(calls).toEqual(['GET /api/ai-config', 'GET /api/local/setup', 'GET /api/acp/agents', 'POST /api/acp/agents/connect', 'GET /api/agent-settings']);
     } finally {
       fetchSpy.mockRestore();
     }
@@ -228,7 +233,79 @@ describe('<FirstRun>', () => {
     expect(asked).toHaveLength(0);
     expect(done).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('first-run-model'));
-    expect((await screen.findAllByTestId('first-run-option')).length).toBeGreaterThan(0);
+    /* P0-3: Connect a model goes to the model route, never back to the picker it came from. */
+    expect(screen.getByTestId('first-run').getAttribute('data-step')).toBe('route');
+    expect(screen.getByTestId('first-run-route').getAttribute('data-route')).toBe('local');
+    expect(screen.queryByTestId('first-run-options')).toBeNull();
+    expect(await screen.findByTestId('first-run-local')).toBeTruthy();
+    /* The API key route is one click on from there. */
+    fireEvent.click(screen.getByTestId('first-run-to-key'));
+    expect(await screen.findByTestId('first-run-key')).toBeTruthy();
+  });
+
+  it('first-run-model never lands on pick, for every state that offers it', async () => {
+    for (const state of ['install', 'update', 'attention'] as const) {
+      const client = fakeClient({
+        providers: async () => ({ ok: true, body: [{ ...PROVIDERS[0], state }] }),
+      });
+      const { unmount } = render(<FirstRun client={client} onDone={() => {}} onAskAgent={() => {}} canAnswer={false} />);
+      await choose('claude');
+      fireEvent.click(await screen.findByTestId('first-run-model'));
+      expect(screen.getByTestId('first-run').getAttribute('data-step'), state).not.toBe('pick');
+      expect(screen.queryByTestId('first-run-options'), state).toBeNull();
+      unmount();
+    }
+  });
+
+  it('with Claude Code signed in, first run is ONE click to the setup (P0-3)', async () => {
+    const calls: string[] = [];
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((async (u: string, init?: RequestInit) => {
+      calls.push(`${init?.method ?? 'GET'} ${u}`);
+      return new Response(JSON.stringify({ agents: [] }), { status: 200 });
+    }) as unknown as typeof fetch);
+    try {
+      const client = fakeClient({
+        providers: async () => ({ ok: true, body: [{ ...PROVIDERS[0], state: 'ready', plan: 'Max' }, { ...PROVIDERS[1], state: 'install', installed: false }] }),
+      });
+      render(<FirstRun client={client} onDone={() => {}} />);
+      const use = await screen.findByTestId('first-run-use-ready');
+      expect(use.textContent).toBe('Use Claude Code');
+      /* It is where focus starts, so even Enter is that one click. */
+      await waitFor(() => expect(document.activeElement).toBe(use));
+      fireEvent.click(use);
+      expect(await screen.findByTestId('first-run-setup')).toBeTruthy();
+      expect(calls).toContain('POST /api/acp/agents/connect');
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it('no ready option: no primary button and nothing preselected (negative control)', async () => {
+    const client = fakeClient({ providers: async () => ({ ok: true, body: [{ ...PROVIDERS[0] }, { ...PROVIDERS[1], state: 'signIn' }] }) });
+    render(<FirstRun client={client} onDone={() => {}} />);
+    await waitFor(() => expect(screen.getAllByTestId('first-run-option')[0]!.getAttribute('data-state')).toBe('signIn'));
+    expect(screen.queryByTestId('first-run-use-ready')).toBeNull();
+    expect(screen.getAllByTestId('first-run-option').some((o) => o.getAttribute('data-preselected'))).toBe(false);
+  });
+
+  it('a running Ollama makes Local model a ready option, sorted first, and its one button saves that model', async () => {
+    const wrote: unknown[] = [];
+    const settings = {
+      read: async () => ({ outcome: 'ok' as const, body: { profiles: [], localProviders: [{ name: 'Ollama', baseUrl: 'http://127.0.0.1:11434/v1', models: ['qwen3:8b'] }] } }),
+      write: async (d: unknown) => {
+        wrote.push(d);
+        return { outcome: 'ok' as const, body: {} };
+      },
+      selectProfile: async () => ({ outcome: 'ok' as const, body: {} }),
+    } as unknown as import('../settings/settingsClient').SettingsClient;
+    const client = fakeClient({ providers: async () => ({ ok: true, body: [{ ...PROVIDERS[0] }] }) });
+    render(<FirstRun client={client} onDone={() => {}} settings={settings} />);
+    const use = await screen.findByTestId('first-run-use-ready');
+    expect(use.textContent).toBe('Use qwen3:8b');
+    expect(screen.getAllByTestId('first-run-option')[0]!.getAttribute('data-option')).toBe('local');
+    fireEvent.click(use);
+    expect(await screen.findByTestId('first-run-setup')).toBeTruthy();
+    expect(JSON.stringify(wrote)).toContain('qwen3:8b');
   });
 
   it('an agent older than Sequence can drive gets Update in chat, with its versions in the prompt', async () => {
@@ -410,7 +487,8 @@ describe('first run holds the keyboard', () => {
     const { unmount } = render(<FirstRun client={fakeClient()} onDone={() => {}} />, { container: host.querySelector('#slot')! });
     const dialog = await screen.findByTestId('first-run');
     expect(dialog.getAttribute('aria-modal')).toBe('true');
-    await waitFor(() => expect(document.activeElement?.getAttribute('data-testid')).toBe('first-run-option'));
+    /* Codex is ready: focus starts on its one primary button. */
+    await waitFor(() => expect(document.activeElement?.getAttribute('data-testid')).toBe('first-run-use-ready'));
     expect(host.querySelector('#shell')!.hasAttribute('inert')).toBe(true);
     const buttons = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled)'));
     const last = buttons[buttons.length - 1]!;
@@ -425,11 +503,14 @@ describe('first run holds the keyboard', () => {
   });
 });
 
-/* ── SIGN IN THROUGH THE EMBEDDED TERMINAL ─────────────────────────────── */
+/* ── SIGN IN IN THE BROWSER (P0-2) ─────────────────────────────────────── */
 
 const term = vi.hoisted(() => ({
   calls: [] as (string | undefined)[],
   close: null as null | ((info: { code: number; reason: string }) => void),
+  output: '',
+  sent: [] as string[],
+  closed: 0,
 }));
 
 vi.mock('../terminal/terminalClient', async (orig) => {
@@ -443,51 +524,156 @@ vi.mock('../terminal/terminalClient', async (orig) => {
       ) => {
         term.calls.push(signIn);
         term.close = handlers.onClose ?? null;
-        handlers.onOutput(new TextEncoder().encode('FAKE-CLAUDE ran: claude auth login\n'));
-        return { sendInput() {}, resize() {}, close() {}, readyState: 1 };
+        handlers.onOutput(new TextEncoder().encode(term.output));
+        return {
+          sendInput(d: string | Uint8Array) {
+            term.sent.push(typeof d === 'string' ? d : new TextDecoder().decode(d));
+          },
+          resize() {},
+          close() {
+            term.closed += 1;
+          },
+          readyState: 1,
+        };
       },
     ),
   };
 });
 
-describe('Sign in', () => {
-  it('opens the Terminal running exactly the vendor command for that provider, and re-probes when it exits', async () => {
+const CLAUDE_URL = 'https://claude.com/cai/oauth/authorize?code=true&client_id=abc&redirect_uri=https%3A%2F%2Fplatform.claude.com%2Foauth%2Fcode%2Fcallback&state=xyz';
+
+describe('Sign in in the browser (P0-2)', () => {
+  function signInClient() {
+    const s = { signedIn: false, client: null as unknown as OnboardingClient & { calls: string[] } };
+    s.client = fakeClient({
+      providers: vi.fn(async (refresh?: boolean) => {
+        s.client.calls.push(refresh ? 'providers:refresh' : 'providers');
+        return { ok: true as const, body: [{ ...PROVIDERS[0], state: s.signedIn ? ('ready' as const) : ('signIn' as const) }, PROVIDERS[1]] };
+      }),
+    });
+    return s;
+  }
+
+  function reset(output: string) {
     term.calls.length = 0;
-    const client = fakeClient();
-    render(<FirstRun client={client} onDone={() => {}} />);
-    /* Only the signed-out provider offers it (negative control: Codex is ready). */
-    await choose('codex');
-    expect(screen.queryByTestId('first-run-setup-agent')).toBeNull();
-    fireEvent.click(await screen.findByTestId('first-run-back'));
-    await choose('claude');
-    fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
+    term.sent.length = 0;
+    term.closed = 0;
+    term.close = null;
+    term.output = output;
+  }
 
-    expect(screen.getByTestId('first-run-signin-command').textContent).toBe('Signing in to Claude Code');
-    await waitFor(() => expect(term.calls).toEqual(['claude']));
-    await waitFor(() =>
-      expect(screen.getByTestId('terminal-pane-surface').textContent).toContain('FAKE-CLAUDE ran: claude auth login'),
-    );
-
-    expect(client.calls.filter((c) => c === 'providers:refresh')).toHaveLength(0);
-    act(() => term.close?.({ code: 1000, reason: 'shell exited (code 0)' }));
-    await waitFor(() => expect(client.calls.filter((c) => c === 'providers:refresh')).toHaveLength(1));
-    expect(screen.getByTestId('first-run-signin-terminal').textContent).toContain('Finished');
-    /* UX study 2026-10-09: a finished sign-in is not a lost connection. */
-    expect(screen.getByTestId('terminal-pane-status').textContent).toBe('Command ended. Run again');
+  it('opens the vendor sign-in page in the system browser, shows one waiting state and no terminal, and moves on by itself once signed in', async () => {
+    reset(`${CLAUDE_URL}\nPaste code here if prompted >`);
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((async () => new Response(JSON.stringify({ agents: [] }), { status: 200 })) as unknown as typeof fetch);
+    const s = signInClient();
+    try {
+      render(<FirstRun client={s.client} onDone={() => {}} />);
+      await choose('claude');
+      fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
+      await waitFor(() => expect(term.calls).toEqual(['claude']));
+      /* The page went to the browser, whole, once. */
+      await waitFor(() => expect(opened).toHaveBeenCalledTimes(1));
+      expect(opened.mock.calls[0]![0]).toBe(CLAUDE_URL);
+      /* One state, with Cancel; nothing to read in a terminal, nothing pasted unless the CLI asks for it. */
+      expect(screen.getByTestId('first-run-signin-waiting').textContent).toContain('Waiting for you to finish in the browser…');
+      expect(screen.getByTestId('first-run-signin-cancel')).toBeTruthy();
+      expect(screen.queryByTestId('terminal-pane')).toBeNull();
+      expect(screen.queryByTestId('first-run-signin-log')).toBeNull();
+      fireEvent.click(screen.getByTestId('first-run-signin-details'));
+      expect(screen.getByTestId('first-run-signin-log').textContent).toContain(CLAUDE_URL);
+      /* The person finishes in the browser: the probe reads Ready and first run goes on to the setup with no click. */
+      s.signedIn = true;
+      await waitFor(() => expect(screen.getByTestId('first-run-setup')).toBeTruthy(), { timeout: 5000 });
+      expect(s.client.calls).toContain('providers:refresh');
+    } finally {
+      opened.mockRestore();
+      fetchSpy.mockRestore();
+    }
   });
 
-  it('a dropped socket (1006) during sign-in reads Terminal disconnected, not Command ended', async () => {
-    term.calls.length = 0;
-    const client = fakeClient();
-    render(<FirstRun client={client} onDone={() => {}} />);
-    await choose('claude');
-    fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
-    await waitFor(() => expect(term.calls).toEqual(['claude']));
-    act(() => term.close?.({ code: 1006, reason: '' }));
-    await waitFor(() => expect(screen.getByTestId('terminal-pane-status').textContent).toBe('Terminal disconnected. Reconnect'));
-    /* Review v2 nit: the header agrees with the pane: not "Finished". */
-    expect(screen.getByTestId('first-run-signin-terminal').textContent).toContain('Disconnected');
-    expect(screen.getByTestId('first-run-signin-terminal').textContent).not.toContain('Finished');
+  it('a CLI that opens the browser itself (Codex) is not opened twice; the page can still be opened again', async () => {
+    reset('Starting local login server on http://localhost:1455.\nIf your browser did not open, navigate to this URL to authenticate:\n\nhttps://auth.openai.com/oauth/authorize?redirect_uri=http%3A%2F%2Flocalhost%3A1455%2Fauth%2Fcallback\n');
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const s = signInClient();
+    try {
+      render(<FirstRun client={s.client} onDone={() => {}} />);
+      await choose('claude');
+      fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
+      await screen.findByTestId('first-run-signin-open');
+      expect(opened).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByTestId('first-run-signin-open'));
+      expect(opened.mock.calls[0]![0]).toContain('https://auth.openai.com/oauth/authorize');
+    } finally {
+      opened.mockRestore();
+    }
+  });
+
+  it('Cancel ends the sign-in and shows a clear Retry, which starts it again', async () => {
+    reset(`${CLAUDE_URL}\n`);
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(<FirstRun client={signInClient().client} onDone={() => {}} />);
+      await choose('claude');
+      fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
+      fireEvent.click(await screen.findByTestId('first-run-signin-cancel'));
+      expect(term.closed).toBeGreaterThan(0);
+      expect(screen.getByTestId('first-run-signin-retry-state').textContent).toContain('Sign-in cancelled.');
+      fireEvent.click(screen.getByTestId('first-run-signin-retry'));
+      await waitFor(() => expect(term.calls).toEqual(['claude', 'claude']));
+      expect(await screen.findByTestId('first-run-signin-waiting')).toBeTruthy();
+    } finally {
+      opened.mockRestore();
+    }
+  });
+
+  it('coming back to the window still signed out (the browser tab was closed) offers Retry', async () => {
+    reset(`${CLAUDE_URL}\n`);
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(<FirstRun client={signInClient().client} onDone={() => {}} />);
+      await choose('claude');
+      fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
+      await screen.findByTestId('first-run-signin-open');
+      act(() => {
+        window.dispatchEvent(new Event('focus'));
+      });
+      expect((await screen.findByTestId('first-run-signin-back')).textContent).toContain('Retry');
+    } finally {
+      opened.mockRestore();
+    }
+  });
+
+  it('a command that ends while still signed out says so with Retry, never a dead terminal', async () => {
+    reset(`${CLAUDE_URL}\n`);
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(<FirstRun client={signInClient().client} onDone={() => {}} />);
+      await choose('claude');
+      fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
+      await waitFor(() => expect(term.close).not.toBeNull());
+      act(() => term.close?.({ code: 1006, reason: '' }));
+      expect((await screen.findByTestId('first-run-signin-retry-state')).textContent).toContain('The sign-in stopped.');
+      expect(screen.getByTestId('first-run-signin-retry')).toBeTruthy();
+    } finally {
+      opened.mockRestore();
+    }
+  });
+
+  it('a CLI that asks for the code from the browser gets one field, which goes to the command', async () => {
+    reset(`${CLAUDE_URL}\nPaste code here if prompted >`);
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(<FirstRun client={signInClient().client} onDone={() => {}} />);
+      await choose('claude');
+      fireEvent.click(await screen.findByTestId('first-run-setup-agent'));
+      fireEvent.change(await screen.findByTestId('first-run-signin-code'), { target: { value: ' abc#123 ' } });
+      fireEvent.click(screen.getByTestId('first-run-signin-code-send'));
+      expect(term.sent).toEqual(['abc#123\r']);
+      expect(screen.queryByTestId('first-run-signin-code')).toBeNull();
+    } finally {
+      opened.mockRestore();
+    }
   });
 });
 

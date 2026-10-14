@@ -42,6 +42,7 @@ import type {
   GetStatusResponse,
   GetBrowseResponse,
   PostAttachRequest,
+  AllowedFolderRequest,
   PostAttachResponse,
   GraphSummary,
   PostDetachResponse,
@@ -351,7 +352,10 @@ import {
   validateGithubCloneUrl,
   cloneTargetFromFullName,
   safeRepoDirName,
-  type GithubCloneTarget,
+  parseGitRemoteUrl,
+  gitLsRemote,
+  type GitRemoteTarget,
+  type LsRemoteFn,
   type CloneRepoFn,
 } from './gitClone.js';
 import {
@@ -419,6 +423,7 @@ import { netFetchUrl } from './netFetch.js';
 import {
   buildPlainTree,
   buildDigest,
+  type Digest,
   buildDesignSuggestPrompt,
   normalizeDesignSuggestion,
   buildAnnotations,
@@ -427,6 +432,11 @@ import {
 } from '../explain/explain.js';
 import { describeRepoInstructions, renderTrustedInstructionsSection } from '../explain/instructions.js';
 import { isRepoTrusted, setRepoTrust } from './repoTrust.js';
+import { createDigestMemo, probeEffectiveContextCached, readRepoInstructionsCached } from './askMemo.js';
+import { OUTSIDE_HOME_SENTENCE } from './browse.js';
+import { addAllowedFolder, readAllowedFolders, removeAllowedFolder } from './allowedFolders.js';
+import { fillRepoKeys, heldKeysFromEnv, migrateRepoAiConfig, readUserAiConfig, writeUserAiConfig } from './aiKeyStore.js';
+import { ensureSequenceIgnored } from './sequenceIgnore.js';
 import { clearAutoApprove, readAutoApprove, setAutoApprove } from './autoApprove.js';
 import type { DesignAskContext } from '../explain/explain.js';
 import {
@@ -636,6 +646,8 @@ const SENSITIVE_EXACT: ReadonlySet<string> = new Set([
   '/api/status',
   '/api/browse',
   '/api/attach',
+  /* C5: the folders outside home this person allowed: a map of their disk. */
+  '/api/allowed-folders',
   '/api/detach',
   '/api/tree',
   '/api/file',
@@ -1021,6 +1033,8 @@ export interface RepoServerOptions {
    * dest jail-vetting still run on the real code path. Mirrors {@link githubFetch}.
    */
   cloneRepo?: CloneRepoFn;
+  /** 0.1.8.1 C4: the `git ls-remote` probe a clone address must pass. Default: the real one. Tests inject. */
+  lsRemote?: LsRemoteFn;
   /**
    * v12 Phase 2 — the OAuth config powering `/auth/*` + `/api/me`. Absent (the
    * default) ⇒ auth routes report "not configured" and `resolveIdentity` stays
@@ -1084,6 +1098,35 @@ export interface RepoServerOptions {
   shadowWarm?: { delayMs?: number; retryMs?: number; clock?: IdleClock };
   /** Tests: build the ask file index after a scan, as the app does (off under `node --test` unless set). */
   askIndexWarm?: boolean;
+  /**
+   * 0.1.8.1 B1: do NOT attach `repoRootInput` inside `createRepoServer`. The
+   * caller binds the socket first and then calls {@link startDeferredAttach};
+   * `/api/status` answers during the scan with `scanning: {done,total}`. The
+   * launcher (`serveApp`) sets this; every other caller keeps the old await.
+   */
+  deferStartupAttach?: boolean;
+  /** Tests (and `SEQUENCE_DEBUG_STARTUP_SCAN_DELAY_MS`): a simulated slow startup scan, in ms. */
+  startupScanDelayMs?: number;
+}
+
+/** B1 (review B): the startup attach stood down because a person attached or detached. */
+class StartupSupersededError extends Error {
+  constructor() {
+    super('the startup attach was superseded by a newer attach or detach');
+  }
+}
+
+/** B1: the deferred startup attach of each server built with `deferStartupAttach`. */
+const deferredAttaches = new WeakMap<http.Server, () => Promise<void>>();
+
+/**
+ * Begin the startup attach a `deferStartupAttach` server was given. Call it
+ * AFTER `listen()`; resolves when the attach settled (attached, or refused with
+ * `attachFailure`). Never rejects. A second call returns the same run.
+ */
+export function startDeferredAttach(server: http.Server): Promise<void> {
+  const run = deferredAttaches.get(server);
+  return run ? run() : Promise.resolve();
 }
 
 /**
@@ -1112,6 +1155,12 @@ function sendJson(res: http.ServerResponse, status: number, body: unknown): void
   res.setHeader('content-type', 'application/json; charset=utf-8');
   res.end(payload);
 }
+
+/* 0.1.8.1 C5: the outside-home sentence lives in browse.ts (browseDir uses it). */
+export { OUTSIDE_HOME_SENTENCE };
+
+/** 0.1.8.1 C4: what a clone refusal asks the person to do next (the UI's button). */
+export type CloneAction = 'connect-github' | 'check-url' | 'choose-folder';
 
 function sendError(res: http.ServerResponse, status: number, message: string, extra?: object): void {
   sendJson(res, status, { error: message, ...extra });
@@ -1784,6 +1833,8 @@ export async function createRepoServer(
   opts: RepoServerOptions = {}
 ): Promise<http.Server> {
   bootMark('serverCreate');
+  /* B3: take the desktop vault's keys out of the environment before anything is spawned. */
+  heldKeysFromEnv();
   const webDist = opts.webDist ?? findWebDist();
   /**
    * Why this server came up with no repo, when it was ASKED for one.
@@ -1892,6 +1943,20 @@ export async function createRepoServer(
   let bootRoot: string | null = null;
   let bootRootPending = false;
   let currentGraph: ArchGraph | null = null;
+  /** D4: bumped by every file change the server hears of; keys the remembered ask digest. */
+  let repoRevision = 0;
+  const digestMemo = createDigestMemo();
+  /** B1: the startup scan in flight (`--repo` read after listen), for `/api/status`. */
+  let startupScan: { path: string; done: number; total: number } | null = null;
+  /** B1: the deferred startup attach, once begun; a runtime attach waits for it. */
+  let startupAttachPromise: Promise<void> | null = null;
+  let deferredRun: (() => Promise<void>) | null = null;
+  /** B1: set by close(); a startup scan still running stops at its next progress tick. */
+  let serverClosed = false;
+  /** B1 (review B): a person attached or detached before the startup attach committed. */
+  let startupSuperseded = false;
+  /** B1: the startup attach has finished one way or the other. */
+  let startupSettled = false;
   /** MADR detail slots for GET /archgraph.json — keyed by real ArchGraph node ids. */
   let currentNodeDetail: Record<string, SeqDiagramNodeDetail> | null = null;
   /**
@@ -1969,6 +2034,8 @@ export async function createRepoServer(
 
   /** Record that `relPath` changed under the graph currently being served. */
   function markGraphStale(relPath: string): void {
+    /* D4: every change, even one already listed, moves the remembered digest on. */
+    repoRevision += 1;
     if (staleSince === null) staleSince = new Date().toISOString();
     const posix = relPath.replace(/\\/g, '/');
     if (stalePaths.includes(posix)) return;
@@ -2066,6 +2133,21 @@ export async function createRepoServer(
       if (old !== ctx) disposeContext(old);
     }
     headTracker.prime();
+  }
+
+  /**
+   * 0.1.8.1 D4: the ask digest (graph + a walk of the tree), remembered while
+   * the graph and the repository's change counter stand still and the file
+   * watcher is running (see askMemo.ts).
+   */
+  function askDigest(): Digest {
+    const root = activeRoot();
+    return digestMemo.get({
+      root,
+      graph: currentGraph!,
+      revision: repoRevision,
+      watching: activeCtx !== null && activeCtx.root === root && activeCtx.repoWatcher.active,
+    });
   }
 
   /** The staleness fields to merge into a graph response; empty when fresh. */
@@ -2178,6 +2260,29 @@ export async function createRepoServer(
    * never resolves into another user's tree. The returned root is canonical
    * (realpath-resolved) so it plugs straight into {@link resolveInBrowseRoot}.
    */
+  /**
+   * The allowed folder that holds `target`, with `target`'s realpath; null when
+   * `target` is outside every folder this caller may open (or does not exist).
+   */
+  function resolveAllowedDir(sessionId: string | undefined, target: string): { root: string; real: string } | null {
+    for (const root of allowedRootsFor(sessionId)) {
+      const real = resolveInBrowseRoot(root, target);
+      if (real !== null) return { root, real };
+    }
+    return null;
+  }
+
+  /**
+   * 0.1.8.1 C5: the folders this caller may open — home (the browse root)
+   * first, then, in the LOCAL app only, the folders the person allowed
+   * (`POST /api/allowed-folders`). Under auth it is the per-user root alone.
+   */
+  function allowedRootsFor(sessionId: string | undefined): string[] {
+    const home = browseRootFor(sessionId);
+    if (authConfig ? authEnabled(authConfig) : false) return [home];
+    return [home, ...readAllowedFolders(userConfigDir, [browseRoot, os.homedir()])];
+  }
+
   function browseRootFor(sessionId: string | undefined): string {
     const authOn = authConfig ? authEnabled(authConfig) : false;
     if (!authOn || !sessionId) return browseRoot;
@@ -2219,6 +2324,17 @@ export async function createRepoServer(
    * per-identity sub-dir rule, reused rather than re-derived, because two
    * functions that answer "which user's dir" and disagree is one of them wrong.
    */
+  /**
+   * Review B (hosted mode): where the AI config and its keys live. Local mode:
+   * the user store. Under auth with a repo attached: the repo OWNER's own
+   * per-identity dir, so one tenant's key is never another's config (before
+   * B3 this was the owner-gated per-repo file). Repo-less under auth stays the
+   * shared dir it always was (the v13 per-user-workspace follow-up).
+   */
+  function aiConfigDir(): string {
+    return userConfigDirFor(repoOwner ?? undefined);
+  }
+
   function userConfigDirFor(sessionId: string | undefined): string {
     const authOn = authConfig ? authEnabled(authConfig) : false;
     if (!authOn || !sessionId) return userConfigDir;
@@ -2231,7 +2347,38 @@ export async function createRepoServer(
    * (null in local/CLI mode ⇒ unowned/shared). Every attach RE-SETS ownership.
    */
   async function attachRepo(dir: string, record: boolean, owner: string | null = null): Promise<ArchGraph> {
+    /* B1 (review B): the person's own attach is the LATEST action, so the startup
+       scan stands down (at its next progress tick, or before it would commit)
+       instead of this attach waiting the whole scan out and then being raced. */
+    supersedeStartup();
+    if (startupAttachPromise) await startupAttachPromise;
+    return attachRepoNow(dir, record, owner);
+  }
+
+  /** B1 (review B): a person's attach or detach wins over a startup attach not yet committed. */
+  function supersedeStartup(): void {
+    if (repoRootInput == null || startupSettled) return;
+    startupSuperseded = true;
+    startupScan = null;
+  }
+
+  async function attachRepoNow(
+    dir: string,
+    record: boolean,
+    owner: string | null = null,
+    onProgress?: (done: number, total: number) => void,
+    /** B1 (review B): asked right before the attach commits; true abandons it. */
+    abandon?: () => boolean,
+  ): Promise<ArchGraph> {
     const root = canonicalRoot(dir); // realpath; throws if missing
+    /* 0.1.8.1 B3: git ignores `.sequence/` before anything is written there,
+       and a key an older build wrote into this repo moves to the user store. */
+    try {
+      ensureSequenceIgnored(root);
+    } catch {
+      /* no git: nothing to ignore */
+    }
+    migrateRepoAiConfig(root, userConfigDirFor(owner ?? undefined), isRepoTrusted(root));
     // PERSISTENCE MOAT: if a persisted graph exists AND the content signature
     // still matches, load it VERBATIM (preserving its stored `scannedAt`) and
     // SKIP the full re-crawl. A cache-loaded graph is identical to a fresh scan
@@ -2294,7 +2441,7 @@ export async function createRepoServer(
        * back the empty answer until something else invalidated it.
        */
       try {
-        graph = await scanRepo(root, opts.scan);
+        graph = await scanRepo(root, onProgress ? { ...opts.scan, onProgress } : opts.scan);
         bootMark('graphScanned');
         writeCachedGraph(root, signature, graph);
         writeAgentMaps(root, graph); // .sequence/map.md beside the graph it was cut from
@@ -2325,6 +2472,10 @@ export async function createRepoServer(
     if (record && owner === null && bootRootPending) {
       if (repoRoot !== null && repoRoot === bootRoot && root !== bootRoot) appendRecentIfAbsent(recentStoreFor(undefined), repoRoot);
       if (repoRoot === bootRoot || root === bootRoot) bootRootPending = false;
+    }
+    if (abandon?.()) {
+      if (ctx !== prior) disposeContext(ctx);
+      throw new StartupSupersededError();
     }
     /* The context being left takes the graph it was serving, BEFORE the new graph replaces it. */
     if (activeCtx && activeCtx !== ctx) parkActiveContext();
@@ -2391,20 +2542,62 @@ export async function createRepoServer(
    * NOT A SILENT FALLBACK. The reason is kept verbatim and served; a server
    * that quietly came up empty would be the same failure with better manners.
    */
-  if (repoRootInput != null) {
+  /*
+   * 0.1.8.1 B1: THE SCAN IS NOT PART OF STARTING. A `deferStartupAttach` server
+   * (the launcher) binds its socket first and runs this afterwards, so the
+   * window opens at once and `/api/status` reports `scanning: {done,total}`
+   * while the graph is read. A slow scan used to cross the desktop's 30 s
+   * health timeout and quit the app before any window existed.
+   */
+  const runStartupAttach = async (): Promise<void> => {
+    if (repoRootInput == null) return;
+    /* Review B: a person attached or detached in the gap before this began. */
+    if (startupSuperseded) {
+      startupSettled = true;
+      return;
+    }
+    startupScan = { path: repoRootInput, done: 0, total: 0 };
     try {
-      await attachRepo(repoRootInput, false);
+      if (opts.startupScanDelayMs && opts.startupScanDelayMs > 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, opts.startupScanDelayMs));
+      }
+      if (serverClosed || startupSuperseded) return;
+      await attachRepoNow(repoRootInput, false, null, (done, total) => {
+        if (serverClosed) throw new Error('server closed during the startup scan');
+        if (startupSuperseded) throw new StartupSupersededError();
+        if (startupScan) {
+          startupScan.done = done;
+          startupScan.total = total;
+        }
+      }, () => serverClosed || startupSuperseded);
     } catch (e) {
+      if (serverClosed || startupSuperseded) return;
       startupAttachFailure = {
         path: repoRootInput,
         reason: e instanceof Error ? e.message : String(e),
       };
+    } finally {
+      startupScan = null;
+      startupSettled = true;
     }
-  }
-
-  if (repoRoot !== null && startupAttachFailure === null) {
-    bootRoot = repoRoot;
-    bootRootPending = true;
+    if (startupSuperseded) return;
+    /* Attached after close: the watchers it started would hold the process up. */
+    if (serverClosed) {
+      stopRepoWatch();
+      return;
+    }
+    if (repoRoot !== null && startupAttachFailure === null) {
+      bootRoot = repoRoot;
+      bootRootPending = true;
+    }
+  };
+  if (opts.deferStartupAttach) {
+    deferredRun = () => {
+      startupAttachPromise ??= runStartupAttach();
+      return startupAttachPromise;
+    };
+  } else {
+    await runStartupAttach();
   }
 
   /**
@@ -3181,6 +3374,8 @@ export async function createRepoServer(
         const body: GetStatusResponse = {
           attached: false,
           ...(startupAttachFailure ? { attachFailure: startupAttachFailure } : {}),
+          /* B1: the startup `--repo` is being read; the window shows progress, not a home screen. */
+          ...(startupScan ? { scanning: { done: startupScan.done, total: startupScan.total, path: startupScan.path } } : {}),
         };
         sendJson(res, 200, body);
       }
@@ -3194,13 +3389,63 @@ export async function createRepoServer(
       // v13 Finding A: list only within the CALLER'S own browse jail. In auth
       // mode this is the per-user subtree, so a path escaping it (or another
       // user's tree) is 403/empty — never another tenant's directory listing.
-      const outcome = browseDir(browseRootFor(sessionId), target);
+      let outcome = browseDir(browseRootFor(sessionId), target);
+      /* C5: a path inside an allowed folder is browsed from that folder. */
+      if (!outcome.ok && outcome.status === 403 && outcome.error === OUTSIDE_HOME_SENTENCE) {
+        const allowed = resolveAllowedDir(sessionId, target);
+        if (allowed !== null) outcome = browseDir(allowed.root, target);
+      }
       if (!outcome.ok) {
-        sendError(res, outcome.status, outcome.error);
+        sendError(
+          res,
+          outcome.status,
+          outcome.error,
+          outcome.error === OUTSIDE_HOME_SENTENCE ? { action: 'allow-folder', path: target } : undefined,
+        );
         return;
       }
       const listing: GetBrowseResponse = outcome.result;
       sendJson(res, 200, listing);
+      return;
+    }
+
+    // ---- /api/allowed-folders (0.1.8.1 C5: "Allow this folder") ----
+    // GET -> { folders }; POST { path } allows one folder; DELETE { path } stops.
+    // Local app only: under auth every caller keeps their own per-user root.
+    if (pathname === '/api/allowed-folders') {
+      if (authConfig ? authEnabled(authConfig) : false) {
+        sendError(res, 403, 'Allowing other folders is only available in the desktop app.');
+        return;
+      }
+      if (method === 'GET') {
+        sendJson(res, 200, { folders: readAllowedFolders(userConfigDir, [browseRoot, os.homedir()]) });
+        return;
+      }
+      if (method === 'POST' || method === 'DELETE') {
+        if (!isJsonRequest(req)) {
+          sendError(res, 415, 'expected content-type application/json');
+          return;
+        }
+        let body: Unvalidated<AllowedFolderRequest>;
+        try {
+          body = JSON.parse(await readBody(req, MAX_BODY_BYTES));
+        } catch (e) {
+          sendError(res, 400, `invalid JSON body: ${(e as Error).message}`);
+          return;
+        }
+        if (method === 'DELETE') {
+          sendJson(res, 200, { folders: removeAllowedFolder(userConfigDir, body.path, [browseRoot, os.homedir()]) });
+          return;
+        }
+        const outcome = addAllowedFolder(userConfigDir, body.path, [browseRoot, os.homedir()]);
+        if (!outcome.ok) {
+          sendError(res, outcome.status, outcome.error);
+          return;
+        }
+        sendJson(res, 200, { folders: outcome.folders });
+        return;
+      }
+      sendError(res, 405, 'method not allowed');
       return;
     }
 
@@ -3228,9 +3473,12 @@ export async function createRepoServer(
       // so user B attaching user A's path (e.g. a peeked clone dir) is refused
       // (403) — it realpath-escapes B's jail and never resolves into A's tree.
       const callerRoot = browseRootFor(sessionId);
-      const dir = resolveInBrowseRoot(callerRoot, target);
+      /* C5: home, or a folder the person allowed. Outside both: one plain
+         sentence and the `allow-folder` action the UI turns into a button. */
+      const allowedAt = resolveAllowedDir(sessionId, target);
+      const dir = allowedAt?.real ?? null;
       if (dir === null) {
-        sendError(res, 403, 'path escapes the browse root');
+        sendError(res, 403, OUTSIDE_HOME_SENTENCE, { action: 'allow-folder', path: target });
         return;
       }
       // F1 (layer 1, load-bearing): refuse attaching the browse root ITSELF — or
@@ -3247,6 +3495,8 @@ export async function createRepoServer(
         sendError(res, 400, 'Pick a project folder inside your home directory, not the home directory itself.');
         return;
       }
+      /* An ALLOWED folder may itself be opened (that is what allowing it is
+         for); it can never hold home — addAllowedFolder refuses that. */
       let st: fs.Stats;
       try {
         st = fs.statSync(dir);
@@ -3291,6 +3541,8 @@ export async function createRepoServer(
 
     // ---- POST /api/detach — leave the attached repo; board becomes unattached ----
     if (pathname === '/api/detach' && method === 'POST') {
+      /* Review B: a detach during the startup scan is not undone by the scan finishing. */
+      supersedeStartup();
       parkActiveContext();
       gitEvents.closeAll();
       repoRoot = null;
@@ -4204,7 +4456,7 @@ export async function createRepoServer(
            `goalRunDeps` takes the same road `/api/ask/stream` takes when nothing
            is attached — design mode over the workspace jail — so a run there
            has exactly the tools a typed turn there has. */
-        const started = startGoalRun(deps, { permission });
+        const started = startGoalRun(deps, { permission, ...(agentRef !== undefined ? { agentRef } : {}), ...(jobMode === 'work' || jobMode === 'code' ? { jobMode } : {}) });
         if (!started.ok) {
           sendJson(res, started.status, { error: started.message, reason: started.reason, state: started.state });
           return;
@@ -5043,6 +5295,8 @@ export async function createRepoServer(
          * once, which is what test isolation actually needs.
          */
         setRepoTrust(userStoreDir(), root, trusted);
+        /* B3: a repo trusted now gives up any key an older build left in it. */
+        if (trusted && isRepoTrusted(root)) migrateRepoAiConfig(root, userConfigDirFor(sessionId), true);
         /* Answer what the STORE now says, re-read through the same canonical
            key the gate uses — not the boolean that was asked for. A write that
            silently failed (read-only home) must not report success, and
@@ -6629,7 +6883,7 @@ export async function createRepoServer(
         sendError(res, 400, 'AI provider not configured — connect your AI key in Settings to chat', { fix: 'provider' });
         return;
       }
-      const digest = designMode ? undefined : buildDigest(currentGraph!, buildTree(activeRoot()));
+      const digest = designMode ? undefined : askDigest();
       const historyTurns = parseAskHistoryTurns(body.history);
       const historyDropped =
         typeof body.historyDropped === 'number' && Number.isFinite(body.historyDropped)
@@ -6647,9 +6901,9 @@ export async function createRepoServer(
        * sized to it (askHistoryBudget).
        */
       const localContext = isLocalOllama(cfg.provider, cfg.baseUrl)
-        ? { window: await probeEffectiveContext(cfg.baseUrl!, cfg.model, fetch) }
+        ? { window: await probeEffectiveContextCached(cfg.baseUrl!, cfg.model, fetch) }
         : undefined;
-      const askWindow = localContext ? localContext.window : await askHistoryWindow(cfg.provider, cfg.baseUrl, cfg.model, fetch);
+      const askWindow = localContext ? localContext.window : await askHistoryWindow(cfg.provider, cfg.baseUrl, cfg.model, fetch, probeEffectiveContextCached);
       const historyLines = renderAskHistorySection(historyTurns, 20, { droppedTurns: historyDropped, ...(askWindow !== undefined ? { contextWindow: askWindow } : {}) });
       /*
        * THE REPOSITORY'S OWN RULES. Every competitor reads a project
@@ -6671,7 +6925,7 @@ export async function createRepoServer(
        * is still READABLE — `GET /api/repo-trust` serves it to the surface as
        * content — it just does not enter the belt as instruction.
        */
-      const instructionLines = renderTrustedInstructionsSection(repoRoot);
+      const instructionLines = renderTrustedInstructionsSection(repoRoot, undefined, readRepoInstructionsCached);
       /*
        * ATTACHMENTS THE TURN NAMED. Ids only on the wire, never content: the
        * text is already on disk, and re-sending it every turn would put the
@@ -7196,14 +7450,14 @@ export async function createRepoServer(
         sendError(res, 400, 'AI provider not configured — connect your AI key in Settings to chat', { fix: 'provider' });
         return;
       }
-      const digest = designMode ? undefined : buildDigest(currentGraph!, buildTree(activeRoot()));
+      const digest = designMode ? undefined : askDigest();
       const historyTurns = parseAskHistoryTurns(body.history);
       const historyDropped =
         typeof body.historyDropped === 'number' && Number.isFinite(body.historyDropped)
           ? Math.max(0, Math.floor(body.historyDropped))
           : 0;
       /* Sized to the local model's window when there is one (askHistoryBudget). */
-      const historyWindow = await askHistoryWindow(cfg.provider, cfg.baseUrl, cfg.model, fetch);
+      const historyWindow = await askHistoryWindow(cfg.provider, cfg.baseUrl, cfg.model, fetch, probeEffectiveContextCached);
       const historyLines = renderAskHistorySection(historyTurns, 20, { droppedTurns: historyDropped, ...(historyWindow !== undefined ? { contextWindow: historyWindow } : {}) });
       /*
        * THE REPOSITORY'S OWN INSTRUCTIONS, on the route the product uses.
@@ -7221,7 +7475,7 @@ export async function createRepoServer(
       /* Trust-gated, exactly as on `/api/ask` — see the note there. The two
          call sites are the only ones, and `repo-trust.test.ts` asserts this
          file never reaches `renderInstructionsSection` directly again. */
-      const instructionLines = renderTrustedInstructionsSection(repoRoot);
+      const instructionLines = renderTrustedInstructionsSection(repoRoot, undefined, readRepoInstructionsCached);
 
       /*
        * ATTACHMENTS. Ids only on the wire; the text is already on disk. An id
@@ -7872,8 +8126,8 @@ export async function createRepoServer(
             sendError(res, 400, revalidated.error ?? 'invalid ai config');
             return;
           }
-          if (attached && isRepoTrusted(repoRoot)) writeJson(activeRoot(), AI_FILE, next);
-          else writeUserJson(userConfigDir, AI_FILE, next);
+          /* 0.1.8.1 B3: the user's config, and every key in it, is user-level only. */
+          writeUserAiConfig(aiConfigDir(), next);
           sendJson(res, 200, aiConfigView(loadAiConfig() ?? revalidated.config));
           return;
         }
@@ -7924,11 +8178,11 @@ export async function createRepoServer(
          * is, and the repo's own file stays repo-shipped data. Trusting the
          * repository restores the old per-repo behaviour exactly.
          */
-        if (attached && isRepoTrusted(repoRoot)) {
-          writeJson(activeRoot(), AI_FILE, onDisk);
-        } else {
-          writeUserJson(userConfigDir, AI_FILE, onDisk);
-        }
+        /* 0.1.8.1 B3 (audit H4): NEVER INTO THE REPOSITORY, trusted or not. A
+           key in `<repo>/.sequence/` travels with every copy, zip and synced
+           folder of the project. The user store (0o600, 0o700 dir) is read
+           FIRST by loadAiConfig, so this write applies on every repo. */
+        writeUserAiConfig(aiConfigDir(), onDisk);
         // Answer with the view a GET would give for what we just stored: reload
         // through loadAiConfig so the runtime `gatewayLive` stamp is applied. The
         // validated object alone has no stamp, so replying with it would tell a
@@ -9595,14 +9849,21 @@ export async function createRepoServer(
       }
 
       const cfg = loadGithubConfig(); // may be undefined — public repos need no token
+      /* 0.1.8.1 C4: every refusal is a sentence a person can act on, plus an
+         `action` the UI turns into a button (connect-github | check-url |
+         choose-folder). No route or internal names in any of them. */
+      const cloneFail = (status: number, error: string, action: CloneAction): void => {
+        sendError(res, status, error, { action });
+      };
+      const localMode = !(authConfig ? authEnabled(authConfig) : false);
 
-      // --- 1. Resolve to a validated github.com target (the SSRF guard) ---
-      let target: GithubCloneTarget | null = null;
+      // --- 1. Resolve to a git address: any https or ssh address (C4); file:// on this machine only ---
+      let target: GitRemoteTarget | null = null;
       if (typeof body.fullName === 'string' && body.fullName.trim() !== '') {
         // Prefer the allow-list: the fullName must be one of the token owner's OWN
         // repos, so a picker click can only ever clone a repo the user can see.
         if (!cfg) {
-          sendError(res, 400, 'connect GitHub in Settings first to clone by name, or paste a clone URL');
+          cloneFail(400, 'Connect GitHub to clone from your repository list, or paste the repository\'s address.', 'connect-github');
           return;
         }
         let repos;
@@ -9620,74 +9881,165 @@ export async function createRepoServer(
         const wanted = body.fullName.trim();
         const match = repos.find((r) => r.fullName === wanted);
         if (!match) {
-          sendError(res, 404, 'that repository is not in your GitHub account');
+          cloneFail(404, 'That repository isn\'t in your GitHub account.', 'check-url');
           return;
         }
         // Defence-in-depth: still host-check GitHub's OWN clone_url, and prefer the
         // canonical fixed-host URL over whatever string GitHub returned.
-        target = validateGithubCloneUrl(match.cloneUrl) ?? cloneTargetFromFullName(match.fullName);
+        const gh = validateGithubCloneUrl(match.cloneUrl) ?? cloneTargetFromFullName(match.fullName);
+        target = gh ? parseGitRemoteUrl(gh.cloneUrl) : null;
         if (!target) {
-          sendError(res, 400, 'the repository clone URL is not a supported github.com URL');
+          cloneFail(400, 'GitHub gave an address for that repository that Sequence can\'t clone.', 'check-url');
           return;
         }
       } else if (typeof body.cloneUrl === 'string' && body.cloneUrl.trim() !== '') {
-        target = validateGithubCloneUrl(body.cloneUrl);
+        target = parseGitRemoteUrl(body.cloneUrl, { allowFile: localMode });
         if (!target) {
-          sendError(res, 400, 'cloneUrl must be an https://github.com/<owner>/<repo> URL');
+          cloneFail(
+            400,
+            'That isn\'t a git address Sequence can clone. Paste an https:// or ssh address, like https://github.com/owner/repo.git.',
+            'check-url',
+          );
           return;
         }
       } else {
-        sendError(res, 400, 'body must include a string "fullName" or "cloneUrl"');
+        cloneFail(400, 'Paste the address of a git repository to clone.', 'check-url');
         return;
       }
+      /* Review B: a HOSTED server clones from https://github.com only. ssh (the
+         server's own keys), other hosts (requests from the server's network)
+         and file:// (its disk) are things only the person's own machine may do. */
+      if (!localMode && !target.isGithubHttps) {
+        cloneFail(400, 'This server can only clone from GitHub. Paste an https://github.com/owner/repo address.', 'check-url');
+        return;
+      }
+      /* The GitHub token goes to https://github.com and nowhere else. */
+      const token = target.isGithubHttps ? cfg?.token : undefined;
 
-      // --- 2. Choose + jail-vet a dest INSIDE the browse root (BEFORE cloning) ---
+      // --- 2. The destination: EXACTLY the chosen folder (C4), else <home>/sequence-workspaces/<name> ---
       // v13 Finding A: the browse root is the CALLER'S own per-user jail under
-      // auth, so a clone lands under <callerRoot>/sequence-workspaces/ — never a
-      // shared dir another tenant can browse/attach. Local mode ⇒ callerRoot ===
-      // browseRoot, so the clone dest is byte-identical to pre-v13.
+      // auth, so a clone lands under <callerRoot>/... — never a shared dir another
+      // tenant can browse/attach. Local mode ⇒ callerRoot === browseRoot.
       const callerRoot = browseRootFor(sessionId);
-      const workspacesDir = path.join(callerRoot, WORKSPACES_DIR);
-      try {
-        fs.mkdirSync(workspacesDir, { recursive: true });
-      } catch (e) {
-        sendError(res, 500, `could not create the workspaces directory: ${(e as Error).message}`);
+      let jailRoot = callerRoot;
+      let dest: string;
+      let destExisted = false;
+      const chosen = (body as { destination?: unknown }).destination;
+      if (chosen !== undefined && chosen !== null && chosen !== '') {
+        if (typeof chosen !== 'string' || !path.isAbsolute(chosen)) {
+          cloneFail(400, 'Choose the folder to clone into.', 'choose-folder');
+          return;
+        }
+        const wantedDest = path.resolve(chosen);
+        const parent = path.dirname(wantedDest);
+        if (parent === wantedDest) {
+          cloneFail(400, 'Choose a folder inside your home folder to clone into.', 'choose-folder');
+          return;
+        }
+        const allowed = resolveAllowedDir(sessionId, parent);
+        if (allowed === null) {
+          if (!fs.existsSync(parent)) {
+            cloneFail(400, 'The folder to clone into doesn\'t exist. Choose a folder that exists.', 'choose-folder');
+          } else {
+            cloneFail(403, OUTSIDE_HOME_SENTENCE, 'choose-folder');
+          }
+          return;
+        }
+        jailRoot = allowed.root;
+        dest = path.join(allowed.real, path.basename(wantedDest));
+        if (fs.existsSync(dest)) {
+          let st: fs.Stats;
+          try {
+            st = fs.lstatSync(dest);
+          } catch {
+            cloneFail(400, 'Sequence can\'t use that folder. Choose another one.', 'choose-folder');
+            return;
+          }
+          if (!st.isDirectory() || fs.readdirSync(dest).length > 0) {
+            cloneFail(409, 'That folder isn\'t empty. Choose an empty folder, or type a new folder name.', 'choose-folder');
+            return;
+          }
+          destExisted = true;
+        }
+      } else {
+        const workspacesDir = path.join(callerRoot, WORKSPACES_DIR);
+        try {
+          fs.mkdirSync(workspacesDir, { recursive: true });
+        } catch (e) {
+          sendError(res, 500, `could not create the workspaces directory: ${(e as Error).message}`);
+          return;
+        }
+        // The parent must realpath-resolve INSIDE the caller's browse root (reuse the jail).
+        const realWorkspaces = resolveInBrowseRoot(callerRoot, workspacesDir);
+        if (realWorkspaces === null) {
+          sendError(res, 500, 'the workspaces folder is not inside your home folder');
+          return;
+        }
+        // A filesystem-safe, no-clobber dest under the (real) workspaces dir. The safe
+        // name has no separators/`..`, so the join stays lexically contained.
+        dest = uniqueDest(realWorkspaces, safeRepoDirName(target.repo));
+        if (dest !== realWorkspaces && !dest.startsWith(realWorkspaces + path.sep)) {
+          sendError(res, 500, 'the clone destination is not inside your home folder');
+          return;
+        }
+      }
+      /* A failed clone leaves the chosen folder as it found it: an existing
+         empty folder is emptied, never removed. */
+      const undoClone = (): void => {
+        try {
+          if (destExisted) {
+            for (const name of fs.readdirSync(dest)) fs.rmSync(path.join(dest, name), { recursive: true, force: true });
+          } else {
+            fs.rmSync(dest, { recursive: true, force: true });
+          }
+        } catch {
+          /* best-effort cleanup of a partial clone */
+        }
+      };
+
+      // --- 3. Is there a repository at that address? (`git ls-remote`, C4) ---
+      const probeRemote: LsRemoteFn = opts.lsRemote ?? gitLsRemote;
+      const reach = await probeRemote(target.url, token);
+      if (!reach.ok && target.kind === 'ssh' && reach.reason === 'ssh-hostkey') {
+        cloneFail(
+          400,
+          "Sequence couldn't confirm that server's identity: its SSH host key has changed since it was last seen. If you expected that, update it in your known_hosts file; otherwise check the address.",
+          'check-url',
+        );
         return;
       }
-      // The parent must realpath-resolve INSIDE the caller's browse root (reuse the jail).
-      const realWorkspaces = resolveInBrowseRoot(callerRoot, workspacesDir);
-      if (realWorkspaces === null) {
-        sendError(res, 500, 'the workspaces directory escapes the browse root');
+      if (!reach.ok && target.kind === 'ssh' && reach.reason === 'ssh-auth') {
+        cloneFail(
+          400,
+          "That server didn't accept your SSH key, or the repository isn't there. Check that your key is added to the git host, or use the https address.",
+          'check-url',
+        );
         return;
       }
-      // A filesystem-safe, no-clobber dest under the (real) workspaces dir. The safe
-      // name has no separators/`..`, so the join stays lexically contained.
-      const dest = uniqueDest(realWorkspaces, safeRepoDirName(target.repo));
-      if (dest !== realWorkspaces && !dest.startsWith(realWorkspaces + path.sep)) {
-        sendError(res, 500, 'the clone destination escapes the browse root');
+      if (!reach.ok) {
+        const needsGithub = target.isGithubHttps && !cfg;
+        cloneFail(
+          400,
+          needsGithub
+            ? 'Sequence couldn\'t open that repository. If it\'s private, connect GitHub and try again.'
+            : 'Sequence couldn\'t find a git repository at that address. Check the address, and that you have access to it.',
+          needsGithub ? 'connect-github' : 'check-url',
+        );
         return;
       }
 
-      // --- 3. Clone (default = real gitClone; tests inject a local-origin clone) ---
+      // --- 4. Clone (default = real gitClone; tests inject a local-origin clone) ---
       const doClone: CloneRepoFn = opts.cloneRepo ?? gitClone;
       let cloneOk: { ok: boolean; error?: string };
       try {
-        cloneOk = await doClone(target.cloneUrl, dest, cfg?.token);
+        cloneOk = await doClone(target.url, dest, token);
       } catch (e) {
-        try {
-          fs.rmSync(dest, { recursive: true, force: true });
-        } catch {
-          /* best-effort cleanup */
-        }
+        undoClone();
         sendError(res, 502, `clone failed: ${(e as Error).message}`);
         return;
       }
       if (!cloneOk.ok) {
-        try {
-          fs.rmSync(dest, { recursive: true, force: true });
-        } catch {
-          /* best-effort cleanup of a partial clone */
-        }
+        undoClone();
         sendError(res, 502, cloneOk.error ?? 'git clone failed');
         return;
       }
@@ -9702,18 +10054,18 @@ export async function createRepoServer(
       }
       // attachRepo has NO intrinsic jail check, so vet containment here (a symlinked
       // clone escaping the jail is refused and removed before any scan/attach).
-      if (realDest !== callerRoot && !realDest.startsWith(callerRoot + path.sep)) {
-        try {
-          fs.rmSync(dest, { recursive: true, force: true });
-        } catch {
-          /* best-effort */
-        }
-        sendError(res, 403, 'the cloned path escapes the browse root');
+      // C4: a chosen destination must also BE the folder that was chosen.
+      if (
+        (realDest !== jailRoot && !realDest.startsWith(jailRoot + path.sep)) ||
+        (chosen !== undefined && chosen !== null && chosen !== '' && realDest !== dest)
+      ) {
+        undoClone();
+        cloneFail(403, OUTSIDE_HOME_SENTENCE, 'choose-folder');
         return;
       }
       // Mirror /api/attach: never attach the browse root itself or an ancestor.
-      if (realDest === callerRoot || callerRoot.startsWith(realDest + path.sep)) {
-        sendError(res, 400, 'invalid clone destination');
+      if (realDest === jailRoot || jailRoot.startsWith(realDest + path.sep)) {
+        cloneFail(400, 'Choose a folder inside your home folder to clone into, not your home folder itself.', 'choose-folder');
         return;
       }
       let graph: ArchGraph;
@@ -11226,16 +11578,20 @@ export async function createRepoServer(
        * boundary has exactly one store, and a caller that redirected the config
        * read must not also redirect the trust read.
        */
-      const raw = isRepoTrusted(repoRoot) ? readJson(activeRoot(), AI_FILE) : undefined;
-      cfg = raw === undefined ? undefined : validateAiConfig(raw).config;
-      // Per-repo ai.json wins when valid; missing/invalid falls through to the
-      // user-level ~/.sequence/ai.json (OF-K01) before env.
+      /* 0.1.8.1 B3: THE USER'S OWN CONFIG FIRST. Every write goes to the user
+         store now (keys never live in a repository), so the user store is
+         what Settings changed; a trusted repo's own ai.json is the fallback
+         behind it, never in front of it, or a save would be shadowed. */
+      const userRaw = readUserAiConfig(aiConfigDir());
+      cfg = userRaw === undefined ? undefined : validateAiConfig(userRaw).config;
       if (!cfg) {
-        const userRaw = readUserJson(userConfigDir, AI_FILE);
-        cfg = userRaw === undefined ? undefined : validateAiConfig(userRaw).config;
+        /* Review B: the keys moved out of this repo's file come back from the
+           user-level repo-keys.json; the repo's config is never adopted as the user's. */
+        const raw = isRepoTrusted(repoRoot) ? readJson(activeRoot(), AI_FILE) : undefined;
+        cfg = raw === undefined ? undefined : validateAiConfig(fillRepoKeys(raw, aiConfigDir(), activeRoot())).config;
       }
     } else {
-      const raw = readUserJson(userConfigDir, AI_FILE);
+      const raw = readUserAiConfig(aiConfigDir());
       cfg = raw === undefined ? undefined : validateAiConfig(raw).config;
     }
     // Env fallback when no on-disk ai.json: OPENROUTER_API_KEY / SEQUENCE_AI_KEY
@@ -11470,8 +11826,7 @@ export async function createRepoServer(
     };
     const checked = validateAiConfig(next);
     if (!checked.config) return;
-    if (repoRoot !== null && isRepoTrusted(repoRoot)) writeJson(activeRoot(), AI_FILE, next);
-    else writeUserJson(userConfigDir, AI_FILE, next);
+    writeUserAiConfig(aiConfigDir(), next); // B3: user-level only
   }
 
   /**
@@ -12259,7 +12614,7 @@ export async function createRepoServer(
                Passing the stored value rather than a literal keeps the one
                source of that decision at the door. */
             permission,
-            instructionLines: repoAttached ? renderTrustedInstructionsSection(activeRoot()) : [],
+            instructionLines: repoAttached ? renderTrustedInstructionsSection(activeRoot(), undefined, readRepoInstructionsCached) : [],
             /* The repo's notes reach a goal run as they reach a typed ask: the always-on part in the
                cache head (the same bytes every turn of the run), the part that fits the goal and the
                step being worked after the history. A General run has no repo and no notes. */
@@ -12279,10 +12634,10 @@ export async function createRepoServer(
               chat.turns.map((t) => ({ role: t.role, text: t.text })),
               20,
               /* Sized to the local model's window when there is one (askHistoryBudget). */
-              await askHistoryWindow(cfg.provider, cfg.baseUrl, cfg.model, fetch).then((w) => (w !== undefined ? { contextWindow: w } : undefined)),
+              await askHistoryWindow(cfg.provider, cfg.baseUrl, cfg.model, fetch, probeEffectiveContextCached).then((w) => (w !== undefined ? { contextWindow: w } : undefined)),
             ),
             graph: repoAttached ? currentGraph : null,
-            digest: repoAttached ? buildDigest(currentGraph!, buildTree(activeRoot())) : undefined,
+            digest: repoAttached ? askDigest() : undefined,
             cfg,
             resolveReadable: resolveReadablePath,
             applyProposedFiles: repoAttached
@@ -12798,14 +13153,17 @@ export async function createRepoServer(
      forever (and the watchers with it). */
   const closeServer = server.close.bind(server) as typeof server.close;
   server.close = ((cb?: (err?: Error) => void) => {
+    serverClosed = true;
     stopRepoWatch();
     gitEvents.closeAll();
     return closeServer(cb);
   }) as typeof server.close;
   server.on('close', () => {
+    serverClosed = true;
     stopRepoWatch();
     gitEvents.closeAll();
   });
+  if (deferredRun) deferredAttaches.set(server, deferredRun);
 
   bootMark('routesReady');
   return server;

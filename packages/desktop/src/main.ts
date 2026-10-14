@@ -12,6 +12,7 @@ import {
   ipcMain,
   Notification,
   nativeImage,
+  safeStorage,
   session,
   shell,
   type MenuItemConstructorOptions,
@@ -19,10 +20,12 @@ import {
 } from 'electron';
 import { ATTENTION_CHANNEL, AttentionController, type AttentionRequest } from './attention';
 import { MainLog, pushTail } from './mainLog';
-import { systemProxyEnv } from './proxyEnv';
+import { applyProxyEnv, proxyForFirstSpawn, startProxyProbe, systemProxyEnv } from './proxyEnv';
+import { openVault } from './aiKeyVault';
 import { launchPendingUpdate, registerUpdateOnQuit } from './updateHandoff';
 import { decideRendererRecovery } from './rendererRecovery';
-import { ServerController } from './server-control';
+import { pickFolder } from './pick-folder';
+import { AttachStalledError, ServerController, type ScanProgress } from './server-control';
 import { claimSingleInstance, showOrCreate, stopWithin } from './singleInstance';
 
 /**
@@ -193,7 +196,9 @@ const controller = new ServerController({
   onRespawned: () => {
     serverStderrTail.length = 0;
     mainLog.write('server-respawned', `port=${controller.url.split(':').pop()}`);
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
+    /* Review B: a respawned engine re-reads its repo after it listens; the boot
+       screen covers that, as at launch, instead of reloading onto a home screen. */
+    if (mainWindow && !mainWindow.isDestroyed()) void loadAppWhenAttached();
   },
   onUnexpectedExit: ({ code, signal }) => {
     mainLog.write('server-unexpected-exit', `code=${code ?? 'null'} signal=${signal ?? 'null'} stderr-tail=${JSON.stringify(serverStderrTail)}`);
@@ -218,6 +223,82 @@ const controller = new ServerController({
 
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
+
+/*
+ * 0.1.8.1 B1: THE WINDOW OPENS AT ONCE. It is created before the engine is
+ * spawned and shows this page until the engine has listened AND finished
+ * reading the startup repo; then it loads the app. `appUrlReady` says which
+ * of the two a (re-)created window should load.
+ */
+let appUrlReady = false;
+export const BOOT_PAGE =
+  'data:text/html;charset=utf-8,' +
+  encodeURIComponent(
+    '<!doctype html><html><head><meta charset="utf-8"><title>Sequence</title><style>' +
+      'html,body{margin:0;height:100%;background:#202025;color:#c8c8d0;font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}' +
+      'body{display:flex;align-items:center;justify-content:center;-webkit-app-region:drag}' +
+      '</style></head><body><div id="boot-status">Opening Sequence…</div></body></html>',
+  );
+
+/** The boot screen's one line, from the engine's `scanning` report. */
+export function bootStatusText(p: ScanProgress | null): string {
+  if (!p) return 'Opening Sequence…';
+  if (p.total > 0) return `Reading ${p.done.toLocaleString('en-US')} of ${p.total.toLocaleString('en-US')} files…`;
+  return 'Reading your project…';
+}
+
+function setBootStatus(p: ScanProgress | null): void {
+  const win = mainWindow;
+  if (!win || win.isDestroyed() || appUrlReady) return;
+  const text = JSON.stringify(bootStatusText(p));
+  void win.webContents
+    .executeJavaScript(`(function(){var e=document.getElementById('boot-status');if(e)e.textContent=${text};})()`, true)
+    .catch(() => {});
+}
+
+/** The engine's origin, or '' before it has a port (a boot-screen window). */
+function serverOrigin(): string {
+  try {
+    return controller.url;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Show the boot screen until the engine has finished its startup attach, then
+ * load the app. Never times out: a slow scan is progress, not a failure. A child
+ * that dies meanwhile goes to the restart dialog through `onUnexpectedExit`.
+ */
+async function loadAppWhenAttached(onAppLoad?: (win: BrowserWindow) => void): Promise<void> {
+  appUrlReady = false;
+  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.getURL().startsWith('data:')) {
+    await mainWindow.loadURL(BOOT_PAGE).catch(() => {});
+  }
+  try {
+    await controller.waitUntilAttached((p) => setBootStatus(p));
+  } catch (e) {
+    mainLog.write('startup-attach', (e as Error).message);
+    /* Review B: a scan that stopped moving (or an engine that stopped answering)
+       is said, not spun on. The app still opens: the person can pick another folder. */
+    if (e instanceof AttachStalledError && !SMOKE && mainWindow && !mainWindow.isDestroyed()) {
+      await dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: ['Open Sequence'],
+        title: 'Sequence stopped reading this project',
+        message: 'Sequence stopped reading this project.',
+        detail: `${(e as Error).message}
+
+You can open another folder from the home screen. Details are in ${mainLog.file}`,
+      });
+    }
+  }
+  appUrlReady = true;
+  const win = mainWindow;
+  if (!win || win.isDestroyed()) return;
+  onAppLoad?.(win);
+  await win.loadURL(controller.url).catch(() => {});
+}
 
 /*
  * S5, NEVER MISS A TURN. The renderer says when a turn ended or an approval is
@@ -391,7 +472,8 @@ function createWindow(): void {
 
   // Keep navigation inside the embedded app; open any external link in the OS browser.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.startsWith(controller.url)) {
+    const origin = serverOrigin();
+    if (origin === '' || !url.startsWith(origin)) {
       void shell.openExternal(url);
       return { action: 'deny' };
     }
@@ -403,7 +485,7 @@ function createWindow(): void {
     if (!allowFrameNavigation(event.isMainFrame, event.url)) event.preventDefault();
   });
 
-  void mainWindow.loadURL(controller.url);
+  void mainWindow.loadURL(appUrlReady ? controller.url : BOOT_PAGE);
 }
 
 /**
@@ -567,7 +649,10 @@ async function attachWithRetry(dir: string): Promise<string | null> {
     try {
       const status = await controller.setRepo(dir);
       if (mainWindow) {
-        await mainWindow.loadURL(status.url); // stable port, same URL, fresh load
+        /* B1: the engine listens before it reads the folder; the boot screen
+           shows the scan, then the app loads on the same (stable) URL. */
+        await loadAppWhenAttached();
+        if (!mainWindow) return dir;
         mainWindow.webContents.send('sequence:repo-changed', {
           repoDir: status.repoDir,
           url: status.url,
@@ -1076,6 +1161,8 @@ async function bootstrap(): Promise<void> {
   mark('appReady');
   // IPC: the renderer (via the preload bridge) can also trigger the native picker.
   ipcMain.handle('sequence:open-repo', () => openRepoDialog());
+  /* 0.1.8.1: the folder dialog alone, for the clone's "Clone into" (pick-folder.ts). Attaches nothing. */
+  ipcMain.handle('sequence:pick-folder', () => pickFolder((opts) => dialog.showOpenDialog(mainWindow!, opts)));
 
   /*
    * ONE CHANNEL FAMILY FOR THE WHOLE REMOVED MENU.
@@ -1091,6 +1178,11 @@ async function bootstrap(): Promise<void> {
   /* S5: notifications, the waiting-approvals badge and flashFrame. One named
      channel, like `sequence:shell`; ./attention.ts throws on unknown kinds. */
   ipcMain.handle(ATTENTION_CHANNEL, (_e, req: AttentionRequest) => attention.handle(req));
+
+  /* 0.1.8.1 B1: the window first, showing the boot screen; the engine after. */
+  buildMenu();
+  createWindow();
+  mark('windowCreated');
 
   try {
     /*
@@ -1118,15 +1210,38 @@ async function bootstrap(): Promise<void> {
     const wanted = rememberedPort();
     if (wanted !== undefined && (await portIsFree(wanted))) controller.usePort(wanted);
     /* The system proxy (Windows registry, macOS scutil) becomes HTTPS_PROXY for the server and everything it starts, unless
-       the person set one: the Claude bridge download, the agent CLIs and the update check all read it. Before the spawn. */
-    Object.assign(
-      serverEnv,
-      await systemProxyEnv({
-        run: (cmd, args) => new Promise<string>((resolve, reject) => execFile(cmd, args, { windowsHide: true, timeout: 5000, encoding: 'utf8' }, (e, out) => (e ? reject(e) : resolve(out)))),
-        resolveProxy: (url) => session.defaultSession.resolveProxy(url),
-        log: (line) => mainLog.write('system-proxy', line),
-      }),
+       the person set one: the Claude bridge download, the agent CLIs and the update check all read it.
+       0.1.8.1 B2: NOT AWAITED. The spawn uses the answer cached by the last launch; this launch's probe runs alongside,
+       refreshes the cache, and is what any later (re)spawn of the engine reads. */
+    const proxy = startProxyProbe({
+      file: path.join(userDataDir, 'system-proxy.json'),
+      probe: () =>
+        systemProxyEnv({
+          run: (cmd, args) => new Promise<string>((resolve, reject) => execFile(cmd, args, { windowsHide: true, timeout: 5000, encoding: 'utf8' }, (e, out) => (e ? reject(e) : resolve(out)))),
+          resolveProxy: (url) => session.defaultSession.resolveProxy(url),
+          log: (line) => mainLog.write('system-proxy', line),
+        }),
+      log: (line) => mainLog.write('system-proxy', line),
+    });
+    /* Review B: the first launch (no cache yet) waits up to 1.5 s for the live probe; later launches use the cache at once. */
+    applyProxyEnv(serverEnv, await proxyForFirstSpawn(proxy));
+    void proxy.fresh.then((fresh) => applyProxyEnv(serverEnv, fresh));
+    /* 0.1.8.1 B3: API keys are sealed with safeStorage (DPAPI / Keychain / libsecret) and handed to the engine at spawn;
+       the engine takes them out of its environment at once. Without encryption they stay in the 0o600 user file. */
+    const vaultKeys = openVault(
+      { aiFile: path.join(userStoreDir(), 'ai.json'), sealedFile: path.join(userDataDir, 'ai-keys.sealed') },
+      {
+        available: () =>
+          safeStorage.isEncryptionAvailable() &&
+          /* Linux with no keyring falls back to a fixed-key obfuscation; that is not a vault. */
+          !(process.platform === 'linux' && safeStorage.getSelectedStorageBackend?.() === 'basic_text'),
+        encrypt: (plain) => safeStorage.encryptString(plain),
+        decrypt: (sealed) => safeStorage.decryptString(sealed),
+      },
+      (line) => mainLog.write('key-vault', line),
     );
+    if (Object.keys(vaultKeys).length > 0) serverEnv.SEQUENCE_AI_KEYS = JSON.stringify(vaultKeys);
+    else delete serverEnv.SEQUENCE_AI_KEYS;
     const status = await controller.start(lastRepoDir() ?? undefined);
     mark('serverUp');
     rememberPort(status.port);
@@ -1157,11 +1272,11 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
-  buildMenu();
-  createWindow();
-  mark('windowCreated');
-
-  if (SMOKE && mainWindow) runSmoke(mainWindow);
+  /* The engine is listening; it may still be reading the repo. The boot
+     screen shows that, with no deadline, and the app loads once it is done. */
+  void loadAppWhenAttached((win) => {
+    if (SMOKE) runSmoke(win);
+  });
 
   app.on('activate', () => {
     // macOS: re-create the window when the dock icon is clicked and none are open.

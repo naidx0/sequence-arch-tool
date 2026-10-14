@@ -106,17 +106,19 @@ describe('ask in place on the whiteboard: right-click', () => {
     board(() => undefined);
     const notPrevented = fireEvent.contextMenu(markOf('r2'), { clientX: 400, clientY: 70 });
     expect(notPrevented).toBe(false);
-    expect(screen.getByTestId('ask-menu-ask').textContent).toBe('Ask about this');
+    expect(screen.getByTestId('ask-menu-ask').textContent).toBe('Ask agent about this'); // 0.1.8.1 C7: one ask row, one name
     expect(document.querySelector('[data-item-id="r2"] [data-selected="true"]') ?? document.querySelector('[data-item-id="r2"]')).toBeTruthy();
     fireEvent.click(screen.getByTestId('ask-menu-ask'));
     expect(screen.getByTestId('ask-pop-chip').textContent).toBe('Tool call');
   });
 
-  it('on bare ground leaves the browser menu', () => {
+  it('on bare ground opens the board menu, which asks about nothing in particular', () => {
+    /* 0.1.8.1 C7 (audit P2-3): the empty board has a menu too. It is the board's own actions; the item ask is not in it. */
     board(() => undefined);
     const notPrevented = fireEvent.contextMenu(screen.getByTestId('wb-canvas'), { clientX: 600, clientY: 400 });
-    expect(notPrevented).toBe(true);
-    expect(screen.queryByTestId('ask-menu')).toBeNull();
+    expect(notPrevented).toBe(false);
+    expect(screen.getByTestId('ask-menu')).toBeTruthy();
+    expect(screen.queryByTestId('ask-menu-ask')).toBeNull();
   });
 
   it('on an arrow names what it joins', async () => {
@@ -197,11 +199,11 @@ describe('ask in place on the whiteboard: with nowhere to send', () => {
     board(undefined);
     pick('r1', 100, 70);
     fire(markOf('r1'), 'pointermove', 100, 70, { buttons: 0 });
-    const notPrevented = fireEvent.contextMenu(markOf('r1'));
+    fireEvent.contextMenu(markOf('r1'));
     fireEvent.keyDown(screen.getByTestId('whiteboard'), { key: '/' });
     expect(screen.queryByTestId('ask-affordance')).toBeNull();
-    expect(notPrevented).toBe(true);
-    expect(screen.queryByTestId('ask-menu')).toBeNull();
+    /* 0.1.8.1 C7: the right-click menu stays (Duplicate, Delete...), with no ask row in it. */
+    expect(screen.queryByTestId('ask-menu-ask')).toBeNull();
     expect(screen.queryByTestId('ask-pop')).toBeNull();
   });
 });

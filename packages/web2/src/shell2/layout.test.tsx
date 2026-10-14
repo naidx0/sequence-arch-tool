@@ -7,6 +7,9 @@ import { createStore, type Store } from '../state';
 import { V3App } from '../v3/V3App';
 import { BOARD_MIN, CHAT_DEFAULT, CHAT_MAX, CHAT_MIN, NARROW_W, roomFor } from './layoutPrefs';
 
+/** 0.1.8.1 C1: a plain click switches the stage; these cases open surfaces BESIDE each other, which is Ctrl/Cmd+click. */
+const BESIDE = { ctrlKey: true } as const;
+
 /*
  * THE SHELL'S LAYOUT BEHAVIOUR (Decision 49 keeps DeepSeek's, in B's look).
  * Ported from the shell they replaced (v3/shell3b.test.tsx: the remembered
@@ -123,7 +126,7 @@ describe('the split dock divides on its hairline, 20 to 80 percent, remembered',
     render(<V3App appStore={freshStore()} />);
     expect(panes()).toHaveLength(1);
     expect(screen.queryByTestId('s2-split-divider')).toBeNull();
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
     expect(panes()).toHaveLength(2);
     const divider = screen.getByRole('separator', { name: 'Resize split' });
     expect(divider.getAttribute('aria-valuenow')).toBe('50');
@@ -137,7 +140,7 @@ describe('the split dock divides on its hairline, 20 to 80 percent, remembered',
      the arrows jump frame to frame, Shift+arrow steps 1, Home and End are the bounds. */
   it('arrows walk the lock frames, Shift+arrow steps 1, and it stops at 20 and 80; the share is remembered', () => {
     render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
     const divider = screen.getByTestId('s2-split-divider');
     expect(divider.getAttribute('data-frame')).toBe('50');
     fireEvent.keyDown(divider, { key: 'ArrowRight' });
@@ -174,7 +177,7 @@ describe('the split dock divides on its hairline, 20 to 80 percent, remembered',
       return real.call(this);
     });
     const first = render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
     dragBy(screen.getByTestId('s2-split-divider'), 100);
     expect(screen.getByTestId('s2-split-divider').getAttribute('aria-valuenow')).toBe('60');
     expect(localStorage.getItem('s2.split')).toBe('0.6');
@@ -396,7 +399,7 @@ describe('a sidebar folded for room still opens', () => {
   it('two surfaces at 1024 fold it; Show sidebar peeks it over the content without changing the stored choice; Escape puts it away', () => {
     setWidth(1024);
     render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
     expect(railShut()).toBe(true);
     fireEvent.click(screen.getByTestId('s2-sidebar-open'));
     expect(railShut()).toBe(false);

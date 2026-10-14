@@ -91,7 +91,7 @@ function tempUserDir(): string {
 async function startServer(
   repoRoot: string,
   userConfigDir: string = tempUserDir(),
-): Promise<{ base: string; close: () => Promise<void> }> {
+): Promise<{ base: string; userDir: string; close: () => Promise<void> }> {
   /*
    * THE USER DIR IS ISOLATED BY DEFAULT HERE, NOT OPT-IN.
    *
@@ -117,8 +117,15 @@ async function startServer(
   const port = typeof addr === 'object' && addr ? addr.port : 0;
   return {
     base: `http://127.0.0.1:${port}`,
+    userDir: userConfigDir,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
+}
+
+/* 0.1.8.1 B3: the user's config and key live in the USER store (0o600), never in
+   the repository, trusted or not. */
+function userAiOnDisk(userDir: string): string {
+  return fs.readFileSync(path.join(userDir, 'ai.json'), 'utf8');
 }
 
 async function putAiConfig(base: string, baseUrl: string): Promise<Response> {
@@ -133,7 +140,7 @@ async function putAiConfig(base: string, baseUrl: string): Promise<Response> {
 
 test('ai-config PUT/GET round-trips with the key redacted; 415/400 on garbage', async () => {
   const repo = ticketingRepo();
-  const { base, close } = await startServer(repo);
+  const { base, userDir, close } = await startServer(repo);
   try {
     // not configured yet
     const before = (await (await fetch(`${base}/api/ai-config`)).json()) as { configured: boolean };
@@ -154,8 +161,9 @@ test('ai-config PUT/GET round-trips with the key redacted; 415/400 on garbage', 
     assert.ok(!getBody.apiKey.includes(TEST_KEY), 'GET must never return the raw key');
     assert.match(getBody.apiKey, /^••••/);
 
-    const onDisk = fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8');
-    assert.ok(onDisk.includes(TEST_KEY), 'the on-disk ai.json must hold the full key');
+    const onDisk = userAiOnDisk(userDir);
+    assert.ok(onDisk.includes(TEST_KEY), 'the user-level ai.json must hold the full key');
+    assert.ok(!fs.existsSync(path.join(repo, '.sequence', 'ai.json')), 'B3: no key file in the repository');
 
     // wrong content-type
     const badCt = await fetch(`${base}/api/ai-config`, {
@@ -181,7 +189,7 @@ test('ai-config PUT/GET round-trips with the key redacted; 415/400 on garbage', 
 
 test('ai-config saves a keyless loopback model and returns no invented key mask', async () => {
   const repo = ticketingRepo();
-  const { base, close } = await startServer(repo);
+  const { base, userDir, close } = await startServer(repo);
   try {
     const put = await fetch(`${base}/api/ai-config`, {
       method: 'PUT',
@@ -202,7 +210,7 @@ test('ai-config saves a keyless loopback model and returns no invented key mask'
     assert.strictEqual(getBody.configured, true);
     assert.ok(!('apiKey' in getBody));
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8')) as Record<string, unknown>;
+    const onDisk = JSON.parse(userAiOnDisk(userDir)) as Record<string, unknown>;
     assert.ok(!('apiKey' in onDisk), 'keyless is represented by absence, never a placeholder credential');
   } finally {
     await close();
@@ -382,7 +390,7 @@ test('a malicious model response (traversal / absolute / .sequence targets) writ
   ];
   const mock = await startMockProvider(() => ({ text: filesReply(evil) }));
   const repo = ticketingRepo();
-  const { base, close } = await startServer(repo);
+  const { base, userDir, close } = await startServer(repo);
   try {
     await putAiConfig(base, mock.baseUrl);
     const treeBefore = await (await fetch(`${base}/api/tree`)).text();
@@ -399,9 +407,11 @@ test('a malicious model response (traversal / absolute / .sequence targets) writ
     // nothing escaped, nothing clobbered
     assert.ok(!fs.existsSync(path.join(repo, '..', 'escape.txt')), 'no parent-dir escape');
     assert.ok(!fs.existsSync('/tmp/sequence-abs-escape.txt'), 'no absolute-path write');
-    // ai.json still holds our real key, not the injected one
-    const aiOnDisk = fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8');
-    assert.ok(aiOnDisk.includes(TEST_KEY) && !aiOnDisk.includes('stolen'), '.sequence/ai.json untouched');
+    // ai.json still holds our real key, not the injected one (user store, B3),
+    // and nothing was written to the repo's reserved .sequence/ai.json.
+    const aiOnDisk = userAiOnDisk(userDir);
+    assert.ok(aiOnDisk.includes(TEST_KEY) && !aiOnDisk.includes('stolen'), 'the user ai.json is untouched');
+    assert.ok(!fs.existsSync(path.join(repo, '.sequence', 'ai.json')), '.sequence/ai.json was not written');
     assert.ok(!fs.existsSync(path.join(repo, '.git', 'hooks', 'pre-commit')), 'no .git write');
 
     // repo tree unchanged
@@ -438,11 +448,12 @@ test('a model write through an in-repo symlink into .sequence is rejected; ai.js
     await mock.close();
     return; // symlinks not permitted here; skip
   }
-  const { base, close } = await startServer(repo);
+  const { base, userDir, close } = await startServer(repo);
   try {
-    // putAiConfig writes the REAL key to .sequence/ai.json (creating .sequence/).
+    // putAiConfig writes the REAL key to the USER store (B3); .sequence/ exists
+    // from the attach (the graph cache), so `docs` -> `.sequence` resolves.
     assert.strictEqual((await putAiConfig(base, mock.baseUrl)).status, 200);
-    const before = fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8');
+    const before = userAiOnDisk(userDir);
     assert.ok(before.includes(TEST_KEY));
 
     const res = await fetch(`${base}/api/generate`, {
@@ -458,9 +469,10 @@ test('a model write through an in-repo symlink into .sequence is rejected; ai.js
     );
 
     // The on-disk key is UNCHANGED: still the real key, never the attacker's.
-    const after = fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8');
-    assert.strictEqual(after, before, '.sequence/ai.json must be byte-for-byte unchanged');
+    const after = userAiOnDisk(userDir);
+    assert.strictEqual(after, before, 'the user ai.json must be byte-for-byte unchanged');
     assert.ok(after.includes(TEST_KEY) && !after.includes(ATTACKER_KEY), 'real key preserved, attacker key not written');
+    assert.ok(!fs.existsSync(path.join(repo, '.sequence', 'ai.json')), 'nothing written through the symlink');
   } finally {
     await close();
     await mock.close();

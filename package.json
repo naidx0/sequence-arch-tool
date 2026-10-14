@@ -16,7 +16,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "test:ci": "node --test tools/ci/*.test.mjs",
+    "test:ci": "node --test tools/ci/*.test.mjs tools/release-smoke/test/*.test.mjs",
     "gate:count": "node tools/ci/counting-gate.mjs",
     "push": "node tools/ci/push-if-green.mjs",
     "restart:app": "node tools/ci/restart-if-stale.mjs",
@@ -37,7 +37,8 @@
     "desktop": "pnpm --filter @sequence/desktop dev",
     "desktop:dist": "pnpm --filter @sequence/desktop dist",
     "desktop:smoke": "node tools/desktop-smoke.mjs",
-    "desktop:smoke:packaged": "node tools/desktop-smoke.mjs --packaged"
+    "desktop:smoke:packaged": "node tools/desktop-smoke.mjs --packaged",
+    "test:release": "node tools/release-smoke/run.mjs"
   },
   "packageManager": "pnpm@10.33.0",
   "pnpm": {

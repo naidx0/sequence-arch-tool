@@ -481,6 +481,9 @@ function pushWorkWithProse(
   items.push({ key: `${turnId}:w${live ? ':live' : ''}`, kind: 'work', turnId, rows: stack });
 }
 
+/** The record line of a turn the server refused because no model was connected. */
+export const NOT_RUN_NO_MODEL = 'Not run yet: no model or agent was connected.';
+
 function endingFor(turn: AssistantTurn): { reason: EndingReason; text: string } | null {
   if (turn.failure?.kind === 'stopped') return { reason: 'stopped', text: STOPPED };
 
@@ -498,6 +501,8 @@ function endingFor(turn: AssistantTurn): { reason: EndingReason; text: string } 
      * message verbatim. It is a record. It does not shout and it does not
      * pretend to be the assistant speaking.
      */
+    /* P0-4: a turn refused for want of a model is not a dead end; the card above the composer runs it after connect. */
+    if (turn.failure.fix === 'provider') return { reason: 'error', text: NOT_RUN_NO_MODEL };
     return { reason: 'error', text: turn.failure.message };
   }
 

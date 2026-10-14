@@ -72,6 +72,7 @@ node --test tools/ci/*.test.mjs   # hygiene
 ```
 node tools/desktop-smoke.mjs              # the dev shell: electron .
 node tools/desktop-smoke.mjs --packaged   # release/, after `pnpm desktop:dist`
+pnpm test:release                         # REQUIRED before any release: the shipped app, flows + budgets
 ```
 
 Not a public download / signed release — engineer packaging smoke only. Added 2026-08-23,
@@ -89,6 +90,25 @@ most exposed to, so the word is never buried.
 `--packaged` is not the same test: it exercises `serverPaths()`'s other arm,
 where `app.isPackaged` resolves `<resources>/server/...` rather than the
 monorepo tree. Running only the dev shell proves nothing about the installer.
+
+**Required before any release: `pnpm test:release`.** After `pnpm desktop:dist`,
+it drives the packaged app (`release/win-unpacked/Sequence.exe`, or the mac/linux
+sibling) through Playwright's Electron driver in a fresh temp profile: its own
+`--user-data-dir`, a fake HOME/USERPROFILE with `SEQUENCE_USER_DIR` inside it,
+and a PATH of system folders plus git, so no agent CLI, key or profile of the
+person running it is visible. It runs the 0.1.8 audit flows a person meets first
+(first run with nothing installed, Connect a model, Skip then send, open inside and
+outside home, clone a local git URL into a chosen folder, tab switching, terminal
+resize, board Clear and Undo, `/goal` copy, Settings "Read more" linking exactly `releases/tag/v<this version>` and every
+published version's release notes answering 200) and
+five budgets (window shown < 2 s with a ~3k-file repo last opened, no quit on a
+slow startup scan, `resources/server` < 60 MiB, no key under `<repo>/.sequence`
+after saving one in a trusted repo, the user-level key file not readable by
+others). Screenshots and `report.json` go to `tmp-shots/release-smoke/<version>/`.
+Exit 0 only when every step and budget is PASS; a SKIP (offline, a build without
+the `SEQUENCE_DEBUG_STARTUP_SCAN_DELAY_MS` hook) fails the gate, it is never a
+pass. Exit 2 means it could not run (no packaged app). The pure logic is unit-tested
+under `tools/release-smoke/test/` and runs in `pnpm test:ci`.
 
 Known pre-existing analyzer failures, which are **not** findings and must not be
 "fixed" by weakening them: `not ok 37/38` (ai-server generate ×2), `43`

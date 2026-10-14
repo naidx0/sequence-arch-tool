@@ -32,9 +32,9 @@ describe('B9: Whiteboard is called Spaces where the reader sees it', () => {
   it('the tag strip says space, not whiteboard, on the + button, tooltip and menu', () => {
     render(<BoardTabs index={{ version: 1, boards: [arch, wb] } as unknown as BoardsIndex} current="wb1" onOpen={noop} onCreate={noop} onRename={noop} onDelete={noop} />);
     const plus = screen.getByTestId('board-tab-new');
-    expect(plus.getAttribute('aria-label')).toBe('New space');
-    expect(plus.getAttribute('title')).toBe('New space');
-    expect(screen.getByTestId('board-tab-wb1').getAttribute('title')).toMatch(/a space/);
+    expect(plus.getAttribute('aria-label')).toBe('New board');
+    expect(plus.getAttribute('title')).toBe('New board');
+    expect(screen.getByTestId('board-tab-wb1').getAttribute('title')).toMatch(/a board/);
     fireEvent.click(plus);
     expect(document.body.textContent ?? '').not.toMatch(/whiteboard/i);
   });

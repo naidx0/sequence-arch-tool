@@ -657,6 +657,54 @@ test('the run row is on disk, and a restart reports engine_restarted not running
   assert.match(after.lastStopSentence!, /picks up at the first open step/);
 });
 
+test('B4: Resume after engine_restarted works on from step 3, never re-runs 1-2, and keeps the worker it was started on', async () => {
+  const repo = freshRepo();
+  const { id } = seed(repo, [
+    ['Alpha step', 'done'],
+    ['Bravo step', 'done'],
+    ['Charlie step', 'open'],
+    ['Delta step', 'open'],
+    ['Echo step', 'open'],
+  ]);
+  /* The run as a killed engine left it: started on an agent, in Code mode, still marked running. */
+  const sessionDir = path.join(repo, '.sequence', 'sessions', id);
+  fs.mkdirSync(sessionDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(sessionDir, 'goal-run.json'),
+    JSON.stringify({ version: 1, sessionId: id, pid: 1, running: true, turns: 2, cap: GOAL_RUN_TURN_CAP, startedAt: '2026-10-14T00:00:00.000Z', agentRef: 'claude', jobMode: 'code' }),
+  );
+  assert.deepStrictEqual(reapGoalRuns(repo), [id]);
+  const stopped = goalRunState(repo, id);
+  assert.strictEqual(stopped.lastStopReason, 'engine_restarted');
+  /* What the one-click Resume reads back to start the run on the same worker. */
+  assert.strictEqual(stopped.agentRef, 'claude');
+  assert.strictEqual(stopped.jobMode, 'code');
+
+  /* The mock provider ticks whatever step it is aimed at. */
+  const h = harness(repo, id, ({ plan, aiming }) => (aiming ? { plan: ticked(plan, aiming) } : {}));
+  /* The fake pipeline reports the plan; the real one persists it, so the test does that half too. */
+  const deps: GoalRunnerDeps = {
+    ...h.deps,
+    takeTurn: async (args) => {
+      const out = await h.deps.takeTurn(args);
+      h.deps.writePlan(out.plan);
+      return out;
+    },
+  };
+  const started = startGoalRun(deps, { permission: 'build', agentRef: stopped.agentRef!, jobMode: stopped.jobMode! });
+  assert.ok(started.ok, `resume refused: ${started.ok ? '' : started.message}`);
+  /* The resumed row remembers its worker too, so a second restart resumes the same way. */
+  assert.strictEqual(readGoalRun(repo, id)!.agentRef, 'claude');
+  assert.strictEqual(readGoalRun(repo, id)!.jobMode, 'code');
+  await started.done;
+
+  const worked = h.aimed.filter((a) => !a.startsWith('('));
+  assert.strictEqual(worked[0], 'Charlie step', 'the run picks up at the first open step');
+  assert.deepStrictEqual(worked, ['Charlie step', 'Delta step', 'Echo step']);
+  assert.ok(!worked.includes('Alpha step') && !worked.includes('Bravo step'), 'finished steps are never run again');
+  assert.ok((readSessionGoal(repo, id).plan ?? []).every((s) => s.status === 'done'));
+});
+
 test('a session that never ran reads as a stopped run of zero turns, never a 404', () => {
   const repo = freshRepo();
   const { id } = seed(repo, [['Alpha step', 'open']]);

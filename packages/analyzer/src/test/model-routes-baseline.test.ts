@@ -181,9 +181,9 @@ test('model-subscription-oauth: typed route exists but fails closed with actiona
 
 /* ========================================= ACP cache constants (locked) ====== */
 
-test('ACP session cache: idle TTL is 10 minutes and cap is 8 sessions', () => {
-  assert.strictEqual(ACP_SESSION_IDLE_TTL_MS, 10 * 60 * 1000);
-  assert.strictEqual(ACP_SESSION_MAX, 8);
+test('ACP session cache: idle TTL is 3 minutes and cap is 3 sessions (0.1.8.1 D3)', () => {
+  assert.strictEqual(ACP_SESSION_IDLE_TTL_MS, 3 * 60 * 1000);
+  assert.strictEqual(ACP_SESSION_MAX, 3);
 });
 
 /* ========================================= prompt budget omission markers === */

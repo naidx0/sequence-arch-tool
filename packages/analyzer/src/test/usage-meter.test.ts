@@ -92,8 +92,9 @@ test('PUT {mode:"default"} → redacted default config, NO key; on-disk ai.json 
     assert.strictEqual(body.configured, true);
     assert.strictEqual(body.mode, 'default');
     assert.ok(!('apiKey' in body), 'the default config redaction has no key field');
-    // Per-repo ai.json exists and holds no key material.
-    const onDisk = fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8');
+    // 0.1.8.1 B3: the config is stored user-level and holds no key material.
+    assert.ok(!fs.existsSync(path.join(repo, '.sequence', 'ai.json')), 'nothing written into the repository');
+    const onDisk = fs.readFileSync(path.join(userDir, 'ai.json'), 'utf8');
     assert.ok(!onDisk.includes('sk-'));
     assert.ok(onDisk.includes('default'));
   } finally {

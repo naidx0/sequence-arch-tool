@@ -2859,6 +2859,11 @@ function bootSettled(
         ...settledState,
         repo: { phase: 'failed', attempted: null, failure: outcome.failure },
       };
+
+    /* 0.1.8.1 B1: the engine is still reading its startup repository; the boot surface says so and boot runs again
+       when it is done. Nothing about the repository is known yet, so nothing changes but reachability. */
+    case 'scanning':
+      return settledState;
   }
 }
 

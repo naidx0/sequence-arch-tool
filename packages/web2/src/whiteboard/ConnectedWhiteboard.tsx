@@ -13,7 +13,7 @@
  * written into it, so nobody's drawing is lost to the move.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 
 import { BoardTabs } from '../canvas/boards/BoardTabs';
 import { boardsApi, setActiveWhiteboard, useActiveWhiteboard, useBoardDoc, useBoardsIndex } from '../canvas/boards/boardsClient';
@@ -21,6 +21,8 @@ import { ARCH_BOARD_ID, diffOps, nextBoardName } from '../canvas/boards/boardsMo
 import { requestHostCommand } from '../app/hostCommands';
 import { groundedRepoRoot, useAppState, useStore } from '../state/connect';
 import { sendBoardAsk } from '../askInPlace/sendBoardAsk';
+import { agentRuns } from '../agents/agentRuns';
+import { modelConfigured } from '../onboarding/setupFallback';
 import { Whiteboard } from './Whiteboard';
 import { readScenes, writeScenes } from './sceneStore';
 import { useCloseWhenEmpty } from './useCloseWhenEmpty';
@@ -31,6 +33,7 @@ const liveNow = (inFlight: boolean, until: number): boolean => inFlight || Date.
 
 export function ConnectedWhiteboard() {
   const state = useAppState();
+  const runsState = useSyncExternalStore(agentRuns.subscribe, agentRuns.get, agentRuns.get);
   const store = useStore();
   /* A TURN IS LIVE UNTIL SHORTLY AFTER IT ENDS. React batches a whole burst of stream events into one render, so a short
      answer can start and finish between two renders and the board would never see `inFlight` set. The store tells us on
@@ -147,13 +150,13 @@ export function ConnectedWhiteboard() {
       />
       {board.error && current !== null ? (
         <p className="wb-boards-note" role="status" data-testid="wb-boards-error">
-          This space could not be saved: {board.error}
+          This board could not be saved: {board.error}
         </p>
       ) : null}
       <div className="wb-boards-body">
         {index !== null && current === null ? (
           <p className="wb-boards-note" data-testid="wb-boards-none">
-            No spaces in this project. Press + to make one.
+            Spaces is empty. Press + to make a board.
           </p>
         ) : (
           <Whiteboard
@@ -168,6 +171,7 @@ export function ConnectedWhiteboard() {
             agentItems={state.session.boardAgentItems}
             live={liveNow(state.session.inFlight !== null, liveUntil.current)}
             intentGhosts={state.session.boardIntentGhosts}
+            canAnswer={modelConfigured(state.composer.model) || Boolean(runsState.agents?.[state.session.activeId ?? ''])}
             onAsk={(request) => {
               store.dispatch({ type: 'composer/draft', text: request.prompt });
               store.dispatch({ type: 'composer/focus' });

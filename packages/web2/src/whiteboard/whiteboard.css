@@ -110,6 +110,22 @@
   gap: var(--sp-2);
   min-width: calc(var(--control-h-lg) + var(--sp-8));
 }
+/* 0.1.8.1 C6: the Shapes and Text buttons are the last tool used (one click) and its chevron (the list), side by
+   side: the glyph keeps a plain tool's width and the chevron takes only its own. */
+.wb-tool.wb-tool-split {
+  min-width: var(--control-h-lg);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.wb-tool.wb-tool-chev {
+  min-width: var(--sp-16);
+  padding: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.wb-tool.wb-tool-chev .wb-chev-glyph {
+  display: none;
+}
 
 .wb-tool:hover:not(:disabled) {
   background: var(--glass-ctl-hover);
@@ -194,6 +210,16 @@
 @container wb (max-width: 380px) {
   .wb-tool .wb-caret {
     display: none;
+  }
+  /* The split Shapes and Text buttons fold into one trigger (glyph, opens the list), as before 0.1.8.1 (review S5). */
+  .wb-tool.wb-tool-split {
+    display: none;
+  }
+  .wb-tool.wb-tool-chev {
+    min-width: var(--icon-btn-lg);
+  }
+  .wb-tool.wb-tool-chev .wb-chev-glyph {
+    display: block;
   }
   .wb-tool.wb-tool-menu {
     min-width: var(--control-h-lg);

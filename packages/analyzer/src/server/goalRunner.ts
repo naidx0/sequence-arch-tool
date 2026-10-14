@@ -599,7 +599,7 @@ export function goalRunDoorRefusal(
 
 export function startGoalRun(
   deps: GoalRunnerDeps,
-  opts: { permission?: string; cap?: number },
+  opts: { permission?: string; cap?: number; agentRef?: string; jobMode?: 'work' | 'code' },
 ): StartGoalRunResult {
   const { repoRoot, sessionId } = deps;
   /*
@@ -624,6 +624,9 @@ export function startGoalRun(
     turns: 0,
     cap,
     startedAt,
+    /* B4: recorded so a run a restart ended resumes on the same worker (see `engine_restarted`). */
+    ...(opts.agentRef ? { agentRef: opts.agentRef } : {}),
+    ...(opts.jobMode ? { jobMode: opts.jobMode } : {}),
   };
   /*
    * THE ROW IS WRITTEN BEFORE THE LOOP IS STARTED, not after.

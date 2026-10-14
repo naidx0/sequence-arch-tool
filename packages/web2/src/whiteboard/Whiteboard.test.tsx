@@ -1298,7 +1298,10 @@ describe('THE TOOLBAR IS ONE FLOATING PILL, ONE LINE (jsdom has no layout: the D
     expect(order()).toEqual([
       'wb-tool-select',
       'wb-tool-draw',
+      /* 0.1.8.1 C6: the last tool used (one click), then its list's chevron. */
+      'wb-shapes-main',
       'wb-shapes-trigger',
+      'wb-annotate-main',
       'wb-annotate-trigger',
       'wb-color-trigger',
       'wb-tool-erase',
@@ -1533,15 +1536,25 @@ describe('THE TOOLBAR IS ONE FLOATING PILL, ONE LINE (jsdom has no layout: the D
 
   it('menu triggers: glyph and chevron side by side on one centre line (no corner badge), wider by one fixed step', () => {
     render(<Whiteboard repoRoot="r" storage={memoryStore()} />);
-    for (const id of ['wb-shapes-trigger', 'wb-annotate-trigger']) {
-      const trigger = screen.getByTestId(id);
-      const caret = trigger.querySelector('.wb-caret');
-      expect(caret).not.toBeNull();
-      expect(trigger.querySelectorAll('svg:not(.wb-caret)')).toHaveLength(1);
+    /* 0.1.8.1 C6: Shapes and Text are two controls side by side, the glyph (the last tool used, one click) and the
+       chevron (the list); the colour menu is still one trigger with both. */
+    for (const id of ['wb-shapes', 'wb-annotate']) {
+      const main = screen.getByTestId(`${id}-main`);
+      const trigger = screen.getByTestId(`${id}-trigger`);
+      expect(main.nextElementSibling).toBe(trigger);
+      expect(main.querySelectorAll('svg:not(.wb-caret)')).toHaveLength(1);
+      expect(main.querySelector('.wb-caret')).toBeNull();
+      expect(trigger.querySelector('.wb-caret')).not.toBeNull();
+      /* Its glyph shows only when the board is narrow and the pair folds into one trigger (review S5). */
+      expect(trigger.querySelectorAll('svg:not(.wb-caret):not(.wb-chev-glyph)')).toHaveLength(0);
+      expect(trigger.querySelector('.wb-chev-glyph')).not.toBeNull();
+      expect(trigger.classList.contains('wb-tool-chev')).toBe(true);
     }
+    const color = screen.getByTestId('wb-color-trigger');
+    expect(color.querySelector('.wb-caret')).not.toBeNull();
     expect(rule('.wb-tool .wb-caret')).not.toMatch(/position:\s*absolute/);
     expect(rule('.wb-tool.wb-tool-menu')).toMatch(/min-width:\s*calc\(var\(--control-h-lg\) \+ var\(--sp-8\)\)/);
-    expect(screen.getByTestId('wb-shapes-trigger').classList.contains('wb-tool-menu')).toBe(true);
+    expect(color.classList.contains('wb-tool-menu')).toBe(true);
   });
 
   it('EVERY MENU ROW IS ON ONE GRID: glyph column, label, key; one row height', () => {

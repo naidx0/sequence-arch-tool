@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { argvAfterCli, sameDir } from './restart-if-stale.mjs';
+import { argvAfterCli, isScanning, rootOfStatus, sameDir, waitForScan } from './restart-if-stale.mjs';
 
 /**
  * THE RESTART MUST BRING BACK THE SAME SERVER.
@@ -68,4 +68,36 @@ test('a different checkout is NOT the same server', () => {
     false,
   );
   assert.strictEqual(sameDir('C:\\a\\sequence', 'C:\\b\\sequence'), false);
+});
+
+/*
+ * 0.1.8.1 B1: the server listens before it reads its startup --repo, and says so on /api/status as
+ * `{ attached: false, scanning: { done, total, path } }`. A restart (or a replay) that asks too early must still know
+ * whose server it is, and must wait for the read to finish before handing it on.
+ */
+test('a server still reading its repository names it, and is reported as scanning', () => {
+  const reading = { attached: false, scanning: { done: 0, total: 0, path: 'C:\repo' } };
+  assert.equal(rootOfStatus(reading), 'C:\repo');
+  assert.equal(isScanning(reading), true);
+  assert.equal(rootOfStatus({ attached: true, repoName: 'repo', root: 'C:\repo' }), 'C:\repo');
+  assert.equal(isScanning({ attached: true, root: 'C:\repo' }), false);
+  assert.equal(isScanning({ attached: false, attachFailure: { path: 'x', reason: 'y' } }), false);
+  assert.equal(rootOfStatus({ attached: false }), null);
+});
+
+test('waitForScan polls until scanning clears, and gives up at its bound', async () => {
+  const bodies = [
+    { attached: false, scanning: { done: 0, total: 0, path: '/r' } },
+    { attached: false, scanning: { done: 40, total: 120, path: '/r' } },
+    { attached: true, root: '/r', repoName: 'r' },
+  ];
+  let calls = 0;
+  const fetchImpl = async () => ({ ok: true, json: async () => bodies[Math.min(calls++, bodies.length - 1)] });
+  const done = await waitForScan('http://x', { everyMs: 1, fetchImpl });
+  assert.deepEqual(done, bodies[2]);
+  assert.equal(calls, 3);
+
+  const never = async () => ({ ok: true, json: async () => bodies[0] });
+  const last = await waitForScan('http://x', { everyMs: 1, timeoutMs: 20, fetchImpl: never });
+  assert.equal(isScanning(last), true);
 });

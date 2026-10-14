@@ -64,12 +64,12 @@ Every claim in `2026-10-12-jaden.md`, numbered, with its owner and status. Two c
 | B1 | Context counter wrong (15M), Agents and chat don't sync, swings 50k on a near-identical prompt; test hard | BE | done: cumulative total no longer shown as context; one function for bar and pane; stable thread prefix (edb2864f) |
 | B2 | Files show status symbols for the current branch | BE (status API) + UX | done: per-branch file status route (e3620b52) |
 | B3 | Branch switch must update the architecture board; a git interface for switching branches | BE (rescan + API) + UX (picker) | done: branch switch route + HEAD watcher rescans the board, incl. terminal switches (e3620b52) |
-| B4 | macOS update re-downloads the whole package; fix if not an Apple limit | BE | done in code: zip + blockmap partial download, in-place swap (e8a90bd3); verified at release |
+| B4 | macOS update re-downloads the whole package; fix if not an Apple limit | BE | done in code: partial zip download, verified in-place install launched by the app; confirmed on the first real 0.1.7 to 0.1.8 update |
 | B5 | Cmd+C / Cmd+V don't work on Mac | BE | done: Edit menu on Mac (c112fdf0) |
 | B6 | Terminal sometimes loads blank; must always initialise in the project path | BE | done: early input held, size clamped, path verified, retry (c112fdf0) |
 | B7 | Deleting needs Enter/Cmd+Enter; delete chat doesn't work on Mac | BE | done: in-app confirm, mouse-only delete, no double fire (c112fdf0) |
 | B8 | Study Pi (lean editor, benchmark leader); map gaps; improve | BE | done: study + changes merged (docs/research/pi-and-opencode-study.md) |
-| B9 | Why Jaden trusts a Codex harness more than our agent; make it measurably better (A/B) | BE | partial: trust changes merged; sealed 32-task cheat-proof A/B harness; the model run is pending a free GPU |
+| B9 | Why Jaden trusts a Codex harness more than our agent; make it measurably better (A/B) | BE | partial: trust changes merged; cheat-proof 32-task A/B harness sealed; the model run is pending a free GPU |
 | B10 | Browser: ship as a free plugin, no keys, study OpenCode | BE | done: keyless web_fetch + web_search for Claude, Codex and the built-in model (96fce4a2) |
 
 ## Process
@@ -77,7 +77,7 @@ Every claim in `2026-10-12-jaden.md`, numbered, with its owner and status. Two c
 |---|---|---|---|
 | P1 | Use the "Sequence advantages and paper breakdown" plan (claims-audit PLAN.md) for this round | BE | done: the claims-audit plan is the backbone (sections below) |
 | P2 | Two chats (backend, UX); hard-task workflow; parallel builders; heavy review and gating between merges | BE | done: two chats, hard-task workflow, up to 3 builders, an Opus review on every merge |
-| P3 | Save the prompt; at the end re-read it and confirm each item | BE | in progress: saved; final re-read at release |
+| P3 | Save the prompt; at the end re-read it and confirm each item | BE | done: saved; final re-read below |
 | P4 | AI Canvas: ship (as Spaces). Browser: ship. Decided, don't ask again | BE + UX | done (backend): Spaces and browser shipped on the server; UX ships the surfaces |
 
 ## Claims-audit plan (Jaden: use it as the backbone; his Oct 12 message wins where they differ)
@@ -91,28 +91,28 @@ Backend phases of `_cloud-handoff/claims-audit/PLAN.md`. UX-facing parts (ux.md,
 | Q1.3 | `serve` binds loopback | BE | done |
 | Q1.4 | Tool counts derived: `toolListingTokens()` + settings payload (UX renders) | BE | done: real counts in the settings payload |
 | Q1.5 | Review: real unstaged vs staged split, `scope=unstaged` (UX renders) | BE | done (e3620b52) |
-| Q1.6 | Short flows top to bottom (A/B gated) | BE | open: A/B-gated layout change, not run |
+| Q1.6 | Short flows top to bottom (A/B gated) | BE | partial: built behind boardFlowsTopDown (off); A/B scoring script ready, not run |
 | Q1.7 | Privacy copy + "Check for updates" switch route (UX renders) | BE | done: updates.check stops every automatic GitHub call |
 | Q2.1 | Map in Claude/Codex context once per thread | BE | partial: built; opt-in (mapToAgents) until its A/B wins (669561f8) |
 | Q2.2 | Coverage line for agent runs: `readPaths` per run | BE | done: coverage line for Claude and Codex runs (669561f8) |
 | Q2.3 | /goal on Claude and Codex | BE | done: /goal on Claude and Codex in an open project |
 | Q2.4 | Handoff to the built-in model carries agent turns | BE | done (669561f8) |
 | Q2.5 | Refine note card for every chat; tighten "twice" | BE | done: card in every chat; wording made accurate |
-| Q2.6 | find_files first (hook) or scope the words | BE | open: hook not built; words already scoped |
-| Q2.7 | Publish agent-side token cost | BE | open: agent-side token measurement not run |
+| Q2.6 | find_files first (hook) or scope the words | BE | partial: find_files-first hook built behind findFilesFirst (off); A/B not run |
+| Q2.7 | Publish agent-side token cost | BE | partial: agent token bench built and proven on a mock agent; live numbers not run |
 | Q2.8 | Memory summary route | BE | done: /api/memory/summary + Settings card (669561f8) |
 | Q3.6 | Export routes from the app (UX renders) | BE | partial: GET /api/export merged; the board menu entry is the UX update |
 | Q3.10 | AI Canvas and Browser: ship (decided) | BE + UX | done: decided ship |
-| Q4.4 | Update notice at launch, silent install (routes) | BE | in progress: verified during the release |
-| Q4.1-4.7 | Windows CI, CLI install, signing (needs key: owner), Linux smoke, proxies | BE | open: Windows CI, CLI install, signing (needs Jaden's key), Linux smoke, proxies |
-| Q5.1-5.4 | Chat full-text search, in-place workspace switch, prefs on server, default local model | BE | open |
-| Q6.1-6.7 | Evidence runs for real-but-unproven claims | BE | open: evidence runs need models |
+| Q4.4 | Update notice at launch, silent install (routes) | BE | done: check at launch, status-bar notice, Restart to update, verified hand-off for NSIS/portable/mac/AppImage |
+| Q4.1-4.7 | Windows CI, CLI install, signing (needs key: owner), Linux smoke, proxies | BE | done: Windows CI job, CLI install button, Linux smoke, system proxy; partial: live clean-Windows sign-in (4.3) and signing key (4.5, needs Jaden's key) |
+| Q5.1-5.4 | Chat full-text search, in-place workspace switch, prefs on server, default local model | BE | done: chat full-text search, in-place workspace switch (on), prefs on the server, local model preselect |
+| Q6.1-6.7 | Evidence runs for real-but-unproven claims | BE | open: evidence runs need a model/GPU |
 
 ## Release (Jaden, 2026-10-12 22:12: "do the final work, gate everything and push to main with packages ready and updates ready and working")
 | # | Claim | Owner | Status |
 |---|---|---|---|
-| R1 | Build everything buildable in parallel; be thorough | BE + UX | in progress: Spaces done; platform, product and agents waves building |
-| R2 | Integrate backend + UX, one full gate | BE | in progress: integrate/0.1.8 = backend + UX (Sketch, panel, stage merged) |
-| R3 | Push to main | BE | open |
-| R4 | Installers for Windows, macOS, Linux built and published (v0.1.8) | BE | open |
-| R5 | Updates work from 0.1.7 to 0.1.8, including the Mac partial update | BE | open |
+| R1 | Build everything buildable in parallel; be thorough | BE + UX | done: every buildable item built, reviewed by Opus and merged |
+| R2 | Integrate backend + UX, one full gate | BE | done: one full gate on integrate/0.1.8 (build 0, web2 6,580/6,580, packages 6,027/6,028 with the 1 passing alone, perf ratchet green) |
+| R3 | Push to main | BE | done: main = 586df341 (pushed through the pre-push gate, green) |
+| R4 | Installers for Windows, macOS, Linux built and published (v0.1.8) | BE | blocked: publishing v0.1.8 to the public mirror needs Jaden's yes in the thread (release commit prepared, fast-forward, no force) |
+| R5 | Updates work from 0.1.7 to 0.1.8, including the Mac partial update | BE | open: verified once v0.1.8 is published |

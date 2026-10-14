@@ -171,7 +171,7 @@ describe('VersionSection', () => {
     expect(screen.getAllByTestId('settings-version-copy').at(-1)).toHaveProperty('disabled', true);
   });
 
-  it('lists the bundled release notes newest first, each a two-line highlight that Read more opens in place', async () => {
+  it('lists the bundled release notes newest first, each a two-line highlight that Show all opens in place', async () => {
     render(<VersionSection client={fakeClient()} />);
     const items = await screen.findAllByTestId('settings-whatsnew-item');
     expect(items.map((i) => i.getAttribute('data-version'))).toEqual(['0.1.5', '0.1.4']);
@@ -179,7 +179,8 @@ describe('VersionSection', () => {
     for (const i of items) expect(i.querySelector('[data-expanded]')!.getAttribute('data-expanded')).toBe('false');
     expect(items[0]!.querySelectorAll('.sb-news-body > *').length).toBeLessThanOrEqual(2);
     const toggle = items[0]!.querySelector('button')!;
-    expect(toggle.textContent).toBe('Read more');
+    /* 0.1.8.1 D1 (review N5): "Read more" is the link to the published notes; the in-place expansion is "Show all". */
+    expect(toggle.textContent).toBe('Show all');
     const before = items[0]!.textContent!.length;
     fireEvent.click(toggle);
     expect(toggle.textContent).toBe('Show less');

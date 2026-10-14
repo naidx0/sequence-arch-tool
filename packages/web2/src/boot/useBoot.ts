@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { bootIsStale, runBoot } from './bootSequence';
+import { bootIsStale, runBoot, scanningOf } from './bootSequence';
 import type { BootOutcome, BootTransport } from './bootSequence';
 
 /**
@@ -28,6 +28,9 @@ export interface UseBoot {
   /** Ask again. The one control every failed boot state offers. */
   retry: () => void;
 }
+
+/** How often a tab waiting on the startup read asks again (0.1.8.1 B1). */
+export const SCAN_POLL_MS = 700;
 
 export function useBoot(transport: BootTransport): UseBoot {
   const [state, setState] = useState<BootPhase>({ phase: 'probing' });
@@ -135,6 +138,34 @@ export function useBoot(transport: BootTransport): UseBoot {
       cancelled = true;
       document.removeEventListener('visibilitychange', reask);
       window.removeEventListener('focus', reask);
+    };
+  }, [state]);
+
+  /*
+   * WHILE THE ENGINE READS ITS STARTUP REPOSITORY (0.1.8.1 B1). The server listens before it scans, so a tab can open
+   * mid-read. It polls /api/status: the count moves on screen, and once `scanning` is gone (attached, or the attach
+   * failed) the ladder runs again and lands where it would have.
+   */
+  useEffect(() => {
+    if (state.phase !== 'settled' || state.outcome.kind !== 'scanning') return undefined;
+    const platform = state.outcome.platform;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void held.current
+        .status()
+        .then((answer) => {
+          if (cancelled) return;
+          const scanning = answer.outcome === 'ok' && !answer.body.attached ? scanningOf(answer.body) : null;
+          if (scanning) setState({ phase: 'settled', outcome: { kind: 'scanning', scanning, platform } });
+          else setAttempt((n) => n + 1);
+        })
+        .catch(() => {
+          if (!cancelled) setAttempt((n) => n + 1);
+        });
+    }, SCAN_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
     };
   }, [state]);
 

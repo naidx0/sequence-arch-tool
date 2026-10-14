@@ -3,7 +3,7 @@ import { siOllama } from 'simple-icons';
 import { ClaudeMark, CodexMark } from '@/components/HarnessLogos';
 import { Reveal } from '@/components/lt/hooks';
 import { Clip, Window } from '@/components/lt/Window';
-import { DEPTH4, GRADE, RANKER, SHAPE, fmt } from '@/data/advantages';
+import { DEPTH4, GRADE, RANKER, SHAPE } from '@/data/advantages';
 
 /**
  * THE SHORT STORY (owner, 2026-10-10: simplify). "All your favorite harness
@@ -178,7 +178,7 @@ export function SmallModels() {
           },
           {
             title: 'Recognises your drawing',
-            body: `Turns a hand-drawn shape into a clean box or arrow. On ${fmt(SHAPE.drawings)} diagrams it had never seen, it picked the right shape ${SHAPE.accuracy}% of the time.`,
+            body: `On the architecture board, Draw a box to add a service or a line to connect two boxes. On a fresh test set it picked the right shape ${SHAPE.accuracy}% of the time, and it snapped ${SHAPE.recall}% of the shapes it should have. One stroke per shape: a box drawn in four strokes is not recognised yet.`,
           },
           {
             title: 'Finds the right files',

@@ -46,7 +46,7 @@ export async function generateFlow(
       : board && typeof board === 'object' && typeof (board as { id?: unknown }).id === 'string' && (board as { id: string }).id !== ''
         ? (board as { id: string }).id
         : null;
-  if (boardId === null) return { outcome: 'failed', message: 'The engine answered without saying which Space it drew on.' };
+  if (boardId === null) return { outcome: 'failed', message: 'The engine answered without saying which board it drew on.' };
   const name = board && typeof board === 'object' && typeof (board as { name?: unknown }).name === 'string' ? (board as { name: string }).name : null;
   const group = typeof body?.group === 'string' && body.group !== '' ? body.group : null;
   return { outcome: 'ok', boardId, name: name || null, group };

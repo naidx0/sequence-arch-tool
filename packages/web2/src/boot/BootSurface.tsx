@@ -4,6 +4,7 @@ import './boot.css';
 
 import { AttachDialog } from './AttachDialog';
 import type { BootOutcome, BootTransport, ScannedRepoDraft } from './bootSequence';
+import { scanningLine } from './bootSequence';
 import { attachFailureCopy } from './attachFailure';
 import type { FailureTone } from './attachFailure';
 import { Glyph } from './icons';
@@ -289,6 +290,17 @@ function describe(outcome: BootOutcome): Described {
         glyph: 'board',
         title: 'Project attached',
         why: 'The engine answered and handed over the graph it already holds. The board draws it next.',
+        detail: null,
+        action: null,
+        tone: 'plain',
+      };
+
+    case 'scanning':
+      /* 0.1.8.1 B1: the engine is up and reading its startup repository. */
+      return {
+        glyph: 'board',
+        title: 'Opening the project',
+        why: scanningLine(outcome.scanning),
         detail: null,
         action: null,
         tone: 'plain',

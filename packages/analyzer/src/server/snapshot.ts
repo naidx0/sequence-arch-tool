@@ -64,6 +64,10 @@ import path from 'node:path';
 import { isCheckpointSessionId, trackSessionWrite } from './checkpointStore.js';
 import { resolveInRepo } from './jail.js';
 import { SEQUENCE_DIR } from './store.js';
+import { ensureSequenceIgnored, resetSequenceIgnoredCheck, userExcludeFile } from './sequenceIgnore.js';
+
+/* Moved to ./sequenceIgnore.ts (0.1.8.1 B3) so store.ts can run it before every `.sequence/` write without an import cycle. */
+export { ensureSequenceIgnored, resetSequenceIgnoredCheck, userExcludeFile };
 
 export const SNAPSHOTS_DIR = 'snapshots';
 const GIT_TIMEOUT_MS = 60_000;
@@ -273,32 +277,6 @@ export async function ensureShadow(root: string): Promise<void> {
 /* ─────────────────────────── ignore rules ─────────────────────────── */
 
 /**
- * The user's own git directory's `info/exclude`, or null when the root is not
- * a git checkout. Handles a linked worktree (`.git` is a file naming the git
- * dir, whose `commondir` holds the shared info/).
- */
-export function userExcludeFile(root: string): string | null {
-  const dotGit = path.join(root, '.git');
-  let st: fs.Stats;
-  try {
-    st = fs.statSync(dotGit);
-  } catch {
-    return null;
-  }
-  if (st.isDirectory()) return path.join(dotGit, 'info', 'exclude');
-  const m = /^gitdir:\s*(.+?)\s*$/m.exec(fs.readFileSync(dotGit, 'utf8'));
-  if (!m) return null;
-  const gitDir = path.resolve(root, m[1]!);
-  let common = gitDir;
-  try {
-    common = path.resolve(gitDir, fs.readFileSync(path.join(gitDir, 'commondir'), 'utf8').trim());
-  } catch {
-    /* not a linked worktree */
-  }
-  return path.join(common, 'info', 'exclude');
-}
-
-/**
  * THE SHADOW SEES THE USER'S IGNORE RULES. The work tree's .gitignore files
  * apply on their own, and the global excludes file comes from the user's git
  * config; but the shadow GIT_DIR has its own info/, which does not see the
@@ -326,48 +304,6 @@ function syncShadowExclude(root: string): void {
     have = '';
   }
   if (have !== want) fs.writeFileSync(ours, want);
-}
-
-/** Roots whose `.sequence/` this process has already made sure git ignores. */
-const userExcludeChecked = new Set<string>();
-
-/** Tests: forget which roots were checked, as a new process would. */
-export function resetSequenceIgnoredCheck(): void {
-  userExcludeChecked.clear();
-}
-
-/**
- * `.sequence/` IS NEVER COMMITTED BY ACCIDENT. When the user's repository does
- * not already ignore it, `.sequence/` is added to their LOCAL
- * `.git/info/exclude` (once), never to their .gitignore, which is theirs and
- * shared. Read-only git otherwise: `check-ignore` writes nothing.
- */
-export function ensureSequenceIgnored(root: string): void {
-  if (userExcludeChecked.has(root)) return;
-  const file = userExcludeFile(root);
-  if (!file) return;
-  const r = childProcess.spawnSync('git', ['-C', root, 'check-ignore', '-q', '--no-index', `${SEQUENCE_DIR}/`], {
-    env: cleanEnv(),
-    windowsHide: true,
-  });
-  if (r.status === 0) {
-    userExcludeChecked.add(root);
-    return;
-  }
-  if (r.status !== 1) return; /* git could not answer: change nothing */
-  let text = '';
-  try {
-    text = fs.readFileSync(file, 'utf8');
-  } catch {
-    text = '';
-  }
-  const line = `${SEQUENCE_DIR}/`;
-  if (!text.split(/\r?\n/).some((l) => l.trim() === line || l.trim() === `/${line}`)) {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    const nl = text.includes('\r\n') ? '\r\n' : '\n';
-    fs.writeFileSync(file, `${text}${text && !text.endsWith('\n') ? nl : ''}${line}${nl}`);
-  }
-  userExcludeChecked.add(root);
 }
 
 /* ─────────────────────────── growth ─────────────────────────── */

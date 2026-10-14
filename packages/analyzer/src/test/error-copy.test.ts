@@ -87,7 +87,8 @@ test('server errors: the human replacements for the owner-reported strings are t
     [REPO_SERVER, 'AI provider not configured — connect your AI key in Settings to design'],
     [REPO_SERVER, 'AI provider not configured — connect your AI key in Settings'],
     [REPO_SERVER, 'connect GitHub in Settings first'],
-    [REPO_SERVER, 'connect GitHub in Settings first to clone by name, or paste a clone URL'],
+    /* 0.1.8.1 (C4): the clone refusal names the action, and any git address is accepted, not only a GitHub URL. */
+    [REPO_SERVER, 'Connect GitHub to clone from your repository list, or paste the repository'],
     [REPO_SERVER, 'no design spec found — create one on the Design board first'],
     [TERMINAL, 'no repo attached — open a repository first'],
   ];

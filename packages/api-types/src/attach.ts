@@ -57,6 +57,13 @@ export interface GetStatusDetachedResponse {
    * being shown was "connect ECONNREFUSED 127.0.0.1:60416".
    */
   attachFailure?: { path: string; reason: string };
+  /**
+   * 0.1.8.1 B1: the startup `--repo` is still being read. The server listens
+   * BEFORE it scans, so this state is real: `done` of `total` source files
+   * parsed (`total` is 0 until the file count is known). Absent once the
+   * attach settles, into `attached: true` or `attachFailure`.
+   */
+  scanning?: { done: number; total: number; path: string };
 }
 
 export type GetStatusResponse =
@@ -298,4 +305,29 @@ export interface PutRepoTrustRequest {
 export interface PutRepoTrustResponse {
   root: string;
   trusted: boolean;
+}
+
+/* ------------------- 0.1.8.1 C5: "Allow this folder" --------------------- */
+
+/**
+ * The 403 from `POST /api/attach` and `GET /api/browse` for a folder outside
+ * home (and outside every allowed folder). `error` is always
+ * "Sequence can only open folders inside your home folder."; `action` is the
+ * button to offer ([Allow this folder]); `path` is what was asked for, to send
+ * back to `POST /api/allowed-folders`.
+ */
+export interface OutsideHomeRefusal {
+  error: string;
+  action: 'allow-folder';
+  path: string;
+}
+
+/** `GET /api/allowed-folders`, and the answer to POST / DELETE: the allowed folders (realpaths). */
+export interface AllowedFoldersResponse {
+  folders: string[];
+}
+
+/** `POST /api/allowed-folders` (allow) and `DELETE /api/allowed-folders` (stop allowing). */
+export interface AllowedFolderRequest {
+  path: string;
 }

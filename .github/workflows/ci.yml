@@ -51,7 +51,7 @@ jobs:
       - name: Hygiene tests
         env:
           MERGE_LANE_BASE: ${{ github.event.pull_request.base.sha }}
-        run: node --test tools/ci/*.test.mjs
+        run: node --test tools/ci/*.test.mjs tools/release-smoke/test/*.test.mjs
 
   correctness:
     name: Build + package tests

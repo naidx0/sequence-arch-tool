@@ -57,6 +57,39 @@ export interface AskHostConfig {
   /** Whether the hook owns the context menu for this element. Default: yes. */
   ownsContextMenu?: (el: Element) => boolean;
   onSend: (payload: AskPayload) => void | Promise<void>;
+  /**
+   * False keeps the menu but drops the ask itself (the hover button, the key and the "Ask agent about this" row): a
+   * board with nowhere to send to still has its right-click menu. Default true. 0.1.8.1 C7.
+   */
+  ask?: boolean;
+  /** More rows for an item's menu, after "Ask agent about this" (0.1.8.1 C7: Explain, Duplicate, Bring to front...). */
+  menuItems?: (ids: readonly string[]) => AskMenuAction[];
+  /** The menu on the empty board (0.1.8.1 C7). Absent: a right-click there is the browser's. */
+  emptyMenuItems?: () => AskMenuAction[];
+}
+
+/** One row of the right-click menu. */
+export interface AskMenuAction {
+  id: string;
+  label: string;
+  run: (ids: readonly string[]) => void;
+  disabled?: boolean;
+}
+
+/** The one ask row's words, everywhere a menu offers it (0.1.8.1 C7, audit P2-3: two Ask rows in one menu). */
+export const ASK_AGENT_LABEL = 'Ask agent about this';
+
+/** The rows a menu shows, ask first, each label once (a second row with the same words is dropped). */
+export function menuRows(ask: AskMenuAction | null, more: readonly AskMenuAction[]): AskMenuAction[] {
+  const seen = new Set<string>();
+  const out: AskMenuAction[] = [];
+  for (const row of ask ? [ask, ...more] : more) {
+    const key = row.label.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
 }
 
 export interface AskInPlace {
@@ -64,6 +97,8 @@ export interface AskInPlace {
   layer: ReactNode;
   /** Open the popover for these ids (the menu item, the button and the key all land here). */
   open: (ids: readonly string[]) => void;
+  /** Send a question about these ids straight away, as the popover's Send would ("Explain"). 0.1.8.1 C7. */
+  askAbout: (ids: readonly string[], text: string) => void;
   close: () => void;
   isOpen: boolean;
 }
@@ -205,7 +240,17 @@ export function useAskInPlace(cfg: AskHostConfig): AskInPlace {
       if (target.closest('.ask-pop, .ask-menu')) return;
       if (c.ownsContextMenu && !c.ownsContextMenu(target)) return;
       const id = c.idAt(target);
-      if (id === null) return;
+      if (id === null) {
+        /* The empty board has a menu of its own when the board gives one (0.1.8.1 C7). */
+        if (!c.emptyMenuItems) return;
+        event.preventDefault();
+        const box = el.getBoundingClientRect();
+        setPopover(null);
+        setHover(null);
+        setBounds({ width: box.width, height: box.height });
+        setMenu({ ids: [], left: event.clientX - box.left, top: event.clientY - box.top });
+        return;
+      }
       event.preventDefault();
       const ids = c.selection.includes(id) && c.selection.length > 1 ? [...c.selection] : [id];
       c.select?.(ids);
@@ -223,7 +268,7 @@ export function useAskInPlace(cfg: AskHostConfig): AskInPlace {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const c = cfgRef.current;
-      if (c.enabled === false || c.selection.length === 0 || isEditable(event.target)) return;
+      if (c.enabled === false || c.ask === false || c.selection.length === 0 || isEditable(event.target)) return;
       const el = containerRef.current;
       const inside = el && event.target instanceof Node && el.contains(event.target);
       const idle = (event.target === document.body || event.target === null) && overBoard.current;
@@ -315,7 +360,13 @@ export function useAskInPlace(cfg: AskHostConfig): AskInPlace {
     const popRef = popover ? cfg.resolve(popover.ids) : null;
     const popRectView = popover ? cfg.rectOf(popover.ids) : null;
     const popRect = popRectView ? relativeTo(popRectView, box) : null;
-    const hoverRef = hover && !popover && !menu ? cfg.resolve(cfg.selection) : null;
+    const hoverRef = hover && !popover && !menu && cfg.ask !== false ? cfg.resolve(cfg.selection) : null;
+    const rows = menu
+      ? menuRows(
+          menu.ids.length > 0 && cfg.ask !== false ? { id: 'ask', label: ASK_AGENT_LABEL, run: (ids) => open(ids) } : null,
+          menu.ids.length > 0 ? (cfg.menuItems?.(menu.ids) ?? []) : (cfg.emptyMenuItems?.() ?? []),
+        )
+      : [];
     return (
       <>
         {hover && hoverRef ? (
@@ -341,24 +392,32 @@ export function useAskInPlace(cfg: AskHostConfig): AskInPlace {
             className="ask-menu"
             data-testid="ask-menu"
             role="menu"
-            aria-label="Ask"
+            aria-label={menu.ids.length > 0 ? 'Item' : 'Board'}
             style={{
               left: Math.max(8, Math.min(menu.left, bounds.width - 188)),
-              top: Math.max(8, Math.min(menu.top, bounds.height - 56)),
+              top: Math.max(8, Math.min(menu.top, bounds.height - 16 - 32 * Math.max(1, rows.length))),
             }}
             onPointerDown={(event) => event.stopPropagation()}
             onContextMenu={(event) => event.preventDefault()}
           >
-            <button
-              type="button"
-              role="menuitem"
-              className="ask-menuitem"
-              data-testid="ask-menu-ask"
-              onClick={() => open(menu.ids)}
-            >
-              <Icon name="chatbox" size={14} />
-              <span>Ask about this</span>
-            </button>
+            {rows.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                role="menuitem"
+                className="ask-menuitem"
+                data-testid={row.id === 'ask' ? 'ask-menu-ask' : `ask-menu-${row.id}`}
+                disabled={row.disabled}
+                onClick={() => {
+                  const ids = menu.ids;
+                  if (row.id !== 'ask') setMenu(null);
+                  row.run(ids);
+                }}
+              >
+                {row.id === 'ask' ? <Icon name="chatbox" size={14} /> : null}
+                <span>{row.label}</span>
+              </button>
+            ))}
           </div>
         ) : null}
         {popover && popRef && popRect ? (
@@ -375,5 +434,5 @@ export function useAskInPlace(cfg: AskHostConfig): AskInPlace {
     );
   })();
 
-  return { layer, open, close, isOpen: popover !== null };
+  return { layer, open, askAbout: send, close, isOpen: popover !== null };
 }

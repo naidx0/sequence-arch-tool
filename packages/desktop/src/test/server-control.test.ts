@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { LISTENING_PREFIX, ServerController, findFreePort, onListeningLine, waitForHealthy, probe } from '../server-control';
+import { AttachStalledError, LISTENING_PREFIX, ServerController, findFreePort, onListeningLine, waitForAttach, waitForHealthy, probe } from '../server-control';
 
 /**
  * These tests exercise the RUNNABLE heart of the desktop app WITHOUT Electron:
@@ -165,8 +165,10 @@ test('setRepo restarts on the SAME port and attaches the chosen repo (desktop na
     assert.strictEqual(after.port, originalPort, 'must respawn on the same port so the window URL is stable');
     assert.strictEqual(after.repoDir, TICKETING, 'controller tracks the attached repo');
 
-    // Still 200 on `/`, and now /api/status reports the attached repo.
+    // Still 200 on `/`, and — once the background scan lands (B1: the engine
+    // listens before it reads the repo) — /api/status reports the attached repo.
     assert.strictEqual(await fetchStatus(after.url + '/'), 200);
+    await controller.waitUntilAttached();
     const st = await getJson(after.url + '/api/status');
     assert.strictEqual(st.status, 200);
     const body = st.body as { attached?: boolean; root?: string };
@@ -265,6 +267,7 @@ test('the bundled server entry (what main.ts runs when present) starts under the
   try {
     await controller.start(TICKETING);
     assert.ok(logs.includes('[server] ready (listening line)'), logs.join('\n'));
+    await controller.waitUntilAttached();
     const st = await getJson(controller.url + '/api/status');
     assert.strictEqual((st.body as { attached?: boolean }).attached, true, JSON.stringify(st.body));
     assert.strictEqual(await fetchStatus(controller.url + '/'), 200);
@@ -293,4 +296,122 @@ test('the real analyzer CLI prints the listening line and readiness comes from i
   } finally {
     await controller.stop();
   }
+});
+
+/* ── 0.1.8.1 B1: A SLOW SCAN IS NEVER A FAILED START ────────────────────────
+   The audit (H1): the engine scanned before it listened, so a scan longer than
+   the 30 s health timeout killed the child and main.ts showed "Sequence failed
+   to start" and quit — on every launch, because the last repo is re-attached.
+   Here the scan is made slower than the health timeout on purpose. */
+
+test('B1: a startup scan slower than the health timeout never takes the failed-to-start path', async () => {
+  const unexpected: unknown[] = [];
+  const progress: { done: number; total: number }[] = [];
+  const controller = makeController({
+    healthTimeoutMs: 4000,
+    env: { SEQUENCE_USER_DIR: CHILD_USER_DIR, SEQUENCE_DEBUG_STARTUP_SCAN_DELAY_MS: '7000' },
+    onUnexpectedExit: (info) => unexpected.push(info),
+  });
+  try {
+    const t0 = Date.now();
+    const status = await controller.start(TICKETING);
+    assert.ok(Date.now() - t0 < 4000, 'ready on listen, inside the health timeout');
+    const during = await getJson(status.url + '/api/status');
+    const body = during.body as { attached?: boolean; scanning?: { done: number; total: number } };
+    assert.strictEqual(body.attached, false, 'still reading the repo');
+    assert.ok(body.scanning, `status carries scanning during the scan: ${JSON.stringify(body)}`);
+
+    const final = await controller.waitUntilAttached((p) => progress.push(p));
+    assert.ok(Date.now() - t0 >= 7000, 'the wait outlived the health timeout instead of failing');
+    assert.strictEqual(final.attached, true, JSON.stringify(final));
+    assert.ok(progress.length > 0, 'the boot screen got progress reports');
+    assert.deepStrictEqual(unexpected, [], 'no failed-to-start / unexpected-exit path');
+    assert.ok(controller.childPid, 'the engine is still running');
+  } finally {
+    await controller.stop();
+  }
+});
+
+test('B1: waitForAttach rejects (no hang) once the child is gone', async () => {
+  await assert.rejects(
+    () => waitForAttach('http://127.0.0.1:1', { intervalMs: 10, isAlive: () => false }),
+    /exited during the startup scan/,
+  );
+});
+
+test('B1: main.ts creates the window before it spawns the engine, and loads the app only after the attach', () => {
+  const src = fs.readFileSync(path.join(REPO_ROOT, 'packages', 'desktop', 'src', 'main.ts'), 'utf8').replace(/\r\n/g, '\n');
+  const boot = src.slice(src.indexOf('async function bootstrap()'));
+  const created = boot.indexOf('createWindow();');
+  const started = boot.indexOf('controller.start(');
+  assert.ok(created > 0 && started > 0 && created < started, 'createWindow() precedes controller.start() in bootstrap');
+  assert.match(boot, /loadAppWhenAttached\(/, 'the app URL waits for the startup attach');
+  assert.match(src, /await controller\.waitUntilAttached\(/);
+  assert.doesNotMatch(src, /waitUntilAttached\([^)]*timeout/i, 'the attach wait has no deadline');
+});
+
+/* ── review B: the attach wait has no deadline, but it does not spin forever ── */
+
+/** A status server that answers each probe from `script` (the last answer repeats). */
+async function scriptedStatus(script: Array<Record<string, unknown>>): Promise<{ url: string; close: () => Promise<void>; probes: () => number }> {
+  let i = 0;
+  const http = await import('node:http');
+  const server = http.createServer((_req, res) => {
+    const body = script[Math.min(i, script.length - 1)]!;
+    i += 1;
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify(body));
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 0;
+  return { url: `http://127.0.0.1:${port}`, probes: () => i, close: () => new Promise<void>((r) => server.close(() => r())) };
+}
+
+test('review B: a slow scan that keeps counting is waited out, far past both limits', async () => {
+  const steps = Array.from({ length: 40 }, (_, n) => ({ attached: false, scanning: { done: n * 10, total: 400 } }));
+  const s = await scriptedStatus([...steps, { attached: true }]);
+  let t = 0;
+  try {
+    const body = await waitForAttach(s.url, { intervalMs: 1, noAnswerMs: 50, stalledMs: 50, now: () => (t += 30) });
+    assert.strictEqual(body.attached, true);
+    assert.ok(t > 1000, 'the fake clock ran far past both limits');
+  } finally {
+    await s.close();
+  }
+});
+
+test('review B: a count that stops moving while total > 0 is reported, not spun on', async () => {
+  const s = await scriptedStatus([{ attached: false, scanning: { done: 12, total: 400 } }]);
+  let t = 0;
+  try {
+    await assert.rejects(
+      () => waitForAttach(s.url, { intervalMs: 1, stalledMs: 120_000, now: () => (t += 10_000) }),
+      (e: Error) => e instanceof AttachStalledError && /stopped at 12 of 400 files/.test(e.message),
+    );
+  } finally {
+    await s.close();
+  }
+});
+
+test('review B: the counting phase before a total is known (total 0) is not a stall', async () => {
+  const counting = Array.from({ length: 20 }, () => ({ attached: false, scanning: { done: 0, total: 0 } }));
+  const s = await scriptedStatus([...counting, { attached: true }]);
+  let t = 0;
+  try {
+    const body = await waitForAttach(s.url, { intervalMs: 1, stalledMs: 50, now: () => (t += 30) });
+    assert.strictEqual(body.attached, true);
+  } finally {
+    await s.close();
+  }
+});
+
+test('review B: an engine that stops answering is reported after the no-answer limit', async () => {
+  const s = await scriptedStatus([{ attached: false, scanning: { done: 1, total: 10 } }]);
+  await s.close();
+  let t = 0;
+  await assert.rejects(
+    () => waitForAttach(s.url, { intervalMs: 1, noAnswerMs: 60_000, now: () => (t += 20_000) }),
+    (e: Error) => e instanceof AttachStalledError && /has not answered for 60 s/.test(e.message),
+  );
 });

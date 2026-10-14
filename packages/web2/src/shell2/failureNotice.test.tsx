@@ -34,7 +34,7 @@ beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
 describe('a refused turn shows the reason and the way out', () => {
-  it('no model configured: a notice with Connect an agent and Add a model', async () => {
+  it('no model configured: one "Connect a model to run this" card that opens the connect flow in place (P0-4)', async () => {
     serverThatRefuses({ error: REFUSAL, fix: 'provider' });
     const store = createStore({});
     render(
@@ -45,16 +45,16 @@ describe('a refused turn shows the reason and the way out', () => {
       </StoreProvider>,
     );
     await send('hello');
-    const notice = await screen.findByTestId('s2-failure');
-    expect(notice.getAttribute('role')).toBe('alert');
-    expect(notice.getAttribute('data-fix')).toBe('provider');
-    expect(screen.getByTestId('s2-failure-text').textContent).toContain(REFUSAL);
-    fireEvent.click(screen.getByTestId('s2-failure-model'));
-    expect(store.getState().shell.overlay).toMatchObject({ kind: 'settings', pane: 'provider' });
-    fireEvent.click(screen.getByTestId('s2-failure-connect'));
-    await waitFor(() => expect(screen.getByTestId('s2-model-menu')).toBeTruthy());
-    fireEvent.click(screen.getByTestId('s2-failure-dismiss'));
+    const card = await screen.findByTestId('connect-to-run');
+    expect(card.textContent).toContain('Connect a model to run this');
+    /* Not the dead-end banner: no server sentence, no trip to Settings. */
     expect(screen.queryByTestId('s2-failure')).toBeNull();
+    expect(card.textContent).not.toContain(REFUSAL);
+    fireEvent.click(screen.getByTestId('connect-to-run-open'));
+    expect(await screen.findByTestId('connect-in-place')).toBeTruthy();
+    expect(store.getState().shell.overlay).toBeNull();
+    fireEvent.click(screen.getByTestId('s2-failure-dismiss'));
+    await waitFor(() => expect(screen.queryByTestId('connect-to-run')).toBeNull());
   });
 
   it('any other refusal says the server sentence and offers Retry, never nothing', async () => {

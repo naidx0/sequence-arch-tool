@@ -121,8 +121,9 @@ export interface WaitOptions {
 
 /**
  * The analyzer CLI prints `SEQUENCE_LISTENING <url>` once its server is
- * listening (packages/analyzer/src/cli.ts `LISTENING_PREFIX`), after the repo
- * scan, so `/` answers from then on.
+ * listening (packages/analyzer/src/cli.ts `LISTENING_PREFIX`). Since 0.1.8.1
+ * (B1) that is BEFORE the repo scan: `/` answers from then on, and the scan's
+ * progress is on `/api/status` (`scanning`), never part of health.
  */
 export const LISTENING_PREFIX = 'SEQUENCE_LISTENING';
 
@@ -183,6 +184,98 @@ export async function waitForHealthy(url: string, opts: WaitOptions = {}): Promi
   }
   const detail = lastErr ? `: ${(lastErr as Error).message}` : '';
   throw new Error(`server did not become healthy at ${url} within ${timeoutMs}ms${detail}`);
+}
+
+/** What `/api/status` says while the startup `--repo` is still being read (0.1.8.1 B1). */
+export interface ScanProgress {
+  done: number;
+  total: number;
+  path?: string;
+}
+
+/** Single GET of `/api/status` as JSON; rejects on connection/timeout/parse error. */
+export function getStatusJson(baseUrl: string, timeoutMs = 2000): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    const req = http.get(`${baseUrl}/api/status`, (res) => {
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', (c: string) => (body += c));
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(body) as Record<string, unknown>);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.setTimeout(timeoutMs, () => req.destroy(new Error('status timeout')));
+    req.on('error', reject);
+  });
+}
+
+export interface AttachWaitOptions {
+  intervalMs?: number;
+  /** False once the child died: the wait rejects instead of polling a dead port. */
+  isAlive?: () => boolean;
+  /** Each `scanning` report, for the boot screen. */
+  onProgress?: (p: ScanProgress) => void;
+  /** Review B: give up when no probe has been answered for this long (default 60 s). */
+  noAnswerMs?: number;
+  /** Review B: give up when `done` has not moved for this long while `total` > 0 (default 120 s). */
+  stalledMs?: number;
+  /** Tests: the clock. */
+  now?: () => number;
+}
+
+/** The startup attach stopped making progress: the shell shows an error instead of spinning. */
+export class AttachStalledError extends Error {}
+
+/**
+ * 0.1.8.1 B1: wait until the server has FINISHED its startup attach — attached,
+ * refused (`attachFailure`), or never asked for a repo — by polling
+ * `/api/status` until it no longer carries `scanning`.
+ *
+ * NO TIMEOUT, ON PURPOSE. Health is "the socket answers" (spawnAndWait); the
+ * scan is not part of it. A big repo on a slow laptop may take minutes, and
+ * that is progress to show, never a reason to quit. The wait ends early only
+ * when the child dies.
+ */
+export async function waitForAttach(baseUrl: string, opts: AttachWaitOptions = {}): Promise<Record<string, unknown>> {
+  const intervalMs = opts.intervalMs ?? 200;
+  const now = opts.now ?? Date.now;
+  const noAnswerMs = opts.noAnswerMs ?? 60_000;
+  const stalledMs = opts.stalledMs ?? 120_000;
+  /* REVIEW B: NO DEADLINE, BUT NOT FOREVER EITHER. A slow scan that keeps
+     counting files is waited out however long it takes; a server that stops
+     answering, or a count that stops moving, is reported instead of spinning. */
+  let lastAnswer = now();
+  let lastDone = -1;
+  let doneMovedAt = now();
+  for (;;) {
+    if (opts.isAlive && !opts.isAlive()) throw new Error('server process exited during the startup scan');
+    try {
+      const body = await getStatusJson(baseUrl);
+      lastAnswer = now();
+      const scanning = body.scanning as ScanProgress | undefined;
+      if (!scanning) return body;
+      if (scanning.done !== lastDone) {
+        lastDone = scanning.done;
+        doneMovedAt = now();
+      } else if (scanning.total > 0 && now() - doneMovedAt >= stalledMs) {
+        throw new AttachStalledError(
+          `Reading the project stopped at ${scanning.done} of ${scanning.total} files and has not moved for ${Math.round(stalledMs / 1000)} s.`,
+        );
+      }
+      opts.onProgress?.(scanning);
+    } catch (e) {
+      if (e instanceof AttachStalledError) throw e;
+      /* A busy event loop can miss one probe; the next one decides. */
+      if (now() - lastAnswer >= noAnswerMs) {
+        throw new AttachStalledError(`The Sequence engine has not answered for ${Math.round(noAnswerMs / 1000)} s while reading the project.`);
+      }
+    }
+    await delay(intervalMs);
+  }
 }
 
 /**
@@ -338,6 +431,22 @@ export class ServerController {
       throw e;
     }
     return this.status;
+  }
+
+  /**
+   * B1: resolve once the started server's startup attach has settled (see
+   * {@link waitForAttach}). Never times out while the child is alive.
+   */
+  waitUntilAttached(
+    onProgress?: (p: ScanProgress) => void,
+    limits: Pick<AttachWaitOptions, 'noAnswerMs' | 'stalledMs'> = {},
+  ): Promise<Record<string, unknown>> {
+    return waitForAttach(this.url, {
+      intervalMs: this.pollIntervalMs,
+      isAlive: () => this.childAlive,
+      onProgress,
+      ...limits,
+    });
   }
 
   /** Stop the embedded server for good (called on app quit). Idempotent. */

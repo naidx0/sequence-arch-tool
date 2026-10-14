@@ -4,6 +4,9 @@ import type {
   GetStatusResponse,
   PostAttachResponse,
   PostDetachResponse,
+  AllowedFolderRequest,
+  AllowedFoldersResponse,
+  PostGithubCloneRequest,
   PostGithubCloneResponse,
 } from '@sequence/api-types';
 
@@ -147,9 +150,18 @@ export function createBootTransport(fetchImpl: typeof fetch = globalThis.fetch):
     attach: (path: string) =>
       request<PostAttachResponse>(fetchImpl, '/api/attach', { method: 'POST', body: { path } }),
 
-    /* Clone a public github.com repository and attach it (the server pins the host). */
-    clone: (cloneUrl: string) =>
-      request<PostGithubCloneResponse>(fetchImpl, '/api/github/clone', { method: 'POST', body: { cloneUrl } }),
+    /* Clone a repository and attach it. `dest` is the folder the clone goes into (0.1.8.1 C4); left out, the server
+       picks its own. The URL is any https or ssh git URL; the server checks it (git ls-remote) and says why not. */
+    clone: (cloneUrl: string, destination?: string) => {
+      const body: PostGithubCloneRequest = destination !== undefined && destination.length > 0 ? { cloneUrl, destination } : { cloneUrl };
+      return request<PostGithubCloneResponse>(fetchImpl, '/api/github/clone', { method: 'POST', body });
+    },
+
+    /* "Allow this folder" (0.1.8.1 C5): add a folder outside home to the ones Sequence opens. Answers `{ folders }`. */
+    allowFolder: (path: string) => {
+      const body: AllowedFolderRequest = { path };
+      return request<AllowedFoldersResponse>(fetchImpl, '/api/allowed-folders', { method: 'POST', body });
+    },
 
     /*
      * LEAVING. Reported as a trap: "how do I exit the project? That's a very

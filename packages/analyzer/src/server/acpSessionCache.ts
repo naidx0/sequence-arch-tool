@@ -28,13 +28,13 @@
  *    the caller says the throw was an expected abort — a client disconnect must NOT
  *    tear down a session other requests still share). A dead agent surfaces as the
  *    next turn's throw → dispose → transparent re-create.
- *  - An idle TTL (default 10 min, reset on every use) disposes an untouched session
+ *  - An idle TTL (default 3 min since 0.1.8.1 D3, reset on every use) disposes an untouched session
  *    so an abandoned key never pins a subprocess forever. The timer is `unref`'d so
  *    it never keeps the process alive. Since S1 this frees the PROCESS only: a
  *    chat's agent thread id is kept on its session index entry, and the next
  *    turn's `create` resumes that thread (session/resume or load, codex
  *    thread/resume), so the agent's memory outlives the TTL and the app.
- *  - A hard cap (default 8 live sessions) LRU-evicts + disposes the oldest, so a
+ *  - A hard cap (default 3 live sessions since 0.1.8.1 D3) LRU-evicts + disposes the oldest, so a
  *    runaway client can't spawn unbounded subprocesses.
  *  - `disposeAll()` (wired to the server's `close` event) tears every session down
  *    on shutdown.
@@ -46,10 +46,17 @@
 import type { AcpAgentClient } from '@sequence/acp';
 import { systemWatchdogClock, type WatchdogClock } from '@sequence/acp';
 
-/** Default idle TTL: a session untouched this long is disposed. */
-export const ACP_SESSION_IDLE_TTL_MS = 10 * 60 * 1000;
-/** Default cap on concurrent live sessions (mirrors MAX_TERMINALS). */
-export const ACP_SESSION_MAX = 8;
+/**
+ * Default idle TTL: a session untouched this long is disposed.
+ *
+ * 0.1.8.1 D3 (audit M2): 3 minutes, down from 10. Each live agent (Claude Code,
+ * Codex) holds 200-400 MB; an idle one is cheap to bring back, because the
+ * next turn resumes its thread from the session index (S1), so only the
+ * process is freed early, never the conversation.
+ */
+export const ACP_SESSION_IDLE_TTL_MS = 3 * 60 * 1000;
+/** Default cap on concurrent live sessions. 0.1.8.1 D3: 3, down from 8 (up to ~3 GB of agents). */
+export const ACP_SESSION_MAX = 3;
 
 /** A live cached session plus its serialization + lifecycle state. */
 interface Entry {
@@ -192,13 +199,25 @@ export function createAcpSessionCache(opts: AcpSessionCacheOptions = {}): AcpSes
   }
 
   /** After inserting a new entry, LRU-evict+dispose until we're within the cap. */
+  /**
+   * LRU-evict down to the cap, NEVER an entry with a turn running or queued
+   * (review B: with cap 3, a 4th chat killed an agent mid-answer). When every
+   * live entry is busy the cache runs over the cap for a moment; the turn
+   * that finishes calls this again.
+   */
   function enforceCap(): void {
     while (live.size > maxSessions) {
-      const oldestKey = live.keys().next().value as string | undefined;
-      if (oldestKey === undefined) break;
-      const oldest = live.get(oldestKey);
+      let victim: string | undefined;
+      for (const k of live.keys()) {
+        if ((inflight.get(k) ?? 0) === 0) {
+          victim = k;
+          break;
+        }
+      }
+      if (victim === undefined) return;
+      const oldest = live.get(victim);
       if (oldest) void disposeEntry(oldest);
-      else live.delete(oldestKey);
+      else live.delete(victim);
     }
   }
 
@@ -257,6 +276,8 @@ export function createAcpSessionCache(opts: AcpSessionCacheOptions = {}): AcpSes
       const n = (inflight.get(key) ?? 1) - 1;
       if (n > 0) inflight.set(key, n);
       else inflight.delete(key);
+      /* A cache held over its cap by busy entries comes back down now. */
+      if (n <= 0) enforceCap();
     }
   }
 

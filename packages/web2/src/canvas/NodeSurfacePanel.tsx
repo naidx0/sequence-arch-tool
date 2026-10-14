@@ -65,8 +65,8 @@ export function NodeSurfacePanel({
       return setStatus({ tone: 'fail', text: (error as Error).message || 'Could not generate the workflow.' });
     }
     if (!out) return setStatus(null);
-    if (out.kind === 'space') setStatus({ tone: 'ok', text: out.name ? `Workflow drawn on the Space "${out.name}" and opened in Spaces.` : 'Workflow drawn on a new Space and opened in Spaces.' });
-    else if (out.kind === 'chat') setStatus({ tone: 'ok', text: 'Asked the agent in chat to draw it on a Space.' });
+    if (out.kind === 'space') setStatus({ tone: 'ok', text: out.name ? `Workflow drawn on the board "${out.name}" and opened in Spaces.` : 'Workflow drawn on a new board and opened in Spaces.' });
+    else if (out.kind === 'chat') setStatus({ tone: 'ok', text: 'Asked the agent in chat to draw it on a board.' });
     else setStatus({ tone: 'fail', text: out.message });
   };
   const facts = [

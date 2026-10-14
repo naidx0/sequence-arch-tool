@@ -369,7 +369,8 @@ describe('item 2.4 — the attach dialog', () => {
     expect(recents[0].querySelector('svg')).toBeTruthy(); // the folder icon tile
     expect(recents[0].textContent).toContain('old');
     expect(screen.getByTestId('attach-open-folder').textContent).toContain('Open folder');
-    expect(screen.getByTestId('attach-clone-toggle').textContent).toContain('Clone from GitHub');
+    /* 0.1.8.1 C4: any https or ssh git URL clones, not only GitHub. */
+    expect(screen.getByTestId('attach-clone-toggle').textContent).toContain('Clone a repository');
     // With a recent to pick, the folder browser stays out of the way until Open folder is pressed.
     expect(screen.getByTestId('attach-browse').hasAttribute('hidden')).toBe(true);
     fireEvent.click(screen.getByTestId('attach-open-folder'));
@@ -413,7 +414,9 @@ describe('item 2.4 — the attach dialog', () => {
       String(u).startsWith('/api/github/clone'),
     );
     expect(call?.[1]?.method).toBe('POST');
-    expect(JSON.parse(String(call?.[1]?.body))).toEqual({ cloneUrl: 'https://github.com/octocat/hello' });
+    /* 0.1.8.1 C4: the checkout is a new folder named for the repository inside the folder being browsed, sent as
+       `destination` (PostGithubCloneRequest: the folder the checkout becomes, new or empty). */
+    expect(JSON.parse(String(call?.[1]?.body))).toEqual({ cloneUrl: 'https://github.com/octocat/hello', destination: '/home/max/projects/hello' });
   });
 
   it('a refused clone says why and attaches nothing', async () => {

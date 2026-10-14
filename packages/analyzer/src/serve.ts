@@ -10,6 +10,7 @@ import type { ArchGraph } from '@sequence/schema';
 import {
   serveRepo,
   createRepoServer,
+  startDeferredAttach,
   assertSafeBind,
   resolveTerminalEnabled,
   type RepoServerOptions,
@@ -53,13 +54,29 @@ export async function serveApp(
     // serveApp wires no auth ⇒ authOn=false. Loopback keeps the local default (on);
     // a non-loopback bind would force it off, but assertSafeBind already refused that.
     terminalEnabled: resolveTerminalEnabled(loopbackBind, false, process.env),
+    /* 0.1.8.1 B1: LISTEN FIRST, SCAN AFTER. The repo is attached once the
+       socket is bound, so `/api/status` answers (with `scanning`) during the
+       scan and a slow scan can never look like a server that did not start. */
+    deferStartupAttach: true,
+    startupScanDelayMs: debugStartupScanDelay(process.env),
   };
   const server = await createRepoServer(repoDir ?? null, opts);
   await new Promise<void>((resolve) => {
     server.listen(port, bindHost, () => resolve());
   });
   bootMark('listening');
+  /* A macrotask later, so the caller prints its listening line before the
+     signature walk (synchronous) starts. */
+  setImmediate(() => void startDeferredAttach(server));
   return server;
+}
+
+/** Tests: `SEQUENCE_DEBUG_STARTUP_SCAN_DELAY_MS` simulates a slow startup scan (ms). */
+export function debugStartupScanDelay(env: NodeJS.ProcessEnv): number | undefined {
+  const raw = env.SEQUENCE_DEBUG_STARTUP_SCAN_DELAY_MS;
+  if (!raw) return undefined;
+  const ms = Number(raw);
+  return Number.isFinite(ms) && ms > 0 ? ms : undefined;
 }
 
 const MIME: Record<string, string> = {

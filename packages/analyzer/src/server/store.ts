@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { validatePolicy, type Policy } from '@sequence/schema';
 import { resolveInBrowseRoot } from './browse.js';
 import { parseHookFile, type HookFile, type HookTrust } from './hooks.js';
+import { ensureSequenceIgnored } from './sequenceIgnore.js';
 
 /**
  * The per-project memory layer. Everything the platform remembers about a repo
@@ -30,9 +31,21 @@ export function readJson<T = unknown>(repoRoot: string, file: string): T | undef
   return JSON.parse(fs.readFileSync(p, 'utf8')) as T;
 }
 
-/** Write `value` (pretty JSON) to `.sequence/<file>`, creating parent dirs lazily. */
+/**
+ * Write `value` (pretty JSON) to `.sequence/<file>`, creating parent dirs lazily.
+ *
+ * 0.1.8.1 B3: git is told to ignore `.sequence/` (the repo's LOCAL
+ * `.git/info/exclude`, once per root per process) BEFORE the first write, not
+ * only from the snapshot and worktree paths, so nothing written here can be
+ * committed by accident.
+ */
 export function writeJson(repoRoot: string, file: string, value: unknown): void {
   const p = sequencePath(repoRoot, file);
+  try {
+    ensureSequenceIgnored(repoRoot);
+  } catch {
+    /* git missing or the exclude unwritable: the write itself still happens */
+  }
   fs.mkdirSync(path.dirname(p), { recursive: true });
   atomicWriteFileSync(p, JSON.stringify(value, null, 2));
 }
@@ -392,10 +405,27 @@ export function readUserJson<T = unknown>(storeDir: string, file: string): T | u
   }
 }
 
-/** Write a user-level JSON file directly under the store dir (creates it lazily). */
+/**
+ * Write a user-level JSON file directly under the store dir (creates it lazily).
+ *
+ * 0.1.8.1 B3 (audit H4): the store holds API keys and the GitHub token, so the
+ * directory is 0o700 and every file 0o600 — owner only, whatever the umask.
+ * `chmod` after the write as well, because `mode` applies only when a file or
+ * directory is CREATED and older installs left them 0644 / 0755. (On Windows
+ * the modes are close to a no-op; the profile folder's ACL is what protects it.)
+ */
+export const USER_DIR_MODE = 0o700;
+export const USER_FILE_MODE = 0o600;
 export function writeUserJson(storeDir: string, file: string, value: unknown): void {
-  fs.mkdirSync(storeDir, { recursive: true });
-  fs.writeFileSync(path.join(storeDir, file), JSON.stringify(value, null, 2));
+  fs.mkdirSync(storeDir, { recursive: true, mode: USER_DIR_MODE });
+  try {
+    fs.chmodSync(storeDir, USER_DIR_MODE);
+  } catch {
+    /* not ours to change (a shared mount): the file mode below still holds */
+  }
+  const p = path.join(storeDir, file);
+  fs.writeFileSync(p, JSON.stringify(value, null, 2), { mode: USER_FILE_MODE });
+  fs.chmodSync(p, USER_FILE_MODE);
 }
 
 /**

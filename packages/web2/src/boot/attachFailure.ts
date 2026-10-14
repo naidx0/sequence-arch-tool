@@ -1,3 +1,5 @@
+import type { PostGithubCloneRefusal } from '@sequence/api-types';
+
 import type { AttachFailure } from '../state/types';
 
 /**
@@ -104,7 +106,22 @@ export interface FailureCopy {
   detail: string | null;
   /** One thing to do about it. Compulsory: this is the part that gets dropped. */
   action: FailureAction;
+  /** A second way out, where there is one ("Allow this folder" beside "Choose another"). */
+  secondary?: FailureAction;
   tone: FailureTone;
+}
+
+/** The sentence the outside-home refusal says, word for word (0.1.8.1 C5, audit P1-8). */
+export const OUTSIDE_HOME_SENTENCE = 'Sequence can only open folders inside your home folder.';
+
+/**
+ * WORDS FOR PEOPLE, NOT FOR THE CODE (0.1.8.1 C5: "No internal terms (jail, boundary, browseRoot) appear in the UI").
+ * The server's own sentences still name its implementation ("path escapes the browse root"); they are shown, because
+ * they are the evidence, with those words put the way the reader knows the place: their home folder.
+ */
+export const INTERNAL_TERMS = /\bbrowse[ _-]?roots?\b|\bbrowseRoots?\b|\bjail(?:ed|s)?\b|\bboundar(?:y|ies)\b/gi;
+export function plainWords(text: string): string {
+  return text.replace(INTERNAL_TERMS, 'home folder');
 }
 
 export interface FailureAction {
@@ -114,7 +131,25 @@ export interface FailureAction {
    * callbacks so the copy table stays pure and testable, and so two surfaces
    * showing the same failure cannot offer two different ways out of it.
    */
-  intent: 'pick-another' | 'go-up' | 'retry' | 'attach-anyway';
+  intent: 'pick-another' | 'go-up' | 'retry' | 'attach-anyway' | 'connect-github' | 'check-url' | 'choose-folder' | 'allow-folder';
+}
+
+/**
+ * The actions a clone refusal's body names (`PostGithubCloneRefusal.action`), as the control the strip offers (0.1.8.1
+ * C4, audit P1-7). An action this build does not know is dropped in favour of the default, never shown as a raw word.
+ */
+export const SERVER_ACTIONS: Readonly<Record<PostGithubCloneRefusal['action'], FailureAction>> = {
+  'connect-github': { label: 'Connect GitHub', intent: 'connect-github' },
+  'check-url': { label: 'Check the address', intent: 'check-url' },
+  'choose-folder': { label: 'Choose a folder', intent: 'choose-folder' },
+};
+const serverAction = (name: string | undefined): FailureAction | undefined =>
+  name !== undefined && Object.prototype.hasOwnProperty.call(SERVER_ACTIONS, name) ? SERVER_ACTIONS[name as PostGithubCloneRefusal['action']] : undefined;
+
+/** The server's sentence as a title: its first letter raised, nothing else changed. */
+function asTitle(sentence: string): string {
+  const t = sentence.trim();
+  return t.length === 0 ? t : t[0]!.toUpperCase() + t.slice(1);
 }
 
 /**
@@ -143,6 +178,15 @@ export function classifyAttachFailure(
    * the message must then be ABOUT the status rather than a sentence describing
    * a cause nobody reported. */
   const detail = said ?? `the server answered ${status} and said nothing more`;
+  /* A refusal the server put into words (0.1.8.1 C4): its sentence and the action it named travel with it. */
+  const named = actionText(body);
+  const refused = (): AttachFailure => ({
+    kind: 'transport',
+    status,
+    message: detail,
+    ...(said !== null ? { said: true } : {}),
+    ...(named !== null ? { serverAction: named } : {}),
+  });
 
   if (status === 422) {
     const repoName = readRepoName(body);
@@ -152,8 +196,19 @@ export function classifyAttachFailure(
     if (hasNoManifestsCode(body) && repoName !== null) {
       return { kind: 'no-manifests', repoName, message: detail };
     }
-    return { kind: 'transport', status, message: detail };
+    return refused();
   }
+
+  /*
+   * THE BODY'S ACTION DECIDES BEFORE THE STATUS DOES (0.1.8.1 C4/C5, review S3). The outside-home refusal names
+   * `allow-folder` and the path to allow; a clone refusal names its own button (connect-github, check-url,
+   * choose-folder) and its sentence is the title, whatever its status (a clone's 403 or 404 is not a folder refusal).
+   */
+  if (named === 'allow-folder') {
+    const path = (body as { path?: unknown }).path;
+    return { kind: 'outside-browse-root', message: detail, ...(typeof path === 'string' && path.length > 0 ? { path } : {}) };
+  }
+  if (named !== null && serverAction(named) !== undefined && status >= 400 && status < 500) return refused();
 
   if (status === 403) return { kind: 'outside-browse-root', message: detail };
   if (status === 404) return { kind: 'not-found', message: detail };
@@ -169,7 +224,7 @@ export function classifyAttachFailure(
     }
   }
 
-  return { kind: 'transport', status, message: detail };
+  return refused();
 }
 
 /**
@@ -182,6 +237,16 @@ export function classifyAttachFailure(
  * the server's own text.
  */
 export function attachFailureCopy(failure: AttachFailure): FailureCopy {
+  const copy = rawCopy(failure);
+  return {
+    ...copy,
+    title: plainWords(copy.title),
+    body: plainWords(copy.body),
+    detail: copy.detail === null ? null : plainWords(copy.detail),
+  };
+}
+
+function rawCopy(failure: AttachFailure): FailureCopy {
   switch (failure.kind) {
     case 'no-manifests':
       return {
@@ -195,11 +260,12 @@ export function attachFailureCopy(failure: AttachFailure): FailureCopy {
 
     case 'outside-browse-root':
       return {
-        title: 'That folder is outside the boundary',
-        body:
-          'Sequence can only open folders inside your browse root, and that path resolves above it. A symlink pointing out of the boundary counts as outside too.',
-        detail: failure.message,
-        action: { label: 'Go back up', intent: 'go-up' },
+        title: 'That folder is outside your home folder',
+        body: OUTSIDE_HOME_SENTENCE,
+        /* The server says this very sentence now (OutsideHomeRefusal.error); it is not printed twice. */
+        detail: failure.message.trim() === OUTSIDE_HOME_SENTENCE ? null : failure.message,
+        action: { label: 'Choose another', intent: 'pick-another' },
+        secondary: { label: 'Allow this folder', intent: 'allow-folder' },
         tone: 'plain',
       };
 
@@ -207,7 +273,7 @@ export function attachFailureCopy(failure: AttachFailure): FailureCopy {
       return {
         title: 'That is your home folder, not a project',
         body:
-          'Opening it would put every file in your home directory inside the jail Sequence reads and writes through — keys and credentials included. Pick a project folder inside it instead.',
+          'Opening it would let Sequence read and write every file in your home folder, keys and credentials included. Pick a project folder inside it instead.',
         detail: failure.message,
         action: { label: 'Pick a project folder', intent: 'pick-another' },
         tone: 'plain',
@@ -243,6 +309,29 @@ export function attachFailureCopy(failure: AttachFailure): FailureCopy {
       };
 
     case 'transport':
+      /*
+       * A 4xx is a REFUSAL, not an engine problem (0.1.8.1 C4, audit P1-7: "The engine answered 400" for a clone URL
+       * the server did not take). The server's own sentence is the title and the action it named is the way out.
+       * "Engine" is said only where the engine is the subject: nothing answered, or it failed (5xx).
+       */
+      if (failure.status !== null && failure.status >= 400 && failure.status < 500) {
+        const action = serverAction(failure.serverAction) ?? { label: 'Try again', intent: 'retry' as const };
+        return failure.said
+          ? {
+              title: asTitle(failure.message),
+              body: action.intent === 'connect-github' ? 'Connect GitHub, then try again. Nothing was changed.' : 'Nothing was changed. Correct it and try again.',
+              detail: null,
+              action,
+              tone: 'plain',
+            }
+          : {
+              title: 'Sequence could not do that',
+              body: `The request was refused (${failure.status}). Nothing was changed.`,
+              detail: failure.message,
+              action,
+              tone: 'plain',
+            };
+      }
       return {
         title:
           failure.status === null
@@ -279,6 +368,12 @@ function errorText(body: unknown): string | null {
   const record = asRecord(body);
   const error = record?.error;
   return typeof error === 'string' && error.length > 0 ? error : null;
+}
+
+/** The action a refusal names (`{ error, action: 'connect-github' }`), or null. */
+function actionText(body: unknown): string | null {
+  const action = asRecord(body)?.action;
+  return typeof action === 'string' && action.length > 0 ? action : null;
 }
 
 function hasNoManifestsCode(body: unknown): boolean {

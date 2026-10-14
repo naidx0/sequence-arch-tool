@@ -61,6 +61,8 @@ export type AttentionRequest =
 const api = {
   /** Trigger the native folder picker; resolves with the chosen repo dir, or null if cancelled. */
   openRepo: (): Promise<string | null> => ipcRenderer.invoke('sequence:open-repo'),
+  /** The native folder dialog alone: the chosen folder, or null if cancelled. Attaches nothing (the clone's "Clone into"). */
+  pickFolder: (): Promise<string | null> => ipcRenderer.invoke('sequence:pick-folder'),
   /**
    * Run one of the actions the removed application menu used to carry.
    *

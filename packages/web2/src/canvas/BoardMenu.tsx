@@ -37,6 +37,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { AskAgentMenuItem, type AskResult } from '../agents/askAgent.js';
+import { ASK_AGENT_LABEL } from '../askInPlace/useAskInPlace';
 import type { AccessMode } from '../state/types';
 
 export interface BoardMenuTarget {
@@ -273,7 +274,7 @@ export function BoardMenu({
                 onClose();
               }}
             >
-              Ask about this
+              {ASK_AGENT_LABEL}
             </button>
           ) : null}
           {onOpen ? (
@@ -313,8 +314,11 @@ export function BoardMenu({
               {anatomyOpen ? 'Hide inside' : 'Show inside'}
             </button>
           ) : null}
-          {/* The run hands off to chat; the menu closes at once. */}
+          {/* The run hands off to chat; the menu closes at once. ONE ask row per menu (0.1.8.1 C7, audit P2-3: "Ask
+              about this" and "Ask an agent about this" side by side): with the in-place ask above, this row is
+              Explain (the agent's standing question about a node); without it, this row IS the ask. */}
           <AskAgentMenuItem
+            label={onAskHere ? 'Explain' : ASK_AGENT_LABEL}
             nodeId={target.nodeId}
             nodeLabel={target.label}
             {...(access ? { access } : {})}

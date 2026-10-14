@@ -389,6 +389,13 @@ export interface GoalRunState {
   lastAuditNote?: string;
   startedAt?: string;
   finishedAt?: string;
+  /**
+   * B4 (P0-6 lite): what the run was started on, so a run the engine's restart ended can be resumed
+   * in one click on the same worker — the coding agent it named (absent: Sequence's own model) and
+   * its Work | Code mode.
+   */
+  agentRef?: string;
+  jobMode?: 'work' | 'code';
 }
 
 export type GetGoalRunResponse = GoalRunState;

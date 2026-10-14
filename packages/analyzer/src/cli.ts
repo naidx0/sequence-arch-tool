@@ -22,6 +22,7 @@ import { scoreGraph } from './score.js';
 import { diffGraphs } from './diff.js';
 import { renderBrief } from './brief.js';
 import { serveGraph, serveRepo, serveApp } from './serve.js';
+import { startDeferredAttach } from './server/repoServer.js';
 import { openBrowser } from './open-browser.js';
 import { EXPORT_FORMATS } from './server/exportFormats.js';
 import { listAgents, addAgent, removeAgent } from './server/agentsStore.js';
@@ -202,8 +203,9 @@ export async function launch(args: string[]): Promise<http.Server> {
   const url = `http://127.0.0.1:${boundPort}`;
 
   /* THE READY LINE, FIRST AND MACHINE-READABLE. `serveApp` resolves after
-     `listen()` fires, with the repo already scanned, so `/` answers from this
-     moment. The desktop shell reads this line instead of polling `/` every
+     `listen()` fires and BEFORE the repo is scanned (0.1.8.1 B1: the scan runs
+     in the background and /api/status reports `scanning`), so `/` answers from
+     this moment. The desktop shell reads this line instead of polling `/` every
      150 ms (packages/desktop/src/server-control.ts `LISTENING_PREFIX`). */
   console.log(`${LISTENING_PREFIX} ${url}`);
   console.log('');
@@ -218,7 +220,12 @@ export async function launch(args: string[]): Promise<http.Server> {
   console.log('  ▸ press Ctrl+C to stop');
   console.log('');
 
-  if (!noOpen) openBrowser(url);
+  /* B1: a browser tab opens on the attached repo, not on a home screen that
+     the scan then replaces; the desktop (--no-open) shows its own boot screen. */
+  if (!noOpen) {
+    await startDeferredAttach(server);
+    openBrowser(url);
+  }
   return server;
 }
 

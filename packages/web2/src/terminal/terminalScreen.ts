@@ -48,13 +48,107 @@ function ensureRows(s: TerminalScreen): void {
   }
 }
 
+/**
+ * A new grid size (0.1.8.1 C2, audit P1-6: "the terminal wraps mid-word and garbles after a narrow resize").
+ *
+ * A changed width RE-WRAPS what is on screen, as a terminal does: rows the terminal wrapped (`cont`) are joined back
+ * into their line and cut again at the new width, and the cursor keeps its place in its line. Before, the rows kept
+ * their old width, so the shell's repaint at the new width (ConPTY redraws after every resize) landed on rows that were
+ * still long and left their old tails behind it ("keepsdog and keeps").
+ *
+ * A changed height keeps the cursor's line on screen by scrolling, never by moving the cursor onto another line.
+ */
 export function resizeScreen(s: TerminalScreen, cols: number, rows: number): TerminalScreen {
-  s.cols = Math.max(2, cols);
-  s.rows = Math.max(2, rows);
+  const nextCols = Math.max(2, cols);
+  const nextRows = Math.max(2, rows);
+  if (nextCols !== s.cols) reflow(s, nextCols, nextRows);
+  s.cols = nextCols;
+  if (s.row > nextRows - 1) {
+    s.top += s.row - (nextRows - 1);
+    s.row = nextRows - 1;
+  }
+  s.rows = nextRows;
   ensureRows(s);
-  s.row = Math.min(s.row, s.rows - 1);
   s.col = Math.min(s.col, s.cols - 1);
   return s;
+}
+
+/** Re-wrap every line at `cols`, keeping the cursor at the same place in its line. */
+function reflow(s: TerminalScreen, cols: number, rows: number): void {
+  const oldCols = s.cols;
+  const cur = s.top + s.row;
+  const lines: string[] = [];
+  const cont: boolean[] = [];
+  let curRow = -1;
+  let curCol = 0;
+  let lastText = -1;
+  for (let i = 0; i < s.lines.length; ) {
+    let j = i;
+    while (j + 1 < s.lines.length && s.cont[j + 1]) j++;
+    /* The line as cells. A row the terminal wrapped was full, so it is padded to the old width. */
+    const cells: string[] = [];
+    let at = -1;
+    for (let r = i; r <= j; r++) {
+      const rc = cellsOf(s.lines[r]!);
+      if (r < j) while (rc.length < oldCols) rc.push(' ');
+      if (r === cur) at = cells.length + s.col;
+      cells.push(...rc);
+    }
+    let end = cells.length;
+    while (end > 0 && cells[end - 1] === ' ' && end > at) end--;
+    const kept = cells.slice(0, end);
+    /* Cut at the new width; a wide character is never split across two rows. */
+    const starts: number[] = [];
+    let k = 0;
+    do {
+      starts.push(k);
+      let take = Math.min(cols, kept.length - k);
+      if (k + take < kept.length && kept[k + take] === '' && take > 1) take--;
+      lines.push(kept.slice(k, k + take).join(''));
+      cont.push(k > 0);
+      k += Math.max(1, take);
+    } while (k < kept.length);
+    const first = lines.length - starts.length;
+    if (kept.length > 0) lastText = lines.length - 1;
+    if (at >= 0) {
+      let r = starts.length - 1;
+      while (r > 0 && starts[r]! > at) r--;
+      curRow = first + r;
+      curCol = at - starts[r]!;
+    }
+    i = j + 1;
+  }
+  if (curRow < 0) {
+    curRow = Math.max(0, lines.length - 1);
+    curCol = 0;
+  }
+  /* A cursor past the end of its row (spaces not yet drawn) moves down onto the rows it would have wrapped to. */
+  while (curCol > cols) {
+    curCol -= cols;
+    curRow += 1;
+    if (curRow >= lines.length) {
+      lines.push('');
+      cont.push(true);
+    }
+  }
+  /* What is kept: the scrollback limit, counted from the end, never cutting the cursor's row. */
+  const over = lines.length - (SCROLLBACK_LINES + rows);
+  if (over > 0) {
+    const cut = Math.min(over, curRow);
+    lines.splice(0, cut);
+    cont.splice(0, cut);
+    if (cont.length) cont[0] = false;
+    curRow -= cut;
+    lastText -= cut;
+  }
+  /* The screen ends at the cursor or the last line with text below it, whichever is lower. */
+  const bottom = Math.max(curRow, lastText);
+  const top = Math.max(0, Math.min(curRow, bottom - (rows - 1)));
+  s.lines = lines;
+  s.cont = cont;
+  s.top = top;
+  s.row = curRow - top;
+  s.col = curCol;
 }
 
 /* ── cells ───────────────────────────────────────────────────────────────────

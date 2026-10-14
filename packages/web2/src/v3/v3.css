@@ -2721,6 +2721,18 @@
   color: var(--ink-2);
 }
 
+/* What /goal does, under the field, from the same constant as the slash menu (0.1.8.1 C8; the release smoke reads
+   data-testid="goal-chip"). The form wraps so the line takes a row of its own. */
+.v3-focus-form {
+  flex-wrap: wrap;
+}
+.v3-focus-hint {
+  flex-basis: 100%;
+  order: 10;
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+
 .v3-focus-input {
   flex: 1 1 auto;
   min-width: 0;
@@ -4573,6 +4585,13 @@
 
 /* Glass all round (owner 2026-10-09: "add transparency all around it"): the screen is a translucent pane with a
    hairline, inset from the pane's edge so the ground reads through on every side. */
+/* The screen is exactly `cols` columns wide (TerminalPane sets --term-cols); a narrower pane scrolls sideways
+   (.terminal-pane-surface is overflow: auto) rather than wrapping mid-word (0.1.8.1, review S6). */
+.terminal-grid {
+  display: block;
+  width: calc(var(--term-cols, 80) * 1ch);
+}
+
 .terminal-pane-surface {
   margin: var(--sp-8);
   border: var(--w-hair) solid var(--glass-edge);

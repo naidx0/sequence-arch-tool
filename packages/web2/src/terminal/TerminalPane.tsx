@@ -14,10 +14,11 @@
    PTY backends echo; pipe backends need local echo (honest note in chrome).
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 
 import { condensePrompt } from './promptLine';
 import { takeTerminalInput } from './terminalInput';
+import { createFitScheduler, type FitScheduler } from './terminalFit';
 import { createScreen, resizeScreen, viewScreen, writeScreen, type TerminalScreen } from './terminalScreen';
 import './terminalFallback.css';
 
@@ -114,6 +115,8 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
   const surfaceRef = useRef<HTMLPreElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const clientRef = useRef<TerminalClient | null>(null);
+  /* The one fitter (terminalFit.ts): the observer and a new socket both fit through it. */
+  const fitRef = useRef<FitScheduler | null>(null);
   /* Set by Escape: the next Tab leaves the terminal instead of reaching the shell. */
   const releaseRef = useRef(false);
   const hintId = useId();
@@ -241,13 +244,16 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
         /* A shell (not a sign-in) takes lines queued elsewhere in the page (terminalInput.ts). */
         const live = client;
         if (!signIn && !launch) releaseInput = takeTerminalInput((line) => live.sendInput(new TextEncoder().encode(`${line}\r`)));
-        /* The observer may have measured before this socket existed (and told nobody): measure now. */
-        const wrapEl = wrapRef.current;
-        const surfaceEl = surfaceRef.current;
-        const fit = wrapEl && surfaceEl ? measureGrid(wrapEl, surfaceEl) : null;
-        if (fit) resizeScreen(screenRef.current, fit.cols, fit.rows);
-        const s = screenRef.current;
-        if (s.cols > 0 && s.rows > 0) client.resize(s.cols, s.rows);
+        /* The new socket has been told nothing: fit now, through the same scheduler the observer uses, so the shell
+           hears ONE resize for this size (review N3: the open and the observer's first fit each sent one). A pane
+           with no layout yet (jsdom, a hidden tab) tells the grid the screen has. */
+        const fitter = fitRef.current;
+        fitter?.reset();
+        fitter?.flush();
+        if (!fitter?.last()) {
+          const s = screenRef.current;
+          if (s.cols > 0 && s.rows > 0) client.resize(s.cols, s.rows);
+        }
       } catch (e) {
         if (cancelled) return;
         setBlank(false);
@@ -287,22 +293,40 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
     if (el && stickRef.current) el.scrollTop = el.scrollHeight;
   }, [frame]);
 
-  /* The grid follows the surface: cols and rows from the measured cell, told to the shell. */
+  /* The grid follows the surface: cols and rows from the measured cell, told to the shell ONCE the box has held
+     still (0.1.8.1 C2, terminalFit.ts): a window drag used to send the pty a resize per frame. The page coming back
+     into view measures again and redraws, because a hidden page measured nothing while it was away. */
   useEffect(() => {
     const wrap = wrapRef.current;
     const surface = surfaceRef.current;
     if (!wrap || !surface) return undefined;
-    const ro = new ResizeObserver(() => {
-      const m = measureGrid(wrap, surface);
-      if (!m) return;
-      const s = screenRef.current;
-      if (m.cols === s.cols && m.rows === s.rows) return;
-      resizeScreen(s, m.cols, m.rows);
-      clientRef.current?.resize(m.cols, m.rows);
-      repaint();
+    const fit = createFitScheduler({
+      measure: () => measureGrid(wrap, surface),
+      apply: (grid) => {
+        const s = screenRef.current;
+        if (grid.cols !== s.cols || grid.rows !== s.rows) resizeScreen(s, grid.cols, grid.rows);
+        repaint();
+        const client = clientRef.current;
+        if (!client) return false;
+        client.resize(grid.cols, grid.rows);
+        return true;
+      },
     });
+    fitRef.current = fit;
+    const ro = new ResizeObserver(() => fit.schedule());
     ro.observe(wrap);
-    return () => ro.disconnect();
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      fit.flush();
+      repaint();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      ro.disconnect();
+      fit.cancel();
+      if (fitRef.current === fit) fitRef.current = null;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [repaint]);
 
   const send = (payload: string) => {
@@ -492,7 +516,11 @@ export function TerminalPane({ repoRoot = null, signIn, launch, onExit }: Termin
           releaseRef.current = false;
         }}
       >
-        {shown}
+        {/* The text wraps at the GRID's width, not the pane's (review S6): the shell drew it for `cols` columns, so a
+            pane narrower than the grid (MIN_COLS) scrolls sideways instead of wrapping words the shell did not wrap. */}
+        <span className="terminal-grid" data-testid="terminal-grid" style={{ '--term-cols': screenRef.current.cols } as CSSProperties}>
+          {shown}
+        </span>
       </pre>
       {(blank && status === 'live') || status === 'error' ? (
         <div className="terminal-pane-fallback" data-testid="terminal-fallback" role="status">

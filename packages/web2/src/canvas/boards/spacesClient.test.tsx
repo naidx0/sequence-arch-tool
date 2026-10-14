@@ -46,18 +46,18 @@ function mount() {
 }
 const settle = () => new Promise((r) => setTimeout(r, 60));
 
-describe('an untouched default board shows as Space', () => {
-  it('names the tab, its label, its delete control and the confirm Space, and the confirm button says space', async () => {
+describe('an untouched default board shows as Board (0.1.8.1 C9: Spaces holds boards)', () => {
+  it('names the tab, its label, its delete control and the confirm Board, and the confirm button says board', async () => {
     mount();
     await waitFor(() => expect(screen.getByTestId('board-tab-whiteboard')).toBeTruthy());
     expect(server.boards().find((b) => b.id === 'whiteboard')!.name).toBe('Whiteboard');
     const tab = screen.getByTestId('board-tab-whiteboard');
-    expect(tab.textContent).toBe('Space');
-    expect(tab.getAttribute('aria-label')).toBe('Space');
-    expect(screen.getByTestId('board-tab-delete-whiteboard').getAttribute('aria-label')).toBe('Delete Space');
+    expect(tab.textContent).toBe('Board');
+    expect(tab.getAttribute('aria-label')).toBe('Board');
+    expect(screen.getByTestId('board-tab-delete-whiteboard').getAttribute('aria-label')).toBe('Delete Board');
     fireEvent.click(screen.getByTestId('board-tab-delete-whiteboard'));
-    expect(screen.getByTestId('board-delete-confirm').textContent).toMatch(/Delete "Space"\?/);
-    expect(screen.getByTestId('board-delete-ok').textContent).toBe('Delete space');
+    expect(screen.getByTestId('board-delete-confirm').textContent).toMatch(/Delete "Board"\?/);
+    expect(screen.getByTestId('board-delete-ok').textContent).toBe('Delete board');
     expect(document.body.textContent ?? '').not.toMatch(/whiteboard/i);
   });
 
@@ -73,7 +73,7 @@ describe('a save that fails after the person has left the Space is not the next 
     mount();
     await waitFor(() => expect(screen.getByTestId('board-tab-new')).toBeTruthy());
     fireEvent.click(screen.getByTestId('board-tab-new'));
-    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('space-2'));
+    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('board-2'));
     /* from here every ops POST is held until we say */
     let release!: (r: Response) => void;
     const held = new Promise<Response>((r) => (release = r));
@@ -86,7 +86,7 @@ describe('a save that fails after the person has left the Space is not the next 
         return held;
       }
       /* the Space it was drawn on is gone by the time the save fails: re-reading it answers 404 */
-      if (gone && String(input).endsWith('/api/boards/space-2')) return Promise.resolve(new Response(JSON.stringify({ error: 'no board' }), { status: 404 }));
+      if (gone && String(input).endsWith('/api/boards/board-2')) return Promise.resolve(new Response(JSON.stringify({ error: 'no board' }), { status: 404 }));
       return real(input, init);
     });
     const canvas = screen.getByTestId('wb-canvas');
@@ -137,7 +137,7 @@ describe('the surface closes whenever the list of Spaces becomes empty, whoever 
     await server.fetch('/api/boards/whiteboard', { method: 'DELETE' });
     mount();
     await waitFor(() => expect(screen.getByTestId('wb-boards-none')).toBeTruthy());
-    expect(screen.getByTestId('wb-boards-none').textContent).toMatch(/No spaces/);
+    expect(screen.getByTestId('wb-boards-none').textContent).toMatch(/Spaces is empty/);
     await settle();
     expect(asked).not.toContain('whiteboard.close');
   });

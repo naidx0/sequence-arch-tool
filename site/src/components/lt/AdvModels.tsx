@@ -8,8 +8,9 @@ import { DEPTH4, FIND_FILES, GRADE, RANKER, SHAPE } from '@/data/advantages';
  * model and the file-finding model work, with the token saving for search.
  * Three cards, each a small working diagram, what it does in one line, and
  * its measured number:
- *  - the drawing model: the whiteboard's stroke recognizer (packages/ink),
- *    boosted trees trained on the DiDi diagram set, sealed look 93.9%;
+ *  - the drawing model: the architecture board's Draw, the older stroke
+ *    recognizer (packages/ink), one stroke at a time, sealed look 88.1% (V14);
+ *    the newer trained model is a research result and is not in the app;
  *  - the architecture map: deterministic static analysis, no model guessing,
  *    15 of 15 labelled connections and none invented;
  *  - the file finder: the ranker behind find_files, 84.9% hit@5, named on the
@@ -108,9 +109,9 @@ function RankerDiagram() {
 const MODELS = [
   {
     name: 'The drawing model',
-    what: 'Turns a rough sketch on the whiteboard into clean boxes and arrows. Trained on thousands of hand-drawn diagrams.',
+    what: 'On the architecture board, Draw a box to add a service, or a line to connect two boxes. Each shape is one stroke.',
     value: `${SHAPE.accuracy.toFixed(1)}%`,
-    label: `of strokes recognised on a fresh test set, ${SHAPE.wrongSnap.toFixed(1)}% wrong snaps`,
+    label: `right shape on a fresh test set. It snapped ${SHAPE.recall.toFixed(1)}% of the shapes it should have`,
     Diagram: DrawingDiagram,
   },
   {

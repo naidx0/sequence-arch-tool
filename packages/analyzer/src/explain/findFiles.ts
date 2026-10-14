@@ -38,6 +38,7 @@ import { ASK_STOPWORDS, askTokens } from './askTokens.js';
 import { linkedWorktreeBase } from '../server/graphStamp.js';
 import { createFindFilesLearner, type FindFilesLearner } from './findFilesLearn.js';
 import type { LightGbmModel } from './lightgbm.js';
+import { isTestFile } from '../testFiles.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -290,6 +291,36 @@ function render(question: string, ranker: FindFilesRanker, shown: FoundFile[], t
   return lines.join('\n');
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   TESTS ARE NOT THE ANSWER UNLESS ASKED FOR — 0.1.8.1 D5 (audit M7 / P1-12)
+
+   A test names everything its subject names, and then some: on five probe
+   questions about this repository the ranker put test files in the top three.
+   An agent asking "where is the retry delay computed" wants the code that
+   computes it. So unless the question mentions tests, a test file (the
+   analyzer's own `isTestFile`: *.test.*, *.spec.*, test_*.py, tests/ ...)
+   counts its rank TEST_FILE_PENALTY times over: it still appears, just behind
+   the code it tests. A question that mentions tests keeps the ranker's order.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export const TEST_FILE_PENALTY = 4;
+
+const MENTIONS_TESTS = /\b(tests?|testing|tested|specs?|unit[- ]?tests?|e2e|fixtures?|jest|vitest|mocha|pytest|coverage)\b/i;
+
+/** True when the question is about tests, so test files keep their rank. */
+export function questionMentionsTests(question: string): boolean {
+  return MENTIONS_TESTS.test(question);
+}
+
+/** The ranking with test files moved down (see above); unchanged when the question mentions tests. */
+export function demoteTestFiles<T extends { path: string }>(order: readonly T[], question: string): T[] {
+  if (questionMentionsTests(question)) return [...order];
+  return order
+    .map((o, i) => ({ o, key: (i + 1) * (isTestFile(o.path) ? TEST_FILE_PENALTY : 1), i }))
+    .sort((a, b) => a.key - b.key || a.i - b.i)
+    .map((x) => x.o);
+}
+
 /** Path-word fallback while no index exists: tracked files scored by how many question words their path holds. */
 async function pathFallback(root: string, question: string, k: number): Promise<string[]> {
   const files = await listRepoSourceFilesAsync(root);
@@ -344,6 +375,7 @@ export async function findFiles(root: string, question: string, opts: FindFilesO
     order = (await pathFallback(path.resolve(root), q, k)).map((p) => ({ path: p }));
     ranker = 'paths';
   }
+  order = demoteTestFiles(order, q); // D5
   const top = order.slice(0, k);
   if (rowsForLog && e) e.learner.recordQuery(q, rowsForLog);
 

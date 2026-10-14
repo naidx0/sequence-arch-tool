@@ -82,7 +82,7 @@ describe('ask in place on the architecture board', () => {
   it('the node menu carries Ask about this, with the menu items it already had', () => {
     mount();
     fireEvent.contextMenu(card('gateway'));
-    expect(screen.getByTestId('board-menu-ask-here').textContent).toBe('Ask about this');
+    expect(screen.getByTestId('board-menu-ask-here').textContent).toBe('Ask agent about this'); // 0.1.8.1 C7: one ask row, one name
     expect(screen.getByTestId('board-menu-rename')).toBeTruthy();
     expect(screen.getByTestId('board-menu-delete')).toBeTruthy();
   });

@@ -101,6 +101,21 @@ if (!text.includes('const __seqImport =')) {
   process.exit(1);
 }
 fs.writeFileSync(outfile, text);
+
+/* Review B: the HTML converter worker, as one file BESIDE the bundle
+   (netFetch htmlWorkerFile looks there), so a packaged build runs it in a
+   worker with its hard timeout rather than in-process. */
+await esbuild.build({
+  entryPoints: [path.join(DIST, 'server', 'htmlMarkdownWorker.js')],
+  bundle: true,
+  platform: 'node',
+  target: 'node20',
+  format: 'cjs',
+  outfile: path.join(DIST, 'sequence-html-worker.cjs'),
+  external: externals(),
+  logLevel: 'silent',
+  legalComments: 'none',
+});
 fs.copyFileSync(path.join(here, 'server-entry.cjs'), path.join(DIST, 'sequence-server-entry.cjs'));
 const inputs = Object.keys(result.metafile.inputs).length;
 console.log(`bundle-server: ${inputs} modules -> dist/sequence-server.cjs (${Math.round(text.length / 1024)} KB, ${rewritten} dynamic imports routed through the entry)`);

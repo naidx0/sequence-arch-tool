@@ -110,7 +110,7 @@ describe('V3 harness smoke', () => {
 
   it('opens two surfaces side by side with a divider between, and closes one from its pane head', () => {
     const { container } = render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }), { ctrlKey: true }); // 0.1.8.1 C1: beside is Ctrl+click
     const panes = [...container.querySelectorAll('.s2-pane[data-surface-pane]')];
     expect(panes.map((p) => p.getAttribute('data-surface-pane'))).toEqual(['architecture', 'whiteboard']);
     expect(panes[0]!.nextElementSibling?.getAttribute('data-testid')).toBe('s2-split-divider');
@@ -184,7 +184,7 @@ describe('V3 harness smoke', () => {
 
   it('fills the stage when only one surface remains after close', () => {
     const { container } = render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Spaces$/ }), { ctrlKey: true }); // 0.1.8.1 C1: beside is Ctrl+click
     expect((container.querySelector('.s2-pane[data-surface-pane="architecture"]') as HTMLElement).style.flex).toMatch(/^0\.5 1 0/);
     fireEvent.click(screen.getByTestId('v3-tab-close-whiteboard'));
     const alone = container.querySelector('.s2-pane[data-surface-pane="architecture"]') as HTMLElement;

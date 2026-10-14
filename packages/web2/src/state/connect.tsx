@@ -21,6 +21,7 @@ import {
 } from '../chat/mentionModel';
 import { V3Chat } from '../v3/V3Chat';
 import { BootSurface, type BootOutcome, type BootSurfaceProps, type BootTransport } from '../boot';
+import { BootScanning } from '../boot/BootScanning';
 import { useBoot } from '../boot/useBoot';
 import { requestHostCommand } from '../app/hostCommands';
 import { setActivityLaunch } from '../activity/activityLaunch';
@@ -1687,9 +1688,11 @@ export function ConnectedBootHydrate({ transport }: { transport: BootTransport }
   };
 
   useEffect(() => {
-    if (settled !== null) handOn.current(settled);
+    if (settled !== null && settled.kind !== 'scanning') handOn.current(settled);
   }, [settled]);
 
+  /* 0.1.8.1 B1: mid-read, the one thing worth showing is the read (not the no-project home). */
+  if (settled?.kind === 'scanning') return <BootScanning scanning={settled.scanning} />;
   return null;
 }
 

@@ -68,6 +68,11 @@ export interface GoalRunView {
    */
   start: (mode?: GoalRunMode) => Promise<void>;
   stop: () => Promise<void>;
+  /**
+   * B4: start the run again after the engine's restart ended it, on what it was started on (the agent and
+   * Work | Code mode the run row recorded), in Build. It picks up at the first open step.
+   */
+  resume: () => Promise<void>;
   /** Replace the plan — the Unpark control's write. */
   savePlan: (plan: readonly PlanStep[]) => Promise<void>;
   refresh: () => Promise<void>;
@@ -202,6 +207,27 @@ export function useGoalRun(input: {
     await refresh();
   }, [client, input.agentRef, input.getAgentRef, input.jobMode, input.mode, refresh, repoPath, sessionId]);
 
+  const resume = useCallback(async () => {
+    const id = sessionId;
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    const res = await client.startGoalRun(
+      id,
+      {
+        permission: 'build',
+        ...(run.jobMode ? { jobMode: run.jobMode } : input.jobMode === undefined ? {} : { jobMode: input.jobMode }),
+        ...(run.agentRef ? { agentRef: run.agentRef } : {}),
+      },
+      repoPath,
+    );
+    if (servingRef.current !== id) return;
+    if (res.outcome === 'ok') setRun(res.body.state);
+    else setError(res.message);
+    setBusy(false);
+    await refresh();
+  }, [client, input.jobMode, refresh, repoPath, run.agentRef, run.jobMode, sessionId]);
+
   const stop = useCallback(async () => {
     const id = sessionId;
     if (!id) return;
@@ -236,5 +262,5 @@ export function useGoalRun(input: {
     [input.mode, plan, run],
   );
 
-  return { run, plan, goal, goalName, button, busy, error, start, stop, savePlan, refresh };
+  return { run, plan, goal, goalName, button, busy, error, start, stop, resume, savePlan, refresh };
 }

@@ -117,12 +117,30 @@ test('our models: the ranker facts are the ones its source states', () => {
   for (const v of [51.0, 75.5, 84.9]) assert.ok(ADV.includes(`value: ${v.toFixed(1)}`), String(v));
 });
 
-test('our models: the drawing model numbers are its sealed look', () => {
+test('our models: the drawing model numbers are the shipped Draw recognizer sealed look', () => {
   const sealed = read('tools/bench/ink-fresh-sealed.txt');
-  const m = /grouped macroF1 [\d.]+ acc ([\d.]+) wrongSnap ([\d.]+)% recall [\d.]+ \((\d+) strokes, (\d+) drawings\)/.exec(sealed);
-  assert.ok(m, 'sealed line not found');
+  // The old v1 model is what the architecture board's Draw runs (claims V14), scored on single strokes.
+  const m = /fresh test, old v1 model lone: macroF1 [\d.]+ acc ([\d.]+) wrongSnap ([\d.]+)% recall ([\d.]+)/.exec(sealed);
+  assert.ok(m, 'old v1 sealed line not found');
   assert.equal(num('SHAPE', 'accuracy'), Math.round(Number(m[1]) * 1000) / 10);
-  assert.equal(num('SHAPE', 'wrongSnap'), Number(m[2]));
-  assert.equal(num('SHAPE', 'strokes'), Number(m[3]));
-  assert.equal(num('SHAPE', 'drawings'), Number(m[4]));
+  assert.equal(num('SHAPE', 'recall'), Math.round(Number(m[3]) * 1000) / 10);
+});
+
+/* Shipped Draw copy: the architecture board's Draw does not run the trained grouped model (93.9%, 530 diagrams). */
+const DRAW_COPY = {
+  'site/src/data/advantages.ts (SHAPE)': ADV.slice(ADV.indexOf('export const SHAPE ='), ADV.indexOf('} as const;', ADV.indexOf('export const SHAPE ='))),
+  'site/src/components/lt/AdvModels.tsx': read('site/src/components/lt/AdvModels.tsx'),
+  'site/src/components/lt/Story.tsx': read('site/src/components/lt/Story.tsx'),
+};
+const TRAINED_CLAIM = /93\.9|93,9|\b530 diagrams\b/;
+
+test('draw copy: no shipped Draw copy quotes the trained model 93.9% on 530 diagrams', () => {
+  for (const [file, text] of Object.entries(DRAW_COPY)) {
+    assert.doesNotMatch(text, TRAINED_CLAIM, `${file} still quotes the trained model`);
+  }
+});
+
+test('draw copy: a planted 93.9% is caught by the same guard (positive control)', () => {
+  assert.match('On 530 diagrams it picked the right shape 93.9% of the time.', TRAINED_CLAIM);
+  assert.doesNotMatch('On the architecture board, Draw a box to add a service.', TRAINED_CLAIM);
 });

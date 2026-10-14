@@ -8,6 +8,9 @@ import { createStore, type Store } from '../state';
 import { V3App } from '../v3/V3App';
 import { sortByTitle } from './surfaceOrder';
 
+/** 0.1.8.1 C1: a plain click switches the stage; these cases open surfaces BESIDE each other, which is Ctrl/Cmd+click. */
+const BESIDE = { ctrlKey: true } as const;
+
 /*
  * 0.1.8 C3 (owner: "surfaces should open according to their titles ... it shouldn't sort on the recency of windows
  * opened, it should sort based off of the surface names"). The expected order is computed from the labels the code
@@ -39,7 +42,7 @@ describe('surfaces sort by their titles (C3)', () => {
     render(<V3App appStore={freshStore()} />);
     /* Open in a deliberately non-alphabetical order: last opened must not move to the front or the end. */
     const opened = ['terminal', 'agents', 'files', 'whiteboard', 'architecture'].filter((id) => (LIVE_PILLS as readonly string[]).includes(id));
-    for (const id of opened) fireEvent.click(screen.getByTestId(`s2-tab-${id}`));
+    for (const id of opened) fireEvent.click(screen.getByTestId(`s2-tab-${id}`), BESIDE);
     const expected = [...LIVE_PILLS].map(label).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
     expect(stripLabels()).toEqual(expected);
   });
@@ -66,23 +69,23 @@ describe('the open panes follow the title order too (C3)', () => {
     cleanup();
     localStorage.clear();
     render(<V3App appStore={freshStore()} />);
-    for (const id of order) fireEvent.click(screen.getByTestId(`s2-tab-${id}`));
+    for (const id of order) fireEvent.click(screen.getByTestId(`s2-tab-${id}`), BESIDE);
     expect(paneLabels()).toEqual(byTitle(trio.map(label)));
   });
 
   it('close then reopen puts the surface back in its title place, not at the end', () => {
     render(<V3App appStore={freshStore()} />);
-    for (const id of ['terminal', 'agents', 'files']) fireEvent.click(screen.getByTestId(`s2-tab-${id}`));
+    for (const id of ['terminal', 'agents', 'files']) fireEvent.click(screen.getByTestId(`s2-tab-${id}`), BESIDE);
     fireEvent.click(screen.getByTestId('v3-tab-close-agents'));
     expect(paneLabels()).toEqual(byTitle([label('files'), label('terminal')]));
-    fireEvent.click(screen.getByTestId('s2-tab-agents'));
+    fireEvent.click(screen.getByTestId('s2-tab-agents'), BESIDE);
     expect(paneLabels()).toEqual(byTitle(trio.map(label)));
   });
 
   it('a saved drag order sets the panes too', () => {
     localStorage.setItem('sequence.surfaceOrder', JSON.stringify(['terminal', 'files']));
     render(<V3App appStore={freshStore()} />);
-    for (const id of ['agents', 'files', 'terminal']) fireEvent.click(screen.getByTestId(`s2-tab-${id}`));
+    for (const id of ['agents', 'files', 'terminal']) fireEvent.click(screen.getByTestId(`s2-tab-${id}`), BESIDE);
     expect(paneLabels()).toEqual([label('terminal'), label('files'), label('agents')]);
   });
 });

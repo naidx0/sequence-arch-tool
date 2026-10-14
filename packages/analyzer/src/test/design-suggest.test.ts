@@ -197,32 +197,33 @@ test('/api/design-suggest: a malformed / oversized reply is safely normalized/ca
   }
 });
 
-test('/api/design-suggest: per-repo config still WINS when a repo is attached', async () => {
+test('/api/design-suggest: a config saved with a repo attached is stored user-level (B3) and answers', async () => {
   const userDir = tempUserDir();
   const repo = plainappRepo();
   const userMock = await startMockProvider(() => ({ text: JSON.stringify({ nodes: [{ title: 'from-user', kind: 'feature' }] }) }));
   const repoMock = await startMockProvider(() => ({ text: JSON.stringify({ nodes: [{ title: 'from-repo', kind: 'feature' }] }) }));
   const { base, close } = await startServer(repo, userDir); // repo ATTACHED
   try {
-    // Seed a USER-LEVEL config pointing at userMock (written directly — a PUT with
-    // a repo attached would target the per-repo file).
+    // Seed a USER-LEVEL config pointing at userMock.
     fs.writeFileSync(
       path.join(userDir, 'ai.json'),
       JSON.stringify({ provider: 'anthropic', baseUrl: userMock.baseUrl, model: 'claude-test', apiKey: USER_KEY })
     );
-    // Connect the PER-REPO config (repo attached) pointing at repoMock.
+    // Save a config WITH THE REPO ATTACHED, pointing at repoMock. 0.1.8.1 B3: it is
+    // the user's config, so it goes to the user store, never into the repository.
     assert.strictEqual((await putAiConfig(base, repoMock.baseUrl, REPO_KEY)).status, 200);
+    assert.ok(!fs.existsSync(path.join(repo, '.sequence', 'ai.json')), 'no ai.json (and no key) in the repository');
     assert.ok(
-      fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8').includes(REPO_KEY),
-      'per-repo ai.json written (attached path unchanged)'
+      fs.readFileSync(path.join(userDir, 'ai.json'), 'utf8').includes(REPO_KEY),
+      'the saved config replaced the user-level one'
     );
 
     const res = await suggest(base, 'a system');
     assert.strictEqual(res.status, 200);
     const body = (await res.json()) as { nodes: { title: string }[] };
-    assert.strictEqual(body.nodes[0].title, 'from-repo', 'per-repo provider answered');
-    assert.strictEqual(repoMock.requests.length, 1, 'per-repo provider was called');
-    assert.strictEqual(userMock.requests.length, 0, 'user-level provider was NOT called when a repo is attached');
+    assert.strictEqual(body.nodes[0].title, 'from-repo', 'the provider just saved answered');
+    assert.strictEqual(repoMock.requests.length, 1, 'the saved provider was called');
+    assert.strictEqual(userMock.requests.length, 0, 'the replaced provider was not called');
   } finally {
     await close();
     await userMock.close();

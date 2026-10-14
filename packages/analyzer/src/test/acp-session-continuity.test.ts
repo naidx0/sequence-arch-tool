@@ -442,3 +442,54 @@ test('cache: a turn queued behind a force-killed turn answers on a new client', 
   assert.strictEqual(clients[1].promptCalls, 1);
   await cache.disposeAll();
 });
+
+/* ── 0.1.8.1 D3 (audit M2): production defaults are cap 3, idle TTL 3 min ── */
+
+test('D3: the DEFAULT cache holds at most 3 live agents (the 4th evicts the least recently used)', async () => {
+  const clients: FakeClient[] = [];
+  const cache = createAcpSessionCache();
+  const create = fakeFactory(clients);
+  for (const k of ['K1', 'K2', 'K3', 'K4']) await cache.run(k, create, (c) => c.prompt(k));
+  assert.strictEqual(cache.size(), 3, 'held to 3');
+  assert.strictEqual(clients[0].disposed, true, 'the oldest agent process was freed');
+  assert.deepStrictEqual(clients.slice(1).map((c) => c.disposed), [false, false, false]);
+  await cache.disposeAll();
+});
+
+test('D3: the DEFAULT idle TTL frees an untouched agent after 3 minutes, not before', async (t) => {
+  const clients: FakeClient[] = [];
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const cache = createAcpSessionCache();
+  const create = fakeFactory(clients);
+  await cache.run('K', create, (c) => c.prompt('a'));
+  t.mock.timers.tick(3 * 60 * 1000 - 1);
+  for (let i = 0; i < 5; i += 1) await Promise.resolve();
+  assert.strictEqual(clients[0].disposed, false, 'still live a moment before 3 minutes');
+  t.mock.timers.tick(1);
+  for (let i = 0; i < 5; i += 1) await Promise.resolve();
+  assert.strictEqual(clients[0].disposed, true, 'freed at 3 minutes');
+  t.mock.timers.reset();
+  await cache.disposeAll();
+});
+
+test('review B: the cap never evicts an agent whose turn is still running; it comes back to 3 when turns end', async () => {
+  const clients: FakeClient[] = [];
+  const cache = createAcpSessionCache();
+  const create = fakeFactory(clients);
+  const releases: Array<() => void> = [];
+  const busy = ['A', 'B', 'C'].map((k) =>
+    cache.run(k, create, () => new Promise<AcpPromptResult>((r) => releases.push(() => r({ stopReason: 'end_turn', text: k } as AcpPromptResult)))),
+  );
+  await delay(30);
+  await cache.run('D', create, (c) => c.prompt('d'));
+  assert.deepStrictEqual(clients.slice(0, 3).map((c) => c.disposed), [false, false, false], 'no agent was killed mid-turn');
+  /* The only idle entry once D's own turn ended is D: it is the one freed, so the cap holds. */
+  assert.strictEqual(cache.size(), 3, 'back at the cap as soon as a turn ended');
+  assert.strictEqual(clients[3]!.disposed, true, 'the idle agent, not a busy one, was freed');
+  for (const r of releases) r();
+  assert.deepStrictEqual((await Promise.all(busy)).map((x) => (x as AcpPromptResult).text), ['A', 'B', 'C'], 'every running turn finished');
+  await delay(10);
+  assert.strictEqual(cache.size(), 3);
+  assert.strictEqual(clients.filter((c) => c.disposed).length, 1, 'nothing else was freed');
+  await cache.disposeAll();
+});

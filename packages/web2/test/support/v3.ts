@@ -90,7 +90,8 @@ export function paneIsFocused(id: ChromeTabId): boolean {
  */
 export function openPane(id: ChromeTabId): void {
   if (id === 'chat') return;
-  if (!paneIsOpen(id)) fireEvent.click(tab(id));
+  /* 0.1.8.1 C1: a plain click on a name SWITCHES the stage to it; opening a pane beside the others is Ctrl/Cmd+click. */
+  if (!paneIsOpen(id)) fireEvent.click(tab(id), { ctrlKey: true });
 }
 
 /**

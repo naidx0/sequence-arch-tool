@@ -4,6 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from '../state';
 import { V3App } from '../v3/V3App';
 
+/** 0.1.8.1 C1: a plain click switches the stage; these cases open surfaces BESIDE each other, which is Ctrl/Cmd+click. */
+const BESIDE = { ctrlKey: true } as const;
+
 /* Round 11, UX audit (lane ux1): the folded sidebar leaves a rail, the surface
    bar shows that it scrolls, the palette holds every door, and the doors the
    palette alone held are in the sidebar and the chat's more menu. */
@@ -19,7 +22,7 @@ afterEach(() => {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
 });
 
-const openTab = (id: string) => fireEvent.click(screen.getByTestId(`s2-tab-${id}`));
+const openTab = (id: string) => fireEvent.click(screen.getByTestId(`s2-tab-${id}`), BESIDE);
 
 describe('a second surface folds the sidebar to a rail', () => {
   it('keeps New chat and Settings in reach, and the sidebar peeks back from it', () => {

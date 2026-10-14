@@ -327,19 +327,31 @@ export { htmlToMarkdown };
  * Where the worker file is not beside this module (the one-file server bundle),
  * it runs in-process, still behind the size cap and the nesting pre-scan.
  */
+/**
+ * The converter worker beside this module: `htmlMarkdownWorker.js` next to
+ * dist/server/netFetch.js in a build, `sequence-html-worker.cjs` next to the
+ * one-file server bundle (review B: the bundle looked for the .js beside
+ * itself, where it never is, so packaged builds always ran in-process).
+ */
+export function htmlWorkerFile(from: string = import.meta.url): string | null {
+  for (const name of ['./htmlMarkdownWorker.js', './sequence-html-worker.cjs']) {
+    try {
+      const p = fileURLToPath(new URL(name, from));
+      if (fs.existsSync(p)) return p;
+    } catch {
+      /* not a file URL */
+    }
+  }
+  return null;
+}
+
 export async function convertHtml(
   html: string,
   opts: { baseUrl?: string; markup?: boolean },
   timeoutMs: number,
 ): Promise<{ ok: true; text: string } | { ok: false }> {
   const capped = html.length > HTML_CAP ? html.slice(0, HTML_CAP) : html;
-  let file: string | null = null;
-  try {
-    const p = fileURLToPath(new URL('./htmlMarkdownWorker.js', import.meta.url));
-    if (fs.existsSync(p)) file = p;
-  } catch {
-    file = null;
-  }
+  const file = htmlWorkerFile();
   if (!file) return { ok: true, text: htmlToMarkdown(capped, opts) };
   return new Promise((resolve) => {
     let done = false;

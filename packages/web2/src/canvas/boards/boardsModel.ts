@@ -214,17 +214,18 @@ export function diffOps(prev: readonly WbItem[], next: readonly WbItem[]): Board
 
 /**
  * What a board is CALLED on screen. A project made before Spaces has its default board stored as "Whiteboard"; the
- * reader's word for it is "Space", so that untouched default displays as Space. A name the person chose is theirs.
+ * reader's word for one is "Board" (0.1.8.1 C9, audit P2-12: Spaces is the surface, a Board is what is in it), so that
+ * untouched default displays as Board. A name the person chose is theirs.
  */
 export function boardLabel(b: Pick<BoardMeta, 'id' | 'kind' | 'name'>): string {
-  return b.kind === 'whiteboard' && b.id === 'whiteboard' && b.name === 'Whiteboard' ? 'Space' : b.name;
+  return b.kind === 'whiteboard' && b.id === 'whiteboard' && b.name === 'Whiteboard' ? 'Board' : b.name;
 }
 
-/** A name for the next new space: "Space", "Space 2", … Boards already named "Whiteboard N" keep their names. */
+/** A name for the next new board: "Board", "Board 2", … Boards already named otherwise keep their names. */
 export function nextBoardName(index: BoardsIndex | null): string {
   const names = new Set((index?.boards ?? []).map((b) => boardLabel(b).toLowerCase()));
-  if (!names.has('space')) return 'Space';
+  if (!names.has('board')) return 'Board';
   let n = 2;
-  while (names.has(`space ${n}`)) n += 1;
-  return `Space ${n}`;
+  while (names.has(`board ${n}`)) n += 1;
+  return `Board ${n}`;
 }

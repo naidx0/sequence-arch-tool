@@ -182,3 +182,29 @@ linux:
 deb:
   packageName: sequence
   artifactName: Sequence-${version}-${arch}.${ext}
+  # 0.1.8.1 D6 (audit L3): THE DEPENDENCIES, PINNED HERE rather than left to
+  # app-builder's default, so what `apt install` needs is in the repository.
+  # libsecret-1-0 STAYS: since B3 the app seals API keys with Electron
+  # safeStorage, which uses libsecret (the desktop keyring) on Linux. Without
+  # a keyring the app falls back to the 0o600 key file (aiKeyVault.ts).
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+  # The deb runs WITH the Chromium sandbox (audit L4): electron-builder's
+  # after-install makes chrome-sandbox setuid where user namespaces are not
+  # available, so the deb's .desktop Exec carries no --no-sandbox. Do not add
+  # executableArgs here or under `linux:` (that would reach the AppImage too).
+  #
+  # THE AppImage KEEPS electron-builder 25's AppRun `--no-sandbox` and needs
+  # libfuse2 (audit L2). The static type-2 runtime that removes the FUSE 2
+  # dependency is `toolsets.appimage`, which arrived in electron-builder 26;
+  # this tree pins ^25.1.8 (installed 25.1.8), so it cannot be set here. The
+  # upgrade rides with the Electron upgrade (0.1.9). Until then the download
+  # page carries the `--appimage-extract-and-run` line.

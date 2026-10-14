@@ -9,6 +9,9 @@ import { V3App } from '../v3/V3App';
 import { CARD_GAP } from './layoutPrefs';
 import cssRaw from './shell2.css?raw';
 
+/** 0.1.8.1 C1: a plain click switches the stage; these cases open surfaces BESIDE each other, which is Ctrl/Cmd+click. */
+const BESIDE = { ctrlKey: true } as const;
+
 const css = cssRaw.replace(/\r\n/g, '\n');
 
 /*
@@ -59,7 +62,7 @@ describe('the surface bar names every surface, always (B1)', () => {
     expect(LIVE_PILLS.length).toBeGreaterThanOrEqual(4);
     render(<V3App appStore={freshStore()} />);
     for (const focus of LIVE_PILLS) {
-      fireEvent.click(screen.getByTestId(`s2-tab-${focus}`));
+      fireEvent.click(screen.getByTestId(`s2-tab-${focus}`), BESIDE);
       for (const id of LIVE_PILLS) {
         const pill = within(bar()).getByRole('button', { name: nameOf(id) });
         expect(pill.querySelector('.s2-seg-l')?.textContent).toBe(nameOf(id));
@@ -71,7 +74,7 @@ describe('the surface bar names every surface, always (B1)', () => {
   it('every open surface has its own ×, Terminal included; a closed one has none', () => {
     render(<V3App appStore={freshStore()} />);
     for (const id of LIVE_PILLS) {
-      fireEvent.click(screen.getByTestId(`s2-tab-${id}`));
+      fireEvent.click(screen.getByTestId(`s2-tab-${id}`), BESIDE);
       const x = screen.getByTestId(`v3-tab-close-${id}`);
       expect(x.getAttribute('aria-label')).toBe(`Close ${nameOf(id)}`);
       /* The × belongs to its own pill. */
@@ -126,7 +129,7 @@ describe('with no surface open the stage folds and the chat is centred (B3)', ()
     expect(screen.queryByTestId('s2-chat-sizer')).toBeNull();
     /* The composer stays the same one. */
     expect(screen.getByTestId('composer-field')).toBeTruthy();
-    fireEvent.click(screen.getByTestId('s2-tab-architecture'));
+    fireEvent.click(screen.getByTestId('s2-tab-architecture'), BESIDE);
     expect(row().getAttribute('data-stage')).toBeNull();
     expect(chat.style.width).toBe('420px');
     expect(screen.getByTestId('s2-chat-sizer')).toBeTruthy();
@@ -230,7 +233,7 @@ describe('the bar scrolls when the names do not fit, fading only the side with m
     for (const width of [1440, 1024, 900]) {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
       const { unmount } = render(<V3App appStore={freshStore()} />);
-      fireEvent.click(screen.getByTestId('s2-tab-files'));
+      fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
       expect(document.querySelector("nav[aria-label=Workspace]")!.classList.contains("is-compact")).toBe(false);
       for (const id of LIVE_PILLS) expect(screen.getByTestId(`s2-tab-${id}`).querySelector('.s2-seg-l')?.textContent).toBe(nameOf(id));
       unmount();
@@ -244,8 +247,8 @@ describe('round 9, asks 35 and 36: the selected surface and the top-left of the 
     render(<V3App appStore={freshStore()} />);
     closeAll();
     const [a, b, c] = LIVE_PILLS;
-    fireEvent.click(screen.getByTestId(`s2-tab-${a}`));
-    fireEvent.click(screen.getByTestId(`s2-tab-${b}`));
+    fireEvent.click(screen.getByTestId(`s2-tab-${a}`), BESIDE);
+    fireEvent.click(screen.getByTestId(`s2-tab-${b}`), BESIDE);
     const state = (id: string) => bar().querySelector(`[data-pill="${id}"]`)?.getAttribute('data-state');
     expect(state(b)).toBe('focused');
     expect(state(a)).toBe('open');

@@ -114,7 +114,13 @@ test('launch starts a listening server and opens the browser to the bound URL', 
     const port = typeof addr === 'object' && addr ? addr.port : 0;
     const url = `http://127.0.0.1:${port}`;
 
-    // it serves the app on the bound port
+    // it serves the app on the bound port. B1 (0.1.8.1): the launcher listens
+    // BEFORE it scans, so the graph is there once the background attach lands.
+    for (let i = 0; i < 600; i += 1) {
+      const st = (await (await fetch(`${url}/api/status`)).json()) as { attached?: boolean };
+      if (st.attached === true) break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
     const res = await fetch(`${url}/archgraph.json`);
     assert.strictEqual(res.status, 200);
 

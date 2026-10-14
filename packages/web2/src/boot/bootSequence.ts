@@ -1,4 +1,5 @@
 import type {
+  AllowedFoldersResponse,
   GetArchGraphResponse,
   GetBrowseResponse,
   GetRecentResponse,
@@ -105,7 +106,13 @@ export interface BootTransport {
    * attach it (`POST /api/github/clone`). Optional so older fakes satisfy the
    * interface; the open-project screen says so when it is absent.
    */
-  clone?(cloneUrl: string): Promise<WireResult<PostGithubCloneResponse>>;
+  /** `destination` is the folder the checkout BECOMES (new or empty); absent, the server's own default. */
+  clone?(cloneUrl: string, destination?: string): Promise<WireResult<PostGithubCloneResponse>>;
+  /**
+   * Let Sequence open folders under `path` too (`POST /api/browse-roots { path }`), for "Allow this folder" on the
+   * outside-home refusal (0.1.8.1 C5). Optional so older fakes satisfy the interface.
+   */
+  allowFolder?(path: string): Promise<WireResult<AllowedFoldersResponse>>;
   /** Leave the attached repository. See bootClient for why this arrived late. */
   detach(): Promise<WireResult<PostDetachResponse>>;
 }
@@ -126,6 +133,7 @@ export const BOOT_ROUTES = [
   '/api/browse',
   '/api/attach',
   '/api/github/clone',
+  '/api/allowed-folders',
   '/api/detach',
 ] as const;
 
@@ -187,6 +195,11 @@ export interface PlatformReport {
  */
 export type BootOutcome =
   | { kind: 'attached'; repo: ScannedRepoDraft; platform: PlatformReport }
+  /**
+   * 0.1.8.1 B1: the engine is up and still reading its startup `--repo` (`/api/status` carries `scanning`). Not
+   * `unattached`: a tab opened now must say "Reading N of M files" and wait, not offer to open a project.
+   */
+  | { kind: 'scanning'; scanning: BootScanning; platform: PlatformReport }
   | { kind: 'unattached'; platform: PlatformReport }
   | { kind: 'foreign-repo'; platform: PlatformReport }
   | { kind: 'sign-in-required'; platform: PlatformReport }
@@ -237,6 +250,29 @@ export function bootIsStale(outcome: BootOutcome, status: GetStatusResponse | nu
   return false;
 }
 
+/** The startup read's progress, as `/api/status` reports it (0.1.8.1 B1). */
+export interface BootScanning {
+  done: number;
+  total: number;
+  path: string;
+}
+
+/** `scanning` off a status body, or null when the engine is not reading a startup repository. */
+export function scanningOf(body: unknown): BootScanning | null {
+  const s = (body as { scanning?: unknown } | null)?.scanning as Partial<BootScanning> | undefined;
+  if (!s || typeof s !== 'object') return null;
+  const done = typeof s.done === 'number' && s.done >= 0 ? s.done : 0;
+  const total = typeof s.total === 'number' && s.total >= 0 ? s.total : 0;
+  return { done, total, path: typeof s.path === 'string' ? s.path : '' };
+}
+
+/** What the boot surface says while the engine reads: "Reading 1,204 of 3,010 files…" ("Counting files…" first). */
+export function scanningLine(s: BootScanning): string {
+  if (s.total <= 0) return 'Counting files…';
+  const fmt = (n: number) => n.toLocaleString('en-US');
+  return `Reading ${fmt(Math.min(s.done, s.total))} of ${fmt(s.total)} files…`;
+}
+
 /* ========================================================================== *
  * THE LADDER
  * ========================================================================== */
@@ -260,7 +296,10 @@ export async function runBoot(transport: BootTransport, now = Date.now): Promise
       at: now(),
     };
 
-    if (!probe.body.attached) return { kind: 'unattached', platform };
+    if (!probe.body.attached) {
+      const scanning = scanningOf(probe.body);
+      return scanning ? { kind: 'scanning', scanning, platform } : { kind: 'unattached', platform };
+    }
 
     /*
      * `{ attached: true }` with no name and no root is the authenticated

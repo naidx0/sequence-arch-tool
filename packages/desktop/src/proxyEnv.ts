@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 /**
  * The system proxy, as environment variables for the server child.
  *
@@ -201,4 +203,104 @@ async function systemProxyEnvRaw(deps: SystemProxyDeps): Promise<ProxyEnv> {
     log(`could not read the system proxy: ${(e as Error).message}`);
   }
   return {};
+}
+
+/* ── 0.1.8.1 B2: THE PROBE NEVER DELAYS THE ENGINE ─────────────────────────
+   `reg query` / `scutil` (5 s timeout) and a PAC script (2 s) used to be
+   awaited before the server was spawned (audit M8). The engine only needs the
+   proxy for outbound calls, so it now starts at once with the answer the LAST
+   launch found (cached in userData), while this launch's probe runs alongside
+   and refreshes the cache and the env any later (re)spawn reads. */
+
+const PROXY_KEYS = ['HTTPS_PROXY', 'HTTP_PROXY', 'NO_PROXY'] as const;
+
+/** The cached probe result; {} when missing or unreadable, or when the person set proxy variables (theirs win). */
+export function readCachedProxyEnv(
+  file: string,
+  env: NodeJS.ProcessEnv = process.env,
+  readFile: (p: string) => string = (p) => fs.readFileSync(p, 'utf8'),
+): ProxyEnv {
+  if (proxySetInEnv(env)) return {};
+  try {
+    const raw = JSON.parse(readFile(file)) as Record<string, unknown>;
+    const out: ProxyEnv = {};
+    for (const k of PROXY_KEYS) if (typeof raw[k] === 'string' && raw[k] !== '') out[k] = raw[k] as string;
+    return out.HTTPS_PROXY ? out : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Replace the proxy variables in `target` with `proxy` (a fresh {} clears a stale cached proxy). */
+export function applyProxyEnv(target: NodeJS.ProcessEnv, proxy: ProxyEnv): void {
+  for (const k of PROXY_KEYS) delete target[k];
+  Object.assign(target, proxy);
+}
+
+export interface ProxyProbeDeps {
+  /** `<userData>/system-proxy.json`. */
+  file: string;
+  /** The live probe (systemProxyEnv with the real deps). */
+  probe: () => Promise<ProxyEnv>;
+  env?: NodeJS.ProcessEnv;
+  log?: (line: string) => void;
+  readFile?: (p: string) => string;
+  writeFile?: (p: string, data: string) => void;
+}
+
+/**
+ * Read the cached answer NOW (synchronously, for the spawn) and start the live
+ * probe in parallel. `fresh` resolves with the live answer once it has been
+ * written to the cache; it never rejects.
+ */
+export function startProxyProbe(deps: ProxyProbeDeps): { cached: ProxyEnv; fresh: Promise<ProxyEnv>; hadCache: boolean } {
+  const env = deps.env ?? process.env;
+  const cached = readCachedProxyEnv(deps.file, env, deps.readFile);
+  let hadCache = false;
+  try {
+    hadCache = (deps.readFile ?? ((p: string) => fs.readFileSync(p, 'utf8')))(deps.file).trim() !== '';
+  } catch {
+    hadCache = false;
+  }
+  const write = deps.writeFile ?? ((p: string, data: string) => fs.writeFileSync(p, data));
+  const fresh = Promise.resolve()
+    .then(() => deps.probe())
+    .catch((e: Error) => {
+      deps.log?.(`system proxy probe failed: ${e.message}`);
+      return {} as ProxyEnv;
+    })
+    .then((found) => {
+      try {
+        write(deps.file, JSON.stringify(found));
+      } catch (e) {
+        deps.log?.(`could not cache the system proxy: ${(e as Error).message}`);
+      }
+      return found;
+    });
+  return { cached, fresh, hadCache };
+}
+
+/** Review B: how long the FIRST launch (no cache yet) waits for the live probe before spawning. */
+export const FIRST_LAUNCH_PROXY_WAIT_MS = 1500;
+
+/**
+ * The proxy for the first spawn. With a cache: the cached answer, at once.
+ * With none (first launch, or a cleared userData): the live probe, waited for
+ * up to `waitMs` so a proxy-only network works from the very first start; past
+ * that, no proxy, and the live answer is cached for the next spawn.
+ */
+export async function proxyForFirstSpawn(
+  probe: { cached: ProxyEnv; fresh: Promise<ProxyEnv>; hadCache: boolean },
+  waitMs: number = FIRST_LAUNCH_PROXY_WAIT_MS,
+): Promise<ProxyEnv> {
+  if (probe.hadCache) return probe.cached;
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<ProxyEnv>((resolve) => {
+    timer = setTimeout(() => resolve({}), waitMs);
+  });
+  try {
+    return await Promise.race([probe.fresh, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }

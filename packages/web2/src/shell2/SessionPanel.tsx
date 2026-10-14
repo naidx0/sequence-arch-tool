@@ -710,7 +710,8 @@ export function SessionPanel({ client = sessionsClient, skillsSource = defaultSk
           className="s2-it-hit s2-rail-hit"
           aria-current={on ? 'true' : undefined}
           aria-busy={opening ? 'true' : undefined}
-          title={projectTag ? `${wt ? branchLabel(wt.branch) : sessionTitle(entry)} (${p.name})` : undefined}
+          /* The full name on hover, for a row the sidebar cuts short (0.1.8.1 C9, audit P2-11). */
+          title={projectTag ? `${wt ? branchLabel(wt.branch) : sessionTitle(entry)} (${p.name})` : wt ? branchLabel(wt.branch) : sessionTitle(entry)}
           onPointerEnter={p.current ? () => warmOnRest(entry.id) : undefined}
           onPointerLeave={p.current ? stopRest : undefined}
           onFocus={p.current ? () => warmSnapshot(store, entry.id, client) : undefined}
@@ -1017,7 +1018,7 @@ export function SessionPanel({ client = sessionsClient, skillsSource = defaultSk
                     className="s2-it-hit s2-rail-hit"
                     aria-expanded={open}
                     aria-busy={opening ? 'true' : undefined}
-                    title={p.path ?? 'Local workspace'}
+                    title={`${p.name} (${p.path ?? 'Local workspace'})`}
                     data-testid="s2-project-switch"
                     aria-keyshortcuts={p.home ? undefined : 'Alt+ArrowUp Alt+ArrowDown'}
                     onPointerDown={(e) => startDrag(e, p)}

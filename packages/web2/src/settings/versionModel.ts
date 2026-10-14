@@ -59,6 +59,16 @@ const BUSY = new Set(['downloading', 'verifying', 'launching']);
 
 const REPO = 'naidx0/sequence-arch-tool';
 
+/**
+ * The published notes for a version (0.1.8.1 D1, audit P2-8: the notes link 404ed). The GitHub release page of the
+ * version's tag, the page the site's "Full release notes" opens too (site/src/data/release.ts RELEASE_URL); "v" or not,
+ * the tag is v<version>. Anything that is not a version gets the releases list.
+ */
+export function releaseNotesUrl(version: string | null | undefined): string {
+  const v = (version ?? '').trim().replace(/^v/i, '');
+  return /^\d+(\.\d+){1,3}$/.test(v) ? `https://github.com/${REPO}/releases/tag/v${v}` : `https://github.com/${REPO}/releases`;
+}
+
 /** The release page link, only when it is a page of this repo on github.com over https; else the repo's releases page. */
 export function releaseHref(htmlUrl: string | null | undefined): string {
   const fallback = `https://github.com/${REPO}/releases`;

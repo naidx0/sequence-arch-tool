@@ -61,6 +61,7 @@ async function startServer(repoRoot: string): Promise<{ base: string; repo: stri
    * somewhere disposable for this process.
    */
   setRepoTrust(userStoreDir(), repoRoot, true);
+  userDirOf.set(repoRoot, userConfigDir);
   const server = await createRepoServer(repoRoot, { webDist: undefined, userConfigDir });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
   const addr = server.address();
@@ -72,8 +73,13 @@ async function startServer(repoRoot: string): Promise<{ base: string; repo: stri
   };
 }
 
+/* 0.1.8.1 B3: the config, keys included, is stored at USER level only (0o600),
+   never in the repository; `onDisk(repo)` reads the user store of the server
+   that repo was served by. The repository's own `.sequence/` must hold no key. */
+const userDirOf = new Map<string, string>();
 function onDisk(repo: string): Record<string, unknown> {
-  return JSON.parse(fs.readFileSync(path.join(repo, '.sequence', 'ai.json'), 'utf8')) as Record<string, unknown>;
+  assert.ok(!fs.existsSync(path.join(repo, '.sequence', 'ai.json')), 'B3: no ai.json is written into the repository');
+  return JSON.parse(fs.readFileSync(path.join(userDirOf.get(repo)!, 'ai.json'), 'utf8')) as Record<string, unknown>;
 }
 
 async function put(base: string, body: unknown): Promise<Response> {

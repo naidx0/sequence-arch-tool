@@ -5,6 +5,7 @@ import type { GoalRunState, PlanStep } from '@sequence/api-types';
 import { createStore, StoreProvider, type Store } from '../state';
 import type { SessionsClient, WireResult } from '../sessions/sessionsClient';
 import { slashCommands } from '../chat/composerModel';
+import { GOAL_COMMAND_HINT } from './goalCopy';
 import { V3Chat } from './V3Chat';
 
 /**
@@ -263,6 +264,8 @@ describe('/goal <text> sets the goal and begins the long-running task', () => {
 
     expect(screen.getByTestId('v3-focus-form')).toBeTruthy();
     expect(screen.getByTestId('v3-focus-input')).toBeTruthy();
+    /* 0.1.8.1 C8: the picked /goal says what it does, in the slash menu's own words (one constant). */
+    expect(screen.getByTestId('goal-chip').textContent).toBe(GOAL_COMMAND_HINT);
     await waitFor(() => expect(fake.started).toHaveLength(0));
     expect(fake.updated).toHaveLength(0);
   });

@@ -166,16 +166,14 @@ export const RANKER = {
 } as const;
 
 /**
- * The drawing model: the whiteboard's stroke recognizer (packages/ink), boosted
- * trees trained on the DiDi diagram dataset, scored once on a fresh sealed
- * slice with the shipped model (grouped strokes).
+ * The architecture board's Draw: the older stroke recognizer (packages/ink),
+ * one stroke at a time. Scored on a fresh sealed slice (claims V12, V14). The
+ * newer trained model is a research result and is not wired into Draw.
  */
 export const SHAPE = {
-  accuracy: 93.9,
-  wrongSnap: 1.62,
-  drawings: 530,
-  strokes: 13175,
-  source: 'tools/bench/ink-fresh-sealed.txt, packages/ink/src/shapeModel.ts',
+  accuracy: 88.1,
+  recall: 54.4,
+  source: 'tools/bench/ink-fresh-sealed.txt (old v1 model, lone strokes), docs/claims.json V14',
 } as const;
 
 export const LOCAL_MODELS = {

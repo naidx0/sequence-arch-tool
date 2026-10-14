@@ -7,6 +7,9 @@ import { createStore, type Store } from '../state';
 import { V3App } from '../v3/V3App';
 import { SPLIT_KEY } from './layoutPrefs';
 
+/** 0.1.8.1 C1: a plain click switches the stage; these cases open surfaces BESIDE each other, which is Ctrl/Cmd+click. */
+const BESIDE = { ctrlKey: true } as const;
+
 /*
  * ROUND 0.1.5, G2 (owner): "resizing surfaces is very not smooth". A drag used to set React state on every
  * pointer move, re-rendering the whole shell per pixel. It now writes the size straight onto the panes once per
@@ -56,8 +59,8 @@ describe('a split drag is one frame of work per frame', () => {
   it('writes the panes\' flex directly, coalesced per frame, and commits React state once on release', () => {
     render(<V3App appStore={freshStore()} />);
     fireEvent.click(screen.getByTestId('v3-tab-close-architecture'));
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
-    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
+    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'), BESIDE);
     const stage = document.querySelector<HTMLElement>('.s2-stage')!;
     stage.getBoundingClientRect = () => ({ left: 0, right: 1000, width: 1000, top: 0, bottom: 600, height: 600, x: 0, y: 0, toJSON() {} }) as DOMRect;
     const panes = () => Array.from(stage.querySelectorAll<HTMLElement>(':scope > .s2-pane'));
@@ -99,7 +102,7 @@ describe('the chat column never squeezes the surfaces below what they can show (
     };
     try {
       render(<V3App appStore={freshStore()} />);
-      fireEvent.click(screen.getByTestId('s2-tab-files'));
+      fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
       /* Two panes want 240 each plus the 8 px divider: 488 against a 450 stage, so the chat gives 38 px. */
       const col = document.querySelector<HTMLElement>('.v3-chat-col')!;
       expect(col.style.width).toBe('722px');

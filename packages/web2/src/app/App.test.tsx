@@ -384,7 +384,7 @@ describe('the shell mounts the surfaces the lanes built', () => {
     expect(await screen.findByTestId('connected-files-unattached')).toBeTruthy();
   });
 
-  it('Files opens as a pane of its own, and a later board open does not displace it', async () => {
+  it('Files opens as a pane of its own; the palette switches the stage like a click on a name, and Files comes back from its pill', async () => {
     /*
      * THE PROPERTY IS THE SAME ONE IT ALWAYS WAS: the panes are separate
      * columns, not one exclusive board slot. Stronger now than under v2, where
@@ -396,7 +396,8 @@ describe('the shell mounts the surfaces the lanes built', () => {
     expect(pane('files')).toBeTruthy();
     expect(await screen.findByTestId('connected-files')).toBeTruthy();
 
-    /* The palette's board command must not drop Files. */
+    /* 0.1.8.1 C1 / review S8: the palette opens a surface the way a plain click on its name does, so it SWITCHES the
+       stage; a split is Ctrl/Cmd+click, the Split button or a drag. Files is not lost: its pill brings it back. */
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
     fireEvent.change(screen.getByTestId('command-field'), { target: { value: 'spaces' } });
     fireEvent.click(screen.getAllByTestId('command-row')[0]!);
@@ -404,8 +405,9 @@ describe('the shell mounts the surfaces the lanes built', () => {
     expect(paneIsFocused('whiteboard')).toBe(true);
     /* The whiteboard surface loads when first opened (boot ratchet). */
     expect(await screen.findByTestId('whiteboard')).toBeTruthy();
-    expect(pane('files')).toBeTruthy();
-    expect(paneIsOpen('files')).toBe(true);
+    expect(paneIsOpen('files')).toBe(false);
+    fireEvent.click(tab('files'));
+    expect(paneIsFocused('files')).toBe(true);
   });
 
   it('the Architecture pill opens its pane, its × closes it, and the name brings it back', () => {

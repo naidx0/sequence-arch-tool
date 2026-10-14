@@ -615,7 +615,7 @@ describe('the Files chrome tab', () => {
     globalThis.fetch = wire.fetchImpl;
 
     render(<App appStore={storeWithGraph()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Files$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Files$/ }), { ctrlKey: true }); // 0.1.8.1 C1: beside is Ctrl+click
     expect(await row('README.md')).toBeTruthy();
 
     /* Architecture is already open at boot — both panes should coexist. */

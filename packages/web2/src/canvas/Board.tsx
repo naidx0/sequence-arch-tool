@@ -72,7 +72,7 @@ import { displayLabel } from './displayLabel.js';
 import { boardTitleFit, twoLineText } from './titleFit.js';
 import { farLodClass } from './farLod.js';
 import { routeEdges } from './routes.js';
-import { FIT_INSET, FOCUS_MIN_ZOOM, ZOOM_MAX, ZOOM_MIN, unionBounds, type Bounds } from './camera.js';
+import { FIT_INSET, FOCUS_MIN_ZOOM, SHOW_INSIDE_MIN_ZOOM, ZOOM_MAX, ZOOM_MIN, unionBounds, type Bounds } from './camera.js';
 import { NODE_DRAG_THRESHOLD, dragCatchUp, isArrow, isTypingTarget, nextInDirection, nudge } from './boardKeys.js';
 import { followRowLabel, type RowLabelInput } from './rowLabels.js';
 /* Static, not lazy: the board is empty while the first scan runs, so a lazy
@@ -122,6 +122,8 @@ export interface BoardEmpty {
   what: string;
   why: string;
   action?: { label: string; onAct: () => void };
+  /** A second way out, beside the first (P2-9: Open another / Start from a sketch). */
+  secondary?: { label: string; onAct: () => void };
 }
 
 /**
@@ -235,7 +237,7 @@ export interface BoardProps {
    * level). The next fit frames it at no less than `FOCUS_MIN_ZOOM`, eased,
    * instead of fitting the whole board.
    */
-  focusRequest?: { id: string | null; seq: number } | null;
+  focusRequest?: { id: string | null; seq: number; now?: boolean } | null;
   /**
    * Esc after Draw and the selection are already clear: the host steps back
    * one level (the open anatomy wall, then the drilled-in level). Returns
@@ -1476,6 +1478,33 @@ function BoardInner({
     if (focusRequest) pendingFocus.current = focusRequest;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusSeq]);
+  /*
+   * "SHOW INSIDE" FRAMES WHAT IT OPENED, NOW (0.1.8.1 C8, audit P2-7: it opened at 49 %, unreadable). A request marked
+   * `now` does not wait for the next automatic fit, which an open wall does not always cause: once the layout is not
+   * running, the node is framed to its content at no less than SHOW_INSIDE_MIN_ZOOM. The reader zooms out from there.
+   */
+  const fitNow = useRef<string | null>(null);
+  useEffect(() => {
+    if (focusRequest?.now && focusRequest.id) fitNow.current = focusRequest.id;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSeq]);
+  useEffect(() => {
+    const id = fitNow.current;
+    if (!id || canvas.layout === 'laying-out') return;
+    if (!boxes.some((box) => box.id === id)) return;
+    if (canvas.frame.width <= 0 || canvas.frame.height <= 0) return;
+    fitNow.current = null;
+    heldFocus.current = { id };
+    easeCamera();
+    dispatch({
+      type: 'canvas/fit',
+      bounds: fitBounds([id]),
+      reserve: noteBox(),
+      bands: chromeBands(),
+      minZoom: Math.max(FOCUS_MIN_ZOOM, SHOW_INSIDE_MIN_ZOOM),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSeq, canvas.layout, boxes, canvas.frame.width, canvas.frame.height]);
   const autoFit = useCallback(() => {
     const held = heldFocus.current;
     if (held) {
@@ -1913,8 +1942,13 @@ function BoardInner({
           <span className="t">{empty.what}</span>
           <p className="s">{empty.why}</p>
           {empty.action && (
-            <button type="button" className="bpill" onClick={empty.action.onAct}>
+            <button type="button" className="bpill" data-testid="board-empty-action" onClick={empty.action.onAct}>
               {empty.action.label}
+            </button>
+          )}
+          {empty.secondary && (
+            <button type="button" className="bpill" data-testid="board-empty-secondary" onClick={empty.secondary.onAct}>
+              {empty.secondary.label}
             </button>
           )}
         </div>

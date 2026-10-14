@@ -224,10 +224,12 @@ export function renderInstructionsSection(
 export function renderTrustedInstructionsSection(
   repoRoot: string | null,
   isTrusted: (root: string) => boolean = (root) => isRepoTrusted(root),
+  /* 0.1.8.1 D4: the ask routes pass the stat-remembered reader (server/askMemo.ts). */
+  read: (root: string) => RepoInstructions | null = (root) => readRepoInstructions(root),
 ): string[] {
   if (repoRoot === null) return [];
   if (!isTrusted(repoRoot)) return [];
-  return renderInstructionsSection(readRepoInstructions(repoRoot));
+  return renderInstructionsSection(read(repoRoot));
 }
 
 /** What the SURFACE is told about a repository's instruction file. */

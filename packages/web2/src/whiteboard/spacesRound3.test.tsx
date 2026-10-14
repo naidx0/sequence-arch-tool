@@ -206,11 +206,11 @@ describe('scenes are saved per board', () => {
     await addScene();
     await waitFor(() => expect(readScenes('whiteboard')).toHaveLength(1));
     fireEvent.click(screen.getByTestId('board-tab-new'));
-    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('space-2'));
+    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('board-2'));
     await addScene();
-    await waitFor(() => expect(readScenes('space-2')).toHaveLength(1));
+    await waitFor(() => expect(readScenes('board-2')).toHaveLength(1));
     expect(readScenes('whiteboard')).toHaveLength(1);
-    expect(readScenes('whiteboard')[0]!.id).not.toBe(readScenes('space-2')[0]!.id);
+    expect(readScenes('whiteboard')[0]!.id).not.toBe(readScenes('board-2')[0]!.id);
     /* and the first Space's scene is back when you return to it */
     fireEvent.click(screen.getByTestId('board-tab-whiteboard'));
     await waitFor(() => expect(screen.getByTestId('wb-scene')).toBeTruthy());

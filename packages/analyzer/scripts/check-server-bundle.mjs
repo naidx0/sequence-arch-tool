@@ -88,7 +88,13 @@ export async function checkServerBundle(o) {
       );
       return { ok: false, problems, output };
     }
-    const status = await (await fetch(`${base}/api/status`)).json();
+    /* 0.1.8.1 B1: the server listens before it scans; wait for the startup
+       attach to settle (no `scanning` in the status) before judging it. */
+    let status = await (await fetch(`${base}/api/status`)).json();
+    for (const t0 = Date.now(); status.scanning && Date.now() - t0 < 120000 && !gone(child); ) {
+      await new Promise((r) => setTimeout(r, 100));
+      status = await (await fetch(`${base}/api/status`)).json();
+    }
     if (status.attached !== true) problems.push(`the repo did not attach: ${JSON.stringify(status.attachFailure ?? status)}`);
     const graph = await (await fetch(`${base}/archgraph.json`)).json().catch(() => null);
     const nodes = Array.isArray(graph?.nodes) ? graph.nodes : [];

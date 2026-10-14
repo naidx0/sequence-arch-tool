@@ -65,20 +65,20 @@ describe('a change becomes ops', () => {
   });
 
   it('names a new board after the ones there are', () => {
-    expect(nextBoardName(null)).toBe('Space');
+    expect(nextBoardName(null)).toBe('Board');
     const index = { version: 1 as const, boards: [{ id: 'whiteboard', name: 'Whiteboard', kind: 'whiteboard' as const, rev: 0, createdAt: '', updatedAt: '' }] };
-    /* The stored default "Whiteboard" is DISPLAYED as Space, so the next one is Space 2, not a second "Space". */
-    expect(nextBoardName(index)).toBe('Space 2');
+    /* The stored default "Whiteboard" is DISPLAYED as Board (0.1.8.1 C9), so the next one is Board 2, not a second "Board". */
+    expect(nextBoardName(index)).toBe('Board 2');
     const named = (name: string, id = 'x') => ({ id, name, kind: 'whiteboard' as const, rev: 0, createdAt: '', updatedAt: '' });
-    expect(nextBoardName({ version: 1 as const, boards: [named('Space', 'space')] })).toBe('Space 2');
-    expect(nextBoardName({ version: 1 as const, boards: [named('Whiteboard', 'whiteboard'), named('Space 2', 'space-2')] })).toBe('Space 3');
+    expect(nextBoardName({ version: 1 as const, boards: [named('Board', 'board')] })).toBe('Board 2');
+    expect(nextBoardName({ version: 1 as const, boards: [named('Whiteboard', 'whiteboard'), named('Board 2', 'space-2')] })).toBe('Board 3');
     /* a board the person called Whiteboard on another id is theirs, and still counts as that name */
-    expect(nextBoardName({ version: 1 as const, boards: [named('Whiteboard', 'mine')] })).toBe('Space');
+    expect(nextBoardName({ version: 1 as const, boards: [named('Whiteboard', 'mine')] })).toBe('Board');
   });
 
-  it('shows an untouched default Whiteboard as Space, and keeps any name the person chose', () => {
+  it('shows an untouched default Whiteboard as Board, and keeps any name the person chose', () => {
     const b = (id: string, name: string, kind: 'whiteboard' | 'architecture' = 'whiteboard') => ({ id, name, kind });
-    expect(boardLabel(b('whiteboard', 'Whiteboard'))).toBe('Space');
+    expect(boardLabel(b('whiteboard', 'Whiteboard'))).toBe('Board');
     expect(boardLabel(b('whiteboard', 'Roadmap'))).toBe('Roadmap');
     expect(boardLabel(b('mine', 'Whiteboard'))).toBe('Whiteboard');
     expect(boardLabel(b('architecture', 'Architecture', 'architecture'))).toBe('Architecture');

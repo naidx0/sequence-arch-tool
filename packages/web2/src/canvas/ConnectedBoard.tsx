@@ -205,6 +205,18 @@ export function askNote(r: { ok: boolean; text: string; handedOff?: boolean }): 
   return r.ok ? r.text || 'The agent answered with nothing.' : r.text;
 }
 
+/** Whether an engine with a project answers this page (`GET /api/status` says `attached: true`). False for a graph
+ *  served from a static host, whose `/api/git/events` would be index.html. */
+async function engineHasProject(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/status');
+    if (!res.ok) return false;
+    return ((await res.json()) as { attached?: unknown })?.attached === true;
+  } catch {
+    return false;
+  }
+}
+
 /** The post-attach fit's key: the arrangement, without the far band, which
  *  is a zoom and not an arrangement (see the call site). */
 export function attachFitKeyFor(base: string | null | undefined, layoutKey: string): string | null {
@@ -272,7 +284,7 @@ export function ConnectedBoard() {
   /* ROUND 7, C.4 — WHAT THE READER JUST OPENED, so the board frames that
      (readably, eased) when its arrangement lands instead of fitting the whole
      board. `id` null: the whole new level after a drill-in. */
-  const [focusRequest, setFocusRequest] = useState<{ id: string | null; seq: number } | null>(null);
+  const [focusRequest, setFocusRequest] = useState<{ id: string | null; seq: number; now?: boolean } | null>(null);
   const askFocus = useCallback(
     (id: string | null) => setFocusRequest((r) => ({ id, seq: (r?.seq ?? 0) + 1 })),
     [],
@@ -1612,6 +1624,31 @@ export function ConnectedBoard() {
      apart here rather than collapsed into one paragraph the reader cannot act
      on. */
   const empty = useMemo<BoardEmpty | null>(() => {
+    const NO_PROJECT: BoardEmpty = {
+      icon: 'board',
+      what: 'No graph yet',
+      why: 'Nothing has been read. Point at a folder and the board draws what is actually there.',
+      /* THE THIRD PART, AND IT WAS MISSING UNTIL SOMEBODY LOOKED AT THE PAGE.
+         Sheet 08.5: every empty state carries what is not here, WHY it is not
+         here, and one thing to do about it — "the second part is the one that
+         gets dropped, and dropping it turns an empty board into a bug report
+         the reader has to file themselves". The first draft of this state had
+         the what and the why and no way out of it, which is the same failure
+         one step along: a reader who agrees there is no graph still has
+         nothing to press.
+
+         It opens the shell's attach overlay through the shell's own action —
+         the same one `bootSurfacePropsFrom` dispatches — so the board and the
+         boot surface reach the same dialog rather than each inventing a route
+         to it. This is the ONLY case that carries an action: a scan in flight
+         needs no button, and a scan that failed already carries its own words
+         from the failure itself. */
+      action: {
+        label: 'Open a project',
+        onAct: () => store.dispatch({ type: 'shell/overlay', overlay: { kind: 'attach' } }),
+      },
+    };
+
     if (projection.nodes.length) return null;
 
     if (state.repo.phase === 'scanning') {
@@ -1669,6 +1706,34 @@ export function ConnectedBoard() {
         },
       };
 
+      /*
+       * P2-9: SAY WHAT WAS ACTUALLY READ. "The scan read this folder and found no services" was told with no
+       * project open at all, where nothing was scanned: that is the no-project state, and it gets the
+       * no-project words. With a project open, the line between the two empty boards is source code: a
+       * manifest-less folder with code in it (t3code, above) still draws from that code, so it keeps
+       * "Draw it from the code"; a folder whose scan read no source file has nothing to draw from, and says so.
+       */
+      if (drawn === 0 && state.repo.phase === 'unattached') return NO_PROJECT;
+      const sourceFiles =
+        state.repo.phase === 'attached' || state.repo.phase === 'stale'
+          ? state.repo.repo.graph.nodes.filter((n) => n.kind === 'file' || n.kind === 'module').length
+          : null;
+      if (drawn === 0 && sourceFiles === 0) {
+        return {
+          icon: 'board',
+          what: 'This folder has no code Sequence can read yet.',
+          why: 'Open a folder with code in it, or sketch the system yourself.',
+          action: {
+            label: 'Open another',
+            onAct: () => store.dispatch({ type: 'shell/overlay', overlay: { kind: 'attach' } }),
+          },
+          secondary: {
+            label: 'Start from a sketch',
+            onAct: () => requestHostCommand('canvas.whiteboard'),
+          },
+        };
+      }
+
       if (drawn > 0) {
         return {
           icon: 'filter',
@@ -1703,30 +1768,7 @@ export function ConnectedBoard() {
         action: drawFromCode,
       };
     }
-    return {
-      icon: 'board',
-      what: 'No graph yet',
-      why: 'Nothing has been read. Point at a folder and the board draws what is actually there.',
-      /* THE THIRD PART, AND IT WAS MISSING UNTIL SOMEBODY LOOKED AT THE PAGE.
-         Sheet 08.5: every empty state carries what is not here, WHY it is not
-         here, and one thing to do about it — "the second part is the one that
-         gets dropped, and dropping it turns an empty board into a bug report
-         the reader has to file themselves". The first draft of this state had
-         the what and the why and no way out of it, which is the same failure
-         one step along: a reader who agrees there is no graph still has
-         nothing to press.
-
-         It opens the shell's attach overlay through the shell's own action —
-         the same one `bootSurfacePropsFrom` dispatches — so the board and the
-         boot surface reach the same dialog rather than each inventing a route
-         to it. This is the ONLY case that carries an action: a scan in flight
-         needs no button, and a scan that failed already carries its own words
-         from the failure itself. */
-      action: {
-        label: 'Open a project',
-        onAct: () => store.dispatch({ type: 'shell/overlay', overlay: { kind: 'attach' } }),
-      },
-    };
+    return NO_PROJECT;
   }, [projection.nodes.length, state.repo, doc, store, scanStatusLine]);
 
   /* ══ ITEM canvas-fixes 3 — A BOARD WITH NO CONNECTORS SAYS WHY ════════════
@@ -2219,8 +2261,23 @@ export function ConnectedBoard() {
     await sendBoardAsk(store, { text: workflowAsk(surfaceModel.label, audience), reference, image: null });
     return { kind: 'chat' };
   };
-  /* The branch moved under the board (a switch here, in a terminal, by an agent): read the graph again. */
-  useEffect(() => followGitEvents(store), [store]);
+  /* The branch moved under the board (a switch here, in a terminal, by an agent): read the graph again. Only with a
+     project open: with none there is no branch to follow, and the stream was opened against an origin with no
+     /api/git/events (a static host answers it with index.html; the e2e console check caught it at boot). */
+  const gitFollowRoot = groundedRepoRoot(state);
+  useEffect(() => {
+    if (gitFollowRoot === null) return undefined;
+    /* The stream is the ENGINE's: a graph read off a static host (no engine) has nothing to follow. */
+    let stop: (() => void) | null = null;
+    let gone = false;
+    void engineHasProject().then((ok) => {
+      if (ok && !gone) stop = followGitEvents(store);
+    });
+    return () => {
+      gone = true;
+      stop?.();
+    };
+  }, [store, gitFollowRoot]);
 
   const boardTabs = (
     <BoardTabs
@@ -3125,7 +3182,8 @@ export function ConnectedBoard() {
           onAnatomy={
             anatomyIndex?.node(menuTarget.nodeId)
               ? (nodeId) => {
-                  if (anatomyNodeId !== nodeId) askFocus(nodeId);
+                  /* Show inside frames the node at a readable zoom at once (0.1.8.1 C8): `now`, not the next fit. */
+                  if (anatomyNodeId !== nodeId) setFocusRequest((r) => ({ id: nodeId, seq: (r?.seq ?? 0) + 1, now: true }));
                   setAnatomyNodeId((open) => (open === nodeId ? null : nodeId));
                 }
               : undefined

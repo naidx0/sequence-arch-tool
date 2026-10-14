@@ -13,6 +13,9 @@ import { FILES } from '../files/anchors';
 import { STEP_MS } from './ActivityLoader';
 import { AsciiSpinner, SPINNER_FRAMES, SPINNER_STILL } from './AsciiSpinner';
 
+/** 0.1.8.1 C1: a plain click switches the stage; these cases open surfaces BESIDE each other, which is Ctrl/Cmd+click. */
+const BESIDE = { ctrlKey: true } as const;
+
 /*
  * ROUND 11, lane "look" (Jaden 10-08): the surface bar's three states
  * ("coloring, dimming, shimmering to differentiate"), an ASCII spinner on a
@@ -42,9 +45,9 @@ describe('the surface bar tells three states apart', () => {
   it('open surfaces carry NO dot (round 12): the dot is only for a surface that is working', () => {
     const store = createStore({ project: (g) => seqdFromGraph(g, g.nodeDetail), tokens: readShellTokens(document.documentElement), persisted: readShellPersisted() });
     render(<V3App appStore={store} />);
-    fireEvent.click(screen.getByTestId('s2-tab-architecture'));
-    fireEvent.click(screen.getByTestId('s2-tab-terminal'));
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
+    fireEvent.click(screen.getByTestId('s2-tab-architecture'), BESIDE);
+    fireEvent.click(screen.getByTestId('s2-tab-terminal'), BESIDE);
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
     const state = (id: string) => document.querySelector(`.s2-sp[data-pill="${id}"]`)?.getAttribute('data-state');
     expect(state('files')).toBe('focused');
     expect(state('architecture')).toBe('open');

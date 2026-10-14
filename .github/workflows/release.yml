@@ -117,6 +117,11 @@ jobs:
           if [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)([-+].*)?$ ]]; then build="${BASH_REMATCH[1]}"; fi
           echo "{\"build\": $build}" > packages/analyzer/app-build.json
           cat packages/analyzer/app-build.json
+          # electron-builder refuses a four-part package.json version (semver), so the files keep the
+          # three-part name and the build number goes into the OS version fields instead: BUILD_NUMBER
+          # makes buildVersion 0.1.8.1 (Windows file version, mac CFBundleVersion). The tag, the notes
+          # and the app itself (app-build.json) say 0.1.8.1.
+          if [ "$build" != "0" ]; then echo "BUILD_NUMBER=$build" >> "$GITHUB_ENV"; fi
 
       # prepare-server.mjs refuses unless analyzer/dist and web2/dist exist —
       # it copies them, it does not build them.
@@ -180,6 +185,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb libfuse2
           node tools/ci/linux-launch-smoke.mjs --dir packages/desktop/release
+
+      # THE SHIPPED APP IS DRIVEN BEFORE IT IS UPLOADED (0.1.8.1, wave E). `pnpm test:release`
+      # launches release/win-unpacked/Sequence.exe through Playwright's Electron driver in a temp
+      # profile and runs the audit flows and budgets (docs/release-gate.md 1b). Any FAIL or SKIP
+      # stops this row before upload. Windows only for now: the mac row has no unsigned-app launch
+      # path on a runner, and the Linux row already launches its artefacts above.
+      - name: Release smoke (Windows, the packaged app)
+        if: matrix.os == 'windows-latest'
+        run: pnpm test:release
+
+      - name: Keep the release smoke screenshots
+        if: always() && matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-smoke-windows
+          path: tmp-shots/release-smoke/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - uses: actions/upload-artifact@v4
         with:

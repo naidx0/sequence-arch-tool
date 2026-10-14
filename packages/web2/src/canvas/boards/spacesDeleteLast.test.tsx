@@ -83,8 +83,8 @@ describe('B7: deleting the last Space closes the Spaces surface, with no error t
     mount();
     await waitFor(() => expect(screen.getByTestId('board-tab-new')).toBeTruthy());
     fireEvent.click(screen.getByTestId('board-tab-new'));
-    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('space-2'));
-    await deleteBoard('space-2');
+    await waitFor(() => expect(screen.getByTestId('wb-boards').getAttribute('data-board')).toBe('board-2'));
+    await deleteBoard('board-2');
     await waitFor(() => expect(server.boards().map((b) => b.id)).toEqual(['architecture', 'whiteboard']));
     await settle();
     expect(asked).not.toContain('whiteboard.close');

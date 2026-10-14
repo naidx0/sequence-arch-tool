@@ -7,6 +7,8 @@
    PURE protocol helper — the pane owns DOM focus and local echo for pipe.
    ══════════════════════════════════════════════════════════════════════════ */
 
+import { resizeMessage } from './terminalFit';
+
 export type TerminalBackend = 'pty' | 'pipe';
 
 export type TerminalClientHandlers = {
@@ -54,7 +56,7 @@ export function connectTerminal(
       resize(cols, rows) {
         if (ws.readyState !== WebSocket.OPEN) return;
         if (!(cols > 0 && rows > 0)) return;
-        ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+        ws.send(resizeMessage(cols, rows));
       },
       close() {
         try {

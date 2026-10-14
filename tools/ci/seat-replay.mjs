@@ -39,6 +39,7 @@ import path from 'node:path';
 import url from 'node:url';
 
 import { findChromium, launchOptions, loadPlaywright } from '../../packages/web2/e2e/lib/chromium.mjs';
+import { isScanning, waitForScan } from './restart-if-stale.mjs';
 
 const HERE = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
@@ -151,6 +152,9 @@ try {
     }
   }
   if (!up) throw new Error(`the replay app did not come up on ${port}`);
+  /* 0.1.8.1 B1: the app answers /api/status before it has read --repo; the replay starts once the read is done. */
+  const read = await waitForScan(base);
+  if (read === null || isScanning(read)) throw new Error(`the replay app on ${port} was still reading its repository`);
   log(`replay app on ${port}`);
 
   /* ── the seat's question, asked of the old client ──────────────────────── */

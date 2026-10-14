@@ -117,6 +117,8 @@ export interface WhiteboardProps {
    */
   graph?: ArchGraph | null;
   onAsk?: (request: WbAskRequest) => void;
+  /** P2-4: false when no model and no agent can answer yet; the Ask panel's one sentence then says so. Default true. */
+  canAnswer?: boolean;
   /**
    * ASK IN PLACE (askInPlace/): the reader pointed at items on this board and
    * typed a question beside them. Absent means nowhere to send it, and the
@@ -201,6 +203,8 @@ function freshId(prefix: string): string {
 /** How long an unanswered offer stays, and how long "Tidied" keeps its Undo. */
 const OFFER_MS = 12_000;
 const TIDIED_MS = 6_000;
+/** How long "Board cleared, Undo" stays (0.1.8.1 C3, audit P1-4). */
+export const CLEARED_MS = 8_000;
 
 /**
  * Whether a board-level key came from somewhere that owns text editing.
@@ -235,12 +239,20 @@ export function pillLeftFor(inner: number, pillWidth: number, origin = 0, dpr = 
   return Math.max(0, snapped - origin);
 }
 
+/** P2-4: the Ask panel's one sentence: what Send does, and what is missing when nothing can answer. */
+export function askPanelLine(canAnswer: boolean): string {
+  return canAnswer
+    ? 'Send puts this board and your note in the chat box, ready to ask.'
+    : 'Send puts this board and your note in the chat box; no model is connected yet, so the chat will offer to connect one.';
+}
+
 export function Whiteboard({
   repoRoot,
   storage,
   storageKey,
   graph = null,
   onAsk,
+  canAnswer = true,
   onAskInPlace,
   onPin,
   onDocChange,
@@ -267,6 +279,23 @@ export function Whiteboard({
   onDocChangeRef.current = onDocChange;
   const [past, setPast] = useState<WhiteboardDoc[]>([]);
   const [tool, setTool] = useState<WbTool>(WB_DEFAULT_TOOL);
+  /*
+   * ONE SHAPE, THEN BACK TO SELECT; A DOUBLE-CLICK KEEPS THE TOOL (0.1.8.1 C6, audit P2-1 and P2-2, as tldraw and
+   * Excalidraw do). `lockedTool` is the tool a double-click kept; picking any tool any other way lets it go. The
+   * Shapes and Text buttons pick the last one used from their list with one click; the chevron opens the list.
+   */
+  const [lockedTool, setLockedTool] = useState<WbTool | null>(null);
+  const [lastShape, setLastShape] = useState<WbTool>('rect');
+  const [lastAnnotate, setLastAnnotate] = useState<WbTool>('text');
+  useEffect(() => {
+    if ((['rect', 'ellipse', 'line', 'arrow'] as WbTool[]).includes(tool)) setLastShape(tool);
+    if ((['text', 'sticky', 'link'] as WbTool[]).includes(tool)) setLastAnnotate(tool);
+    setLockedTool((kept) => (kept === tool ? kept : null));
+  }, [tool]);
+  const lockTool = (t: WbTool) => {
+    setTool(t);
+    setLockedTool(t);
+  };
   /* Hold Space to pan from any tool (same rule as canvas/Board.tsx). */
   const [spaceHeld, setSpaceHeld] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -1070,6 +1099,8 @@ export function Whiteboard({
       type: 'wb/add',
       item: { kind: 'shape', id: nextId('r'), shape: tool, from, to, ...penStyle },
     });
+    /* One shape, then Select again, unless a double-click kept the tool (C6). */
+    if (lockedTool !== tool) setTool('select');
   };
 
   /**
@@ -1215,8 +1246,59 @@ export function Whiteboard({
     const r = svg.getBoundingClientRect();
     return { left: r.left + b.x, top: r.top + b.y, width: b.w, height: b.h };
   };
+  /* The picture of some marks, cropped from the board: what Ask sends along, and what Copy as image copies. */
+  const snapshotIds = async (ids: readonly string[]): Promise<Blob | null> => {
+    const b = askBoxOf(ids);
+    const svg = svgRef.current;
+    const root = rootRef.current;
+    if (!b || !svg || !root) return null;
+    const r = svg.getBoundingClientRect();
+    const region = regionAround(b, { x: 0, y: 0, w: r.width, h: r.height });
+    const cs = getComputedStyle(root);
+    /* The marks pointed at carry a dashed accent halo in the crop. */
+    return snapshotSvgRegion(svg, region, cs.backgroundColor, { box: b, color: cs.getPropertyValue('--accent').trim() || 'rgb(102, 51, 217)' });
+  };
+  /*
+   * THE RIGHT-CLICK MENUS (0.1.8.1 C7, audit P2-3: "Minimal right-click menu, with duplicate Ask items"). On marks:
+   * the one "Ask agent about this", then Explain, Duplicate, Bring to front, Copy as image and Delete. On the empty
+   * board: the board's own actions. Every edit here is one undo frame.
+   */
+  const copyImage = async (ids: readonly string[]) => {
+    const blob = await snapshotIds(ids).catch(() => null);
+    if (!blob || typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) return;
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]).catch(() => undefined);
+  };
+  const duplicateItems = (ids: readonly string[]) => {
+    const idFor = Object.fromEntries(ids.map((id) => [id, freshId('d')]));
+    apply({ type: 'wb/duplicate', ids: [...ids], dx: 16, dy: 16, idFor });
+    const copies = Object.values(idFor);
+    if (copies.length > 1) {
+      setSelectedRaw(copies[copies.length - 1]!);
+      setGroup(copies);
+    } else setSelected(copies[0] ?? null);
+  };
+  const deleteItems = (ids: readonly string[]) => {
+    apply({ type: 'wb/replace', remove: [...ids], add: [] });
+    setSelected(null);
+    setGroup([]);
+  };
   const ask = useAskInPlace({
-    enabled: Boolean(onAskInPlace),
+    enabled: true,
+    ask: Boolean(onAskInPlace),
+    menuItems: () => [
+      ...(onAskInPlace ? [{ id: 'explain', label: 'Explain', run: (ids: readonly string[]) => ask.askAbout(ids, 'Explain this.') }] : []),
+      { id: 'duplicate', label: 'Duplicate', run: duplicateItems },
+      { id: 'front', label: 'Bring to front', run: (ids) => apply({ type: 'wb/front', ids: [...ids] }) },
+      { id: 'copy-image', label: 'Copy as image', run: (ids) => void copyImage(ids) },
+      { id: 'delete', label: 'Delete', run: deleteItems },
+    ],
+    emptyMenuItems: () => [
+      ...(onAsk ? [{ id: 'ask-board', label: 'Ask agent about this board', run: () => setAsking(true) }] : []),
+      { id: 'fit', label: 'Fit to drawing', run: () => fit(), disabled: doc.items.length === 0 },
+      { id: 'reset', label: 'Reset view', run: () => resetView() },
+      { id: 'grid', label: gridOn ? 'Hide grid' : 'Show grid', run: () => writeGridEnabled(!gridOn) },
+      { id: 'clear', label: 'Clear board', run: () => clearBoard(), disabled: doc.items.length === 0 },
+    ],
     containerRef: rootRef,
     surface: 'whiteboard',
     selection: askSelection,
@@ -1227,17 +1309,7 @@ export function Whiteboard({
       Array.from(rootRef.current?.querySelectorAll('[data-item-id]') ?? []).filter((el) =>
         ids.includes(el.getAttribute('data-item-id') ?? ''),
       ),
-    snapshot: async (ids) => {
-      const b = askBoxOf(ids);
-      const svg = svgRef.current;
-      const root = rootRef.current;
-      if (!b || !svg || !root) return null;
-      const r = svg.getBoundingClientRect();
-      const region = regionAround(b, { x: 0, y: 0, w: r.width, h: r.height });
-      const cs = getComputedStyle(root);
-      /* The marks pointed at carry a dashed accent halo in the crop. */
-      return snapshotSvgRegion(svg, region, cs.backgroundColor, { box: b, color: cs.getPropertyValue('--accent').trim() || 'rgb(102, 51, 217)' });
-    },
+    snapshot: snapshotIds,
     select: (ids) => {
       if (ids.length > 1) {
         setSelectedRaw(ids[ids.length - 1]!);
@@ -1301,7 +1373,44 @@ export function Whiteboard({
     if (cut) fitRef.current();
   }, [doc]);
   const resetView = () => setView(wbCamera(view, { kind: 'reset' }));
-  const clearBoard = () => apply({ type: 'wb/clear' });
+  /*
+   * CLEAR BOARD SAYS SO, WITH ITS UNDO (0.1.8.1 C3, audit P1-4: "Clear board has no undo toast"). The clear is one
+   * undo frame, so Undo (the toast's button, or Ctrl+Z anywhere on the page while the toast shows) puts back every
+   * shape and stroke. The toast goes when the board has something on it again: an undo, or a new mark (after which
+   * Ctrl+Z would take back the mark, not the clear).
+   */
+  const [cleared, setCleared] = useState(false);
+  const clearedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearBoard = () => {
+    if (doc.items.length === 0) return;
+    apply({ type: 'wb/clear' });
+    setCleared(true);
+    if (clearedTimer.current) clearTimeout(clearedTimer.current);
+    clearedTimer.current = setTimeout(() => setCleared(false), CLEARED_MS);
+  };
+  useEffect(() => () => {
+    if (clearedTimer.current) clearTimeout(clearedTimer.current);
+  }, []);
+  useEffect(() => {
+    if (cleared && doc.items.length > 0) setCleared(false);
+  }, [cleared, doc.items.length]);
+  const undoRef = useRef(undoWithLog);
+  undoRef.current = undoWithLog;
+  useEffect(() => {
+    if (!cleared) return undefined;
+    const key = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || isEditableTarget(event.target)) return;
+      /* Only a board on screen takes the page's Ctrl+Z: not one folded away behind a hidden pane (review N4). */
+      const root = rootRef.current;
+      if (!root || !root.isConnected || root.closest('[hidden], [inert], [aria-hidden="true"]')) return;
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        undoRef.current();
+      }
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [cleared]);
 
   /* THE PILL SITS ON WHOLE PIXELS. Centring it with flex puts its left edge on a
      half pixel whenever the board and the pill differ by an odd width, and every
@@ -1370,7 +1479,9 @@ export function Whiteboard({
               data-testid={`wb-tool-${t}`}
               aria-pressed={tool === t}
               data-on={tool === t ? 'true' : 'false'}
+              data-locked={lockedTool === t ? 'true' : undefined}
               onClick={() => setTool(t)}
+              onDoubleClick={() => lockTool(t)}
               aria-label={TOOL_LABEL[t]}
               title={toolTitle(t)}
             >
@@ -1383,20 +1494,26 @@ export function Whiteboard({
           <WbToolMenu
             testId="wb-shapes"
             label="Shapes"
-            icon={shapeActive ? TOOL_ICON[tool] : 'rect'}
+            icon={shapeActive ? TOOL_ICON[tool] : TOOL_ICON[lastShape]}
             active={shapeActive}
             tools={shapeTools}
             current={tool}
+            last={lastShape}
+            locked={lockedTool}
             onPick={setTool}
+            onLock={lockTool}
           />
           <WbToolMenu
             testId="wb-annotate"
             label="Text"
-            icon={annotateActive ? TOOL_ICON[tool] : 'text'}
+            icon={annotateActive ? TOOL_ICON[tool] : TOOL_ICON[lastAnnotate]}
             active={annotateActive}
             tools={annotateTools}
             current={tool}
+            last={lastAnnotate}
+            locked={lockedTool}
             onPick={setTool}
+            onLock={lockTool}
           />
           <WbColorMenu
             color={penColor}
@@ -1715,6 +1832,15 @@ export function Whiteboard({
           </div>
         );
       })}
+      {cleared ? (
+        <div className="wb-snap wb-snap-done" data-testid="wb-cleared" role="status">
+          <button type="button" className="s2-chipbtn" data-testid="wb-cleared-undo" onClick={() => undoWithLog()}>
+            <span>Board cleared</span>
+            <span>Undo</span>
+            <kbd className="s2-kbd">Ctrl Z</kbd>
+          </button>
+        </div>
+      ) : null}
       {tidied ? (
         <div className="wb-snap wb-snap-done" data-testid="wb-snap-done" role="status">
           <button type="button" className="s2-chipbtn" data-testid="wb-snap-undo" onClick={undoWithLog}>
@@ -1852,7 +1978,7 @@ export function Whiteboard({
               with the close X where the composer's + sits and Send where its send sits. Enter sends, Shift+Enter
               breaks the line, as in the composer. */}
           <span className="wb-label" id="wb-ask-label">
-            What should the assistant do with this?
+            {askPanelLine(canAnswer)}
           </span>
           <div className={`composer${askFocused ? ' focused' : ''}`}>
             <textarea
@@ -1871,7 +1997,7 @@ export function Whiteboard({
                   sendAsk();
                 }
               }}
-              placeholder="optional — the notes and references go either way"
+              placeholder="Add a note (optional)"
             />
             <div className="ctrls wb-askactions">
               <button
@@ -1888,8 +2014,8 @@ export function Whiteboard({
                 type="button"
                 className="sendbtn"
                 data-testid="wb-ask-send"
-                aria-label="Put it in the composer"
-                title="Put it in the composer"
+                aria-label="Put it in the chat box"
+                title="Put it in the chat box"
                 disabled={!askableFrom(doc, askNote)}
                 onClick={sendAsk}
               >
@@ -2068,7 +2194,10 @@ function WbToolMenu({
   active,
   tools,
   current,
+  last,
+  locked,
   onPick,
+  onLock,
 }: {
   testId: string;
   label: string;
@@ -2076,28 +2205,46 @@ function WbToolMenu({
   active: boolean;
   tools: readonly WbTool[];
   current: WbTool;
+  /** The tool the glyph picks with one click: the last one used from this list (0.1.8.1 C6). */
+  last: WbTool;
+  locked: WbTool | null;
   onPick: (tool: WbTool) => void;
+  /** A double-click keeps the tool after a shape (0.1.8.1 C6). */
+  onLock: (tool: WbTool) => void;
 }) {
   const { open, setOpen, wrap, trigger, close, onKeyDown } = useMenu();
   return (
     <span className="wb-menuwrap" data-testid={testId} ref={wrap} onKeyDown={onKeyDown}>
+      {/* The glyph is the last tool used from the list, one click to pick it (audit P2-1: "two clicks"); the chevron
+          beside it opens the list. Two controls, one look: the pair is the same width the single trigger was. */}
       <button
         type="button"
-        className="wb-tool wb-tool-menu"
+        className="wb-tool wb-tool-split"
+        data-testid={`${testId}-main`}
+        aria-pressed={active}
+        data-on={active ? 'true' : 'false'}
+        data-locked={locked !== null && locked === current && active ? 'true' : undefined}
+        aria-label={TOOL_LABEL[last]}
+        title={`${toolTitle(last)}. Double-click to keep it`}
+        onClick={() => onPick(last)}
+        onDoubleClick={() => onLock(last)}
+      >
+        <WbIcon name={icon} />
+      </button>
+      <button
+        type="button"
+        className="wb-tool wb-tool-chev"
         data-testid={`${testId}-trigger`}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-pressed={active}
-        data-on={active ? 'true' : 'false'}
         aria-label={label}
         title={label}
         ref={trigger}
         onClick={() => setOpen((was) => !was)}
       >
-        <WbIcon name={icon} />
-        {/* The chevron sits beside the glyph on the same centre line (it was a
-            badge in the corner, which read as a stray mark), and drops away on a
-            narrow board (whiteboard.css). */}
+        {/* On a narrow board the glyph button folds away and this one carries the glyph, as the single trigger did
+            (whiteboard.css: the pill keeps its 240 px budget). */}
+        <WbIcon name={icon} className="wb-chev-glyph" />
         <WbIcon name="caret" className="wb-caret" />
       </button>
       {open ? (
@@ -2153,7 +2300,7 @@ function WbColorMenu({
         data-testid="wb-color-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Colour"
+        aria-label={`Colour: ${WB_COLOR_LABEL[color]}`}
         title={`Colour: ${WB_COLOR_LABEL[color]}`}
         ref={trigger}
         onClick={() => setOpen((was) => !was)}
@@ -2171,6 +2318,9 @@ function WbColorMenu({
               className="wb-menuitem"
               data-testid={`wb-color-${c}`}
               aria-checked={color === c}
+              /* Every swatch is named, by its menu row and its tooltip (0.1.8.1 C9, audit P2-10). */
+              aria-label={WB_COLOR_LABEL[c]}
+              title={WB_COLOR_LABEL[c]}
               onClick={() => {
                 onPick(c);
                 close();
@@ -2187,6 +2337,8 @@ function WbColorMenu({
             className="wb-menuitem"
             data-testid="wb-color-tint"
             aria-checked={tinted}
+            aria-label={`Fill with ${WB_COLOR_LABEL[color]}`}
+            title={`Fill with ${WB_COLOR_LABEL[color]}`}
             disabled={!canTint}
             onClick={() => {
               onTint();

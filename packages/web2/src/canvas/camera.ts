@@ -229,6 +229,8 @@ export const CARD_TITLE_PX = 14;
  *  (12.25 px), not 12/14 exactly: at 85.7% the painted title measured 11.9 px
  *  in Chromium (ML harness copy, 2026-10-06). */
 export const FOCUS_MIN_ZOOM = 0.875;
+/** "Show inside" opens no further out than this (0.1.8.1 C8, audit P2-7: it opened at 49 %). */
+export const SHOW_INSIDE_MIN_ZOOM = 0.8;
 
 export interface Bounds {
   x: number;

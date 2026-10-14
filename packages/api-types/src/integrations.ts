@@ -266,12 +266,28 @@ export interface GithubUpstreamErrorResponse {
 
 /**
  * Exactly one of the two. `fullName` is resolved against the token owner's own
- * repo list (an allow-list); a raw `cloneUrl` must still be an
- * `https://github.com/<owner>/<repo>` URL.
+ * repo list (an allow-list). A raw `cloneUrl` (0.1.8.1 C4) is any https or ssh
+ * git address (`git@host:owner/repo.git` too; `file://` in the local app only)
+ * that `git ls-remote` can reach.
  */
 export interface PostGithubCloneRequest {
   fullName?: string;
   cloneUrl?: string;
+  /**
+   * 0.1.8.1 C4: the folder the checkout BECOMES, exactly — absolute, inside the
+   * home folder (or an allowed folder), and either new or empty. Absent ⇒
+   * `<home>/sequence-workspaces/<repo>` as before.
+   */
+  destination?: string;
+}
+
+/**
+ * 0.1.8.1 C4: every 4xx from the clone route. `error` is a sentence to show as
+ * is; `action` is the one button that helps.
+ */
+export interface PostGithubCloneRefusal {
+  error: string;
+  action: 'connect-github' | 'check-url' | 'choose-folder';
 }
 
 /**

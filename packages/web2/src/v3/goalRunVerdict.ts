@@ -38,8 +38,11 @@ export interface GoalRunButton {
   disabled: boolean;
   /** The tooltip — and when disabled, it is the ONLY place the reason appears. */
   title: string;
-  /** `start` POSTs the run · `stop` POSTs the stop · `none` is a disabled button. */
-  action: 'start' | 'stop' | 'none';
+  /**
+   * `start` POSTs the run · `stop` POSTs the stop · `resume` POSTs the run again on what it was started
+   * on, after the engine's restart ended it (B4) · `none` is a disabled button.
+   */
+  action: 'start' | 'stop' | 'resume' | 'none';
 }
 
 /**
@@ -69,6 +72,20 @@ export function goalRunButton(input: {
     };
   }
   const open = input.plan.filter((s) => s.status === 'open');
+  /*
+   * B4 (P0-6 lite): A RUN THE ENGINE'S RESTART ENDED IS ONE CLICK FROM GOING ON. It was started in Build,
+   * which is the consent a run needs, and the restart was not the person's choice, so the mode under the
+   * chat box does not stand in the way. The plan on disk says where it got to: it picks up at the first
+   * open step, and ticked steps are never run again.
+   */
+  if (input.run.lastStopReason === 'engine_restarted' && open.length > 0) {
+    return {
+      label: 'Resume goal',
+      disabled: false,
+      title: `The engine stopped while this run was working. Resume picks up at: ${open[0]!.text}`,
+      action: 'resume',
+    };
+  }
   if (input.mode !== 'build') {
     return {
       label: 'Work on goal',

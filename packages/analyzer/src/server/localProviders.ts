@@ -520,8 +520,10 @@ export async function askHistoryWindow(
   baseUrl: string | undefined,
   model: string,
   fetchImpl: typeof fetch,
+  /* 0.1.8.1 D4: the ask routes pass the remembered probe (server/askMemo.ts). */
+  probe: (baseUrl: string, model: string, fetchImpl: typeof fetch) => Promise<number | null> = probeEffectiveContext,
 ): Promise<number | null | undefined> {
-  if (isLocalOllama(provider, baseUrl)) return probeEffectiveContext(baseUrl!, model, fetchImpl);
+  if (isLocalOllama(provider, baseUrl)) return probe(baseUrl!, model, fetchImpl);
   if (provider === 'openai-compatible' && isPrivateHost(baseUrl)) return null;
   return undefined;
 }

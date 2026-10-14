@@ -335,6 +335,10 @@ export type WhiteboardEdit =
    * Declined (same document) when none of `remove` is on the board any more.
    */
   | { type: 'wb/replace'; remove: string[]; add: WbItem[] }
+  /** Copies of these marks, moved by (dx, dy), each under the id `idFor` gives it; out of any group. 0.1.8.1 C7. */
+  | { type: 'wb/duplicate'; ids: string[]; dx: number; dy: number; idFor: Record<string, string> }
+  /** These marks to the top of the stacking order, in the order they had. 0.1.8.1 C7. */
+  | { type: 'wb/front'; ids: string[] }
   | { type: 'wb/clear' };
 
 function shift(item: WbItem, dx: number, dy: number): WbItem {
@@ -490,6 +494,32 @@ export function whiteboardEdit(doc: WhiteboardDoc, edit: WhiteboardEdit): Whiteb
       const kept = doc.items.filter((it) => !gone.has(it.id));
       const before = doc.items.slice(0, at).filter((it) => !gone.has(it.id)).length;
       return { ...doc, items: [...kept.slice(0, before), ...edit.add, ...kept.slice(before)] };
+    }
+
+    case 'wb/duplicate': {
+      const want = new Set(edit.ids);
+      const copies = doc.items
+        .filter((it) => want.has(it.id) && edit.idFor[it.id] !== undefined)
+        .map((it) => {
+          const moved = { ...shift(it, edit.dx, edit.dy), id: edit.idFor[it.id]! } as WbItem;
+          delete (moved as { group?: string }).group;
+          /* A connector copied WITH its ends joins the copies; one copied alone keeps joining the originals
+             (review N1). */
+          const bound = moved as { fromId?: string; toId?: string };
+          if (bound.fromId !== undefined && edit.idFor[bound.fromId] !== undefined) bound.fromId = edit.idFor[bound.fromId];
+          if (bound.toId !== undefined && edit.idFor[bound.toId] !== undefined) bound.toId = edit.idFor[bound.toId];
+          return moved;
+        });
+      return copies.length === 0 ? doc : { ...doc, items: [...doc.items, ...copies] };
+    }
+
+    case 'wb/front': {
+      const want = new Set(edit.ids);
+      const lifted = doc.items.filter((it) => want.has(it.id));
+      if (lifted.length === 0) return doc;
+      const rest = doc.items.filter((it) => !want.has(it.id));
+      const next = [...rest, ...lifted];
+      return next.every((it, i) => it === doc.items[i]) ? doc : { ...doc, items: next };
     }
 
     case 'wb/clear':

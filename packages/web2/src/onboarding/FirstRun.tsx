@@ -16,16 +16,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 import { FailureNote } from '../components/FailureNote';
-import { Icon } from '../chat/Icon';
 import { AsciiSpinner } from '../shell2/AsciiSpinner';
 import { ProviderIcon, providerOf } from '../shell2/brandIcons';
 import { agentSetupPrompt, type SetupNeed } from './agentSetupPrompt';
 import { CopyPromptButton } from './setupFallback';
-import { TerminalPane } from '../terminal/TerminalPane';
+import { BrowserSignIn } from './BrowserSignIn';
 import { providerPill, providerSentence, type OnboardingClient, type ProviderStatus } from './onboardingClient';
 import { connectAgent } from './loneAgent';
 import { FirstRunSetup, type SetupResult } from './FirstRunSetup';
 import { KeyPanel, LocalPanel } from './FirstRunModels';
+import { detectLocal, saveLocalModel, type DetectedLocal } from './modelConnect';
 import { createSettingsClient, type SettingsClient } from '../settings/settingsClient';
 import { applySignIn, isQuiet, isSettling, noteReady, settleSignIn, useSignInVersion } from './signInState';
 
@@ -41,6 +41,16 @@ export interface FirstRunProps {
   canAnswer?: boolean;
   /** The Settings wire the model routes save through. */
   settings?: SettingsClient;
+  /**
+   * P0-4: the same connect flow drawn inline (the chat's "Connect a model to run this" card), not as the
+   * Welcome dialog: no welcome header, nothing behind it made inert, no setup step. Connecting an agent or
+   * saving a model calls `onReady` at once, so the blocked action can run.
+   */
+  inline?: boolean;
+  /** Inline only: an agent (its provider id) or a model (its label) is connected. */
+  onReady?: (r: { agent?: string; model?: string }) => void;
+  /** Inline only: close the flow without connecting. */
+  onCancel?: () => void;
 }
 
 type Route = 'claude' | 'codex' | 'local' | 'key';
@@ -59,7 +69,7 @@ const REPROBE_MIN_MS = 4000;
 const BRIDGE_POLL_MS = 500;
 const SETUP_POLL_MS = 1000;
 
-export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, canAnswer = true }: FirstRunProps) {
+export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, canAnswer = true, inline = false, onReady, onCancel }: FirstRunProps) {
   const wire = useRef(settings ?? createSettingsClient()).current;
   const [step, setStep] = useState<Step>({ at: 'pick' });
   /* A local model or API key saved here: the label it goes by. */
@@ -73,22 +83,22 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
   const [providerError, setProviderError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
-  /* The provider whose sign-in is running in the embedded Terminal. */
+  /* The provider whose sign-in is open in the browser (BrowserSignIn). */
   const [signing, setSigning] = useState<ProviderStatus | null>(null);
-  /* How the sign-in pane closed: null while it runs. A dropped socket is not 'Finished'. */
   const signingId = useRef<string | null>(null);
-  const [signDone, setSignDone] = useState<null | 'finished' | 'disconnected'>(null);
   /* The one setup button: the bridge install in flight (its latest npm line) or its failure, for one agent. */
   const [bridge, setBridge] = useState<{ for: string; state: 'running' | 'failed'; line?: string; error?: string } | null>(null);
   /* The agent's own CLI install (claims-audit 4.2): the vendor installer's latest line, or its failure verbatim. */
   const [cli, setCli] = useState<{ for: string; state: 'running' | 'failed'; line?: string; error?: string } | null>(null);
   /* A model already on this machine that fits it (GET /api/local/setup says `ready`): offered first, saved only on Use it. */
   const [fit, setFit] = useState<string | null>(null);
+  /* Ollama and LM Studio as the server found them running (GET /api/ai-config localProviders), asked beside the agents. */
+  const [locals, setLocals] = useState<DetectedLocal[] | null>(null);
   const touched = useRef(false);
   const lastProbe = useRef(0);
-  signingId.current = signing?.id ?? null;
   const rawProvidersRef = useRef<ProviderStatus[] | null>(null);
   rawProvidersRef.current = rawProviders;
+  signingId.current = signing?.id ?? null;
   const rootRef = useRef<HTMLDivElement>(null);
   const autoFocused = useRef<HTMLElement | null>(null);
   const live = useRef(true);
@@ -99,6 +109,13 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
       live.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof wire.read !== 'function') return;
+    void detectLocal(wire).then((f) => {
+      if (live.current) setLocals(f ?? []);
+    }).catch(() => undefined);
+  }, [wire]);
 
   useEffect(() => {
     if (typeof wire.localPlan !== 'function') return;
@@ -116,10 +133,10 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
     setStep({ at: 'route', route: 'local' });
   }, [fit, providers, step.at]);
 
-  /* A modal dialog: the shell behind it is inert while it is up (restored on leave). */
+  /* A modal dialog: the shell behind it is inert while it is up (restored on leave). Inline, it is part of the chat. */
   useEffect(() => {
     const root = rootRef.current;
-    if (!root) return undefined;
+    if (!root || inline) return undefined;
     const marked: Element[] = [];
     for (let el: Element | null = root; el && el !== document.body; el = el.parentElement) {
       for (const sib of Array.from(el.parentElement?.children ?? [])) {
@@ -131,21 +148,22 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
     return () => marked.forEach((m) => m.removeAttribute('inert'));
   }, []);
 
-  /* Initial focus: the primary action (Start chatting), else the first actionable control, once the list is drawn. */
+  /* Initial focus: the primary action (Start chatting), else the first actionable control, once the list is drawn.
+     Inline (the chat's connect card) it is part of the page: focus stays where the person puts it, re-probes included. */
   useEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    if (!root || inline) return;
     const at = document.activeElement;
     /* Leave it where the person put it; move it only from the root or from our own earlier pick. */
     if (at && at !== document.body && at !== root && at !== autoFocused.current && root.contains(at)) return;
-    const target = root.querySelector<HTMLElement>('[data-testid="first-run-start"]:not(:disabled)') ?? root.querySelector<HTMLElement>('button:not(:disabled)');
+    const target = root.querySelector<HTMLElement>('[data-testid="first-run-start"]:not(:disabled), [data-testid="first-run-use-ready"]:not(:disabled)') ?? root.querySelector<HTMLElement>('button:not(:disabled)');
     autoFocused.current = target;
     (target ?? root).focus();
-  }, [providers, step, modelReady]);
+  }, [providers, step, modelReady, inline]);
 
   /* Tab cycles inside the dialog. */
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'Tab') return;
+    if (e.key !== 'Tab' || inline) return;
     const root = rootRef.current;
     if (!root) return;
     const items = Array.from(root.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'));
@@ -216,18 +234,16 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
     return () => window.removeEventListener('focus', onFocus);
   }, [probe]);
 
-  /* The sign-in command ended: ask the vendor again whether it worked. */
+  /* The sign-in command ended: ask the vendor again, with backoff, since its status can lag its own sign-in by seconds. */
   const onSignInExit = useCallback(
-    ({ ended }: { ended: boolean }) => {
-      setSignDone(ended ? 'finished' : 'disconnected');
+    async ({ ended }: { ended: boolean }): Promise<ProviderStatus | null> => {
       const id = signingId.current;
       if (!ended || !id) {
         void probe(true);
-        return;
+        return null;
       }
-      /* The vendor's status can lag its own sign-in by seconds: ask with backoff before saying signed-out again. */
       lastProbe.current = Date.now();
-      void settleSignIn(
+      const last = await settleSignIn(
         id,
         client,
         (l) => {
@@ -236,12 +252,19 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
           setProviderError(null);
         },
         { afterSignIn: true },
-      ).then((last) => {
-        if (live.current && last?.state === 'ready') setSigning(null);
-      });
+      );
+      return last ?? null;
     },
     [probe, client],
   );
+
+  /* P0-2: the browser sign-in finished (the probe reads Ready): onboarding moves on by itself. */
+  const onSignedIn = (p: ProviderStatus) => {
+    noteReady(p.id);
+    setSigning(null);
+    setProviders((cur) => (cur ? cur.map((x) => (x.id === p.id ? p : x)) : cur));
+    void start(p);
+  };
 
   /* Connect the ready agent, then leave for the workspace chat. A refused connect says so and stays. */
   const start = async (p: ProviderStatus) => {
@@ -257,8 +280,22 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
     }
     setBusy(null);
     onConnected?.();
+    if (inline && onReady) {
+      onReady({ agent: p.id });
+      return;
+    }
     setAgentHere(true);
     setStep({ at: 'setup' });
+  };
+
+  /* A model saved on the Local or API key route. Inline, that is the end of the flow. */
+  const modelSaved = (label: string) => {
+    onConnected?.();
+    if (inline && onReady) {
+      onReady({ model: label });
+      return;
+    }
+    setModelReady(label);
   };
 
   /*
@@ -302,7 +339,6 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
       }
     }
     if (cur.state === 'signIn') {
-      setSignDone(null);
       /* Not over another agent's sign-in the person started meanwhile. */
       setSigning((s) => s ?? cur);
     }
@@ -362,34 +398,105 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
     setStartError(null);
   };
 
+  /* "Connect a model" leaves the agent for the Local model route (API key one click on), never back to the four. */
+  const toModel = () => {
+    touched.current = true;
+    setModelReady(null);
+    setSigning(null);
+    setStartError(null);
+    setStep({ at: 'route', route: 'local' });
+  };
+
+  /* P0-3: what is ready on this machine, asked in parallel on open. Ready options come first. */
+  const runningLocal = (locals ?? []).find((d) => d.models.length > 0) ?? null;
+  const localModel = runningLocal ? (fit && runningLocal.models.includes(fit) ? fit : runningLocal.models[0]!) : null;
+  const readyOf = (r: Route): boolean =>
+    r === 'claude' || r === 'codex' ? (providers ?? []).some((p) => p.id === r && p.state === 'ready') : r === 'local' ? runningLocal !== null : false;
+  const ordered = [...OPTIONS].sort((a, b) => Number(readyOf(b.route)) - Number(readyOf(a.route)));
+  const readyRoutes = ordered.filter((o) => readyOf(o.route));
+  const primary = readyRoutes[0] ?? null;
+  const primaryLabel = primary ? `Use ${primary.route === 'local' ? localModel : primary.name}` : '';
+
+  /* One click from a ready option to the setup: connect the agent, or save the running local model. */
+  const useReady = async () => {
+    if (!primary || busy) return;
+    touched.current = true;
+    if (primary.route === 'claude' || primary.route === 'codex') {
+      const p = (providers ?? []).find((x) => x.id === primary.route);
+      if (p) await start(p);
+      return;
+    }
+    if (primary.route === 'local' && runningLocal && localModel) {
+      setBusy('local');
+      setStartError(null);
+      const err = await saveLocalModel(wire, runningLocal.baseUrl, localModel);
+      if (!live.current) return;
+      setBusy(null);
+      if (err) {
+        setStartError(err);
+        return;
+      }
+      modelSaved(localModel);
+      if (!inline) setStep({ at: 'setup' });
+    }
+  };
+
   return (
-    <div ref={rootRef} className="fr-root" data-testid="first-run" data-step={step.at} role="dialog" aria-modal="true" aria-label="Add an agent" tabIndex={-1} onKeyDown={onKeyDown}>
+    <div
+      ref={rootRef}
+      className={inline ? 'fr-root fr-inline' : 'fr-root'}
+      data-testid={inline ? 'connect-in-place' : 'first-run'}
+      data-step={step.at}
+      role={inline ? 'group' : 'dialog'}
+      aria-modal={inline ? undefined : true}
+      aria-label={inline ? 'Connect a model' : 'Add an agent'}
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+    >
       <div className="fr-col">
-        <div className="fr-brand" aria-hidden="true">
-          <SequenceMark />
-        </div>
-        <header className="fr-head">
-          <h1 className="fr-title">{step.at === 'setup' ? 'Quick setup' : 'Welcome to Sequence'}</h1>
-          <p className="fr-sub fr-lede">
-            {step.at === 'setup' ? 'A few taps, each one optional.' : step.at === 'pick' ? 'Add an agent to start chatting.' : 'Connect it, then start chatting.'}
-          </p>
-        </header>
+        {inline ? null : (
+          <>
+            <div className="fr-brand" aria-hidden="true">
+              <SequenceMark />
+            </div>
+            <header className="fr-head">
+              <h1 className="fr-title">{step.at === 'setup' ? 'Quick setup' : 'Welcome to Sequence'}</h1>
+              <p className="fr-sub fr-lede">
+                {step.at === 'setup' ? 'A few taps, each one optional.' : step.at === 'pick' ? 'Add an agent to start chatting.' : 'Connect it, then start chatting.'}
+              </p>
+            </header>
+          </>
+        )}
 
         {step.at === 'pick' ? (
           <section className="fr-section" aria-labelledby="fr-agents-h">
-            <h2 className="fr-h" id="fr-agents-h">
-              Add an agent
-            </h2>
+            {inline ? null : (
+              <h2 className="fr-h" id="fr-agents-h">
+                Add an agent
+              </h2>
+            )}
             {providerError ? (
               <FailureNote testid="first-run-providers-error" message="Could not check your agents." detail={providerError} onRetry={() => void probe(true)} />
             ) : null}
+            {primary ? (
+              <div className="fr-route-acts" data-testid="first-run-ready">
+                <button type="button" className="fr-btn fr-primary" data-testid="first-run-use-ready" data-option={primary.route} disabled={busy !== null} aria-busy={busy !== null} onClick={() => void useReady()}>
+                  {busy !== null ? <><AsciiSpinner /> Connecting</> : primaryLabel}
+                </button>
+              </div>
+            ) : null}
+            {startError ? (
+              <p className="fr-note fr-row-error" role="alert" data-testid="first-run-start-error">
+                {startError}
+              </p>
+            ) : null}
             <ul className="fr-options" data-testid="first-run-options" aria-busy={providers === null}>
-              {OPTIONS.map((o) => {
+              {ordered.map((o) => {
                 const p = (providers ?? []).find((x) => x.id === o.route);
-                const pill = p ? providerPill(p) : o.route === 'local' && fit ? { text: `${fit} fits`, tone: 'done' as const } : null;
+                const pill = p ? providerPill(p) : o.route === 'local' && runningLocal ? { text: 'Running', tone: 'done' as const } : o.route === 'local' && fit ? { text: `${fit} fits`, tone: 'done' as const } : null;
                 return (
                   <li key={o.route} className="fr-opt-li">
-                    <button type="button" className="fr-option" data-testid="first-run-option" data-option={o.route} data-state={p?.state} data-recommended={o.route === 'local' && fit ? 'true' : undefined} onClick={() => {
+                    <button type="button" className="fr-option" data-testid="first-run-option" data-option={o.route} data-state={p?.state} data-recommended={o.route === 'local' && fit ? 'true' : undefined} data-ready={readyOf(o.route) ? 'true' : undefined} data-preselected={readyRoutes.length === 1 && readyRoutes[0] === o ? 'true' : undefined} onClick={() => {
                       touched.current = true;
                       setStep({ at: 'route', route: o.route });
                     }}>
@@ -459,10 +566,7 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
                         className="fr-btn"
                         data-testid="first-run-signin"
                         disabled={signing !== null}
-                        onClick={() => {
-                          setSignDone(null);
-                          setSigning(provider);
-                        }}
+                        onClick={() => setSigning(provider)}
                       >
                         Sign in
                       </button>
@@ -485,7 +589,7 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
                     {onAskAgent && !canAnswer && (provider.state === 'install' || provider.state === 'update' || provider.state === 'attention') ? (
                       <>
                         <CopyPromptButton text={promptFor(provider, provider.state === 'update' ? 'update' : provider.state === 'attention' ? 'attention' : 'install')} className="fr-btn fr-primary" testid="first-run-copy" />
-                        <button type="button" className="fr-btn" data-testid="first-run-model" onClick={back}>
+                        <button type="button" className="fr-btn" data-testid="first-run-model" onClick={toModel}>
                           Connect a model
                         </button>
                       </>
@@ -521,23 +625,7 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
                       The bridge did not install. {myBridge.error}
                     </p>
                   ) : null}
-                  {signing ? (
-                    <div className="fr-term" data-testid="first-run-signin-terminal">
-                      <div className="fr-term-head">
-                        <Icon name="terminal" size={14} />
-                        <span className="fr-agent-say" data-testid="first-run-signin-command">
-                          Signing in to {signing.label}
-                        </span>
-                        <span className="fr-sub">{signDone === 'finished' ? 'Finished' : signDone === 'disconnected' ? 'Disconnected' : 'Running'}</span>
-                        <button type="button" className="fr-ghost" data-testid="first-run-signin-close" onClick={() => setSigning(null)}>
-                          Close
-                        </button>
-                      </div>
-                      <div className="fr-term-body">
-                        <TerminalPane key={signing.id} signIn={signing.id} onExit={onSignInExit} />
-                      </div>
-                    </div>
-                  ) : null}
+                  {signing ? <BrowserSignIn key={signing.id} provider={signing} client={client} onSignedIn={onSignedIn} onExit={onSignInExit} /> : null}
                 </div>
               ) : (
                 <p className="fr-agent-say" data-testid="first-run-providers-checking">
@@ -550,15 +638,16 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
               <>
                 {modelReady === null ? (
                   route === 'local' ? (
-                    <LocalPanel settings={wire} {...(fit ? { preferred: fit } : {})} onReady={(label) => {
-                      onConnected?.();
-                      setModelReady(label);
-                    }} />
+                    <>
+                      <LocalPanel settings={wire} {...(fit ? { preferred: fit } : {})} onReady={modelSaved} />
+                      <div className="fr-route-acts">
+                        <button type="button" className="fr-ghost" data-testid="first-run-to-key" onClick={() => setStep({ at: 'route', route: 'key' })}>
+                          Use an API key instead
+                        </button>
+                      </div>
+                    </>
                   ) : (
-                    <KeyPanel settings={wire} onReady={(label) => {
-                      onConnected?.();
-                      setModelReady(label);
-                    }} />
+                    <KeyPanel settings={wire} onReady={modelSaved} />
                   )
                 ) : (
                   <div className="fr-agent-body" data-testid="first-run-model-ready">
@@ -589,7 +678,11 @@ export function FirstRun({ client, onDone, settings, onConnected, onAskAgent, ca
               Back
             </button>
           ) : null}
-          {step.at === 'setup' ? (
+          {inline ? (
+            <button type="button" className="fr-ghost" data-testid="connect-in-place-cancel" onClick={() => onCancel?.()}>
+              Cancel
+            </button>
+          ) : step.at === 'setup' ? (
             <button type="button" className="fr-ghost" data-testid="first-run-setup-skipall" onClick={() => onDone(true)}>
               Skip setup
             </button>

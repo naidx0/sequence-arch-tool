@@ -12,6 +12,9 @@ import { V3App } from '../v3/V3App';
 import * as layoutPrefs from './layoutPrefs';
 import { PEEK_DEFAULT, PEEK_MAX, PEEK_MIN, PANE_MIN_PX, equalShares, holdShares, normalizeShares, readPaneShares, readPeekWidth, resizeShares, writePaneShares } from './layoutPrefs';
 
+/** 0.1.8.1 C1: a plain click switches the stage; these cases open surfaces BESIDE each other, which is Ctrl/Cmd+click. */
+const BESIDE = { ctrlKey: true } as const;
+
 /*
  * ROUND 14, lane "shell" (Jaden, 10-09): the surface bar sits on the chat header's line and is centred over
  * its column; no arrow circle, the bar is dragged; the names fold to icons when they do not fit, and the
@@ -223,11 +226,11 @@ describe('E. a divider between every pair of surfaces, sizes remembered', () => 
     render(<V3App appStore={freshStore()} />);
     expect(panes()).toHaveLength(1);
     expect(dividers()).toHaveLength(0);
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
     expect(panes()).toHaveLength(2);
     expect(screen.getByTestId('s2-split-divider')).toBeTruthy();
     expect(dividers()).toHaveLength(0);
-    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'));
+    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'), BESIDE);
     expect(panes()).toHaveLength(3);
     expect(screen.queryByTestId('s2-split-divider')).toBeNull();
     expect(dividers()).toHaveLength(panes().length - 1);
@@ -239,8 +242,8 @@ describe('E. a divider between every pair of surfaces, sizes remembered', () => 
   it('a drag moves only the two panes beside it, stops at the minimum, and the shares are remembered', () => {
     stageW(400);
     render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
-    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
+    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'), BESIDE);
     const d0 = screen.getByTestId('s2-pane-divider-0');
     const drag = (el: HTMLElement, dx: number) => {
       act(() => void el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 500 })));
@@ -265,8 +268,8 @@ describe('E. a divider between every pair of surfaces, sizes remembered', () => 
   it('the keyboard steps a divider, Home and End bound it, a double click makes the panes equal again, and the store is read back', () => {
     stageW(400);
     const first = render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
-    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
+    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'), BESIDE);
     const d0 = screen.getByTestId('s2-pane-divider-0');
     fireEvent.keyDown(d0, { key: 'ArrowRight' });
     expect(Number(panes()[0]!.style.flex.split(' ')[0])).toBeCloseTo(1 / 3 + 16 / 1200, 3);
@@ -347,8 +350,8 @@ describe('fix round: pane shares are held to the minimum against the live width'
     stageAt(920);
     localStorage.setItem('s2.panes.3', JSON.stringify([0.02, 0.02, 0.96]));
     render(<V3App appStore={freshStore()} />);
-    fireEvent.click(screen.getByTestId('s2-tab-files'));
-    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'));
+    fireEvent.click(screen.getByTestId('s2-tab-files'), BESIDE);
+    fireEvent.click(screen.getByTestId('s2-tab-whiteboard'), BESIDE);
     const flex = [...document.querySelectorAll<HTMLElement>('.s2-stage > .s2-pane[data-surface-pane]')].map((p) => Number(p.style.flex.split(' ')[0]));
     expect(flex).toHaveLength(3);
     for (const f of flex) expect(f * (920 - 16)).toBeGreaterThanOrEqual(PANE_MIN_PX - 0.5);

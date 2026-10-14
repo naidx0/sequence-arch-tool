@@ -62,9 +62,11 @@ import { modelLabel } from '../chat/modelSelection';
 import { useDefaultAgent } from '../shell2/defaultAgent';
 import { writeAutoEditEnabled } from '../settings/autonomyPreference';
 import { createSettingsClient } from '../settings/settingsClient';
+import { captureBlockedAsk, replayBlockedAsk, type BlockedAsk } from '../chat/blockedAsk';
 import type {
   AccessMode,
   AssistantTurn,
+  ComposerAttachment,
   FileEditProposal,
   InFlightTurn,
   ProposalId,
@@ -79,6 +81,7 @@ import {
 } from '../chat/AccessControl';
 import { ACCESS_STORAGE_KEY, accessOf, type FullAccessClient } from '../chat/accessMode';
 import { groundedRepoRoot, refreshContextWindow } from '../state/connect';
+import { GOAL_COMMAND_HINT } from './goalCopy';
 import { goalPlanProgress, goalRunNowLine, goalRunRestLine } from './goalRunVerdict';
 import { useGoalRun } from './useGoalRun';
 import '../chat/chat.css';
@@ -737,7 +740,7 @@ const SLASH_DESC: Record<string, string> = {
   workflow: 'Start an agent run from a starter workflow',
   breakdown: 'Show what is inside the selected part',
   whatbreaks: 'Show what breaks if the selected part changes',
-  goal: 'Set a goal and let the agent work it down',
+  goal: GOAL_COMMAND_HINT,
   draw: 'Write the request to draw the board from the code',
 };
 /* The modes as commands: the same three as the popup, the same effect. */
@@ -788,6 +791,8 @@ const PromptQueueList = lazy(() => import('../composer/PromptQueueList').then((m
 /* S7: the merge-back panel loads when the worktree chip is opened. */
 const MergePanel = lazy(() => import('../worktree/MergePanel'));
 /* S7: the chip loads with the first chat that has a worktree. */
+/* P0-4: the card a blocked ask gets loads with the first one. */
+const ConnectToRun = lazy(() => import('../chat/ConnectToRun').then((m) => ({ default: m.ConnectToRun })));
 const FanoutMenu = lazy(() => import('../fanout/FanoutMenu').then((m) => ({ default: m.FanoutMenu })));
 const WorktreeChip = lazy(() => import('../worktree/WorktreeChip').then((m) => ({ default: m.WorktreeChip })));
 
@@ -1087,6 +1092,41 @@ export function V3Chat({ goalRunClient, fullAccessClient, componentsClient }: V3
      until the person picks a model. Inline and small: this is the boot path
      and the perf ratchet counts its bytes. */
   const runsState = useSyncExternalStore(agentRuns.subscribe, agentRuns.get, agentRuns.get);
+
+  /*
+   * P0-4: THE ASK A PROVIDER REFUSAL BLOCKED, captured once with the chat it was sent in (chat/blockedAsk.ts).
+   * A sent turn does not keep its attachments, so the composer's attachments as they stood in the render
+   * before the turn appeared are what went with it. The refusal (`net.lastFailure`) is global; the card is
+   * shown only in the chat whose ask it blocked, and the replay goes only there.
+   */
+  let lastUserId: string | null = null;
+  for (let i = state.session.turns.length - 1; i >= 0; i--) {
+    const t = state.session.turns[i]!;
+    if (t.role === 'user') {
+      lastUserId = t.id;
+      break;
+    }
+  }
+  const prevRender = useRef<{ userId: string | null; attachments: ComposerAttachment[] }>({ userId: lastUserId, attachments: state.composer.attachments });
+  const sentAttachments = useRef<ComposerAttachment[]>([]);
+  if (prevRender.current.userId !== lastUserId) sentAttachments.current = prevRender.current.attachments;
+  prevRender.current = { userId: lastUserId, attachments: state.composer.attachments };
+  const providerBlocked = Boolean(composer.failure && composer.failure.fix === 'provider');
+  const [blocked, setBlocked] = useState<BlockedAsk | null>(null);
+  useEffect(() => {
+    if (!providerBlocked) {
+      setBlocked(null);
+      return;
+    }
+    setBlocked((cur) => {
+      if (cur === null) return captureBlockedAsk(store.getState(), sentAttachments.current);
+      /* A new chat gets its id after the first send: the ask still belongs to it. */
+      const st = store.getState();
+      if (cur.sessionId === null && st.session.activeId !== null && st.session.turns.some((t) => t === cur.source)) return { ...cur, sessionId: st.session.activeId };
+      return cur;
+    });
+  }, [providerBlocked, store, state.session.activeId]);
+  const blockedHere = blocked !== null && blocked.sessionId === state.session.activeId ? blocked : null;
   const agentRun = runsState.agents?.[state.session.activeId ?? ''];
   const agentCaps = agentRun ? runsState.caps?.[agentRun] : undefined;
   useDefaultAgent(state.session.activeId, !agentRun && modelChipShort === CONNECT_AGENT_LABEL);
@@ -2284,6 +2324,7 @@ export function V3Chat({ goalRunClient, fullAccessClient, componentsClient }: V3
               onClick={() => {
                 if (goalRun.button.action === 'start') void goalRun.start();
                 else if (goalRun.button.action === 'stop') void goalRun.stop();
+                else if (goalRun.button.action === 'resume') void goalRun.resume();
               }}
             >
               {goalRun.button.label}
@@ -2370,11 +2411,15 @@ export function V3Chat({ goalRunClient, fullAccessClient, componentsClient }: V3
             }}
           >
             <Icon name="target" size={12} />
+            <span className="v3-focus-hint" data-testid="goal-chip">
+              {GOAL_COMMAND_HINT}
+            </span>
             <input
               className="v3-focus-input"
               data-testid="v3-focus-input"
               aria-label="Focus for this chat"
-              placeholder="Name what this chat is for"
+              placeholder="Name the goal"
+              title={GOAL_COMMAND_HINT}
               value={focusDraft}
               autoFocus
               onChange={(e) => setFocusDraft(e.target.value)}
@@ -2437,38 +2482,28 @@ export function V3Chat({ goalRunClient, fullAccessClient, componentsClient }: V3
             </button>
           </div>
         ) : null}
-        {composer.failure && !hasPendingApproval ? (
+        {/* P0-4: no model and no agent is not a dead end. The question is kept, one card opens the connect flow
+            right here, and the question runs once something is connected (chat/blockedAsk.ts). */}
+        {providerBlocked ? (
+          blockedHere && !hasPendingApproval ? (
+            <Suspense fallback={null}>
+              <ConnectToRun
+                question={blockedHere.text}
+                onConnected={(r) => void replayBlockedAsk(store, blockedHere, r, { runs: agentRuns, settings: createSettingsClient(), access: accessSwitch.access, intent: mode })}
+                {...(composer.onDismissFailure ? { onDismiss: composer.onDismissFailure } : {})}
+              />
+            </Suspense>
+          ) : null
+        ) : composer.failure && !hasPendingApproval ? (
           <div className="s2-notice" role="alert" data-testid="s2-failure" data-fix={composer.failure.fix ?? undefined}>
             <span className="s2-notice-mark" aria-hidden="true">
               <S2Icon name="bolt" small />
             </span>
             <p className="s2-notice-text" data-testid="s2-failure-text">
-              {composer.failure.fix === 'provider' ? 'No model is set up to answer yet.' : composer.failure.message}
-              {composer.failure.fix === 'provider' ? <span>{composer.failure.message}</span> : null}
+              {composer.failure.message}
             </p>
             <div className="s2-notice-acts">
-              {composer.failure.fix === 'provider' ? (
-                <>
-                  <button
-                    type="button"
-                    className="s2-btn s2-btn-sm s2-blue"
-                    data-testid="s2-failure-connect"
-                    onClick={() => {
-                      if (!modelOpen) void openModelMenu();
-                    }}
-                  >
-                    Connect an agent
-                  </button>
-                  <button
-                    type="button"
-                    className="s2-btn s2-btn-sm"
-                    data-testid="s2-failure-model"
-                    onClick={() => store.dispatch({ type: 'shell/overlay', overlay: { kind: 'settings', pane: 'provider' } })}
-                  >
-                    Add a model
-                  </button>
-                </>
-              ) : composer.failure.retryable && composer.onRetry ? (
+              {composer.failure.retryable && composer.onRetry ? (
                 <button type="button" className="s2-btn s2-btn-sm" data-testid="s2-failure-retry" onClick={composer.onRetry}>
                   Retry
                 </button>
@@ -2757,7 +2792,7 @@ export function V3Chat({ goalRunClient, fullAccessClient, componentsClient }: V3
                   ) : null}
                   <button type="button" role="menuitem" className="s2-mi" data-testid="v3-new-goal" onClick={() => { setToolsOpen(false); onNewGoal(); }}>
                     <S2Icon name="target" />
-                    <span className="s2-mi-d">New goal<span>Set the focus for this chat</span></span>
+                    <span className="s2-mi-d">New goal<span>{GOAL_COMMAND_HINT}</span></span>
                   </button>
                   {agentRun ? (
                     <button

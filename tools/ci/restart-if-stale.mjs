@@ -82,15 +82,48 @@ function listenerOn(port) {
   }
 }
 
-/** Which repository the running app says it is attached to, or null. */
+/**
+ * The repository a `/api/status` body names: the attached root, or, while the startup `--repo` is still being read
+ * (0.1.8.1 B1: the server listens BEFORE it scans, `{ attached: false, scanning: { done, total, path } }`), the path
+ * being read. Null when it names none.
+ */
+export function rootOfStatus(body) {
+  if (typeof body?.root === 'string') return body.root;
+  if (typeof body?.scanning?.path === 'string') return body.scanning.path;
+  return null;
+}
+
+/** True while the server is still reading its startup repository. */
+export const isScanning = (body) => body !== null && typeof body === 'object' && body.scanning !== undefined && body.scanning !== null;
+
+/**
+ * Wait until `/api/status` no longer reports `scanning` (attached, or the attach failed), polling every `everyMs`.
+ * Resolves with the last body, or null when the server never answered; never waits past `timeoutMs`.
+ */
+export async function waitForScan(base, { timeoutMs = 180_000, everyMs = 500, fetchImpl = fetch } = {}) {
+  const until = Date.now() + timeoutMs;
+  let last = null;
+  for (;;) {
+    try {
+      const res = await fetchImpl(`${base}/api/status`, { signal: AbortSignal.timeout(3000) });
+      if (res.ok) last = await res.json();
+    } catch {
+      /* starting */
+    }
+    if (last !== null && !isScanning(last)) return last;
+    if (Date.now() >= until) return last;
+    await new Promise((r) => setTimeout(r, everyMs));
+  }
+}
+
+/** Which repository the running app says it is attached to (or is reading at startup), or null. */
 async function servedRoot(port) {
   try {
     const res = await fetch(`http://127.0.0.1:${port}/api/status`, {
       signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) return null;
-    const body = await res.json();
-    return typeof body?.root === 'string' ? body.root : null;
+    return rootOfStatus(await res.json());
   } catch {
     return null;
   }
@@ -251,6 +284,10 @@ for (const port of RUN ? targets : []) {
     await new Promise((r) => setTimeout(r, 500));
     after = await stampOf(port);
   }
+  /* The relaunched server listens before it has read its repository (B1): wait for the read to finish, so whoever
+     runs next does not meet a server with nothing attached yet. */
+  const settled = after ? await waitForScan(`http://127.0.0.1:${port}`) : null;
+  if (settled && isScanning(settled)) log(`port ${port}: still reading its repository after the wait`);
   if (after && !after.stale && !after.noEndpoint) {
     log(`port ${port}: restarted — started ${after.startedAt}, built ${after.builtAt}`);
   } else {

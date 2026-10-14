@@ -23,7 +23,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { desktopBridge } from '../boot/desktopBridge';
 import { useStoreIfAny } from '../state/connect';
 
-import { copyText, describeUpdate, noteBlocks, noteHighlight, platformLabel, updateHelpPrompt, type NoteBlock } from './versionModel';
+import { copyText, describeUpdate, noteBlocks, noteHighlight, platformLabel, releaseNotesUrl, updateHelpPrompt, type NoteBlock } from './versionModel';
 import { createVersionClient, type InstallJob, type ReleaseNote, type UpdateCheck, type VersionClient, type VersionInfo } from './versionClient';
 
 const POLL_MS = 700;
@@ -33,7 +33,7 @@ const BLANK = String.fromCharCode(10, 10);
 
 /** One release's notes: a two-line highlight, and "Read more" opens the whole thing in place. Collapsed on every
     mount; nothing is remembered. */
-function NoteDigest({ blocks, testid }: { blocks: NoteBlock[]; testid: string }) {
+function NoteDigest({ blocks, testid, href }: { blocks: NoteBlock[]; testid: string; href?: string }) {
   const [more, setMore] = useState(false);
   const [clamped, setClamped] = useState(false);
   /* Whether layout measured the lines at all (jsdom does not): the length rule stands in only then. */
@@ -64,8 +64,15 @@ function NoteDigest({ blocks, testid }: { blocks: NoteBlock[]; testid: string })
       </div>
       {blocks.length > shown.length || cut || clamped || more ? (
         <button type="button" className="sb-link sb-news-more" data-testid={`${testid}-toggle`} aria-expanded={more} onClick={() => setMore((m) => !m)}>
-          {more ? 'Show less' : 'Read more'}
+          {more ? 'Show less' : 'Show all'}
         </button>
+      ) : null}
+      {/* "Read more" opens the whole notes where they are published (0.1.8.1 D1, audit P2-8: it 404ed; review N5). The
+          in-place expansion is "Show all". */}
+      {href ? (
+        <a className="sb-link sb-news-more" data-testid={`${testid}-link`} href={href} target="_blank" rel="noreferrer noopener" title="The release notes on GitHub">
+          Read more
+        </a>
       ) : null}
     </>
   );
@@ -278,7 +285,7 @@ export function VersionSection({ client }: { client?: VersionClient }) {
             {notes.map((n) => (
               <div key={n.version} className="sb-news-item" data-testid="settings-whatsnew-item" data-version={n.version}>
                 <span className="sb-news-v">{n.title}</span>
-                <NoteDigest blocks={noteBlocks(n.body)} testid="settings-whatsnew-notes" />
+                <NoteDigest blocks={noteBlocks(n.body)} testid="settings-whatsnew-notes" href={releaseNotesUrl(n.version)} />
               </div>
             ))}
           </div>

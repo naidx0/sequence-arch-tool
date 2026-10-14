@@ -112,10 +112,16 @@ export function resolveInBrowseRoot(browseRoot: string, target: string): string 
   return real;
 }
 
+/**
+ * 0.1.8.1 C5: the ONE sentence for a folder outside what Sequence may open.
+ * No internal names (jail, boundary, browse root) reach a person.
+ */
+export const OUTSIDE_HOME_SENTENCE = 'Sequence can only open folders inside your home folder.';
+
 /** List the immediate sub-directories of `target` within the browse root. */
 export function browseDir(browseRoot: string, target: string): BrowseOutcome {
   const dir = resolveInBrowseRoot(browseRoot, target);
-  if (dir === null) return { ok: false, status: 403, error: 'path escapes the browse root' };
+  if (dir === null) return { ok: false, status: 403, error: OUTSIDE_HOME_SENTENCE };
   // F2: dot-directories are HIDDEN from listings (see listSubdirs), so they must
   // not be explicitly navigable either — otherwise `?path=<root>/.ssh` enumerates
   // a hidden secret dir's subdirs even though the picker never offers it. Judge on

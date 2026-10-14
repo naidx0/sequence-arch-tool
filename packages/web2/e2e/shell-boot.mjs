@@ -201,9 +201,14 @@ function readFrame(page) {
   }, SHELL2.chat);
 }
 
-/** Press a pill (open it, or bring it forward) and wait for the layout it caused. */
-async function pressPill(page, id) {
-  await page.locator(sel(SHELL2.pill(id))).click();
+/**
+ * Press a pill and wait for the layout it caused. A plain press SWITCHES the stage to that surface (0.1.8.1 C1: tabs
+ * switch, they do not add panes); `beside` is the deliberate split, Ctrl/Cmd+click, which opens it next to what is
+ * showing. The steps below that are about two panes sharing the stage open the second one on purpose.
+ */
+async function pressPill(page, id, { beside = false } = {}) {
+  const modifiers = beside ? [process.platform === 'darwin' ? 'Meta' : 'Control'] : [];
+  await page.locator(sel(SHELL2.pill(id))).click({ modifiers });
   await settle(page);
 }
 
@@ -347,7 +352,7 @@ await suite(
      */
     await check('1280 — two panes spend the whole stage', async () => {
       await resize(page, 1280, 800);
-      await pressPill(page, 'files');
+      await pressPill(page, 'files', { beside: true });
 
       const frame = await readFrame(page);
       is(frame.panes.length, 2, 'two visible panes');
@@ -380,7 +385,7 @@ await suite(
       await resize(page, 1024, 800);
       for (const id of await pillIds(page)) {
         if ((await attr(page, SHELL2.pill(id), 'aria-pressed')) === 'true') continue;
-        await pressPill(page, id);
+        await pressPill(page, id, { beside: true });
       }
 
       const frame = await readFrame(page);

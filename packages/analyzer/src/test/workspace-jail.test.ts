@@ -63,6 +63,9 @@ async function startServer(opts: {
     userConfigDir: opts.userConfigDir,
     authConfig: opts.authConfig,
     cloneRepo: opts.cloneRepo,
+    /* C4: a clone address must pass `git ls-remote`; these github.com addresses
+       are fakes served by the local-origin clone seam, so the probe is too. */
+    lsRemote: async () => ({ ok: true }),
     terminalEnabled: opts.terminalEnabled,
     resolveIdentity: opts.authConfig
       ? (req: http.IncomingMessage) => verifySession(req.headers.cookie, opts.authConfig!.sessionSecret)?.userId
@@ -146,7 +149,8 @@ test('per-user jail: B cannot browse or attach A\'s workspace; A can browse + at
       body: JSON.stringify({ path: aProject }),
     });
     assert.strictEqual(bAttach.status, 403, "B cannot attach A's path");
-    assert.match(((await bAttach.json()) as { error: string }).error, /escapes the browse root/);
+    /* C5: the refusal is one plain sentence, no internal names. */
+    assert.strictEqual(((await bAttach.json()) as { error: string }).error, 'Sequence can only open folders inside your home folder.');
 
     // A still owns it (B's failed attach did not re-set ownership): A reads 200.
     assert.strictEqual((await fetch(`${base}/api/tree`, { headers: { cookie: A } })).status, 200, 'A still owns');

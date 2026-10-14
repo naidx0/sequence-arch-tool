@@ -24,6 +24,11 @@
  *  `@sequence/desktop` — the web bundle must not pull in Electron types. */
 export interface SequenceDesktopBridge {
   openRepo(): Promise<string | null>;
+  /**
+   * The OS folder dialog, and nothing else: the chosen folder, or null on Cancel. Unlike `openRepo` it attaches
+   * nothing (0.1.8.1: the clone's "Clone into"). OPTIONAL: a shell built before 0.1.8.1 has no such channel.
+   */
+  pickFolder?(): Promise<string | null>;
   onRepoChanged?(cb: (info: { repoDir: string | null; url: string }) => void): () => void;
   /**
    * The application menu asked for the help page.

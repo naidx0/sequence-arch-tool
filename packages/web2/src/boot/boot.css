@@ -770,3 +770,40 @@
   background: var(--scrim);
   z-index: 10;
 }
+
+/* ── The engine is reading the project (0.1.8.1 B1, BootScanning.tsx) ─────
+   Over everything until the startup read is done: the app behind it would
+   offer to open the project being read. Ground, inks and type are the theme's. */
+.startup-scan {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  color: var(--ink-1);
+}
+.startup-scan-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 240px;
+}
+.startup-scan-t {
+  margin: 0;
+  font-size: var(--t-14);
+  font-weight: var(--fw-label);
+}
+.startup-scan-n {
+  margin: 0;
+  font-size: var(--t-12);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.startup-scan-bar {
+  width: 240px;
+  height: 4px;
+  accent-color: var(--accent);
+}
