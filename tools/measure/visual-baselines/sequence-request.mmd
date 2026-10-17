@@ -1,0 +1,13 @@
+sequenceDiagram
+  autonumber
+  participant App
+  participant Gateway
+  participant Cache
+  participant Model
+  App->>Gateway: POST /summarise
+  Gateway->>Cache: lookup
+  Note right of Cache: miss
+  Gateway-)Model: stream prompt
+  Model--)Gateway: tokens
+  Note right of Model: ~900 ms
+  Gateway-->>App: 200 + stream

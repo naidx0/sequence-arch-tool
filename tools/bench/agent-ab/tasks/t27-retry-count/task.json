@@ -1,0 +1,23 @@
+{
+  "id": "t27-retry-count",
+  "prompt": "retry(fn, times) should call fn at most \"times\" times, return the first success, and throw the last error if all fail. It currently makes times+1 attempts and swallows the error. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "retry"
+    ]
+  }
+}

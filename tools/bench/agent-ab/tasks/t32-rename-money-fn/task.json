@@ -1,0 +1,23 @@
+{
+  "id": "t32-rename-money-fn",
+  "prompt": "Rename the exported function fmtMoney to formatMoney in src/money.js and update its caller in src/invoice.js. Both files must change; do not edit tests. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "formatMoney is exported and used"
+    ]
+  }
+}

@@ -1,0 +1,454 @@
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  ContextRing,
+  contextFraction,
+  contextParts,
+  contextSlices,
+  panelShiftIntoView,
+  resolveContextRingUsed,
+} from './ContextRing';
+
+/**
+ * Asked for by name: "I like the Claude context circle. That's the only reason
+ * I'm adding it."
+ *
+ * The same fact the transcript already prints under an answer, drawn where the
+ * reader is deciding what to type next. The tests that matter here are the ones
+ * about what it REFUSES to draw.
+ */
+
+describe('resolveContextRingUsed', () => {
+  it('prefers in-flight usage while a turn streams', () => {
+    expect(resolveContextRingUsed({ inputTokens: 18_400 }, 9_100)).toBe(18_400);
+  });
+
+  it('falls back to the last settled turn when idle', () => {
+    expect(resolveContextRingUsed(null, 27_640)).toBe(27_640);
+    expect(resolveContextRingUsed(undefined, null)).toBeNull();
+  });
+});
+
+describe('the context ring', () => {
+  it('draws the arc in proportion to the window', () => {
+    render(<ContextRing used={250_000} window={1_000_000} />);
+    expect(screen.getByTestId('composer-context').getAttribute('data-fraction')).toBe('0.250');
+  });
+
+  it('NEVER DRAWS WITHOUT A WINDOW', () => {
+    /*
+     * The whole reason this component can be trusted. Only Ollama reports a
+     * context length; every other provider says nothing. A ring is a FRACTION,
+     * so drawing one with no denominator means inventing the denominator —
+     * exactly what CANON law 4 forbids, on the same surface whose usage line
+     * already carries the comment "never invent a number".
+     *
+     * Nothing is the honest answer. Not an empty ring, which reads as 0% used;
+     * not a full one; and not a guess at a common size.
+     */
+    render(<ContextRing used={40_000} window={null} />);
+    expect(screen.queryByTestId('composer-context')).toBeNull();
+  });
+
+  it('shows an empty ring when the window is known but usage is not yet metered', () => {
+    /* Owner wants the model’s context circle visible in the composer even
+       before the first turn. Zero arc + honest accessible name; totals only
+       after click. */
+    render(<ContextRing used={null} window={200_000} />);
+    const wrap = screen.getByTestId('composer-context');
+    expect(wrap.getAttribute('data-fraction')).toBe('0.000');
+    expect(wrap.getAttribute('data-metered')).toBe('false');
+    expect(screen.queryByTestId('composer-context-label')).toBeNull();
+    /* NO NATIVE TOOLTIP AT ALL — Decision 31. The ring opens its own panel
+       after 250ms of hover, and an OS tooltip would arrive on top of it three
+       quarters of a second later saying the same pair. The accessible name is
+       the one place both numbers live now.
+
+       AND STILL NO ZERO IN IT. `0 / 200k` is a measurement claiming a turn
+       filled nothing; the absence of one (CANON law 4) is what the empty arc is
+       already saying, and the name says it in words. */
+    expect(wrap.getAttribute('title')).toBeNull();
+    expect(wrap.getAttribute('aria-label')).not.toMatch(/\b0\b/);
+    expect(wrap.getAttribute('aria-label')).toMatch(/200,000/);
+    expect(wrap.getAttribute('aria-label')).toMatch(/nothing sent yet/i);
+  });
+
+  it('refuses a nonsensical window rather than dividing by it', () => {
+    render(<ContextRing used={10} window={0} />);
+    expect(screen.queryByTestId('composer-context')).toBeNull();
+  });
+
+  it('SAYS BOTH NUMBERS FOR A READER WHO CANNOT SEE THE ARC', () => {
+    /* A ring with no accessible name is a decoration, and since Decision 31
+       took the printed pair off the composer the name is the ONLY place a
+       screen reader can get either number: it gets no panel, no bar, and no
+       tooltip. So it carries both, in full, not in the panel's rounding. */
+    render(<ContextRing used={27_640} window={1_048_576} />);
+    const ring = screen.getByTestId('composer-context');
+    expect(ring.getAttribute('title')).toBeNull();
+    expect(ring.getAttribute('aria-label')).toMatch(/27,640/);
+    expect(ring.getAttribute('aria-label')).toMatch(/1,048,576/);
+    expect(screen.queryByTestId('composer-context-label')).toBeNull();
+  });
+
+  /**
+   * Owner, 2026-09-18, on the installed app: "remove the small text elements:
+   * 'last provider call, not the sum', 'usage not yet measured for this model'
+   * — you say 0 / 131k and show a breakdown depending on how much is done,
+   * that's all."
+   *
+   * A panel that explains itself every time it opens is a panel that has
+   * stopped being a gauge. THIS TEST DERIVES THE FORBIDDEN SET rather than
+   * listing three strings, so a fourth sentence added later fails it too.
+   */
+  it('keeps the chip quiet and explains the measurement inside the panel', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    render(
+      <ContextRing
+        used={3_900}
+        window={131_000}
+        breakdown={{
+          sections: [{ id: 'grounding', label: 'Architecture digest', tokens: 3_000, estimated: true }],
+          totalApprox: 3_000,
+          totalMeasured: 3_900,
+        }}
+      />,
+    );
+    const ring = screen.getByTestId('composer-context');
+    expect(ring.getAttribute('title')).toBeNull();
+    fireEvent.click(ring);
+    const panel = screen.getByTestId('composer-context-breakdown');
+    const text = panel.textContent ?? '';
+    for (const gone of [
+      /last provider call/i,
+      /not the sum/i,
+      /not the summed turn bill/i,
+      /usage not yet measured/i,
+      /this call \/ window/i,
+      /no section breakdown/i,
+    ]) {
+      expect(text, `the panel still explains itself: ${gone}`).not.toMatch(gone);
+    }
+    // October walkthrough replaces the old numbers-only panel contract.
+    /* Round 13 (S8): no footnote at all in the hover; the numbers speak. */
+    expect(panel.querySelector('[data-testid="composer-context-explanation"]')).toBeNull();
+    expect(text).not.toMatch(/estimates|what remains of the measured input/i);
+    expect(screen.getByTestId('composer-context').textContent).toBe('');
+  });
+
+  it('opens with ONE header line — used over window', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    render(<ContextRing used={27_640} window={131_100} breakdown={null} />);
+    fireEvent.click(screen.getByTestId('composer-context'));
+    expect(screen.getByTestId('composer-context-label').textContent).toBe('27.6k / 131.1k');
+    /* Exactly one header: a second would be two answers to one question. */
+    expect(screen.getAllByTestId('composer-context-label')).toHaveLength(1);
+  });
+
+  it('shows the title, "Nothing sent yet" and the window line when nothing has been measured', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    render(<ContextRing used={null} window={131_100} breakdown={null} />);
+    fireEvent.click(screen.getByTestId('composer-context'));
+    const panel = screen.getByTestId('composer-context-breakdown');
+    expect(panel.textContent).toContain('Context window');
+    expect(panel.textContent).toContain('Nothing sent yet');
+    expect(panel.textContent).toBe('Context windowWindow holds 131.1k tokensNothing sent yet');
+    expect(screen.getByTestId('composer-context-window').textContent).toBe('Window holds 131.1k tokens');
+    expect(screen.queryByTestId('composer-context-label')).toBeNull();
+    expect(screen.queryByTestId('composer-context-percent')).toBeNull();
+    expect(screen.queryByTestId('composer-context-meter')).toBeNull();
+    expect(screen.queryByTestId('composer-context-left')).toBeNull();
+  });
+
+  it('LOCKS THE EMPTY PANEL: no dash anywhere, and no window line when the window is unknown', async () => {
+    /* Owner, 2026-10-11 (P2 polish): hovering the context circle before any message
+       showed a big "—", "— / —", an empty bar and "Nothing sent yet" — it read as
+       unfinished. The empty panel now says what is true and nothing else. */
+    const { fireEvent } = await import('@testing-library/react');
+    const { unmount } = render(<ContextRing used={null} window={1_048_576} breakdown={null} note="Input —, Output —, Cache —" showEmpty />);
+    fireEvent.click(screen.getByTestId('composer-context'));
+    const known = screen.getByTestId('composer-context-breakdown').textContent ?? '';
+    expect(known).not.toMatch(/—/);
+    expect(known).toMatch(/Nothing sent yet/);
+    expect(known).toMatch(/Window holds 1\.0M tokens/);
+    expect(screen.queryByTestId('composer-context-note')).toBeNull();
+    unmount();
+
+    render(<ContextRing used={null} window={null} breakdown={null} showEmpty />);
+    fireEvent.click(screen.getByTestId('composer-context'));
+    const unknown = screen.getByTestId('composer-context-breakdown').textContent ?? '';
+    expect(unknown).not.toMatch(/—/);
+    expect(unknown).toMatch(/Context window/);
+    expect(unknown).toMatch(/Nothing sent yet/);
+    /* CANON law 4: an unknown window is never named, so no window line at all. */
+    expect(unknown).not.toMatch(/Window holds/);
+    expect(screen.queryByTestId('composer-context-window')).toBeNull();
+  });
+
+  it('names four parts a reader knows, as shares of the WINDOW (round 12)', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    render(
+      <ContextRing
+        used={20_000}
+        window={100_000}
+        breakdown={{
+          sections: [
+            { id: 'tools', label: 'Tool results this turn', tokens: 2_000, estimated: true },
+            { id: 'grounding', label: 'Architecture digest', tokens: 6_000, estimated: true },
+            { id: 'instructions', label: 'Instructions', tokens: 4_000, estimated: true },
+          ],
+          totalApprox: 12_000,
+          totalMeasured: 20_000,
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('composer-context'));
+    const segs = screen.getAllByTestId('composer-context-seg');
+    expect(segs.map((s) => s.getAttribute('data-section'))).toEqual(['system', 'tools', 'history', 'files']);
+    /* A segment is its share of the 100k window, so the bar and the ring agree. */
+    expect(segs.map((s) => s.style.width)).toEqual(['4%', '2%', '8%', '6%']);
+    const rows = screen.getAllByTestId('composer-context-section');
+    expect(rows.map((r) => r.textContent)).toEqual(['Instructions4k4%', 'Tool results2k2%', 'Other (history, base prompt)8k8%', 'Files and question6k6%']);
+    expect(screen.queryByTestId('composer-context-more')).toBeNull();
+  });
+
+  it('computes History as the metered input the named slices do not account for, and only then', () => {
+    const sections = [{ id: 'grounding' as const, label: 'x', tokens: 6_000, estimated: true }];
+    const metered = contextParts({ sections, totalApprox: 6_000, totalMeasured: 20_000 }, 20_000, 100_000);
+    expect(metered.find((p) => p.id === 'history')?.tokens).toBe(14_000);
+    const unmetered = contextParts({ sections, totalApprox: 6_000 }, null, 100_000);
+    expect(unmetered.find((p) => p.id === 'history')?.tokens).toBeNull();
+    /* A part nobody measured reads as an em dash, never a zero. */
+    expect(unmetered.find((p) => p.id === 'tools')?.tokens).toBeNull();
+    expect(contextParts(null, 5_000, 100_000)).toEqual([]);
+  });
+
+  it('keeps the ring small: 14 px, in the status bar only', () => {
+    render(<ContextRing used={1_000} window={100_000} />);
+    expect(screen.getByTestId('composer-context').querySelector('svg')?.getAttribute('width')).toBe('14');
+  });
+
+  it('fills rather than overflowing when a turn exceeds the window', () => {
+    /*
+     * A turn CAN exceed the window — the provider truncates and says so
+     * elsewhere. An arc drawn at 140% would either lap itself or read as 40%,
+     * which is the opposite of the truth. Full is the honest ceiling, and the
+     * number beside it carries the overflow.
+     */
+    expect(contextFraction(1_400_000, 1_000_000)).toBe(1);
+    expect(contextFraction(-5, 1_000)).toBe(0);
+  });
+
+  it('opens a measured section breakdown on click (B3.4)', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    render(
+      <ContextRing
+        used={12_000}
+        window={100_000}
+        breakdown={{
+          sections: [
+            { id: 'grounding', label: 'Architecture digest + question', tokens: 8_000, estimated: true },
+            { id: 'tools', label: 'Tool results this turn', tokens: 2_000, estimated: true },
+          ],
+          totalApprox: 10_000,
+          totalMeasured: 12_000,
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('composer-context'));
+    expect(screen.getByTestId('composer-context-breakdown')).toBeTruthy();
+    expect(screen.getByTestId('composer-context-label').textContent).toMatch(/12k\s*\/\s*100k/i);
+    expect(screen.getAllByTestId('composer-context-section')).toHaveLength(4);
+  });
+
+  it('INVENTS NO SLICE — a metered turn with no sections says so in four words', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    render(<ContextRing used={4_000} window={100_000} breakdown={null} />);
+    fireEvent.click(screen.getByTestId('composer-context'));
+    /* Distinct from `Nothing sent yet`: a turn WAS measured here, the
+       server just named no sections for it. One absence is not the other, and a
+       shared line would make the panel lie about one of them. */
+    expect(screen.getByTestId('composer-context-breakdown-empty').textContent).toBe(
+      'no breakdown on this turn',
+    );
+    expect(screen.queryByTestId('composer-context-bar')).toBeNull();
+    expect(screen.queryAllByTestId('composer-context-section')).toHaveLength(0);
+  });
+});
+
+/**
+ * The panel's shape, decided without a DOM. Sorting, the eight-row ceiling and
+ * the tail count are arithmetic, and arithmetic tested through a render is
+ * arithmetic tested through three other things that can fail first.
+ */
+describe('contextSlices', () => {
+  const slice = (id: string, tokens: number) => ({
+    id: id as 'other',
+    label: id,
+    tokens,
+    estimated: true,
+  });
+
+  it('sorts by size and shares sum to one', () => {
+    const out = contextSlices({
+      sections: [slice('a', 1_000), slice('b', 3_000)],
+      totalApprox: 4_000,
+    });
+    expect(out.rows.map((r) => r.id)).toEqual(['b', 'a']);
+    expect(out.rows.reduce((n, r) => n + r.share, 0)).toBeCloseTo(1, 10);
+    expect(out.hidden).toBe(0);
+  });
+
+  it('drops zero-token slices rather than drawing a segment of nothing', () => {
+    /* A 0% segment is a 2px sliver (the bar's min-width) claiming a share it
+       does not have — the drawing would be the only place that number exists. */
+    const out = contextSlices({
+      sections: [slice('a', 1_000), slice('empty', 0)],
+      totalApprox: 1_000,
+    });
+    expect(out.rows.map((r) => r.id)).toEqual(['a']);
+  });
+
+  it('answers nothing for nothing', () => {
+    expect(contextSlices(null).rows).toEqual([]);
+    expect(contextSlices(undefined).rows).toEqual([]);
+    expect(contextSlices({ sections: [], totalApprox: 0 }).rows).toEqual([]);
+    expect(contextSlices({ sections: [slice('a', 0)], totalApprox: 0 }).rows).toEqual([]);
+  });
+
+  it('keeps eight and counts the rest', () => {
+    const out = contextSlices({
+      sections: Array.from({ length: 11 }, (_, i) => slice(`s${i}`, 100 - i)),
+      totalApprox: 1_000,
+    });
+    expect(out.rows).toHaveLength(8);
+    expect(out.hidden).toBe(3);
+    expect(out.hiddenTokens).toBe(92 + 91 + 90);
+  });
+});
+
+/**
+ * ── JUST A RING, UNTIL YOU ASK — Decision 31 ────────────────────────────────
+ *
+ * Owner, 2026-09-18, on the built app: "in every single rendering the context
+ * ring should just be a ring; there's no 'out of 130K context'. When you hover
+ * it or click on it, it will show the details. Otherwise it's just a standing
+ * ring with nothing else under it."
+ *
+ * Three claims, and each is tested by a case that can produce only it: the row
+ * holds nothing but the arc at rest; a pause over it opens the details; a click
+ * opens them and a pointer leaving does NOT take them away.
+ */
+describe('the ring stands alone', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('RENDERS THE ARC AND NOTHING BESIDE IT', () => {
+    const { container } = render(<ContextRing used={27_640} window={131_100} />);
+    const ring = screen.getByTestId('composer-context');
+
+    /* No panel, and no sibling of any kind inside the anchor: the assertion is
+       on the anchor's own children rather than on a class name, so a count put
+       back under a different name fails here too. */
+    expect(screen.queryByTestId('composer-context-breakdown')).toBeNull();
+    const anchor = container.querySelector('.ctxring-anchor') as HTMLElement;
+    expect(anchor.children).toHaveLength(1);
+    expect(anchor.children[0]).toBe(ring);
+
+    /* And the button holds only the arc — no digits anywhere in its text. */
+    expect((ring.textContent ?? '').trim()).toBe('');
+    expect(ring.querySelectorAll('svg')).toHaveLength(1);
+  });
+
+  it('OPENS ON A PAUSE, not on a pointer merely crossing it', () => {
+    vi.useFakeTimers();
+    const { container } = render(<ContextRing used={27_640} window={131_100} />);
+    const anchor = container.querySelector('.ctxring-anchor') as HTMLElement;
+
+    fireEvent.mouseOver(anchor);
+    /* 240ms is INSIDE the delay and the case would pass vacuously if the delay
+       were zero, so the closed assertion here is the one that proves there is
+       a delay at all. */
+    act(() => {
+      vi.advanceTimersByTime(240);
+    });
+    expect(screen.queryByTestId('composer-context-breakdown')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(20);
+    });
+    expect(screen.getByTestId('composer-context-breakdown')).toBeTruthy();
+    expect(screen.getByTestId('composer-context-label').textContent).toBe('27.6k / 131.1k');
+
+    /* A GLANCE LEAVES WHEN THE POINTER DOES. The reader never asked for this
+       panel, so they must not have to dismiss it. */
+    fireEvent.mouseOut(anchor);
+    expect(screen.queryByTestId('composer-context-breakdown')).toBeNull();
+  });
+
+  it('a pointer that leaves before the delay opens nothing at all', () => {
+    vi.useFakeTimers();
+    const { container } = render(<ContextRing used={27_640} window={131_100} />);
+    const anchor = container.querySelector('.ctxring-anchor') as HTMLElement;
+    fireEvent.mouseOver(anchor);
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    fireEvent.mouseOut(anchor);
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+    expect(screen.queryByTestId('composer-context-breakdown')).toBeNull();
+  });
+
+  it('A CLICK PINS IT — the pointer can leave and the panel stays', () => {
+    const { container } = render(<ContextRing used={27_640} window={131_100} />);
+    const anchor = container.querySelector('.ctxring-anchor') as HTMLElement;
+    const ring = screen.getByTestId('composer-context');
+
+    fireEvent.click(ring);
+    expect(screen.getByTestId('composer-context-breakdown')).toBeTruthy();
+    expect(ring.getAttribute('aria-expanded')).toBe('true');
+
+    /* THIS IS THE WHOLE DIFFERENCE BETWEEN THE TWO WAYS IN. The same event that
+       closes a hovered panel must not close a clicked one — a reader eight rows
+       into a breakdown cannot lose it to a stray pointer move. */
+    fireEvent.mouseOut(anchor);
+    expect(screen.getByTestId('composer-context-breakdown')).toBeTruthy();
+  });
+
+  it('Escape and an outside click close a pinned panel; a second click toggles it', () => {
+    render(<ContextRing used={27_640} window={131_100} />);
+    const ring = screen.getByTestId('composer-context');
+
+    fireEvent.click(ring);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('composer-context-breakdown')).toBeNull();
+
+    fireEvent.click(ring);
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByTestId('composer-context-breakdown')).toBeNull();
+
+    fireEvent.click(ring);
+    fireEvent.click(ring);
+    expect(screen.queryByTestId('composer-context-breakdown')).toBeNull();
+  });
+});
+
+describe('panelShiftIntoView: the panel opens inside the window at every width', () => {
+  const vp = { width: 420, height: 860 };
+  it('slides a panel that hangs off the left edge back in (420 px: left was -219)', () => {
+    expect(panelShiftIntoView({ left: -219, top: 743, right: 69, bottom: 830 }, vp)).toEqual({ dx: 227, dy: 0 });
+  });
+  it('slides a panel that hangs off the right or bottom edge back in', () => {
+    expect(panelShiftIntoView({ left: 300, top: 800, right: 588, bottom: 900 }, vp)).toEqual({ dx: -176, dy: -48 });
+  });
+  it('leaves a panel that already fits alone (1440 px)', () => {
+    expect(panelShiftIntoView({ left: 55, top: 783, right: 343, bottom: 870 }, { width: 1440, height: 900 })).toEqual({ dx: 0, dy: 0 });
+  });
+  it('keeps the left edge in view when the panel is wider than the window', () => {
+    expect(panelShiftIntoView({ left: -40, top: 10, right: 400, bottom: 90 }, { width: 300, height: 600 }).dx).toBe(48);
+  });
+});

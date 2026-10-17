@@ -1,0 +1,75 @@
+{
+  "retrievedAt": "2026-08-13",
+  "indexVersion": "v1.3",
+  "sourceUrl": "https://artificialanalysis.ai/agents/coding-agents",
+  "comparisonUrls": [
+    "https://artificialanalysis.ai/agents/coding-agents/comparisons/claude-code-vs-cursor-cli",
+    "https://artificialanalysis.ai/agents/coding-agents/comparisons/cursor-cli-vs-opencode"
+  ],
+  "disclaimer": "We did not run these. Numbers are copied from Artificial Analysis comparison pages on retrievedAt. Sequence is not on this index. Not an official ranking of Sequence.",
+  "components": ["DeepSWE", "Terminal-Bench v2", "SWE-Atlas-QnA"],
+  "sameModel": {
+    "model": "Claude Opus 4.7 (medium)",
+    "rows": [
+      {
+        "harness": "Claude Code",
+        "index": 40,
+        "deepSWE": 27,
+        "terminalBenchV2": 71,
+        "sweAtlasQnA": 23,
+        "costUsd": 1.68,
+        "tokensM": 4.6
+      },
+      {
+        "harness": "Cursor CLI",
+        "index": 45,
+        "deepSWE": 32,
+        "terminalBenchV2": 71,
+        "sweAtlasQnA": 34,
+        "costUsd": 2.68,
+        "tokensM": 5.7
+      },
+      {
+        "harness": "Opencode",
+        "index": 50,
+        "deepSWE": 40,
+        "terminalBenchV2": 75,
+        "sweAtlasQnA": 35,
+        "costUsd": 2.93,
+        "tokensM": 7.6
+      }
+    ]
+  },
+  "representative": [
+    {
+      "harness": "Claude Code",
+      "model": "Opus 5 (xhigh)",
+      "index": 67,
+      "deepSWE": 60,
+      "terminalBenchV2": 85,
+      "sweAtlasQnA": 55,
+      "costUsd": 8.23,
+      "tokensM": 21.8
+    },
+    {
+      "harness": "Cursor CLI",
+      "model": "GPT-5.5 (medium)",
+      "index": 46,
+      "deepSWE": 37,
+      "terminalBenchV2": 73,
+      "sweAtlasQnA": 28,
+      "costUsd": 2.01,
+      "tokensM": 4
+    },
+    {
+      "harness": "Opencode",
+      "model": "Muse Spark 1.1 (xhigh)",
+      "index": 54,
+      "deepSWE": 54,
+      "terminalBenchV2": 73,
+      "sweAtlasQnA": 33,
+      "costUsd": 1.43,
+      "tokensM": 12.2
+    }
+  ]
+}

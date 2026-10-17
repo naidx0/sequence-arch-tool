@@ -1,0 +1,23 @@
+{
+  "id": "t14-parse-hex",
+  "prompt": "parseHex(s) should parse a hex string such as \"ff\" or \"0xFF\" into a number. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "parseHex"
+    ]
+  }
+}

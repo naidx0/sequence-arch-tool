@@ -1,0 +1,28 @@
+{
+  "id": "ml/rsi-anything",
+  "group": "ml",
+  "label": "Rsi Anything",
+  "summary": "Set up and run RSI-Anything, a research framework whose loop is propose, predict, select, evaluate, learn and retain, driven by...",
+  "triggers": [
+    "rsi-anything",
+    "recursive self improvement",
+    "world model loop",
+    "run an rsi workflow",
+    "code repair workflow"
+  ],
+  "status": "ready",
+  "license": "Apache-2.0",
+  "source": {
+    "repo": "Gen-Verse/RSI-Anything",
+    "commit": "99dbf000a424b9033651b1096c5da2b6d5fa3865",
+    "path": "tools/components/originals/rsi-anything"
+  },
+  "url": "https://github.com/Gen-Verse/RSI-Anything",
+  "externalRefs": [
+    "docs/reproduction.en.md",
+    "tasks/gui/README.md",
+    "configs/gui/smoke.json",
+    "docs/workflow.md"
+  ],
+  "preamble": "SEQUENCE.md"
+}

@@ -1,0 +1,70 @@
+<svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="12">
+  <title>Request path at 1,000 users</title>
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0.5L7.5 4L0 7.5z" fill="currentColor" fill-opacity="0.6"/>
+    </marker>
+  </defs>
+  <text x="10" y="18" font-size="14" font-weight="600" fill="currentColor">Request path at 1,000 users</text>
+  <g fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-opacity="0.3">
+    <rect x="10" y="34" width="130" height="100" rx="9"/>
+    <rect x="167" y="34" width="130" height="100" rx="9"/>
+    <rect x="324" y="34" width="130" height="100" rx="9" stroke="#c27a0a" stroke-width="2"/>
+    <rect x="481" y="34" width="130" height="100" rx="9"/>
+    <rect x="638" y="34" width="112" height="100" rx="9"/>
+  </g>
+  <g fill="currentColor" font-weight="600" font-size="13">
+    <text x="20" y="54">CDN</text>
+    <text x="177" y="54">AI gateway</text>
+    <text x="334" y="54">Model proxy</text>
+    <text x="491" y="54">Provider</text>
+    <text x="648" y="54">Warehouse</text>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="10.5">
+    <text x="20" y="69">edge</text>
+    <text x="177" y="69">auth, quota</text>
+    <text x="491" y="69">external</text>
+  </g>
+  <g font-size="16" font-weight="600">
+    <text x="20" y="94" fill="#169a68">44 rps</text>
+    <text x="177" y="94" fill="#169a68">44 rps</text>
+    <text x="334" y="94" fill="#c27a0a">31 rps</text>
+    <text x="491" y="94" fill="currentColor">31 rps</text>
+    <text x="648" y="94" fill="currentColor">44 rps</text>
+  </g>
+  <g fill="currentColor" fill-opacity="0.65" font-size="11" text-anchor="end">
+    <text x="130" y="94">12 ms</text>
+    <text x="287" y="94">40 ms</text>
+    <text x="444" y="94">820 ms</text>
+    <text x="601" y="94">300 ms</text>
+    <text x="740" y="94">20 ms</text>
+  </g>
+  <!-- utilisation bars -->
+  <g fill="currentColor" fill-opacity="0.15">
+    <rect x="20" y="104" width="110" height="7" rx="3"/>
+    <rect x="177" y="104" width="110" height="7" rx="3"/>
+    <rect x="334" y="104" width="110" height="7" rx="3"/>
+  </g>
+  <rect x="20" y="104" width="3" height="7" rx="3" fill="#169a68"/>
+  <rect x="177" y="104" width="22" height="7" rx="3" fill="#169a68"/>
+  <rect x="334" y="104" width="71" height="7" rx="3" fill="#c27a0a"/>
+  <g fill="currentColor" fill-opacity="0.65" font-size="10.5">
+    <text x="20" y="127">2% of capacity</text>
+    <text x="177" y="127">20% of capacity</text>
+    <text x="334" y="127" fill="#c27a0a" fill-opacity="1">65% of capacity</text>
+  </g>
+  <g stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#ar)">
+    <line x1="142" y1="84" x2="165" y2="84"/>
+    <line x1="299" y1="84" x2="322" y2="84"/>
+    <line x1="456" y1="84" x2="479" y2="84"/>
+    <line x1="613" y1="84" x2="636" y2="84"/>
+  </g>
+  <!-- latency budget -->
+  <text x="10" y="162" font-size="11" fill="currentColor" fill-opacity="0.65">Latency budget, 1.2 s end to end</text>
+  <rect x="10" y="170" width="8" height="18" fill="#2f6fed"/>
+  <rect x="19" y="170" width="32" height="18" fill="#d9822b"/>
+  <rect x="52" y="170" width="520" height="18" fill="#1f9d6b"/>
+  <rect x="573" y="170" width="170" height="18" fill="#8b5cf6"/>
+  <text x="312" y="183" font-size="10.5" fill="#fff" text-anchor="middle">Model proxy 820</text>
+  <text x="658" y="183" font-size="10.5" fill="#fff" text-anchor="middle">Provider 300</text>
+</svg>

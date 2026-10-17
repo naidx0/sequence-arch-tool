@@ -1,0 +1,251 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   MARKS ON THE ARCHITECTURE BOARD (round 8)
+   packages/web2/src/canvas/boards/archDraw.css
+
+   Sketch ink and sticky tint, never a card: a mark must not pass for a node
+   the scan found. The agent's marks are in the accent so a reader can tell
+   whose they are. Marks never take the pointer (the graph under them stays
+   clickable); the erase and text tools hit-test them through the capture.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.annot-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  /* Above the cards (React Flow's nodes layer), below the board's furniture. */
+  z-index: 5;
+}
+.annot-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+}
+.annot-ink {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.annot-ink[data-by='agent'] { stroke: var(--accent); }
+.annot-ink rect,
+.annot-ink ellipse { fill: transparent; }
+.annot-ink .annot-hit { stroke: transparent; stroke-width: 14; }
+.annot-label {
+  fill: var(--ink-1);
+  stroke: none;
+  font-family: var(--font-ui);
+  font-size: var(--t-13);
+  font-weight: var(--fw-label);
+}
+.annot-label-line {
+  paint-order: stroke;
+  stroke: var(--bg-ground);
+  stroke-width: 4px;
+}
+.annot-ink[data-by='agent'] .annot-label-line { stroke: var(--bg-ground); }
+
+.annot-sticky {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-12);
+  border: var(--w-hair) solid var(--hint-yellow-rim);
+  border-radius: 10px;
+  background-color: var(--board-card);
+  background-image: linear-gradient(var(--hint-yellow-wash), var(--hint-yellow-wash));
+  box-shadow: var(--e1);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: var(--t-13);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.annot-sticky[data-by='agent'] {
+  border-color: var(--accent-edge);
+  background-image: linear-gradient(var(--accent-wash), var(--accent-wash));
+}
+.annot-by {
+  font-size: var(--t-11);
+  font-weight: var(--fw-head);
+  color: var(--accent-ink);
+}
+.annot-text {
+  position: absolute;
+  transform: translateY(-100%);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: var(--t-14);
+  font-weight: var(--fw-label);
+  white-space: pre;
+}
+.annot-text[data-by='agent'] { color: var(--accent-ink); }
+.annot-layer[data-hittable='true'] .annot-sticky,
+.annot-layer[data-hittable='true'] .annot-text,
+.annot-layer[data-hittable='true'] .annot-ink { pointer-events: visiblePainted; }
+.annot-layer[data-hittable='true'] .annot-sticky,
+.annot-layer[data-hittable='true'] .annot-text { pointer-events: auto; }
+
+/* The capture: the stroke layer's chassis (board.css .strokelayer). */
+.annot-capture-wrap { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+.annot-capture-wrap > .annot-capture { pointer-events: auto; }
+.annot-capture-wrap > .annot-capture.is-passive { pointer-events: none; }
+.annot-capture[data-tool='text'],
+.annot-capture[data-tool='sticky'] { cursor: text; }
+.annot-capture[data-tool='erase'] { cursor: pointer; }
+.annot-capture[data-tool='select'] { cursor: grab; }
+.annot-capture[data-tool='select']:active { cursor: grabbing; }
+.annot-selection { fill: none; stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
+.annot-text[data-selected='true'], .annot-sticky[data-selected='true'] { outline: 1px dashed var(--accent); outline-offset: 4px; }
+.annot-ink[data-selected='true'] { stroke: var(--accent); }
+.annot-draft {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 5 4;
+}
+.annot-editor {
+  position: absolute;
+  z-index: 21;
+  pointer-events: auto;
+  min-width: 160px;
+  min-height: 34px;
+  padding: var(--sp-6) var(--sp-8);
+  border: var(--w-hair) solid var(--accent-edge);
+  border-radius: 8px;
+  background: var(--board-card);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: var(--t-13);
+  resize: none;
+  outline: none;
+  box-shadow: var(--e2);
+}
+.annot-editor.is-sticky {
+  width: 180px;
+  min-height: 80px;
+  background-image: linear-gradient(var(--hint-yellow-fill), var(--hint-yellow-fill));
+  border-color: var(--hint-yellow-rim);
+}
+
+/* The palette: B's glass, a column on the board's left edge. */
+.annot-palette {
+  position: absolute;
+  left: var(--sp-12);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 22;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--sp-4);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: 16px;
+  background: var(--board-card);
+  box-shadow: var(--e2);
+}
+.annot-tool {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: var(--w-hair) solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.annot-tool:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.annot-tool[data-on='true'] {
+  border-color: var(--edge-strong);
+  background: var(--board-card);
+  color: var(--ink-1);
+  box-shadow: var(--e1);
+}
+.annot-tool:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 1px; }
+/* The tool's hint, drawn by the sheet beside the button instead of the browser's own tooltip: it wraps inside a fixed width, opens
+   to the palette's right (the palette sits on the board's left edge), and goes when the pointer or focus does. */
+.annot-tool { position: relative; }
+/* The hint for assistive tech, in the button, never painted. */
+.annot-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.annot-tool[data-hint]:hover::after,
+.annot-tool[data-hint]:focus-visible::after {
+  content: attr(data-hint);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + var(--sp-8));
+  z-index: 30;
+  width: max-content;
+  max-width: calc(var(--sp-32) * 6);
+  padding: var(--sp-6) var(--sp-10);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-10);
+  background: var(--board-card);
+  box-shadow: var(--e2);
+  color: var(--ink-1);
+  font-size: var(--t-11-5);
+  line-height: var(--lh-11);
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.annot-glyph {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.annot-sep { width: 18px; height: var(--w-hair); margin: var(--sp-4) 0; background: var(--edge); }
+.annot-hidden {
+  max-width: 32px;
+  font-size: var(--t-10);
+  line-height: 1.2;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.annot-sticky-t { min-width: 0; }
+.annot-tool.annot-done { color: var(--accent-ink); }
+
+/* Nothing within reach is clear of the lines: the label keeps its place and
+   sits on a plate of the card's paper, so it reads over the connector. */
+.annot-text[data-plate='true'] {
+  margin: -4px 0 0 -4px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--board-card);
+}
+
+/* ── SELECT AND MOVE (round 9, ask 26) ─────────────────────────────────── */
+.annot-capture[data-tool='select'] { cursor: default; }
+.annot-ink[data-annot-selected='true'] { stroke: var(--accent); }
+.annot-ink[data-annot-selected='true'] .annot-hit { stroke: var(--accent-wash); }
+.annot-sticky[data-annot-selected='true'],
+.annot-text[data-annot-selected='true'] {
+  outline: var(--w-rule) dashed var(--accent);
+  outline-offset: 3px;
+}

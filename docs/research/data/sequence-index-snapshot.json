@@ -1,0 +1,89 @@
+{
+  "name": "Sequence Index",
+  "analogTo": "Artificial Analysis Coding Agent Index",
+  "aaSourceUrl": "https://artificialanalysis.ai/agents/coding-agents",
+  "aaIndexVersion": "v1.3",
+  "aaRetrievedAt": "2026-08-13",
+  "ranAt": "2026-08-13",
+  "disclaimer": "Our tests, not DeepSWE / Terminal-Bench / SWE-Atlas. Sequence is not on the Artificial Analysis index. Published AA numbers are copied from their site; we did not run those harnesses. Do not mix shopfront 15/15 with DeepSWE 27/32/40 on one unlabeled axis.",
+  "fixture": {
+    "name": "shopfront",
+    "ask": "Explain how orders reaches payments and postgres.",
+    "needles": [
+      "orders→payments http",
+      "orders→postgres db",
+      "gateway→redis must not be claimed"
+    ]
+  },
+  "tests": [
+    {
+      "id": "shopfront-tokens",
+      "title": "Shopfront tokens",
+      "aaAnalog": "tokens per task",
+      "higherIsBetter": false,
+      "rows": [
+        {
+          "harness": "Sequence",
+          "value": 3073,
+          "unit": "assembled prompt approxTokens",
+          "note": "architecture board"
+        },
+        {
+          "harness": "OpenCode",
+          "value": 18400,
+          "unit": "CLI usage.input",
+          "note": "opencode/big-pickle 1.18.18 live-path"
+        },
+        {
+          "harness": "Cursor session",
+          "value": 1281,
+          "unit": "approxTokens of eight files opened",
+          "note": "cursor-grok-4.6-high"
+        },
+        {
+          "harness": "Claude Code",
+          "value": null,
+          "status": "not logged in"
+        }
+      ]
+    },
+    {
+      "id": "shopfront-grounded",
+      "title": "Shopfront grounded",
+      "aaAnalog": "DeepSWE / task success",
+      "higherIsBetter": true,
+      "rows": [
+        {
+          "harness": "Sequence",
+          "value": "15/15",
+          "unit": "scanner edges vs hand truth"
+        },
+        {
+          "harness": "OpenCode",
+          "value": "3/3",
+          "unit": "live-path needles"
+        },
+        {
+          "harness": "Cursor session",
+          "value": "3/3",
+          "unit": "live-path needles"
+        },
+        {
+          "harness": "Claude Code",
+          "value": null,
+          "status": "not logged in"
+        }
+      ]
+    }
+  ],
+  "publishedAaSameModel": {
+    "model": "Claude Opus 4.7 (medium)",
+    "note": "Copied from site/data/aa-coding-agents-snapshot.json. Sequence has no row.",
+    "rows": [
+      { "harness": "Sequence", "deepSWE": null, "terminalBenchV2": null },
+      { "harness": "Claude Code", "deepSWE": 27, "terminalBenchV2": 71 },
+      { "harness": "Cursor CLI", "deepSWE": 32, "terminalBenchV2": 71 },
+      { "harness": "Opencode", "deepSWE": 40, "terminalBenchV2": 75 }
+    ]
+  }
+}

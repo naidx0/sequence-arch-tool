@@ -1,0 +1,6 @@
+RSI-Anything
+Copyright 2026 RSI-Anything contributors.
+Wrapped by Sequence from https://github.com/Gen-Verse/RSI-Anything at commit 99dbf000a424b9033651b1096c5da2b6d5fa3865.
+SKILL.md in this folder is original Sequence text, written from the upstream README and docs/workflow.md.
+Project code is Apache-2.0 (see LICENSE). Third-party code, models and data keep their own terms,
+listed upstream in THIRD_PARTY_NOTICES.md.

@@ -1,0 +1,6 @@
+{
+  "name": "t26-omit-keys",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

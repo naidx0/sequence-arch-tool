@@ -1,0 +1,2442 @@
+[
+ {
+  "id": "teach-chart-first/sys-03/t0",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": "The services communicate primarily through HTTP and gRPC, with a small number of queue-based event flows. Here's how the data moves:\n\n**HTTP flows** connect the Express gateway to other services. The gateway (`svc:gateway`) handles incoming requests and forwards them to `svc:orders` for order processing, `svc:payments` for charges, `svc:invoices` for invoice requests, and `svc:shipping` for shipment queries. The `edge` service also calls `invoices` over HTTP at `/api/`.\n\n**gRPC flow** connects `svc:orders` to `svc:inventory` for real-time stock checks.\n\n**Queue flows** use the `order.created` topic. When an order is created, `svc:orders` publishes to this topic via `queue_publish`. Then `svc:notifications`, `svc:shipping`, and `svc:inventory` all consume from this topic via `queue_consume` to handle notifications, shipment updates, and inventory adjustments.\n\n**Datastore flows** connect services to `ds:postgres` for database reads and writes, and `ds:redis` as the broker for the topic.\n\nThe first concept to explore next is `http.ts` (not read this turn) in `file:http.ts (not read this turn)`, which handles the HTTP request/response logic that routes traffic between services.\n\nDoes this make sense so far?\n\n(Sequence marked http.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The services communicate primarily through HTTP and gRPC, with a small number of queue-based event flows. Here's how the data moves:\n\n**HTTP flows** connect the Express gateway to other services. The gateway (`svc:gateway`) handles incoming requests and forwards them to `svc:orders` for order processing, `svc:payments` for charges, `svc:invoices` for invoice requests, and `svc:shipping` for shipment queries. The `edge` service also calls `invoices` over HTTP at `/api/`.\n\n**gRPC flow** connects `svc:orders` to `svc:inventory` for real-time stock checks.\n\n**Queue flows** use the `order.created` topic. When an order is created, `svc:orders` publishes to this topic via `queue_publish`. Then `svc:notifications`, `svc:shipping`, and `svc:inventory` all consume from this topic via `queue_consume` to handle notifications, shipment updates, and inventory adjustments.\n\n**Datastore flows** connect services to `ds:postgres` for database reads and writes, and `ds:redis` as the broker for the topic.\n\nThe first concept to explore next is `http.ts` (not read this turn) in `file:http.ts (not read this turn)`, which handles the HTTP request/response logic that routes traffic between services.\n\nDoes this make sense so far?\n\n(Sequence marked http.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-chart-first/sys-03/t1",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": "I can explain the repository structure in simpler terms. The system has several services like `svc:gateway`, `svc:orders`, and `svc:payments`, each handling different parts of the shopfront. These services connect through HTTP requests and message topics like `topic:order.created`. For example, when a user creates an order, the gateway service handles it and sends a message to the `order.created` topic, which other services like `svc:invoices` and `svc:notifications` can consume.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through a specific request flow?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "I can explain the repository structure in simpler terms. The system has several services like `svc:gateway`, `svc:orders`, and `svc:payments`, each handling different parts of the shopfront. These services connect through HTTP requests and message topics like `topic:order.created`. For example, when a user creates an order, the gateway service handles it and sends a message to the `order.created` topic, which other services like `svc:invoices` and `svc:notifications` can consume.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through a specific request flow?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-chart-first/sys-05/t0",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": "The payments route failure would break downstream services that depend on it. From the digest's risks section, the `payments` service has a blast radius of 4 — meaning 4 other nodes reach it transitively. The edges show `orders/app/payments_client.py` calls `payments/src/index.js` over HTTP (POST /charge), and `invoices/src/main/java/shop/invoices/PaymentClient.java` also calls the same endpoint. If the payments route fails, both the orders and invoices services lose their ability to charge, which in turn affects any services that depend on successful payment processing.\n\nLooking at the picture: if payments.ts changed what it returns, what do you think would break in index.ts?\n\n(Sequence took out the closing question \"Check-in: which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js\n  index.ts -> payments.ts",
+  "B": "The payments route failure would break downstream services that depend on it. From the digest's risks section, the `payments` service has a blast radius of 4 — meaning 4 other nodes reach it transitively. The edges show `orders/app/payments_client.py` calls `payments/src/index.js` over HTTP (POST /charge), and `invoices/src/main/java/shop/invoices/PaymentClient.java` also calls the same endpoint. If the payments route fails, both the orders and invoices services lose their ability to charge, which in turn affects any services that depend on successful payment processing.\n\nLooking at the picture: if payments.ts changed what it returns, what do you think would break in index.ts?\n\n(Sequence took out the closing question \"Check-in: which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js (http)\n  index.ts -> payments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> payments.ts: import\n  2. payments.ts -> index.js: http: GET /payments/*",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 3,
+    "links": 2,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 3,
+    "links": 2,
+    "steps": 2,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 2
+ },
+ {
+  "id": "teach-chart-first/sys-05/t1",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": "The lesson is about `file:index.js (not read this turn)` — the Express entry point for the payments service. It imports `db.js` (not read this turn) and `stripe.js` (not read this turn), then exposes HTTP routes at `GET /payments/*`. The scan shows this file is called by `payments.ts` (not read this turn) via an HTTP edge, and it also has its own HTTP edge to `file:index.js (not read this turn)` for `/payments/*` requests.\n\nLooking at the picture: if index.js changed what it returns, which of payments.ts, payments_client.py or PaymentClient.java do you think would break first?\n\n(Sequence marked index.js, db.js, stripe.js, payments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js\n  payments_client.py -> index.js\n  PaymentClient.java -> index.js\n  index.js -> db.js",
+  "B": "The lesson is about `file:index.js (not read this turn)` — the Express entry point for the payments service. It imports `db.js` (not read this turn) and `stripe.js` (not read this turn), then exposes HTTP routes at `GET /payments/*`. The scan shows this file is called by `payments.ts` (not read this turn) via an HTTP edge, and it also has its own HTTP edge to `file:index.js (not read this turn)` for `/payments/*` requests.\n\nLooking at the picture: if index.js changed what it returns, which of payments.ts, payments_client.py or PaymentClient.java do you think would break first?\n\n(Sequence marked index.js, db.js, stripe.js, payments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js (http)\n  payments_client.py -> index.js (http)\n  PaymentClient.java -> index.js (http)\n  index.js -> db.js (import)\nSteps, played in order on the canvas:\n  1. payments.ts -> index.js: http: GET /payments/*\n  2. payments_client.py -> index.js: http: POST /charge\n  3. PaymentClient.java -> index.js: http: POST /charge\n  4. index.js -> db.js: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-chart-first/sys-06/t0",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The invoices flow bit by bit:\n\n1. The request arrives at `gateway/src/routes/invoices.ts` (imported by `index.ts` (not read this turn)).\n2. It calls `invoices/src/main/java/shop/invoices/InvoiceController.java` over HTTP at `GET /invoices/*`.\n3. `InvoiceController.java` reads from `ds:postgres` (db_read).\n4. `InvoiceController.java` calls `invoices/src/main/java/shop/invoices/PaymentClient.java` over HTTP at `POST /charge`.\n5. `PaymentClient.java` calls `payments/src/index.js` over HTTP at `POST /charge`.\n6. `payments/src/db.js` writes to `ds:postgres` (db_write).\n\nThe visual is `propose_chart` with kind `data-flow`, items for gateway, invoices, and payments, and links for the HTTP hops and the db_write. Then I'll walk through one concrete example.\n\n**Check-in:** does this make sense so far?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The invoices flow bit by bit:\n\n1. The request arrives at `gateway/src/routes/invoices.ts` (imported by `index.ts` (not read this turn)).\n2. It calls `invoices/src/main/java/shop/invoices/InvoiceController.java` over HTTP at `GET /invoices/*`.\n3. `InvoiceController.java` reads from `ds:postgres` (db_read).\n4. `InvoiceController.java` calls `invoices/src/main/java/shop/invoices/PaymentClient.java` over HTTP at `POST /charge`.\n5. `PaymentClient.java` calls `payments/src/index.js` over HTTP at `POST /charge`.\n6. `payments/src/db.js` writes to `ds:postgres` (db_write).\n\nThe visual is `propose_chart` with kind `data-flow`, items for gateway, invoices, and payments, and links for the HTTP hops and the db_write. Then I'll walk through one concrete example.\n\n**Check-in:** does this make sense so far?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-chart-first/sys-06/t1",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The lesson is about `file:InvoiceController.java (not read this turn)`. It is the entry point for the invoices service, exposed via an HTTP route at `GET /invoices/*` from the gateway. The controller reads from `ds:postgres` (table `invoices`) and publishes to the `topic:order.created` via a queue publish from `file:events.py (not read this turn)`.\n\nLooking at the picture: if InvoiceController.java changed what it returns, what do you think would break in invoices.ts?\n\n(Sequence marked invoicecontroller.java, events.py as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"InvoiceController.java\"]\nBoxes: InvoiceController.java, invoices.ts, ds:postgres\n  invoices.ts -> InvoiceController.java\n  InvoiceController.java -> ds:postgres",
+  "B": "The lesson is about `file:InvoiceController.java (not read this turn)`. It is the entry point for the invoices service, exposed via an HTTP route at `GET /invoices/*` from the gateway. The controller reads from `ds:postgres` (table `invoices`) and publishes to the `topic:order.created` via a queue publish from `file:events.py (not read this turn)`.\n\nLooking at the picture: if InvoiceController.java changed what it returns, what do you think would break in invoices.ts?\n\n(Sequence marked invoicecontroller.java, events.py as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"InvoiceController.java\"]\nBoxes: InvoiceController.java, invoices.ts, ds:postgres\n  invoices.ts -> InvoiceController.java (http)\n  InvoiceController.java -> ds:postgres (db_read)\nSteps, played in order on the canvas:\n  1. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  2. InvoiceController.java -> ds:postgres: db_read: invoices",
+  "chartScore": [
+   {
+    "score": 63,
+    "items": 3,
+    "links": 2,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 1,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "1 box(es) labelled with a raw id instead of a name",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 88,
+    "items": 3,
+    "links": 2,
+    "steps": 2,
+    "flow": true,
+    "rawIdLabels": 1,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "1 box(es) labelled with a raw id instead of a name"
+    ]
+   }
+  ],
+  "steps": 2
+ },
+ {
+  "id": "teach-chart-first/sys-06/t2",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The lesson is about `file:edge/default.conf`. It lives in the `edge` service and is referenced by the gateway's invoice route via an HTTP edge labeled `/api/`. The scan shows this as `e8:http` from `file:edge/default.conf` to `file:invoices.ts (not read this turn)`.\n\nOne comprehension question: does this make sense so far?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"default.conf\"]\nBoxes: default.conf, invoices.ts\n  default.conf -> invoices.ts",
+  "B": "The lesson is about `file:edge/default.conf`. It lives in the `edge` service and is referenced by the gateway's invoice route via an HTTP edge labeled `/api/`. The scan shows this as `e8:http` from `file:edge/default.conf` to `file:invoices.ts (not read this turn)`.\n\nOne comprehension question: does this make sense so far?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"default.conf\"]\nBoxes: default.conf, invoices.ts\n  default.conf -> invoices.ts (http)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/",
+  "chartScore": [
+   {
+    "score": 55,
+    "items": 2,
+    "links": 1,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 80,
+    "items": 2,
+    "links": 1,
+    "steps": 1,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 1
+ },
+ {
+  "id": "teach-chart-first/sys-07/t0",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "The difference is about how the scan connects parts of the system. An **import edge** names what a file loads — for example, `imp1` shows `file:index.ts (not read this turn)` importing `file:gateway/src/routes/invoices.ts`. An **interaction edge** names what a file calls — for example, `imp2` shows `file:index.ts (not read this turn)` calling `file:gateway/src/routes/orders.ts`. The import edge is about a file pulling in another file; the interaction edge is about a file invoking another file.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(Sequence took out the closing offer \"Which part of this flow would you like to explore next?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The difference is about how the scan connects parts of the system. An **import edge** names what a file loads — for example, `imp1` shows `file:index.ts (not read this turn)` importing `file:gateway/src/routes/invoices.ts`. An **interaction edge** names what a file calls — for example, `imp2` shows `file:index.ts (not read this turn)` calling `file:gateway/src/routes/orders.ts`. The import edge is about a file pulling in another file; the interaction edge is about a file invoking another file.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(Sequence took out the closing offer \"Which part of this flow would you like to explore next?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-chart-first/sys-07/t1",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "The lesson is about `http.ts`, which contains generic HTTP helper functions (`getJson` and `postJson`) used by the gateway to fetch and post data. These functions are called by route handlers in `gateway/src/routes/*.ts` files, which then forward requests to services like `svc:orders`, `svc:payments`, and `svc:invoices`.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The lesson is about `http.ts`, which contains generic HTTP helper functions (`getJson` and `postJson`) used by the gateway to fetch and post data. These functions are called by route handlers in `gateway/src/routes/*.ts` files, which then forward requests to services like `svc:orders`, `svc:payments`, and `svc:invoices`.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-chart-first/cs-04/t0",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "The payment flow in this repository works as follows. A request begins at `payments.ts` (not read this turn) (line 6), which calls `payments/src/index.js` over HTTP (edge e4:http). From `index.js`, the code imports `db.js` (line 2, edge imp13) and `stripe.js` (not read this turn) (line 3, edge imp14). Then `db.js` writes to `ds:postgres` at line 6 (edge e16:db_write). The payments service is a single Express service with 3 files under `payments/`.\n\nThe first concept to explore next is `file:index.ts (not read this turn)`.\n\nDoes this make sense so far?\n\n(Sequence marked payments.ts, stripe.js, index.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The payment flow in this repository works as follows. A request begins at `payments.ts` (not read this turn) (line 6), which calls `payments/src/index.js` over HTTP (edge e4:http). From `index.js`, the code imports `db.js` (line 2, edge imp13) and `stripe.js` (not read this turn) (line 3, edge imp14). Then `db.js` writes to `ds:postgres` at line 6 (edge e16:db_write). The payments service is a single Express service with 3 files under `payments/`.\n\nThe first concept to explore next is `file:index.ts (not read this turn)`.\n\nDoes this make sense so far?\n\n(Sequence marked payments.ts, stripe.js, index.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-chart-first/cs-04/t1",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "I can explain the gateway's role in this system differently. The gateway is an Express service that sits at the front door, routing incoming requests to other services. It imports its route handlers from files like `invoices.ts` (not read this turn), `orders.ts` (not read this turn), and `payments.ts` (not read this turn), then passes those through to the appropriate services. For example, a GET request to `/orders/*` goes to the orders service, while a POST to `/payments/*` goes to the payments service. The gateway also publishes configuration via `edge/default.conf` under `/api/`. Would this make sense so far?\n\n(Sequence marked invoices.ts, orders.ts, payments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "I can explain the gateway's role in this system differently. The gateway is an Express service that sits at the front door, routing incoming requests to other services. It imports its route handlers from files like `invoices.ts` (not read this turn), `orders.ts` (not read this turn), and `payments.ts` (not read this turn), then passes those through to the appropriate services. For example, a GET request to `/orders/*` goes to the orders service, while a POST to `/payments/*` goes to the payments service. The gateway also publishes configuration via `edge/default.conf` under `/api/`. Would this make sense so far?\n\n(Sequence marked invoices.ts, orders.ts, payments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-chart-first/link-03/t0",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": "I can't fetch external web pages or teach from Wikipedia content, but I can explain message queues using the real queue edges in this repository.\n\nThe core message queue in this system is `topic:order.created`, which sits as a Redis broker topic. Three services consume from it: `svc:notifications`, `svc:shipping`, and `svc:orders`. The flow works like this: when `orders` processes a new order, it publishes to `topic:order.created` via `queue_publish` (edge e10). Then `notifications/worker.py` and `shipping/subscriber.go` both subscribe to that same topic via `queue_consume` edges (e11 and e12). This means any new order triggers notifications and shipping updates in parallel.\n\nThe first concept to explore next is how the gateway routes requests to these services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through that flow?\": an offer can be answered without having followed the lesson.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "I can't fetch external web pages or teach from Wikipedia content, but I can explain message queues using the real queue edges in this repository.\n\nThe core message queue in this system is `topic:order.created`, which sits as a Redis broker topic. Three services consume from it: `svc:notifications`, `svc:shipping`, and `svc:orders`. The flow works like this: when `orders` processes a new order, it publishes to `topic:order.created` via `queue_publish` (edge e10). Then `notifications/worker.py` and `shipping/subscriber.go` both subscribe to that same topic via `queue_consume` edges (e11 and e12). This means any new order triggers notifications and shipping updates in parallel.\n\nThe first concept to explore next is how the gateway routes requests to these services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through that flow?\": an offer can be answered without having followed the lesson.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-chart-first/link-03/t1",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": "The lesson is about `file:invoices.ts (not read this turn)`, which handles GET /invoices/* requests. The gateway routes to it via an HTTP edge (e1:http), and the invoice service depends on it through its own routes file. The scan shows this as a straightforward HTTP call from the gateway to the Java-based invoice controller.\n\nDoes this make sense so far?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The lesson is about `file:invoices.ts (not read this turn)`, which handles GET /invoices/* requests. The gateway routes to it via an HTTP edge (e1:http), and the invoice service depends on it through its own routes file. The scan shows this as a straightforward HTTP call from the gateway to the Java-based invoice controller.\n\nDoes this make sense so far?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-chart-first/mix-02/t0",
+  "family": "mix-02",
+  "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+  "A": "The request flows from the gateway through orders, then to payments, inventory, and notifications via the order.created topic. The first concept to explore next is `file:index.ts (not read this turn)`.\n\nDoes this make sense so far?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The request flows from the gateway through orders, then to payments, inventory, and notifications via the order.created topic. The first concept to explore next is `file:index.ts (not read this turn)`.\n\nDoes this make sense so far?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-chart-first/mix-02/t1",
+  "family": "mix-02",
+  "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+  "A": "The lesson is about `http.ts`, which contains generic HTTP helper functions (`getJson` and `postJson`) used by the gateway to fetch and post data. These functions are called by route handlers in `gateway/src/routes/*.ts` files, which then forward requests to services like `svc:orders`, `svc:payments`, and `svc:invoices`.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The lesson is about `http.ts`, which contains generic HTTP helper functions (`getJson` and `postJson`) used by the gateway to fetch and post data. These functions are called by route handlers in `gateway/src/routes/*.ts` files, which then forward requests to services like `svc:orders`, `svc:payments`, and `svc:invoices`.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-03/t0",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": "The services communicate through HTTP for request routing and direct calls between services, while queues handle async event distribution. The gateway (`svc:gateway`) is the entry point, forwarding requests to services like orders, payments, and invoices. Orders use HTTP to reach its own routes and gRPC to inventory. Payments and invoices both call the gateway for HTTP requests and use gRPC for internal communication. Notifications and shipping consume the `order.created` topic via `queue_consume` to handle events asynchronously. The `order.created` topic is the central event bus, with 5 services depending on it and a blast radius of 5 if it fails.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The services communicate through HTTP for request routing and direct calls between services, while queues handle async event distribution. The gateway (`svc:gateway`) is the entry point, forwarding requests to services like orders, payments, and invoices. Orders use HTTP to reach its own routes and gRPC to inventory. Payments and invoices both call the gateway for HTTP requests and use gRPC for internal communication. Notifications and shipping consume the `order.created` topic via `queue_consume` to handle events asynchronously. The `order.created` topic is the central event bus, with 5 services depending on it and a blast radius of 5 if it fails.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-03/t1",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": "I can explain the system differently by focusing on how the gateway routes requests to different services. The gateway is an Express service that handles incoming HTTP requests and routes them to specific services based on the path. For example, requests to `/invoices/*` go to the invoices service, while `/orders/*` routes to the orders service. This is defined in the gateway's route files, which are imported by the main index file.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through a specific request flow?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "I can explain the system differently by focusing on how the gateway routes requests to different services. The gateway is an Express service that handles incoming HTTP requests and routes them to specific services based on the path. For example, requests to `/invoices/*` go to the invoices service, while `/orders/*` routes to the orders service. This is defined in the gateway's route files, which are imported by the main index file.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through a specific request flow?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-05/t0",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": "The payments route failure blast radius is **11** — that's the number from the digest's `risks.spofs` section. The payments service alone breaks 4 of those 11 nodes, making it a single point of failure.\n\nTo trace what breaks downstream, I followed the flow from the payments service:\n\n1. `payments/src/db.js:6` writes to `ds:postgres` (payments → datastore postgres, db_write)\n2. `file:payments/src/index.js` depends on `file:payments/src/db.js` (import)\n3. `file:payments/src/index.js` depends on `file:stripe.js (not read this turn)` (import)\n4. `file:payments/src/index.js` depends on `file:payments.ts (not read this turn)` (import)\n5. `file:payments.ts (not read this turn)` depends on `file:http.ts (not read this turn)` (import)\n6. `file:http.ts (not read this turn)` depends on `file:index.ts (not read this turn)` (import)\n7. `file:index.ts (not read this turn)` depends on `file:gateway/src/routes/invoices.ts`, `orders.ts`, `payments.ts` (not read this turn), `shipments.ts` (not read this turn) (imports)\n\nIf the payments route fails, the blast radius is 11 because the payments service is a single point of failure — it breaks 4 nodes out of the 11 total in the risks section. The payments service also feeds into the gateway's route handlers and the entire HTTP request chain.\n\nLooking at the picture: if payments.ts changed what it returns, what do you think would break in index.ts?\n\n(Sequence marked stripe.js, payments.ts, http.ts, index.ts, shipments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js\n  index.ts -> payments.ts",
+  "B": "The payments route failure blast radius is **11** — that's the number from the digest's `risks.spofs` section. The payments service alone breaks 4 of those 11 nodes, making it a single point of failure.\n\nTo trace what breaks downstream, I followed the flow from the payments service:\n\n1. `payments/src/db.js:6` writes to `ds:postgres` (payments → datastore postgres, db_write)\n2. `file:payments/src/index.js` depends on `file:payments/src/db.js` (import)\n3. `file:payments/src/index.js` depends on `file:stripe.js (not read this turn)` (import)\n4. `file:payments/src/index.js` depends on `file:payments.ts (not read this turn)` (import)\n5. `file:payments.ts (not read this turn)` depends on `file:http.ts (not read this turn)` (import)\n6. `file:http.ts (not read this turn)` depends on `file:index.ts (not read this turn)` (import)\n7. `file:index.ts (not read this turn)` depends on `file:gateway/src/routes/invoices.ts`, `orders.ts`, `payments.ts` (not read this turn), `shipments.ts` (not read this turn) (imports)\n\nIf the payments route fails, the blast radius is 11 because the payments service is a single point of failure — it breaks 4 nodes out of the 11 total in the risks section. The payments service also feeds into the gateway's route handlers and the entire HTTP request chain.\n\nLooking at the picture: if payments.ts changed what it returns, what do you think would break in index.ts?\n\n(Sequence marked stripe.js, payments.ts, http.ts, index.ts, shipments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js (http)\n  index.ts -> payments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> payments.ts: import\n  2. payments.ts -> index.js: http: GET /payments/*",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 3,
+    "links": 2,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 3,
+    "links": 2,
+    "steps": 2,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 2
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-05/t1",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": "The question \"Continue to the next point\" is too vague to answer from the provided structure. I don't have context about what \"next point\" refers to, and the digest doesn't include any continuation instructions. Could you clarify what you'd like to explore next?\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js\n  payments_client.py -> index.js\n  PaymentClient.java -> index.js\n  index.js -> db.js",
+  "B": "The question \"Continue to the next point\" is too vague to answer from the provided structure. I don't have context about what \"next point\" refers to, and the digest doesn't include any continuation instructions. Could you clarify what you'd like to explore next?\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js (http)\n  payments_client.py -> index.js (http)\n  PaymentClient.java -> index.js (http)\n  index.js -> db.js (import)\nSteps, played in order on the canvas:\n  1. payments.ts -> index.js: http: GET /payments/*\n  2. payments_client.py -> index.js: http: POST /charge\n  3. PaymentClient.java -> index.js: http: POST /charge\n  4. index.js -> db.js: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-06/t0",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The invoices flow starts at the gateway's `invoices.ts` route, which calls `InvoiceController.java` over HTTP. That controller reads from the postgres datastore. The controller also calls `PaymentClient.java`, which posts to the payments service. Payments then writes to postgres. The edge service also calls `invoices.ts` over HTTP, completing the loop.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The invoices flow starts at the gateway's `invoices.ts` route, which calls `InvoiceController.java` over HTTP. That controller reads from the postgres datastore. The controller also calls `PaymentClient.java`, which posts to the payments service. Payments then writes to postgres. The edge service also calls `invoices.ts` over HTTP, completing the loop.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-06/t1",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The question \"Continue to the next point\" is too vague to answer from the provided structure. I cannot determine what point to continue to without more context about the lesson or sequence you're working through. Could you clarify what you'd like to explore next?\n\n[Picture on the canvas: \"InvoiceController.java\"]\nBoxes: InvoiceController.java, invoices.ts, ds:postgres\n  invoices.ts -> InvoiceController.java\n  InvoiceController.java -> ds:postgres",
+  "B": "The question \"Continue to the next point\" is too vague to answer from the provided structure. I cannot determine what point to continue to without more context about the lesson or sequence you're working through. Could you clarify what you'd like to explore next?\n\n[Picture on the canvas: \"InvoiceController.java\"]\nBoxes: InvoiceController.java, invoices.ts, ds:postgres\n  invoices.ts -> InvoiceController.java (http)\n  InvoiceController.java -> ds:postgres (db_read)\nSteps, played in order on the canvas:\n  1. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  2. InvoiceController.java -> ds:postgres: db_read: invoices",
+  "chartScore": [
+   {
+    "score": 63,
+    "items": 3,
+    "links": 2,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 1,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "1 box(es) labelled with a raw id instead of a name",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 88,
+    "items": 3,
+    "links": 2,
+    "steps": 2,
+    "flow": true,
+    "rawIdLabels": 1,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "1 box(es) labelled with a raw id instead of a name"
+    ]
+   }
+  ],
+  "steps": 2
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-06/t2",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The lesson is about `file:edge/default.conf`, which defines the `/api/` route. The scan shows it has an HTTP edge to `file:invoices.ts (not read this turn)` labeled `/api/`. This means the edge config routes API calls to the gateway's invoices handler.\n\nDoes this make sense so far?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"default.conf\"]\nBoxes: default.conf, invoices.ts\n  default.conf -> invoices.ts",
+  "B": "The lesson is about `file:edge/default.conf`, which defines the `/api/` route. The scan shows it has an HTTP edge to `file:invoices.ts (not read this turn)` labeled `/api/`. This means the edge config routes API calls to the gateway's invoices handler.\n\nDoes this make sense so far?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"default.conf\"]\nBoxes: default.conf, invoices.ts\n  default.conf -> invoices.ts (http)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/",
+  "chartScore": [
+   {
+    "score": 55,
+    "items": 2,
+    "links": 1,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 80,
+    "items": 2,
+    "links": 1,
+    "steps": 1,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 1
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-07/t0",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "The difference is in how the scan records connections. An **import edge** names what a file loads — for example, `imp1` shows `index.ts` (not read this turn) importing `gateway/src/routes/invoices.ts`. An **interaction edge** names what a file calls at runtime — for example, `imp2` shows `index.ts` (not read this turn) calling `gateway/src/routes/orders.ts`. Import edges describe static file dependencies; interaction edges describe dynamic service calls. The distinction matters because import edges are about code structure, while interaction edges are about how services actually communicate.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The difference is in how the scan records connections. An **import edge** names what a file loads — for example, `imp1` shows `index.ts` (not read this turn) importing `gateway/src/routes/invoices.ts`. An **interaction edge** names what a file calls at runtime — for example, `imp2` shows `index.ts` (not read this turn) calling `gateway/src/routes/orders.ts`. Import edges describe static file dependencies; interaction edges describe dynamic service calls. The distinction matters because import edges are about code structure, while interaction edges are about how services actually communicate.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-dot/sys-07/t1",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to forward requests to other services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to forward requests to other services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-dot/cs-04/t0",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "The payment flow begins when a request hits `svc:gateway` at `index.ts` (not read this turn). The gateway's HTTP routes forward the request to `svc:orders` at `orders/app/routes.py` via an `http` edge. Inside `svc:orders`, the request is processed by `orders/app/events.py`, which publishes a message to the `topic:order.created` topic. The order is then persisted to `ds:postgres` by `orders/app/db.py`, and a separate `orders/app/inventory_client.py` calls `svc:inventory` over gRPC to update stock. Finally, `orders/app/payments_client.py` calls `svc:payments` over HTTP to process the charge.\n\nIdempotency in this flow is enforced at the database layer: `orders/app/db.py` uses parameterized queries with `:id` placeholders, and `orders/app/inventory_client.py` and `orders/app/payments_client.py` each make independent calls to their services. If a duplicate request arrives, the database's unique constraints on `orders.id` will reject the insert, and the payment and inventory services will receive no matching order event, preventing double-charges.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The payment flow begins when a request hits `svc:gateway` at `index.ts` (not read this turn). The gateway's HTTP routes forward the request to `svc:orders` at `orders/app/routes.py` via an `http` edge. Inside `svc:orders`, the request is processed by `orders/app/events.py`, which publishes a message to the `topic:order.created` topic. The order is then persisted to `ds:postgres` by `orders/app/db.py`, and a separate `orders/app/inventory_client.py` calls `svc:inventory` over gRPC to update stock. Finally, `orders/app/payments_client.py` calls `svc:payments` over HTTP to process the charge.\n\nIdempotency in this flow is enforced at the database layer: `orders/app/db.py` uses parameterized queries with `:id` placeholders, and `orders/app/inventory_client.py` and `orders/app/payments_client.py` each make independent calls to their services. If a duplicate request arrives, the database's unique constraints on `orders.id` will reject the insert, and the payment and inventory services will receive no matching order event, preventing double-charges.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-dot/cs-04/t1",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "I can explain the system differently by focusing on how the gateway routes requests to other services. The gateway is an Express service that handles incoming HTTP requests and delegates them to services like orders, payments, and notifications. For example, when a user visits `/orders/*`, the gateway forwards that request to `file:orders.ts (not read this turn)`, which then calls `file:routes.py (not read this turn)` via an HTTP edge. This is a concrete request flow you can trace through the edges in the digest. Would this make sense so far?\n\n(Sequence marked orders.ts, routes.py as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "I can explain the system differently by focusing on how the gateway routes requests to other services. The gateway is an Express service that handles incoming HTTP requests and delegates them to services like orders, payments, and notifications. For example, when a user visits `/orders/*`, the gateway forwards that request to `file:orders.ts (not read this turn)`, which then calls `file:routes.py (not read this turn)` via an HTTP edge. This is a concrete request flow you can trace through the edges in the digest. Would this make sense so far?\n\n(Sequence marked orders.ts, routes.py as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-dot/link-03/t0",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": "I can't fetch the full Wikipedia article in this environment, but I can teach you about message queues using the real queue edges in this repo.\n\nThe core idea is that a message queue is a broker that lets services send and receive messages asynchronously. In this system, the broker is `ds:redis`, and the topic is `topic:order.created`. When an order is placed, the `orders` service publishes a message to that topic via `queue_publish` (edge e10), and both `notifications` and `shipping` consume it with `queue_consume` edges (e11, e12). This decouples order processing from notification and shipping logic.\n\nThe first concept to explore next is how the gateway routes requests to these services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through that?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "I can't fetch the full Wikipedia article in this environment, but I can teach you about message queues using the real queue edges in this repo.\n\nThe core idea is that a message queue is a broker that lets services send and receive messages asynchronously. In this system, the broker is `ds:redis`, and the topic is `topic:order.created`. When an order is placed, the `orders` service publishes a message to that topic via `queue_publish` (edge e10), and both `notifications` and `shipping` consume it with `queue_consume` edges (e11, e12). This decouples order processing from notification and shipping logic.\n\nThe first concept to explore next is how the gateway routes requests to these services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through that?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-dot/link-03/t1",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": "The lesson is about `file:gateway/src/routes/invoices.ts`, which defines the `invoicesRouter` for handling GET `/invoices/:id` requests. The gateway imports this file via `imp5` and serves it through the `/api/` route from `edge/default.conf`.\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The lesson is about `file:gateway/src/routes/invoices.ts`, which defines the `invoicesRouter` for handling GET `/invoices/:id` requests. The gateway imports this file via `imp5` and serves it through the `/api/` route from `edge/default.conf`.\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-dot/mix-02/t0",
+  "family": "mix-02",
+  "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+  "A": "The request flows through the `gateway` service first. The gateway's `index.ts` loads its route modules, then a request hits `gateway/src/routes/orders.ts`, which calls `orders/app/routes.py` over HTTP. From there, data moves to the `orders` service, which reads from `ds:postgres`, publishes to `topic:order.created`, calls `inventory/server.py` via gRPC, and calls `payments/src/index.js` over HTTP. The `edge` service also calls into the gateway for `/api/` routes.\n\n**Check-in:** Which part do you think the gateway hands off to next when a request comes in?\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The request flows through the `gateway` service first. The gateway's `index.ts` loads its route modules, then a request hits `gateway/src/routes/orders.ts`, which calls `orders/app/routes.py` over HTTP. From there, data moves to the `orders` service, which reads from `ds:postgres`, publishes to `topic:order.created`, calls `inventory/server.py` via gRPC, and calls `payments/src/index.js` over HTTP. The `edge` service also calls into the gateway for `/api/` routes.\n\n**Check-in:** Which part do you think the gateway hands off to next when a request comes in?\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-dot/mix-02/t1",
+  "family": "mix-02",
+  "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+  "A": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to forward requests to other services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to forward requests to other services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-json/sys-03/t0",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": "The services communicate primarily through HTTP for request routing and direct calls between services, while queues handle async event distribution. The gateway acts as the entry point, forwarding requests to services like orders, payments, and invoices. Orders then publish events to the `order.created` topic, which notifications and shipping consume via queue_consume edges. Payments and invoices also reach the gateway through HTTP routes. The `edge` service adds an HTTP route for `/api/` calls into the gateway.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The services communicate primarily through HTTP for request routing and direct calls between services, while queues handle async event distribution. The gateway acts as the entry point, forwarding requests to services like orders, payments, and invoices. Orders then publish events to the `order.created` topic, which notifications and shipping consume via queue_consume edges. Payments and invoices also reach the gateway through HTTP routes. The `edge` service adds an HTTP route for `/api/` calls into the gateway.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-json/sys-03/t1",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": "I can explain the system differently by showing you how a request flows through the gateway to the invoices service. The gateway routes `/invoices/*` requests to `file:invoices.ts (not read this turn)`, which then makes an HTTP call to `file:InvoiceController.java (not read this turn)`. That controller handles the request and reads from the postgres datastore. Would this make sense so far?\n\n(Sequence marked invoices.ts, invoicecontroller.java as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "I can explain the system differently by showing you how a request flows through the gateway to the invoices service. The gateway routes `/invoices/*` requests to `file:invoices.ts (not read this turn)`, which then makes an HTTP call to `file:InvoiceController.java (not read this turn)`. That controller handles the request and reads from the postgres datastore. Would this make sense so far?\n\n(Sequence marked invoices.ts, invoicecontroller.java as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-json/sys-05/t0",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": "The payments route fails at `file:payments.ts (not read this turn)`, which calls `payments/src/index.js` over HTTP. If that fails, the blast radius is **1 node** reaching it transitively (`svc:payments`), per `who_calls`. The payments service itself has **4 breaks** in the risks section, meaning it can break 4 other services if it fails.\n\nLooking at the picture: if payments.ts changed what it returns, what do you think would break in index.ts?\n\n(Sequence marked payments.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js\n  index.ts -> payments.ts",
+  "B": "The payments route fails at `file:payments.ts (not read this turn)`, which calls `payments/src/index.js` over HTTP. If that fails, the blast radius is **1 node** reaching it transitively (`svc:payments`), per `who_calls`. The payments service itself has **4 breaks** in the risks section, meaning it can break 4 other services if it fails.\n\nLooking at the picture: if payments.ts changed what it returns, what do you think would break in index.ts?\n\n(Sequence marked payments.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js (http)\n  index.ts -> payments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> payments.ts: import\n  2. payments.ts -> index.js: http: GET /payments/*",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 3,
+    "links": 2,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 3,
+    "links": 2,
+    "steps": 2,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 2
+ },
+ {
+  "id": "teach-dot-ab-json/sys-05/t1",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": "The user's next instruction is to continue from where they left off, but no specific question or topic was provided. I cannot proceed without more context about what they want to explore next in the repository.\n\nLooking at the picture: if index.js changed what it returns, which of payments.ts, payments_client.py or PaymentClient.java do you think would break first?\n\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js\n  payments_client.py -> index.js\n  PaymentClient.java -> index.js\n  index.js -> db.js",
+  "B": "The user's next instruction is to continue from where they left off, but no specific question or topic was provided. I cannot proceed without more context about what they want to explore next in the repository.\n\nLooking at the picture: if index.js changed what it returns, which of payments.ts, payments_client.py or PaymentClient.java do you think would break first?\n\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js (http)\n  payments_client.py -> index.js (http)\n  PaymentClient.java -> index.js (http)\n  index.js -> db.js (import)\nSteps, played in order on the canvas:\n  1. payments.ts -> index.js: http: GET /payments/*\n  2. payments_client.py -> index.js: http: POST /charge\n  3. PaymentClient.java -> index.js: http: POST /charge\n  4. index.js -> db.js: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-json/sys-06/t0",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The invoices flow starts at the gateway's `invoices.ts` route, which hands the request to the `InvoiceController.java` in the invoices service. The controller reads from the postgres datastore, and the `PaymentClient.java` in invoices calls the payments service over HTTP to process charges. The payments service then writes to postgres. The edge `e1:http` proves the gateway-to-invoices hop, and `e21`/`e22` prove the controller's reads to postgres.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The invoices flow starts at the gateway's `invoices.ts` route, which hands the request to the `InvoiceController.java` in the invoices service. The controller reads from the postgres datastore, and the `PaymentClient.java` in invoices calls the payments service over HTTP to process charges. The payments service then writes to postgres. The edge `e1:http` proves the gateway-to-invoices hop, and `e21`/`e22` prove the controller's reads to postgres.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-json/sys-06/t1",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The lesson is about `file:InvoiceController.java (not read this turn)`. It's the entry point for the invoices service, exposed via an HTTP route at `GET /invoices/*` from the gateway. The controller reads from `ds:postgres` (tables `invoices`) and publishes to the `topic:order.created` queue. The scan shows it depends on `file:invoices.ts (not read this turn)` (import edge `imp1`) and is called by `file:index.ts (not read this turn)` (import edge `imp1`).\n\nDoes this make sense so far?\n\n(Sequence marked invoicecontroller.java, invoices.ts, index.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"InvoiceController.java\"]\nBoxes: InvoiceController.java, invoices.ts, ds:postgres\n  invoices.ts -> InvoiceController.java\n  InvoiceController.java -> ds:postgres",
+  "B": "The lesson is about `file:InvoiceController.java (not read this turn)`. It's the entry point for the invoices service, exposed via an HTTP route at `GET /invoices/*` from the gateway. The controller reads from `ds:postgres` (tables `invoices`) and publishes to the `topic:order.created` queue. The scan shows it depends on `file:invoices.ts (not read this turn)` (import edge `imp1`) and is called by `file:index.ts (not read this turn)` (import edge `imp1`).\n\nDoes this make sense so far?\n\n(Sequence marked invoicecontroller.java, invoices.ts, index.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"InvoiceController.java\"]\nBoxes: InvoiceController.java, invoices.ts, ds:postgres\n  invoices.ts -> InvoiceController.java (http)\n  InvoiceController.java -> ds:postgres (db_read)\nSteps, played in order on the canvas:\n  1. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  2. InvoiceController.java -> ds:postgres: db_read: invoices",
+  "chartScore": [
+   {
+    "score": 63,
+    "items": 3,
+    "links": 2,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 1,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "1 box(es) labelled with a raw id instead of a name",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 88,
+    "items": 3,
+    "links": 2,
+    "steps": 2,
+    "flow": true,
+    "rawIdLabels": 1,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "1 box(es) labelled with a raw id instead of a name"
+    ]
+   }
+  ],
+  "steps": 2
+ },
+ {
+  "id": "teach-dot-ab-json/sys-06/t2",
+  "family": "sys-06",
+  "question": "Teach me the invoices flow bit by bit with a visual.",
+  "A": "The lesson is about `file:edge/default.conf`. It lives in the `edge` service and is referenced by the gateway's invoices route via an HTTP edge (`e8:http`). The config file is the only file in the `edge` service, and it is the sole source of the `/api/` route prefix for the gateway.\n\nDoes this make sense so far?\n\n[Picture on the canvas: \"default.conf\"]\nBoxes: default.conf, invoices.ts\n  default.conf -> invoices.ts",
+  "B": "The lesson is about `file:edge/default.conf`. It lives in the `edge` service and is referenced by the gateway's invoices route via an HTTP edge (`e8:http`). The config file is the only file in the `edge` service, and it is the sole source of the `/api/` route prefix for the gateway.\n\nDoes this make sense so far?\n\n[Picture on the canvas: \"default.conf\"]\nBoxes: default.conf, invoices.ts\n  default.conf -> invoices.ts (http)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/",
+  "chartScore": [
+   {
+    "score": 55,
+    "items": 2,
+    "links": 1,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 80,
+    "items": 2,
+    "links": 1,
+    "steps": 1,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 1
+ },
+ {
+  "id": "teach-dot-ab-json/sys-07/t0",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "The difference is in how the scan connects parts of the system. An **import edge** names what a file loads — for example, `index.ts` (not read this turn) imports `invoices.ts`, `orders.ts`, `payments.ts`, and `shipments.ts`. An **interaction edge** names what a file calls — for example, `gateway/src/routes/invoices.ts` calls `http.ts` (not read this turn) to handle HTTP requests.\n\nIn this repo, the import edges are the ones listed in the digest under `imp1` through `imp7`, all pointing from `index.ts` (not read this turn) into its route files. The interaction edges are the ones that show services calling each other over HTTP, gRPC, or queue — like `invoices` calling `payments` over HTTP.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts, http.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing offer \"Which part of this flow would you like to explore next?\": an offer can be answered without having followed the lesson.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The difference is in how the scan connects parts of the system. An **import edge** names what a file loads — for example, `index.ts` (not read this turn) imports `invoices.ts`, `orders.ts`, `payments.ts`, and `shipments.ts`. An **interaction edge** names what a file calls — for example, `gateway/src/routes/invoices.ts` calls `http.ts` (not read this turn) to handle HTTP requests.\n\nIn this repo, the import edges are the ones listed in the digest under `imp1` through `imp7`, all pointing from `index.ts` (not read this turn) into its route files. The interaction edges are the ones that show services calling each other over HTTP, gRPC, or queue — like `invoices` calling `payments` over HTTP.\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n(Sequence marked index.ts, http.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(Sequence took out the closing offer \"Which part of this flow would you like to explore next?\": an offer can be answered without having followed the lesson.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-json/sys-07/t1",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to handle incoming requests.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to handle incoming requests.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-json/cs-04/t0",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "The payment flow begins when a request hits `svc:gateway` at `index.ts` (not read this turn). The gateway's HTTP routes forward the request to `svc:orders` at `orders/app/routes.py` via an `http` edge. Inside `svc:orders`, the request is processed by `orders/app/events.py`, which publishes a message to the `topic:order.created` queue. The order then flows to `svc:payments` through `orders/app/payments_client.py` → `payments/src/index.js` over HTTP (`POST /charge`). `svc:payments` writes to `ds:postgres` at `payments/src/db.js`. The `order.created` topic also fans out to `svc:notifications`, `svc:inventory`, and `svc:shipping`, each consuming it via `queue_consume`.\n\nIdempotency in this flow is enforced at the database layer: `orders/app/db.py` reads from `ds:postgres` and `payments/src/db.js` writes to it, with `db_read` and `db_write` edges. If the same order ID is charged twice, the database's unique constraints on `orders` would reject the duplicate insert, but the HTTP layer (`payments/src/index.js`) and the payment client (`orders/app/payments_client.py`) do not guard against duplicate charges — so idempotency must be handled at the application boundary, not just the datastore.\n\nCheck-in: does this make sense so far?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The payment flow begins when a request hits `svc:gateway` at `index.ts` (not read this turn). The gateway's HTTP routes forward the request to `svc:orders` at `orders/app/routes.py` via an `http` edge. Inside `svc:orders`, the request is processed by `orders/app/events.py`, which publishes a message to the `topic:order.created` queue. The order then flows to `svc:payments` through `orders/app/payments_client.py` → `payments/src/index.js` over HTTP (`POST /charge`). `svc:payments` writes to `ds:postgres` at `payments/src/db.js`. The `order.created` topic also fans out to `svc:notifications`, `svc:inventory`, and `svc:shipping`, each consuming it via `queue_consume`.\n\nIdempotency in this flow is enforced at the database layer: `orders/app/db.py` reads from `ds:postgres` and `payments/src/db.js` writes to it, with `db_read` and `db_write` edges. If the same order ID is charged twice, the database's unique constraints on `orders` would reject the duplicate insert, but the HTTP layer (`payments/src/index.js`) and the payment client (`orders/app/payments_client.py`) do not guard against duplicate charges — so idempotency must be handled at the application boundary, not just the datastore.\n\nCheck-in: does this make sense so far?\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-json/cs-04/t1",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "I can explain the system differently by focusing on how the gateway routes requests to other services. The gateway is an Express service that handles incoming HTTP requests and delegates them to services like orders, payments, and notifications. For example, when a user visits `/orders/*`, the gateway forwards that to the orders service's routes file. If you'd like, I can show you the data flow with a chart.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "I can explain the system differently by focusing on how the gateway routes requests to other services. The gateway is an Express service that handles incoming HTTP requests and delegates them to services like orders, payments, and notifications. For example, when a user visits `/orders/*`, the gateway forwards that to the orders service's routes file. If you'd like, I can show you the data flow with a chart.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-json/link-03/t0",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": "I can't fetch the full Wikipedia article in this environment, but I can teach you message queues using the real queue edges in this repo.\n\nThe core idea is that a message queue is a broker that lets services send and receive messages asynchronously. In this system, the broker is `ds:redis`, and the topic is `topic:order.created`. When an order is placed, the `orders` service publishes a message to that topic via `queue_publish` (edge e10), and both `notifications` and `shipping` consume it with `queue_consume` edges (e11, e12). This decouples order processing from notification and shipping logic.\n\nThe first concept to explore next is how the gateway routes requests to these services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through that?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "I can't fetch the full Wikipedia article in this environment, but I can teach you message queues using the real queue edges in this repo.\n\nThe core idea is that a message queue is a broker that lets services send and receive messages asynchronously. In this system, the broker is `ds:redis`, and the topic is `topic:order.created`. When an order is placed, the `orders` service publishes a message to that topic via `queue_publish` (edge e10), and both `notifications` and `shipping` consume it with `queue_consume` edges (e11, e12). This decouples order processing from notification and shipping logic.\n\nThe first concept to explore next is how the gateway routes requests to these services.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing offer \"Would you like me to walk through that?\": an offer can be answered without having followed the lesson.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-dot-ab-json/link-03/t1",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": "The lesson is about `file:invoices.ts (not read this turn)`, which handles the `/invoices/*` endpoint. The gateway routes to it via an HTTP edge (`e1:http`), and the request flows to the InvoiceController at `file:InvoiceController.java (not read this turn)`. The controller reads from `ds:postgres` for the invoices table (edges `e21` and `e22`).\n\nDoes this make sense so far?\n\n(Sequence marked invoices.ts, invoicecontroller.java as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The lesson is about `file:invoices.ts (not read this turn)`, which handles the `/invoices/*` endpoint. The gateway routes to it via an HTTP edge (`e1:http`), and the request flows to the InvoiceController at `file:InvoiceController.java (not read this turn)`. The controller reads from `ds:postgres` for the invoices table (edges `e21` and `e22`).\n\nDoes this make sense so far?\n\n(Sequence marked invoices.ts, invoicecontroller.java as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-json/mix-02/t0",
+  "family": "mix-02",
+  "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+  "A": "The request arrives at `file:gateway/src/index.ts`, the entry point of the `gateway` service. It imports four route files — `invoices.ts`, `orders.ts`, `payments.ts` (not read this turn), and `shipments.ts` (not read this turn) — then mounts them as HTTP routes under `/api/`. When a request hits one of those paths, the gateway forwards it to the matching service: `orders` for `/api/orders` (not in the scan), `payments` for `/api/payments` (not in the scan), `shipments` for `/api/shipments` (not in the scan), and `invoices` for `/api/invoices` (not in the scan). The `edge` service also calls `invoices.ts` over HTTP at `/api/`.\n\nFrom there, data flows through the system: `orders` reads from `ds:postgres`, publishes to `topic:order.created`, calls `inventory` via gRPC, and calls `payments` over HTTP. `invoices` calls `payments` over HTTP and reads from `ds:postgres`. `notifications` and `shipping` both consume `topic:order.created` via queue_consume. `payments` and `shipping` also read from `ds:postgres`.\n\nThe first concept to explore next is how those imported route files translate HTTP calls into service interactions.\n\nDoes this make sense so far?\n\n(Sequence marked payments.ts, shipments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n(Sequence marked 4 routes the scan does not show: /api/orders, /api/payments, /api/shipments, /api/invoices.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The request arrives at `file:gateway/src/index.ts`, the entry point of the `gateway` service. It imports four route files — `invoices.ts`, `orders.ts`, `payments.ts` (not read this turn), and `shipments.ts` (not read this turn) — then mounts them as HTTP routes under `/api/`. When a request hits one of those paths, the gateway forwards it to the matching service: `orders` for `/api/orders` (not in the scan), `payments` for `/api/payments` (not in the scan), `shipments` for `/api/shipments` (not in the scan), and `invoices` for `/api/invoices` (not in the scan). The `edge` service also calls `invoices.ts` over HTTP at `/api/`.\n\nFrom there, data flows through the system: `orders` reads from `ds:postgres`, publishes to `topic:order.created`, calls `inventory` via gRPC, and calls `payments` over HTTP. `invoices` calls `payments` over HTTP and reads from `ds:postgres`. `notifications` and `shipping` both consume `topic:order.created` via queue_consume. `payments` and `shipping` also read from `ds:postgres`.\n\nThe first concept to explore next is how those imported route files translate HTTP calls into service interactions.\n\nDoes this make sense so far?\n\n(Sequence marked payments.ts, shipments.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n(Sequence marked 4 routes the scan does not show: /api/orders, /api/payments, /api/shipments, /api/invoices.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-dot-ab-json/mix-02/t1",
+  "family": "mix-02",
+  "question": "Teach me how to READ an architecture diagram: use this repo as the worked example, one visual element at a time.",
+  "A": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to handle incoming requests.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "The lesson is about `http.ts`, which lives in `file:gateway/src/lib/http.ts`. This file provides two generic HTTP helpers: `getJson` for GET requests and `postJson` for POST requests. Both functions take a `url` parameter and throw descriptive errors if the request fails.\n\nThe gateway's route files import from this module via `imp5`, `imp6`, and `imp7` edges, meaning the gateway uses these helpers to handle incoming requests.\n\nLooking at the picture: if http.ts changed what it returns, which of invoices.ts, orders.ts or shipments.ts do you think would break first?\n\n(Sequence took out the closing question \"Which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-eval-report/sys-03/t0",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": " name=\"read_file\"> name=\"path\">gateway/src/lib/http.ts\n\nThe model provider failed after 1 completed round(s) (the model spent its output on reasoning and returned no answer (14202 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens.), so this turn was cut short. Everything above was established before the failure; nothing after it exists.\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": " name=\"read_file\"> name=\"path\">gateway/src/lib/http.ts\n\nThe model provider failed after 1 completed round(s) (the model spent its output on reasoning and returned no answer (14202 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens.), so this turn was cut short. Everything above was established before the failure; nothing after it exists.\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-eval-report/sys-03/t1",
+  "family": "sys-03",
+  "question": "Teach me how the services here communicate — queues vs HTTP.",
+  "A": "The system uses an Express gateway (`svc:gateway`) to handle HTTP requests. It routes to services like `svc:orders` for order management, `svc:payments` for processing, and `svc:invoices` for billing. Requests flow through the gateway's routes, which then call the appropriate services. For example, a GET to `/orders/*` hits `svc:orders`'s routes. The gateway also publishes to the `topic:order.created` for downstream consumers like notifications and shipping.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing question \"which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The system uses an Express gateway (`svc:gateway`) to handle HTTP requests. It routes to services like `svc:orders` for order management, `svc:payments` for processing, and `svc:invoices` for billing. Requests flow through the gateway's routes, which then call the appropriate services. For example, a GET to `/orders/*` hits `svc:orders`'s routes. The gateway also publishes to the `topic:order.created` for downstream consumers like notifications and shipping.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence took out the closing question \"which part do you think gateway hands off to next?\": it copied the lesson contract's example.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-eval-report/sys-05/t0",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": "The payments service is a single point of failure with a blast radius of **4 nodes** out of 11 total (per the digest's `risks` section). If the payments route fails, 4 downstream components are affected. This includes dependencies on payments via HTTP calls from gateway, orders, and invoices services. \n\nCheck-in: Does this make sense so far? Which part of the payments flow do you think would break first?\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js\n  index.ts -> payments.ts",
+  "B": "The payments service is a single point of failure with a blast radius of **4 nodes** out of 11 total (per the digest's `risks` section). If the payments route fails, 4 downstream components are affected. This includes dependencies on payments via HTTP calls from gateway, orders, and invoices services. \n\nCheck-in: Does this make sense so far? Which part of the payments flow do you think would break first?\n\n[Picture on the canvas: \"payments.ts\"]\nBoxes: payments.ts, index.js, index.ts\n  payments.ts -> index.js (http)\n  index.ts -> payments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> payments.ts: import\n  2. payments.ts -> index.js: http: GET /payments/*",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 3,
+    "links": 2,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 3,
+    "links": 2,
+    "steps": 2,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 2
+ },
+ {
+  "id": "teach-eval-report/sys-05/t1",
+  "family": "sys-05",
+  "question": "Teach me what breaks downstream if the payments route fails — the blast radius.",
+  "A": " name=\"propose_chart\"> name=\"kind\">system-architecture name=\"title\">Payments Service Overview name=\"items\">[{'id': 'svc:payments', 'label': 'payments'}, {'id': 'file:payments/src/index.js', 'label': 'index entry'}, {'id': 'file:payments/src/stripe.js', 'label': 'Stripe integration'}, {'id': 'file:payments/src/db.js', 'label': 'DB layer'}] name=\"links\">[{'from': 'file:gateway/src/routes/payments.ts', 'to': 'file:payments/src/index.js', 'label': 'GET /payments/*'}, {'from': 'file:orders/app/payments_client.py', 'to': 'file:payments/src/index.js', 'label': 'POST /charge'}, {'from': 'file:invoices/src/main/java/shop/invoices/PaymentClient.java', 'to': 'file:payments/src/index.js', 'label': 'POST /charge'}] name=\"focusItemId\">svc:payments\n\nThe model provider failed after 1 completed round(s) (the model spent its output on reasoning and returned no answer (21330 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens.), so this turn was cut short. Everything above was established before the failure; nothing after it exists.\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js\n  payments_client.py -> index.js\n  PaymentClient.java -> index.js\n  index.js -> db.js",
+  "B": " name=\"propose_chart\"> name=\"kind\">system-architecture name=\"title\">Payments Service Overview name=\"items\">[{'id': 'svc:payments', 'label': 'payments'}, {'id': 'file:payments/src/index.js', 'label': 'index entry'}, {'id': 'file:payments/src/stripe.js', 'label': 'Stripe integration'}, {'id': 'file:payments/src/db.js', 'label': 'DB layer'}] name=\"links\">[{'from': 'file:gateway/src/routes/payments.ts', 'to': 'file:payments/src/index.js', 'label': 'GET /payments/*'}, {'from': 'file:orders/app/payments_client.py', 'to': 'file:payments/src/index.js', 'label': 'POST /charge'}, {'from': 'file:invoices/src/main/java/shop/invoices/PaymentClient.java', 'to': 'file:payments/src/index.js', 'label': 'POST /charge'}] name=\"focusItemId\">svc:payments\n\nThe model provider failed after 1 completed round(s) (the model spent its output on reasoning and returned no answer (21330 characters of thinking, finish_reason: length). Set Advanced › Reasoning effort to none, or raise Max output tokens.), so this turn was cut short. Everything above was established before the failure; nothing after it exists.\n\n[Picture on the canvas: \"index.js\"]\nBoxes: index.js, payments.ts, payments_client.py, PaymentClient.java, db.js\n  payments.ts -> index.js (http)\n  payments_client.py -> index.js (http)\n  PaymentClient.java -> index.js (http)\n  index.js -> db.js (import)\nSteps, played in order on the canvas:\n  1. payments.ts -> index.js: http: GET /payments/*\n  2. payments_client.py -> index.js: http: POST /charge\n  3. PaymentClient.java -> index.js: http: POST /charge\n  4. index.js -> db.js: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-eval-report/sys-07/t0",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "The draft was rejected because it's not yet a lesson — I need to expand it with the root overview. Let me add the full component and hop detail.\n\nIn this repository, **import edges** (e.g., `imp1`–`imp7`) are file imports *within* a service — for example, `index.ts` (not read this turn) imports its route files. **Interaction edges** (e.g., `http`, `grpc`, `queue`, `db`) represent actual communication *between* services. For instance, the gateway uses interaction edges to call other services via HTTP (e.g., `e8:http` from `edge/default.conf` to `gateway/src/routes/invoices.ts`).\n\nThe root overview follows. The request arrives at `edge/default.conf` (the edge service), which calls the gateway over HTTP at `/api/`. The gateway then hands off to its route handlers — `invoices.ts`, `orders.ts`, `payments.ts`, and `shipments.ts` — each of which imports `http.ts` (not read this turn) (the import edges `imp5`–`imp7`). Each route handler then makes interaction calls: `invoices.ts` calls `invoices` over HTTP, `orders.ts` calls `orders` over HTTP, `payments.ts` calls `payments` over HTTP, and `shipments.ts` calls `shipping` over HTTP. The `invoices` service reads from `ds:postgres`, `orders` reads from `ds:postgres`, `payments` writes to `ds:postgres`, `inventory` is called over gRPC by `orders`, and `order.created` is published by `orders` and consumed by `notifications` and `shipping`. The `edge` service itself is the entry point — it has no import edges, only the `e8:http` interaction edge to the gateway.\n\nThe first concept to explore next is `index.ts` (not read this turn) (the gateway's entry point).\n\nDoes this make sense so far?\n\n(Sequence marked index.ts, http.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "The draft was rejected because it's not yet a lesson — I need to expand it with the root overview. Let me add the full component and hop detail.\n\nIn this repository, **import edges** (e.g., `imp1`–`imp7`) are file imports *within* a service — for example, `index.ts` (not read this turn) imports its route files. **Interaction edges** (e.g., `http`, `grpc`, `queue`, `db`) represent actual communication *between* services. For instance, the gateway uses interaction edges to call other services via HTTP (e.g., `e8:http` from `edge/default.conf` to `gateway/src/routes/invoices.ts`).\n\nThe root overview follows. The request arrives at `edge/default.conf` (the edge service), which calls the gateway over HTTP at `/api/`. The gateway then hands off to its route handlers — `invoices.ts`, `orders.ts`, `payments.ts`, and `shipments.ts` — each of which imports `http.ts` (not read this turn) (the import edges `imp5`–`imp7`). Each route handler then makes interaction calls: `invoices.ts` calls `invoices` over HTTP, `orders.ts` calls `orders` over HTTP, `payments.ts` calls `payments` over HTTP, and `shipments.ts` calls `shipping` over HTTP. The `invoices` service reads from `ds:postgres`, `orders` reads from `ds:postgres`, `payments` writes to `ds:postgres`, `inventory` is called over gRPC by `orders`, and `order.created` is published by `orders` and consumed by `notifications` and `shipping`. The `edge` service itself is the entry point — it has no import edges, only the `e8:http` interaction edge to the gateway.\n\nThe first concept to explore next is `index.ts` (not read this turn) (the gateway's entry point).\n\nDoes this make sense so far?\n\n(Sequence marked index.ts, http.ts as named without being read this turn: the file name stays, and what the lesson says about them was not checked against the file.)\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-eval-report/sys-07/t1",
+  "family": "sys-07",
+  "question": "Teach me the difference between an import edge and an interaction edge in this repo.",
+  "A": "name=\"read_file\"> name=\"path\">index.ts (not read this turn)\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "name=\"read_file\"> name=\"path\">index.ts (not read this turn)\n\n(Sequence marked index.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n(The rewrite the lesson contract asked for came back shorter than this earlier answer, so the earlier one stands.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-eval-report/cs-04/t0",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "name=\"read_file\"> name=\"path\">payments/src/index.js\n\n(The rewrite the lesson contract asked for came back as the model planning, not answering, so this is the answer written before it; it was sent back only for its length or its closing question.)\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts\n  index.ts -> orders.ts\n  index.ts -> payments.ts\n  index.ts -> shipments.ts",
+  "B": "name=\"read_file\"> name=\"path\">payments/src/index.js\n\n(The rewrite the lesson contract asked for came back as the model planning, not answering, so this is the answer written before it; it was sent back only for its length or its closing question.)\n\nLooking at the picture: index.ts reads from invoices.ts, orders.ts or payments.ts — what do you think would break in index.ts if that changed?\n\n[Picture on the canvas: \"index.ts\"]\nBoxes: index.ts, invoices.ts, orders.ts, payments.ts, shipments.ts\n  index.ts -> invoices.ts (import)\n  index.ts -> orders.ts (import)\n  index.ts -> payments.ts (import)\n  index.ts -> shipments.ts (import)\nSteps, played in order on the canvas:\n  1. index.ts -> invoices.ts: import\n  2. index.ts -> orders.ts: import\n  3. index.ts -> payments.ts: import\n  4. index.ts -> shipments.ts: import",
+  "chartScore": [
+   {
+    "score": 40,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": true,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": [
+     "an inventory drawn as a hub: every arrow says \"contains\"",
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 4,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ },
+ {
+  "id": "teach-eval-report/cs-04/t1",
+  "family": "cs-04",
+  "question": "Teach me idempotency using the payment flow in this repo as the example.",
+  "A": "name=\"read_file\"> name=\"path\">http.ts (not read this turn)\n\n(Sequence marked http.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": "name=\"read_file\"> name=\"path\">http.ts (not read this turn)\n\n(Sequence marked http.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-eval-report/link-03/t0",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": " name=\"fetch_url\"> name=\"url\">https://en.wikipedia.org/wiki/Message_queue\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts\n  orders.ts -> http.ts\n  shipments.ts -> http.ts",
+  "B": " name=\"fetch_url\"> name=\"url\">https://en.wikipedia.org/wiki/Message_queue\n\n[Picture on the canvas: \"http.ts\"]\nBoxes: http.ts, invoices.ts, orders.ts, shipments.ts\n  invoices.ts -> http.ts (import)\n  orders.ts -> http.ts (import)\n  shipments.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. invoices.ts -> http.ts: import\n  2. orders.ts -> http.ts: import\n  3. shipments.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 4,
+    "links": 3,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 4,
+    "links": 3,
+    "steps": 3,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 1,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 3
+ },
+ {
+  "id": "teach-eval-report/link-03/t1",
+  "family": "link-03",
+  "question": "Fetch https://en.wikipedia.org/wiki/Message_queue and teach me message queues using the real queue edges in this repo.",
+  "A": "The lesson focuses on `file:invoices.ts (not read this turn)`, which handles GET /invoices/* requests via an HTTP edge to the invoices service. To check understanding, ask: \"So what do you think happens when the order.created topic gets full?\" This tests whether you grasp how the queue (topic:order.created) backs up under load.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java\n  default.conf -> invoices.ts\n  index.ts -> invoices.ts\n  invoices.ts -> http.ts",
+  "B": "The lesson focuses on `file:invoices.ts (not read this turn)`, which handles GET /invoices/* requests via an HTTP edge to the invoices service. To check understanding, ask: \"So what do you think happens when the order.created topic gets full?\" This tests whether you grasp how the queue (topic:order.created) backs up under load.\n\nLooking at the picture: if invoices.ts changed what it returns, which of default.conf or index.ts do you think would break first?\n\n(Sequence marked invoices.ts as named without being read this turn: the file name stays, and what the lesson says about it was not checked against the file.)\n\n[Picture on the canvas: \"invoices.ts\"]\nBoxes: invoices.ts, InvoiceController.java, default.conf, index.ts, http.ts\n  invoices.ts -> InvoiceController.java (http)\n  default.conf -> invoices.ts (http)\n  index.ts -> invoices.ts (import)\n  invoices.ts -> http.ts (import)\nSteps, played in order on the canvas:\n  1. default.conf -> invoices.ts: http: /api/\n  2. index.ts -> invoices.ts: import\n  3. invoices.ts -> InvoiceController.java: http: GET /invoices/*\n  4. invoices.ts -> http.ts: import",
+  "chartScore": [
+   {
+    "score": 75,
+    "items": 5,
+    "links": 4,
+    "steps": 0,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": [
+     "a flow with no steps to play"
+    ]
+   },
+   {
+    "score": 100,
+    "items": 5,
+    "links": 4,
+    "steps": 4,
+    "flow": true,
+    "rawIdLabels": 0,
+    "longLabels": 0,
+    "dupLabels": 0,
+    "orphans": 0,
+    "containsHub": false,
+    "cycle": false,
+    "maxOut": 2,
+    "groundedShare": 1,
+    "flags": []
+   }
+  ],
+  "steps": 4
+ }
+]

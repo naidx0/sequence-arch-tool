@@ -1,0 +1,6 @@
+{
+  "name": "t17-same-set",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

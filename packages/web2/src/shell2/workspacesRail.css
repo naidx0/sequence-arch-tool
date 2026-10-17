@@ -1,0 +1,55 @@
+/* WORKSPACES RAIL (owner, 2026-10-09): one tree, workspace folders with their chats under them.
+   Layered over shell2.css, which another lane owns. */
+
+/* A folder's "+" appears with the pointer or the keyboard, and takes the count's place. */
+.s2-ws-new {
+  position: absolute;
+  z-index: 1;
+  right: var(--sp-4);
+  top: calc((var(--row-h) - var(--target-min)) / 2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target-min);
+  height: var(--target-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-8);
+  background: var(--b-s2);
+  color: var(--b-ink3);
+  cursor: pointer;
+  opacity: 0;
+}
+.s2-ws-row:hover .s2-ws-new,
+.s2-ws-new:focus-visible,
+.s2-ws-row:focus-within .s2-ws-new {
+  opacity: 1;
+}
+.s2-ws-new:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2-ws-new:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+.s2-ws-new:disabled {
+  cursor: default;
+}
+.s2-ws-row:hover .s2-ws-new:disabled {
+  opacity: 0.4;
+}
+.s2-ws-row:hover .s2-meta,
+.s2-ws-row:focus-within .s2-meta {
+  opacity: 0;
+}
+
+/* The workspace being opened across the reload: its rows say so, so the click is seen to have landed. */
+.s2-rail-hit[aria-busy='true'] .s2-t {
+  opacity: 0.6;
+}
+.s2-switch-note {
+  margin: var(--sp-6) var(--sp-8) 0;
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}

@@ -1,0 +1,19 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"sessionUpdate":"config_option_update","configOptions":[{"id":"model","name":"Model","category":"model","type":"select","currentValue":"sonnet","options":[{"value":"sonnet","name":"Sonnet","description":"Fast, for everyday tasks"},{"value":"opus","name":"Opus","description":"For the hardest problems"}]},{"id":"thought_level","name":"Thinking","category":"thought_level","type":"select","currentValue":"medium","options":[{"value":"low","name":"Low"},{"value":"medium","name":"Medium"},{"value":"high","name":"High"}]}]}}}
+{"type":"acp:session","resumed":false,"threadId":"claude-session-plan"}
+{"type":"acp:model","model":"sonnet"}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"availableCommands":[{"name":"compact","description":"Clear the conversation history but keep a summary in context"},{"name":"review","description":"Review a pull request","input":{"hint":"PR number or URL"}},{"name":"init","description":"Initialize a CLAUDE.md file with codebase documentation"}],"sessionUpdate":"available_commands_update"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"entries":[{"content":"Read orders/app/main.py","priority":"medium","status":"in_progress"},{"content":"Draft the ping plan","priority":"medium","status":"pending"}],"sessionUpdate":"plan"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"used":41000,"size":200000,"cost":{"amount":0.04,"currency":"USD"},"sessionUpdate":"usage_update"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"entries":[{"content":"Read orders/app/main.py","priority":"medium","status":"completed"},{"content":"Draft the ping plan","priority":"medium","status":"in_progress"}],"sessionUpdate":"plan"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"toolCallId":"toolu_exit_1","title":"Ready to code?","kind":"switch_mode","status":"pending","rawInput":{"plan":"## Plan\n\n1. Add `ping()` to orders/app/main.py returning \"pong\"\n2. Route GET /ping to it\n3. Add a test for /ping"},"sessionUpdate":"tool_call"}}}
+{"type":"acp:permission","toolCallId":"toolu_exit_1","title":"Ready to code?","toolKind":"switch_mode","mode":"plan","requestId":"<REQ-1>","pending":true,"decision":null,"proposal":{"proposalId":"<REQ-1>","title":"Ready to code?","rationale":null,"files":[],"plan":"## Plan\n\n1. Add `ping()` to orders/app/main.py returning \"pong\"\n2. Route GET /ping to it\n3. Add a test for /ping"}}
+{"type":"acp:permission","toolCallId":"toolu_exit_1","title":"Ready to code?","toolKind":"switch_mode","mode":"plan","requestId":"<REQ-1>","pending":false,"decision":"allow","answeredBy":"person"}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"currentModeId":"default","sessionUpdate":"current_mode_update"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"toolCallId":"toolu_exit_1","status":"completed","sessionUpdate":"tool_call_update"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"entries":[{"content":"Read orders/app/main.py","priority":"medium","status":"completed"},{"content":"Draft the ping plan","priority":"medium","status":"completed"}],"sessionUpdate":"plan"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"used":52000,"size":200000,"cost":{"amount":0.06,"currency":"USD"},"sessionUpdate":"usage_update"}}}
+{"type":"acp:update","update":{"sessionId":"claude-session-plan","update":{"content":{"text":"The plan is approved; I will start with ping().","type":"text"},"sessionUpdate":"agent_message_chunk"}}}
+{"type":"acp:turn","state":"ended","stopReason":"end_turn"}
+{"type":"acp:result","stopReason":"end_turn","text":"The plan is approved; I will start with ping()."}
+{"type":"acp:turn","state":"settled"}

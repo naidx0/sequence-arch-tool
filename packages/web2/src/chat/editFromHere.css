@@ -1,0 +1,52 @@
+/* Edit from here: layout only. The trigger is the app's transparent icon button (.s2-ibtn) shown on hover; the row
+   and the undo bar sit in the notice's card (shell2/chat2.css) and answer with .s2-btn.s2-btn-sm. */
+.s2-edit-from {
+  align-self: flex-start;
+  margin: 0;
+  opacity: 0;
+}
+.s2-run:hover .s2-edit-from,
+.s2-edit-from:focus-visible {
+  opacity: 1;
+}
+.s2-edit-from-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0;
+  padding: 10px 12px;
+  font-size: var(--t-13);
+  color: var(--b-ink1);
+}
+.s2-edit-from-row p {
+  margin: 0;
+}
+.s2-edit-from-row label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.s2-edit-from-error {
+  color: var(--b-del);
+}
+.s2-edit-from-actions {
+  display: flex;
+  gap: 6px;
+}
+@media (hover: none) {
+  .s2-edit-from {
+    opacity: 1;
+  }
+}
+.s2-edit-from-draft {
+  color: var(--b-ink2);
+}
+.s2-edit-undo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 4px 0;
+  padding: 8px 12px;
+  font-size: var(--t-13);
+  color: var(--b-ink1);
+}

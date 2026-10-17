@@ -1,0 +1,466 @@
+{
+ "model": "granite42-hermes",
+ "when": null,
+ "results": [
+  {
+   "id": "ml-01",
+   "domain": "ml",
+   "repo": "makemore",
+   "turns": [
+    {
+     "turn": 0,
+     "words": 60,
+     "endsWithQuestion": true,
+     "visual": true,
+     "questions": [
+      "Comprehension question: Which file contains the function that trains the neural net?",
+      "Check-in: Which component do you think X talks to next?"
+     ],
+     "chartCalls": 2,
+     "chartProposals": 2,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "you asked a question mid-lesson and moved on without answering it. The learner cannot reply inside your turn, so an unanswered check is rhetorical and teaches nothing — ask, then TELL, and tell why. Only the closing check-in may stay open"
+     ],
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 43,
+     "endsWithQuestion": false,
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it",
+      "you cited bigram_counts.py WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "error": null
+    },
+    {
+     "turn": 2,
+     "words": 20,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 3,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.6666666666666666,
+    "visualRate": 0.3333333333333333
+   }
+  },
+  {
+   "id": "ml-02",
+   "domain": "ml",
+   "repo": "makemore",
+   "turns": [
+    {
+     "turn": 0,
+     "words": 147,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [
+      "Which step of the counting process would you like to understand in more detail?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 43,
+     "endsWithQuestion": false,
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it",
+      "you cited bigram_counts.py WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.5,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "ml-03",
+   "domain": "ml",
+   "repo": "makemore",
+   "turns": [
+    {
+     "turn": 0,
+     "words": 0,
+     "endsWithQuestion": false,
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": null,
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "error: provider request failed: fetch failed"
+     ],
+     "error": "provider request failed: fetch failed"
+    }
+   ],
+   "score": {
+    "turnsRun": 1,
+    "errored": 1,
+    "pacedRate": 0,
+    "questionRate": 0,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "ml-04",
+   "domain": "ml",
+   "repo": "makemore",
+   "turns": [
+    {
+     "turn": 0,
+     "words": 84,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [
+      "Does this explanation help you understand why the dot is used at both ends?"
+     ],
+     "chartCalls": 1,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 19,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [
+      "Which file reads names.txt?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it",
+      "you cited files that DO NOT EXIST in this repository: names.txt. Every file you name must be one you can read_file right now — teach only from what is actually here"
+     ],
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 1,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "ml-05",
+   "domain": "ml",
+   "repo": "makemore",
+   "turns": [
+    {
+     "turn": 0,
+     "words": 119,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [
+      "Does this explanation make sense so far?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 34,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [
+      "What would you like to explore next about this architecture?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it",
+      "you cited nn_bigram.py, sampling.py WITHOUT reading them this turn — call read_file first, then teach from the real contents"
+     ],
+     "error": null
+    },
+    {
+     "turn": 2,
+     "words": 33,
+     "endsWithQuestion": false,
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 3,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0.6666666666666666,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "ml-06",
+   "domain": "ml",
+   "repo": "makemore",
+   "turns": [
+    {
+     "turn": 0,
+     "words": 56,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [
+      "Which line in nn_bigram.py directly computes the negative log likelihood for one bigram pair?"
+     ],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 128,
+     "endsWithQuestion": true,
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it"
+     ],
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 1,
+    "visualRate": 0
+   }
+  },
+  {
+   "id": "ml-07",
+   "domain": "ml",
+   "repo": "makemore",
+   "turns": [
+    {
+     "turn": 0,
+     "words": 56,
+     "endsWithQuestion": false,
+     "visual": true,
+     "questions": [],
+     "chartCalls": 6,
+     "chartProposals": 5,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires"
+     ],
+     "error": null
+    },
+    {
+     "turn": 1,
+     "words": 43,
+     "endsWithQuestion": false,
+     "visual": false,
+     "questions": [],
+     "chartCalls": 0,
+     "chartProposals": 0,
+     "coverage": {
+      "edgesSeen": 2,
+      "edgesTotal": 2,
+      "packagesSeen": [
+       "."
+      ],
+      "packagesMissed": []
+     },
+     "premise": null,
+     "contextFit": null,
+     "contractProblems": [
+      "your reply does not END with the closing check-in question the contract requires",
+      "this concept has NO VISUAL — call propose_chart with a kind that fits (data-flow, system-architecture, hierarchy, comparison-table, bar, …) so the learner can SEE the point, not only read it",
+      "you cited bigram_counts.py WITHOUT reading it this turn — call read_file first, then teach from the real contents"
+     ],
+     "error": null
+    }
+   ],
+   "score": {
+    "turnsRun": 2,
+    "errored": 0,
+    "pacedRate": 1,
+    "questionRate": 0,
+    "visualRate": 0.5
+   }
+  }
+ ]
+}

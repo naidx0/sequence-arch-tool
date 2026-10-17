@@ -1,0 +1,24 @@
+{
+  "groups": [
+    {
+      "id": "design",
+      "label": "Design elements"
+    },
+    {
+      "id": "visual",
+      "label": "Visual and video"
+    },
+    {
+      "id": "workflow",
+      "label": "Workflow and eval"
+    },
+    {
+      "id": "ml",
+      "label": "ML and research"
+    },
+    {
+      "id": "security",
+      "label": "Security"
+    }
+  ]
+}

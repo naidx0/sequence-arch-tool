@@ -1,0 +1,103 @@
+/* A subagent's subthread card (AgentRunThread.tsx SubagentThread): indented, hairline-ruled, quiet. */
+.agsub {
+  margin: 4px 0;
+  border-left: 2px solid var(--b-edge2, rgba(127, 127, 127, 0.3));
+  padding-left: 10px;
+}
+.agsub[data-status='running'] {
+  border-left-color: var(--b-acc);
+}
+.agsub[data-status='failed'] {
+  border-left-color: var(--b-del);
+}
+.agsub-hd {
+  min-width: 0;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--row-h-thread);
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--b-ink2);
+  font: inherit;
+  font-size: var(--t-13);
+  text-align: left;
+  cursor: pointer;
+}
+.agsub-hd:hover .agsub-name {
+  color: var(--b-ink1);
+}
+.agsub-chev {
+  flex: none;
+  color: var(--b-ink3);
+}
+/* The status slot is a fixed square so the dot, the spinner and the chevron all centre on the label. */
+.agsub-dot {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sp-16);
+  height: var(--sp-16);
+}
+.agsub-dot::before {
+  content: '';
+  width: var(--sp-8);
+  height: var(--sp-8);
+  border-radius: 50%;
+  background: var(--b-ink3);
+}
+.agsub-dot[data-state='done']::before {
+  background: var(--b-ok);
+}
+.agsub-dot[data-state='failed']::before {
+  background: var(--b-del);
+}
+.agsub-dot[data-state='waiting']::before {
+  background: var(--b-acc);
+}
+.agsub-dot[data-state='running']::before {
+  content: none;
+}
+.agsub-dot .act-loader.is-cell {
+  width: var(--sp-16);
+  height: var(--sp-16);
+  line-height: var(--sp-16);
+}
+.agsub-name {
+  line-height: var(--sp-16);
+  font-weight: var(--fw-label);
+  color: var(--b-ink1);
+  white-space: nowrap;
+}
+.agsub-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Round 13 (A5, chat side): one line, ellipsis; the full text is the title. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--b-ink3);
+}
+.agsub-meta {
+  flex: none;
+  margin-left: auto;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.agsub-body {
+  padding: 2px 0 6px 14px;
+}
+.agsub-empty {
+  margin: 2px 0;
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}
+.agsub-result {
+  margin-top: 6px;
+  font-size: var(--t-12-5);
+  color: var(--b-ink2);
+}

@@ -1,0 +1,6 @@
+{
+  "name": "t02-sum-range-inclusive",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

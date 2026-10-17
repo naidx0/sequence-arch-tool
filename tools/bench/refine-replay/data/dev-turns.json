@@ -1,0 +1,211 @@
+{
+ "note": "DEV set (not sealed): detector thresholds may be tuned on this only.",
+ "turns": [
+  {
+   "id": "d01.t1",
+   "chat": "d01",
+   "n": 1,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "put a copy button on every code block in the answer",
+   "label": "repeated"
+  },
+  {
+   "id": "d01.t2",
+   "chat": "d01",
+   "n": 2,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "make it show copied for two seconds",
+   "label": "ok"
+  },
+  {
+   "id": "d01.t3",
+   "chat": "d01",
+   "n": 3,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "there is still no copy button on the code blocks",
+   "label": "repeat->1"
+  },
+  {
+   "id": "d01.t4",
+   "chat": "d01",
+   "n": 4,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "add a test",
+   "label": "ok"
+  },
+  {
+   "id": "d02.t1",
+   "chat": "d02",
+   "n": 1,
+   "agent": "codex",
+   "status": "done",
+   "prompt": "rename the user table to accounts and update the queries and the seed script",
+   "label": "not_done",
+   "ledger": "1 rename the user table: done; 2 update the queries: done; 3 update the seed script: not done: the seed script is generated"
+  },
+  {
+   "id": "d02.t2",
+   "chat": "d02",
+   "n": 2,
+   "agent": "codex",
+   "status": "done",
+   "prompt": "then regenerate the seed script",
+   "label": "ok"
+  },
+  {
+   "id": "d02.t3",
+   "chat": "d02",
+   "n": 3,
+   "agent": "codex",
+   "status": "done",
+   "prompt": "run the migration on a fresh database",
+   "label": "ok"
+  },
+  {
+   "id": "d03.t1",
+   "chat": "d03",
+   "n": 1,
+   "agent": "local",
+   "status": "done",
+   "prompt": "where is the logout handler",
+   "label": "ok"
+  },
+  {
+   "id": "d03.t2",
+   "chat": "d03",
+   "n": 2,
+   "agent": "local",
+   "status": "stopped",
+   "prompt": "read every file under auth and summarize them all",
+   "label": "stopped"
+  },
+  {
+   "id": "d03.t3",
+   "chat": "d03",
+   "n": 3,
+   "agent": "local",
+   "status": "done",
+   "prompt": "only the session file",
+   "label": "ok"
+  },
+  {
+   "id": "d03.t4",
+   "chat": "d03",
+   "n": 4,
+   "agent": "local",
+   "status": "done",
+   "prompt": "where is the cookie set",
+   "label": "ok"
+  },
+  {
+   "id": "d04.t1",
+   "chat": "d04",
+   "n": 1,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "add a dark mode toggle to the settings page",
+   "label": "ok"
+  },
+  {
+   "id": "d04.t2",
+   "chat": "d04",
+   "n": 2,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "now add a dark mode toggle to the profile page",
+   "label": "ok"
+  },
+  {
+   "id": "d04.t3",
+   "chat": "d04",
+   "n": 3,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "which pages still have no toggle",
+   "label": "ok"
+  },
+  {
+   "id": "d04.t4",
+   "chat": "d04",
+   "n": 4,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "run the tests",
+   "label": "ok"
+  },
+  {
+   "id": "d04.t5",
+   "chat": "d04",
+   "n": 5,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "run the tests",
+   "label": "ok"
+  },
+  {
+   "id": "d05.t1",
+   "chat": "d05",
+   "n": 1,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "build a search box for the docs site",
+   "label": "edit"
+  },
+  {
+   "id": "d05.t2",
+   "chat": "d05",
+   "n": 2,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "debounce it by 200ms",
+   "label": "ok"
+  },
+  {
+   "id": "d05.t3",
+   "chat": "d05",
+   "n": 3,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "highlight matches in results",
+   "label": "ok"
+  },
+  {
+   "id": "d05.t4",
+   "chat": "d05",
+   "n": 4,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "and results should be limited to ten per page",
+   "label": "repeated"
+  },
+  {
+   "id": "d05.t5",
+   "chat": "d05",
+   "n": 5,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "results are not limited to ten, you said you did it",
+   "label": "repeat->4"
+  },
+  {
+   "id": "d05.t6",
+   "chat": "d05",
+   "n": 6,
+   "agent": "claude",
+   "status": "done",
+   "prompt": "good",
+   "label": "ok"
+  }
+ ],
+ "events": [
+  {
+   "chat": "d05",
+   "type": "rewind",
+   "turn": "d05.t1"
+  }
+ ]
+}

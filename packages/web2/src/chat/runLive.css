@@ -1,0 +1,81 @@
+/* Round 9: the run's live status and its turn details (chat/RunLiveStatus.tsx). */
+.runlive[data-tone='warn'] {
+  border-color: color-mix(in srgb, var(--b-del) 45%, var(--b-edge));
+  color: var(--b-ink1);
+}
+.runlive[data-tone='quiet'] {
+  background: transparent;
+  box-shadow: none;
+  color: var(--b-ink3);
+}
+.runlive-log {
+  margin: 6px 0 0;
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+}
+.runlive-log > summary {
+  cursor: pointer;
+  list-style: none;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.runlive-log > summary::-webkit-details-marker {
+  display: none;
+}
+.runlive-log > summary:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink2);
+}
+.runlive-log ol {
+  margin: 6px 0 0;
+  padding: 8px 12px;
+  list-style: none;
+  border: 1px solid var(--b-edge);
+  border-radius: 12px;
+  background: var(--b-s1);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  max-height: 220px;
+  overflow: auto;
+}
+.runlive-t {
+  display: inline-block;
+  min-width: 6ch;
+  color: var(--b-ink3);
+  font-variant-numeric: tabular-nums;
+}
+.runlive-err {
+  margin: 6px 0 0;
+  color: var(--b-ink2);
+  white-space: pre-wrap;
+}
+
+/* ── Round 9: the ASCII spinner and the glimmer (chat/ChatStatus.tsx) ───────
+   The spinner is a monospace glyph stepped by a timer; the glimmer is a soft
+   light sweeping the ACTIVE status text only. Both hold still for
+   prefers-reduced-motion. */
+.r9-ascii {
+  display: inline-block;
+  flex: none;
+  width: 1.2ch;
+  text-align: center;
+  font-family: var(--font-mono, ui-monospace, 'JetBrains Mono', monospace);
+  font-size: var(--t-13);
+  line-height: 1;
+  color: var(--b-acc, var(--accent));
+  user-select: none;
+}
+.r9-ascii-mark {
+  color: var(--b-ink2);
+}
+.runlive[data-tone='warn'] .r9-ascii-mark {
+  color: var(--b-del, var(--ink-1));
+}
+.r9-status {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 6px 2px;
+  color: var(--b-ink2);
+}
+

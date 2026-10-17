@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sequence v2 Mega Plan — Phase A–D Visual Breakdown</title>
+  <style>
+    :root {
+      --bg: #0f1114;
+      --surface-1: #161a1f;
+      --surface-2: #1c2128;
+      --edge: #2a2f36;
+      --ink-1: #e8eaed;
+      --ink-2: #9aa0a6;
+      --ink-3: #6b7280;
+      --accent: #8ab4f8;
+      --landed: #81c995;
+      --owner: #f9ab00;
+      --bad: #f28b82;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+      --sans: "Instrument Sans", system-ui, sans-serif;
+      --r: 6px;
+      --sp: 8px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink-1);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.02em; }
+    h2 { font-size: 18px; font-weight: 600; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--edge); }
+    h3 { font-size: 13px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; margin: 24px 0 12px; }
+    .sub { color: var(--ink-2); margin-bottom: 24px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: var(--r);
+      border: 1px solid var(--edge); background: var(--surface-1);
+      font-size: 12px; color: var(--ink-2);
+    }
+    .pill strong { color: var(--ink-1); font-weight: 500; }
+    .pill.landed { border-color: #3d5a45; color: var(--landed); }
+    .pill.owner { border-color: #5a4a20; color: var(--owner); }
+    .grid { display: grid; gap: 16px; }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card {
+      background: var(--surface-1);
+      border: 1px solid var(--edge);
+      border-radius: var(--r);
+      padding: 16px;
+    }
+    .stat-num { font-size: 32px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+    .phase-bar { display: flex; height: 28px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--edge); margin: 12px 0; }
+    .phase-bar span { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+    .chart-wrap { background: var(--surface-2); border-radius: var(--r); padding: 16px; border: 1px solid var(--edge); }
+    .chart-caption { font-size: 11px; color: var(--ink-3); margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--edge); }
+    th { color: var(--ink-3); font-weight: 500; }
+    .mono { font-family: var(--mono); font-size: 11px; }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .compare { grid-template-columns: 1fr; } }
+    .before { border-left: 3px solid var(--bad); }
+    .after { border-left: 3px solid var(--landed); }
+    .compare .card h4 { margin: 0 0 8px; font-size: 12px; color: var(--ink-3); }
+    .compare pre {
+      margin: 0; padding: 12px; background: var(--surface-2);
+      border-radius: 4px; overflow-x: auto; white-space: pre-wrap;
+      font-family: var(--mono); font-size: 11px; color: var(--ink-2);
+    }
+    /* UI mockups */
+    .mock-shell {
+      background: var(--surface-2); border: 1px solid var(--edge);
+      border-radius: var(--r); overflow: hidden; font-size: 11px;
+    }
+    .mock-wsbar {
+      display: flex; gap: 4px; padding: 6px 8px;
+      border-bottom: 1px solid var(--edge); flex-wrap: wrap;
+    }
+    .mock-wpill {
+      padding: 3px 8px; border-radius: 4px; border: 1px solid var(--edge);
+      color: var(--ink-3);
+    }
+    .mock-wpill.on { background: var(--surface-1); color: var(--ink-1); border-color: var(--accent); }
+    .mock-body { padding: 12px; min-height: 100px; }
+    .mock-browser-chrome {
+      display: flex; gap: 8px; align-items: center;
+      padding: 6px 10px; border-bottom: 1px solid var(--edge);
+    }
+    .mock-url {
+      flex: 1; padding: 4px 8px; background: var(--surface-1);
+      border: 1px solid var(--edge); border-radius: 4px; color: var(--ink-2);
+      font-family: var(--mono);
+    }
+    .mock-btn {
+      padding: 4px 10px; background: var(--surface-1);
+      border: 1px solid var(--edge); border-radius: 4px; color: var(--ink-1);
+    }
+    .mock-meta { padding: 6px 10px; color: var(--ink-3); font-size: 10px; border-bottom: 1px solid var(--edge); }
+    .mock-pre {
+      margin: 0; padding: 10px; font-family: var(--mono); font-size: 10px;
+      color: var(--ink-2); white-space: pre-wrap;
+    }
+    .mock-composer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+      padding: 8px 10px; border-top: 1px solid var(--edge); background: var(--surface-1);
+    }
+    .mock-iconbtn {
+      width: 26px; height: 26px; border-radius: 4px;
+      border: 1px solid var(--edge); display: flex; align-items: center; justify-content: center;
+      color: var(--ink-2); font-size: 10px;
+    }
+    .mock-send {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--accent); color: var(--bg);
+    }
+    .mock-terminal {
+      font-family: var(--mono); font-size: 10px; color: var(--landed);
+      padding: 10px; min-height: 80px;
+    }
+    .mock-workrow {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 10px; border-bottom: 1px solid var(--edge);
+      font-size: 11px;
+    }
+    .mock-opens { color: var(--accent); font-size: 10px; cursor: default; }
+    ul.compact { margin: 0; padding-left: 18px; color: var(--ink-2); }
+    ul.compact li { margin: 4px 0; }
+    .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+    .tag-a { background: #1a2a3a; color: var(--accent); }
+    .tag-b { background: #1a2a22; color: var(--landed); }
+    .tag-c { background: #2a2218; color: var(--owner); }
+    .tag-d { background: #2a1a2a; color: #c58af9; }
+    footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--edge); color: var(--ink-3); font-size: 12px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sequence v2 Mega Plan</h1>
+  <p class="sub">Phase A–D visual breakdown · merged to <code class="mono">main</code> at <code class="mono">d35d7782</code> · PR #141 · 176 files · +11,683 / −762 lines</p>
+
+  <div class="hero-meta">
+    <span class="pill landed"><strong>Agent code</strong> LANDED</span>
+    <span class="pill owner"><strong>OWNER queue</strong> metrics · walks · desktop CTA</span>
+    <span class="pill"><strong>Tests</strong> CI 112 · web2 1976</span>
+    <span class="pill"><strong>E2E</strong> terminal + browser (Chromium)</span>
+  </div>
+
+  <div class="grid grid-4">
+    <div class="card"><div class="stat-num">4</div><div class="stat-label">Phases shipped (code lane)</div></div>
+    <div class="card"><div class="stat-num">63</div><div class="stat-label">Commits fast-forwarded to main</div></div>
+    <div class="card"><div class="stat-num">100%</div><div class="stat-label">M2 harness: rounds ≤2 (20/20)</div></div>
+    <div class="card"><div class="stat-num">0%</div><div class="stat-label">M3 harness: raw JSON visible (0/7)</div></div>
+  </div>
+
+  <h2>Program completion map</h2>
+  <p class="sub" style="margin-top:-8px">Green = landed on main · Amber = OWNER (you fill with measured evidence)</p>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;">
+      <span><span class="tag tag-a">A</span> Trust &amp; speed</span>
+      <span style="color:var(--landed)">A0.2–A6 LANDED · A7 OWNER</span>
+    </div>
+    <div class="phase-bar">
+      <span style="width:92%;background:#1a3a2a;color:var(--landed)">92%</span>
+      <span style="width:8%;background:#3a3018;color:var(--owner)">A7</span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin:16px 0 8px;font-size:12px;">
+      <span><span class="tag tag-b">B</span> Agent loop</span>
+      <span style="color:var(--landed)">B1–B5 LANDED · B6–B7 OWNER</span>
+    </div>
+    <div class="phase-bar">
+      <span style="width:83%;background:#1a3a2a;color:var(--landed)">83%</span>
+      <span style="width:17%;background:#3a3018;color:var(--owner)">bakeoff</span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin:16px 0 8px;font-size:12px;">
+      <span><span class="tag tag-c">C</span> Surfaces</span>
+      <span style="color:var(--landed)">Terminal · Browser · MCP · Plugins</span>
+    </div>
+    <div class="phase-bar">
+      <span style="width:88%;background:#1a3a2a;color:var(--landed)">88%</span>
+      <span style="width:12%;background:#3a3018;color:var(--owner)">desktop CTA</span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin:16px 0 8px;font-size:12px;">
+      <span><span class="tag tag-d">D</span> Public beta gate</span>
+      <span style="color:var(--landed)">D4 code LANDED · D1–D8 OWNER</span>
+    </div>
+    <div class="phase-bar">
+      <span style="width:15%;background:#1a3a2a;color:var(--landed)">D4</span>
+      <span style="width:85%;background:#3a3018;color:var(--owner)">walks · M1–M5 weeks · ops</span>
+    </div>
+  </div>
+
+  <h2>Phase A — Trust &amp; speed (benchmarks)</h2>
+  <p class="sub" style="margin-top:-8px">Source: <code class="mono">node tools/bench/phase-a-metrics-report.mjs</code> · canned provider · tip <code class="mono">d35d7782</code> · <strong>not</strong> live M1 wall time</p>
+
+  <div class="grid grid-2">
+    <div class="chart-wrap">
+      <svg viewBox="0 0 400 180" width="100%" role="img" aria-label="Tool rounds per design-draw ask, harness n=20">
+        <text x="0" y="14" fill="#9aa0a6" font-size="11" font-weight="600">M2 — Tool rounds per design-draw (target ≤2)</text>
+        <line x1="40" y1="150" x2="380" y2="150" stroke="#2a2f36"/>
+        <line x1="40" y1="20" x2="40" y2="150" stroke="#2a2f36"/>
+        <text x="4" y="90" fill="#6b7280" font-size="9" transform="rotate(-90 12 90)">Count (asks)</text>
+        <rect x="80" y="30" width="100" height="120" fill="#81c995" rx="3"/>
+        <text x="130" y="95" fill="#0f1114" font-size="22" font-weight="700" text-anchor="middle">17</text>
+        <text x="130" y="115" fill="#0f1114" font-size="10" text-anchor="middle">1 round</text>
+        <rect x="220" y="90" width="100" height="60" fill="#8ab4f8" rx="3"/>
+        <text x="270" y="125" fill="#0f1114" font-size="22" font-weight="700" text-anchor="middle">3</text>
+        <text x="270" y="145" fill="#0f1114" font-size="10" text-anchor="middle">2 rounds</text>
+        <text x="130" y="168" fill="#9aa0a6" font-size="10" text-anchor="middle">1 round</text>
+        <text x="270" y="168" fill="#9aa0a6" font-size="10" text-anchor="middle">2 rounds</text>
+      </svg>
+      <div class="chart-caption">100% of harness asks used ≤2 rounds (20/20). Mean 1.2 rounds. LangGraph-style short path + once-per-turn caps.</div>
+    </div>
+
+    <div class="chart-wrap">
+      <svg viewBox="0 0 400 180" width="100%" role="img" aria-label="Board auto-open rate M4 proxy">
+        <text x="0" y="14" fill="#9aa0a6" font-size="11" font-weight="600">M4 proxy — Board opened on draw (auto-open lock)</text>
+        <circle cx="200" cy="95" r="55" fill="none" stroke="#2a2f36" stroke-width="16"/>
+        <circle cx="200" cy="95" r="55" fill="none" stroke="#81c995" stroke-width="16"
+          stroke-dasharray="345.6 0" transform="rotate(-90 200 95)"/>
+        <text x="200" y="92" fill="#e8eaed" font-size="28" font-weight="700" text-anchor="middle">100%</text>
+        <text x="200" y="112" fill="#9aa0a6" font-size="11" text-anchor="middle">20 / 20</text>
+      </svg>
+      <div class="chart-caption">Topology/canvas proposals trigger Architecture auto-open (matches web2 integration tests).</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px">
+    <div class="chart-wrap">
+      <svg viewBox="0 0 400 120" width="100%" role="img" aria-label="M3 output honesty harness">
+        <text x="0" y="14" fill="#9aa0a6" font-size="11" font-weight="600">M3 harness — Raw tool JSON visible after salvage</text>
+        <rect x="40" y="40" width="320" height="24" fill="#2a2f36" rx="4"/>
+        <rect x="40" y="40" width="0" height="24" fill="#f28b82" rx="4"/>
+        <text x="360" y="57" fill="#81c995" font-size="14" font-weight="700" text-anchor="end">0%</text>
+        <text x="40" y="90" fill="#6b7280" font-size="10">7 corpus fixtures (process-sequence dumps, bare nodes, fenced seqd)</text>
+      </svg>
+      <div class="chart-caption">Before: JSON dumps in chat. After: theater + strip/salvage — residual raw JSON = 0 in harness.</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Phase A feature checklist</h3>
+      <ul class="compact">
+        <li><strong>boardSeqd</strong> — session-scoped Architecture; New chat = empty board</li>
+        <li><strong>Design short-path</strong> — ≤2 rounds, parallel reads, tool cache</li>
+        <li><strong>Round k/n UI</strong> — live stall notice</li>
+        <li><strong>Pane resize</strong> — persisted workspace widths</li>
+        <li><strong>askMetrics</strong> — trajectory M1–M7 export path</li>
+        <li><strong>Rescan progress</strong> — debounced repo watch</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Before → After (honesty &amp; copy)</h2>
+  <div class="compare">
+    <div class="card before">
+      <h4>BEFORE — lying / broken</h4>
+      <pre>Settings does not edit that file yet
+(.sequence/mcp.json)
+
+Browser pill: "not shipped" while UNSHIPPED
+
+Tool dumps in chat:
+{"name":"propose_topology","args":{...}}
+
+Session B inherits Session A board
+
+Composer: Terminal disabled</pre>
+    </div>
+    <div class="card after">
+      <h4>AFTER — on main (d35d7782)</h4>
+      <pre>Settings → MCP servers edits .sequence/mcp.json
+
+Browser + Terminal workspace pills + composer controls
+
+Topology theater + stripToolProse (0% raw in harness)
+
+boardSeqd PUT/GET per session; locking tests
+
+Terminal PTY/pipe + Browser fetch_url + SSRF caps</pre>
+    </div>
+  </div>
+
+  <h2>Phase C — New surfaces (UI mockups)</h2>
+  <p class="sub" style="margin-top:-8px">Graphite compact · tool+panel, not fake Chrome</p>
+
+  <div class="grid grid-2">
+    <div class="mock-shell">
+      <div class="mock-wsbar">
+        <span class="mock-wpill">Chat</span>
+        <span class="mock-wpill">Architecture</span>
+        <span class="mock-wpill on">Browser</span>
+        <span class="mock-wpill">Terminal</span>
+      </div>
+      <div class="mock-browser-chrome">
+        <span style="color:var(--ink-3)">Browser</span>
+        <span class="mock-url">https://example.com</span>
+        <span class="mock-btn">Fetch</span>
+      </div>
+      <div class="mock-meta">https://example.com · HTTP 200 · title: Example Domain</div>
+      <pre class="mock-pre">Example Domain
+This domain is for use in documentation examples...</pre>
+      <div class="mock-composer">
+        <span class="mock-iconbtn">🔗</span>
+        <span class="mock-iconbtn">⌘</span>
+        <span class="mock-send">→</span>
+      </div>
+    </div>
+
+    <div class="mock-shell">
+      <div class="mock-wsbar">
+        <span class="mock-wpill">Chat</span>
+        <span class="mock-wpill on">Terminal</span>
+      </div>
+      <div class="mock-meta" style="color:var(--landed)">Connected · PTY</div>
+      <div class="mock-terminal">$ printf '__E2E__'\n__E2E__\n$ pnpm test\nok 1976 tests</div>
+      <div class="mock-workrow">
+        <span>Called fetch_url · https://example.com</span>
+        <span class="mock-opens">Open Browser →</span>
+      </div>
+      <div class="mock-workrow">
+        <span>Ran a command · pnpm test</span>
+        <span class="mock-opens">Open Terminal →</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Phase B — Agent loop (mechanisms borrowed)</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3 style="margin-top:0">LangGraph-style savings</h3>
+      <ul class="compact">
+        <li>Intent router: draw · explore · edit · chat</li>
+        <li>Forced final answer — never silent after tools</li>
+        <li>Native OpenAI tool_calls + fence salvage belt</li>
+        <li>Per-turn tool result cache (name+args hash)</li>
+        <li>Unproductive round cap: explore=3, else=2</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Claude / Codex parity slice</h3>
+      <ul class="compact">
+        <li>ContextRing breakdown (B3.4)</li>
+        <li>Rewind checkpoint restore UX</li>
+        <li>Review per-file diff + Accept/Deny</li>
+        <li>Line comment → composer follow-up</li>
+        <li>Autonomy matrix in Settings (B5.2)</li>
+        <li>Deny-streak circuit breaker (B5.3)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Phase D — CTA honesty (code landed)</h2>
+  <table>
+    <thead><tr><th>Surface</th><th>Old</th><th>New</th><th>Lock</th></tr></thead>
+    <tbody>
+      <tr><td>Browser pill</td><td>UNSHIPPED / disabled</td><td>Workspace pill + BrowserPane</td><td class="mono">d4WorkspaceCtaHonesty.test.ts</td></tr>
+      <tr><td>Terminal</td><td>Pipe shell, disabled composer</td><td>PTY pane + composer-terminal</td><td class="mono">terminal-pane.mjs e2e</td></tr>
+      <tr><td>MCP ask belt</td><td>"Settings does not edit"</td><td>Points at Settings editor</td><td class="mono">ask-placement-hint.test.ts</td></tr>
+      <tr><td>Plugins Settings</td><td>"ask unwired"</td><td>call_plugin live</td><td class="mono">SettingsPanel.test.tsx</td></tr>
+      <tr><td>Composer</td><td>—</td><td>composer-browser + composer-terminal</td><td class="mono">App.test.tsx</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Test &amp; gate evidence</h2>
+  <table>
+    <thead><tr><th>Gate</th><th>Command</th><th>Result (main tip)</th></tr></thead>
+    <tbody>
+      <tr><td>Docs + merge lanes</td><td class="mono">pnpm test:ci</td><td>112 / 112</td></tr>
+      <tr><td>web2 unit</td><td class="mono">pnpm --filter @sequence/web2 test</td><td>1976 / 1976</td></tr>
+      <tr><td>Browser e2e</td><td class="mono">node e2e/browser-pane.mjs</td><td>4 / 4 checks</td></tr>
+      <tr><td>Terminal e2e</td><td class="mono">node e2e/terminal-pane.mjs</td><td>echo + resize + exit</td></tr>
+      <tr><td>Design-draw harness</td><td class="mono">phase-a-metrics-report.mjs</td><td>M2 100% ≤2 rounds</td></tr>
+      <tr><td>Graphite firewall</td><td class="mono">test/firewall.test.ts</td><td>browser.css tokens OK</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Still OWNER (blocks public beta claim)</h2>
+  <div class="card" style="border-color:#5a4a20">
+    <ul class="compact">
+      <li><strong>M1–M7 scorecard</strong> — 2-week dogfood; paste measured numbers (never canned wallMs as M1)</li>
+      <li><strong>B6 bakeoff</strong> — shopfront game vs Claude Code/Cursor; no invented % wins</li>
+      <li><strong>Owner walk videos</strong> — D1–D2, A7.2 per feature-honesty.md</li>
+      <li><strong>Desktop public CTA</strong> — clone + start.sh only until signed assets (C3.2/D7)</li>
+      <li><strong>HANDOFF tip-bump</strong> — docs lane after merge (merge-lanes)</li>
+    </ul>
+  </div>
+
+  <footer>
+    Generated 2026-08-28 · Sequence v2 mega plan · <code class="mono">docs/research/v2-next-phase-mega-plan.md</code> ·
+    Run locally: <code class="mono">pnpm build && pnpm app -- --repo /workspace --no-open --port 4173</code>
+  </footer>
+</div>
+</body>
+</html>

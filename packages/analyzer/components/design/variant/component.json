@@ -1,0 +1,22 @@
+{
+  "id": "design/variant",
+  "group": "design",
+  "label": "Variant",
+  "summary": "Builds multiple variants of a component you're working on and helps you iterate and pick one.",
+  "triggers": [
+    "make variants",
+    "try component variants",
+    "iterate on a component",
+    "compare design options",
+    "pick a variant"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/variant"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/variant"
+}

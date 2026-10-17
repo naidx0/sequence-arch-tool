@@ -1,0 +1,23 @@
+{
+  "id": "t05-average-empty",
+  "prompt": "average(nums) returns NaN for an empty array; it should return 0. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "average"
+    ]
+  }
+}

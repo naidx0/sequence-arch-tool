@@ -1,0 +1,6 @@
+{
+  "name": "t15-pad-left",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

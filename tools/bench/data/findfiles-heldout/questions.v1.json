@@ -1,0 +1,2866 @@
+{
+ "about": "Sealed find_files held-out question set (bench:findfiles). Commit shas, subjects and answer paths only; no repo content.",
+ "seed": 20261014,
+ "perRepo": 50,
+ "k": 5,
+ "repos": [
+  {
+   "id": "flask",
+   "sha": "d086db856be187255b8ec61ef409357393020f32",
+   "lang": "python",
+   "poolSize": 590,
+   "dropped": {
+    "subject<3-words": 225,
+    "answer>8-files": 11,
+    "bot-or-release-subject": 243,
+    "duplicate-subject": 36,
+    "no-indexable-modified-file": 365,
+    "subject-names-a-path": 9,
+    "touches>20-files": 21
+   },
+   "questions": [
+    {
+     "commit": "67c4c7bac2fcd582ebb3474284a7c8a1e737c878",
+     "parent": "e39d78a0ad544ac0b518ed85fc40c7a92833dee4",
+     "subject": "ignore warning from pytest due to change in Python 3.12 alpha",
+     "answer": [
+      "pyproject.toml"
+     ]
+    },
+    {
+     "commit": "4025e27b5714736657f0ac9548170e0ad285c53a",
+     "parent": "0b4296ff1740978e8451602a9719cc5fbfb39606",
+     "subject": "Add test for routes command when no routes registered",
+     "answer": [
+      "tests/test_cli.py"
+     ]
+    },
+    {
+     "commit": "a29f88ce6f2f9843bd6fcbbfce1390a2071965d6",
+     "parent": "f00ad424ee3b050d382cc5b4aabb18afbb5e4ae7",
+     "subject": "document that headers must be set before streaming",
+     "answer": [
+      "src/flask/ctx.py",
+      "src/flask/helpers.py"
+     ]
+    },
+    {
+     "commit": "d614d6bf8c7b6db6f817648836f9044b13dc42b4",
+     "parent": "32d2f47ed1bf3f27fd46e1a54dd136688de9ab81",
+     "subject": "ignore pytest ast warnings",
+     "answer": [
+      "pyproject.toml"
+     ]
+    },
+    {
+     "commit": "9c02f07f9bb4c88207c2a6860742c452c35d2948",
+     "parent": "1ee22e1736ffd12c2222cd6215ed04ec1592adaa",
+     "subject": "deprecate markupsafe exports",
+     "answer": [
+      "src/flask/__init__.py",
+      "tests/test_basic.py",
+      "tests/test_json_tag.py",
+      "tests/test_templating.py"
+     ]
+    },
+    {
+     "commit": "f7d9956c0f0e9a80b1d345adac191f6ebd0ffee4",
+     "parent": "59f81950fe4fb059ad58b8b8c171831ae5214460",
+     "subject": "use oidc instead of token",
+     "answer": [
+      ".github/workflows/publish.yaml"
+     ]
+    },
+    {
+     "commit": "4f7156f2c3271613b34d04040b502b9d7ae35eb9",
+     "parent": "10bdf61a0f751f3cb000f8f8ac5ac5b4bb535677",
+     "subject": "configure and check trusted_hosts",
+     "answer": [
+      "src/flask/app.py",
+      "tests/test_request.py"
+     ]
+    },
+    {
+     "commit": "0e1e9a04aaf29ab78f721cfc79ac2a691f6e3929",
+     "parent": "aab4c8c7452ba198c6096face53ac2b7cc6460b8",
+     "subject": "detect UTF encodings when loading json",
+     "answer": [
+      "flask/json.py",
+      "flask/wrappers.py",
+      "tests/test_helpers.py"
+     ]
+    },
+    {
+     "commit": "07000942dacaeffa84d9db57ea42570fcfb0395e",
+     "parent": "afda0ed9f2e8e45b152919573858627a1cc86d3a",
+     "subject": "update minimum install requirements",
+     "answer": [
+      "setup.py"
+     ]
+    },
+    {
+     "commit": "5da342e4dd7dfcc16aa25928ea91d69c2d362f73",
+     "parent": "ab6e6301945bf42a429f52bc34602627ca0566bc",
+     "subject": "fix docstring and remove redundant parentheses",
+     "answer": [
+      "src/flask/ctx.py",
+      "tests/test_basic.py"
+     ]
+    },
+    {
+     "commit": "60eecb547d8af9916c55163c7356999ca2d5ffb9",
+     "parent": "22e072379b9fcffd229cdd239dd3ff5ed4eed571",
+     "subject": "Remove python 2.6 and 3.3 everywhere. (#2583)",
+     "answer": [
+      "setup.py"
+     ]
+    },
+    {
+     "commit": "6d65595a3c0a02d098c36f7d337e053e07975316",
+     "parent": "6f7762538bffe3ce9d03508ecab230bfff3e3dcd",
+     "subject": "try to address flakiness of lazy loading test",
+     "answer": [
+      "tests/test_cli.py"
+     ]
+    },
+    {
+     "commit": "5a7a4ab4c5eed63a23762e09b7e6a739375ad0f0",
+     "parent": "8ab4967703c2f5c500174f46b672d80e32f55d85",
+     "subject": "locked_cached_property subclasses cached_property",
+     "answer": [
+      "src/flask/helpers.py"
+     ]
+    },
+    {
+     "commit": "fc82dd50e39700b14799df17578e2497b8f0248c",
+     "parent": "80d9519a9c6f6e84d93432a675326da0a983bd46",
+     "subject": "Re-add filename param for send_from_directory",
+     "answer": [
+      "src/flask/helpers.py"
+     ]
+    },
+    {
+     "commit": "560c119e3dc33b35b9c57172fae521d99c2a1421",
+     "parent": "a29f88ce6f2f9843bd6fcbbfce1390a2071965d6",
+     "subject": "add zizmor to scan workflows",
+     "answer": [
+      ".github/workflows/lock.yaml",
+      ".github/workflows/pre-commit.yaml",
+      ".github/workflows/publish.yaml",
+      ".github/workflows/tests.yaml"
+     ]
+    },
+    {
+     "commit": "975f9792697c1a74bca3cfff201d1e0415bece6a",
+     "parent": "cf4923bf586c51365970ee11a33771104241cf60",
+     "subject": "Move dotenv warning to stderr",
+     "answer": [
+      "flask/cli.py"
+     ]
+    },
+    {
+     "commit": "5e059be1b327f2f2f64115d2897c5864eff69b7d",
+     "parent": "bae6ee888f647f15fabb91d21bf28314737be1c6",
+     "subject": "update actions versions",
+     "answer": [
+      ".github/workflows/lock.yaml",
+      ".github/workflows/publish.yaml",
+      ".github/workflows/tests.yaml"
+     ]
+    },
+    {
+     "commit": "66b1b752da1ccc67c1073d4a99c4141a1b2be445",
+     "parent": "85fa8aabf5a7bd0adf204f0c2dacbba1fa6683de",
+     "subject": "simplify logging configuration single default handler and formatter don't remove handlers configure level once using setLevel document logging reorganize logging tests",
+     "answer": [
+      "flask/app.py",
+      "flask/logging.py",
+      "tests/test_basic.py",
+      "tests/test_helpers.py",
+      "tests/test_subclassing.py",
+      "tests/test_templating.py",
+      "tests/test_testing.py"
+     ]
+    },
+    {
+     "commit": "213afec771a92e20516e5ea468bdd2186915f186",
+     "parent": "e21abd9da5fa755d3af96091ab3a181b7d6498b5",
+     "subject": "add rst extension for changelog fix changelog version",
+     "answer": [
+      "scripts/make-release.py"
+     ]
+    },
+    {
+     "commit": "02df042416c312f6c04a5ded8c9404386585c122",
+     "parent": "aef4159588be8bc245243c80e5032ccc79092f42",
+     "subject": "Corrected a typo in a docstring: \"Help object\" --> \"Helper object\"",
+     "answer": [
+      "flask/cli.py"
+     ]
+    },
+    {
+     "commit": "14f56363a4992506f2b3670985fca4f0a29e5176",
+     "parent": "1936ca8a2e1789efd6169a901a8b60ec62ceb578",
+     "subject": "rename send_file add_etags to etag",
+     "answer": [
+      "src/flask/helpers.py"
+     ]
+    },
+    {
+     "commit": "33d888622676073a5cd9d5f268933de82a0345c0",
+     "parent": "04920b30765a5884c5b6516c66feea6df0b5282f",
+     "subject": "enable grouped updates for actions and python",
+     "answer": [
+      ".github/dependabot.yml"
+     ]
+    },
+    {
+     "commit": "491d331e6e0a7915c9e6d9b3287688ac7a3f56ca",
+     "parent": "77b98a2762b358b1e90c350a33971a91f8a9375d",
+     "subject": "load env vars using python-dotenv",
+     "answer": [
+      ".travis.yml",
+      "flask/app.py",
+      "flask/cli.py",
+      "setup.py",
+      "tests/test_cli.py"
+     ]
+    },
+    {
+     "commit": "cabda5935322d75e7aedb3ee6d59fb7ab62bd674",
+     "parent": "d7b6c1f6703df405c69da45e7e0ba3d1aed512ce",
+     "subject": "Ensure that blueprint subdomains suffix-chain",
+     "answer": [
+      "src/flask/blueprints.py",
+      "tests/test_blueprints.py"
+     ]
+    },
+    {
+     "commit": "c7f56c5a5539143662a04ec8e54aa78777d20730",
+     "parent": "976dfedaa9efdb566333ea829b12751820268f67",
+     "subject": "Create json_dumps() method on new EnvironBuilder",
+     "answer": [
+      "flask/testing.py",
+      "tests/test_testing.py"
+     ]
+    },
+    {
+     "commit": "d362399e7ebfe167a27daef20e198ecabed1b49b",
+     "parent": "7627d9ce1351d66f53521fa4ea85076b7626738a",
+     "subject": ":fire: Remove code supposed to be removed at v1.0",
+     "answer": [
+      "flask/__init__.py"
+     ]
+    },
+    {
+     "commit": "976dfedaa9efdb566333ea829b12751820268f67",
+     "parent": "91e53da054c8e923ad6bf45cfb4c12de029de1b2",
+     "subject": "Convert make_test_environ_builder into class (fixes #3207)",
+     "answer": [
+      "flask/app.py",
+      "flask/testing.py",
+      "tests/test_reqctx.py",
+      "tests/test_testing.py"
+     ]
+    },
+    {
+     "commit": "6d5ccdefe29292974d0bb8e1d80dcd1a06f28368",
+     "parent": "5f03ad3004c41f2e0356f0332ea09e67192c5fab",
+     "subject": "Bugfix iscoroutinefunction with Python3.7",
+     "answer": [
+      "src/flask/app.py"
+     ]
+    },
+    {
+     "commit": "2beedabaafb16f2ba255c54c0875beb0d43664fd",
+     "parent": "c3a997864efc0dfa725f21248ba0fc21a9682faa",
+     "subject": "add HTTPS support for flask run command",
+     "answer": [
+      "flask/cli.py",
+      "tests/test_cli.py"
+     ]
+    },
+    {
+     "commit": "0ee1b0b5d9712b6cf2f22429db98549e1a0c8cb8",
+     "parent": "192f4ae0b2a4e7d73c0b0472e53e33250175d786",
+     "subject": "remove test relying on Werkzeug Local internals",
+     "answer": [
+      "tests/test_regression.py"
+     ]
+    },
+    {
+     "commit": "c38499bbf26cfa9683e30c52139a94dc5a50dcc4",
+     "parent": "363205bdc3abcfeed08c7e85e397fb7a7dc9ef07",
+     "subject": "ignore colon with slash when split app_import_path Flask currently supports importing app through a combination of module path and app variable name, such as '/usr/app.py:my_app'. When the module path contains a colon, it will conflict with this import way and a `flask.cli.NoAppException` will be raised.",
+     "answer": [
+      "flask/cli.py",
+      "tests/test_cli.py"
+     ]
+    },
+    {
+     "commit": "190dd4df86874495f56bb088fbd0cb1d9f0e77a0",
+     "parent": "88863288225d5ee13a79c463f2a39391b6a52c61",
+     "subject": "don't use AnyStr for ResponseValue type",
+     "answer": [
+      "src/flask/app.py",
+      "src/flask/helpers.py",
+      "src/flask/typing.py"
+     ]
+    },
+    {
+     "commit": "333865ea34acefbca565170881ff403fd7840d57",
+     "parent": "ffca68fc86718b133668f341ddd8c2635d7e29ec",
+     "subject": "windows python 2 doesn't provide inet_pton",
+     "answer": [
+      "flask/helpers.py"
+     ]
+    },
+    {
+     "commit": "7d5d1874581209f66ad7bcdfb7f85b2b9a7ca471",
+     "parent": "c7c8dc38ea2890d62b7aaff7e4c016e4b98101b0",
+     "subject": "better type checking during deprecation",
+     "answer": [
+      "src/flask/__init__.py"
+     ]
+    },
+    {
+     "commit": "846ee2c62e369ed06190b8791088748bd3a83557",
+     "parent": "2062d984abd3364557a6dcbd3300cfe3e4ecf156",
+     "subject": "add assert message for errorhandler exception type",
+     "answer": [
+      "src/flask/app.py",
+      "tests/test_user_error_handler.py"
+     ]
+    },
+    {
+     "commit": "8f37c82f6144fffc2ed30e49ee81a54702a0f317",
+     "parent": "39e7208366bcf549fd7a2678a6d815dfe39196c5",
+     "subject": "update min dependencies",
+     "answer": [
+      "pyproject.toml"
+     ]
+    },
+    {
+     "commit": "bfdd37110c67ebeb42061fb43cf684b05291241f",
+     "parent": "98ca00d54532bfdf858fe663f8fb3cc260c2048b",
+     "subject": "deprecate config attributes",
+     "answer": [
+      "src/flask/app.py",
+      "src/flask/helpers.py",
+      "src/flask/scaffold.py",
+      "src/flask/sessions.py",
+      "tests/test_config.py",
+      "tests/test_templating.py"
+     ]
+    },
+    {
+     "commit": "54cbb4e64297d68ff6c9ef3fe03c283448e3533f",
+     "parent": "6ed68f015a50ab35b84a8ea71b0f846ca6a75281",
+     "subject": "send_file quotes \":/\" in UTF-8 filename",
+     "answer": [
+      "flask/helpers.py",
+      "tests/test_helpers.py"
+     ]
+    },
+    {
+     "commit": "67b0b7e30d2304f628e966896748032022ac0257",
+     "parent": "c2920e2bd98cdb3dcccc2868c25b695d4780c620",
+     "subject": "cache blueprint path calculation",
+     "answer": [
+      "src/flask/app.py",
+      "src/flask/helpers.py",
+      "src/flask/wrappers.py"
+     ]
+    },
+    {
+     "commit": "8239765a4410d13d489e299a99e4a4c6951e190b",
+     "parent": "a05c0c6b7232aac38899234a6c4f071f9005a502",
+     "subject": "allow async signal receivers",
+     "answer": [
+      "src/flask/app.py",
+      "src/flask/ctx.py",
+      "src/flask/helpers.py",
+      "src/flask/templating.py"
+     ]
+    },
+    {
+     "commit": "9e686d93b69f0e73f801cc11a57839f4dfe2ca1a",
+     "parent": "96d39c87a803e3a92152787a12d09bbc149556ec",
+     "subject": "remove deprecated RequestContext.g",
+     "answer": [
+      "src/flask/ctx.py"
+     ]
+    },
+    {
+     "commit": "3127c304ecbc54387792c9ddff3c266645b67b8a",
+     "parent": "85c35bd6155e14f5c0829a88533d13321408bda5",
+     "subject": "Small SQL formatting fix",
+     "answer": [
+      "examples/tutorial/tests/test_auth.py"
+     ]
+    },
+    {
+     "commit": "e13373f838ab34027c5a80e16a6cb8262d41eab7",
+     "parent": "7522c4bcdb10449dc919e0ffbdebb92fe66822b5",
+     "subject": "enable secret key rotation",
+     "answer": [
+      "pyproject.toml",
+      "src/flask/app.py",
+      "src/flask/sessions.py",
+      "tests/test_basic.py"
+     ]
+    },
+    {
+     "commit": "17e146ad949b3d80438faf95e81b53c543cb50f5",
+     "parent": "8a72b741616556b4f739ea79ab502c2d2038844a",
+     "subject": "Pass maxsplit via kwarg to re.split",
+     "answer": [
+      "src/flask/cli.py"
+     ]
+    },
+    {
+     "commit": "45174bf9a1e96e51ce589c7aa2c151249d1fdf11",
+     "parent": "bab5a65e6eaee20ac1706fc9439ee538f59e652f",
+     "subject": "use __init_subclass__ instead of metaclass for MethodView",
+     "answer": [
+      "src/flask/views.py"
+     ]
+    },
+    {
+     "commit": "0a00e1b6085f62fb776a95ef676ea661bff565f6",
+     "parent": "1d7281fe0770a97229a2a75189a712cff866b448",
+     "subject": "use tmp_path instead of tmpdir",
+     "answer": [
+      "tests/conftest.py",
+      "tests/test_config.py",
+      "tests/test_helpers.py",
+      "tests/test_instance_config.py"
+     ]
+    },
+    {
+     "commit": "a9b99b3489cc24b5bed99fbadbd91f598a5a1420",
+     "parent": "8aa161a43731795841fa2678d3dff0559cee527e",
+     "subject": "update example project metadata",
+     "answer": [
+      "examples/celery/pyproject.toml",
+      "examples/javascript/pyproject.toml",
+      "examples/tutorial/pyproject.toml"
+     ]
+    },
+    {
+     "commit": "aff21fd8bc4d168caf481de87bb5447adccd18ad",
+     "parent": "7d3ae48d57e1f989dfec42e98997ca8b75370c9a",
+     "subject": "Document parameter description error",
+     "answer": [
+      "src/flask/json/__init__.py"
+     ]
+    },
+    {
+     "commit": "eca5fd1dfdc614c2df876cc32018a7d71f84ea82",
+     "parent": "eb58d862cc4a8f31a369b6e9ad1724e9e642f13f",
+     "subject": "redirect defaults to 303",
+     "answer": [
+      "src/flask/helpers.py",
+      "src/flask/sansio/app.py"
+     ]
+    },
+    {
+     "commit": "a71c167836c9dd938199fc72292951359948149c",
+     "parent": "754b72957854e0b955fe973d169daa27a2f98ef1",
+     "subject": "fix teardown bug in FlaskClient",
+     "answer": [
+      "flask/testing.py",
+      "tests/test_testing.py"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sqlfluff",
+   "sha": "467d5927e00faeaaeb9fd73fa68e752d8ca60e7e",
+   "lang": "python",
+   "poolSize": 1324,
+   "dropped": {
+    "no-indexable-modified-file": 62,
+    "touches>20-files": 46,
+    "bot-or-release-subject": 14,
+    "answer>8-files": 48,
+    "subject-names-a-path": 4,
+    "subject<3-words": 2
+   },
+   "questions": [
+    {
+     "commit": "099fb2ca19f3f66ddb04d41d1e476c0a98181697",
+     "parent": "97d050ecfb5b948331c5b4df2ce9d442be33e029",
+     "subject": "SET LANGUAGE statement segment added to tsql dialect. (#7161)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py"
+     ]
+    },
+    {
+     "commit": "a5e05491958f728938289489edd7371d438f2de2",
+     "parent": "17ce19e7435eadf8efe027bb8a8420942dba9475",
+     "subject": "Enable AM02 for snowflake and trino by default. (#6369)",
+     "answer": [
+      "src/sqlfluff/rules/ambiguous/AM02.py"
+     ]
+    },
+    {
+     "commit": "6ff4d5a82c84a9b0438ffdd1836569fadfd45c5c",
+     "parent": "ed348bc1d2871c2dd9faf83529925613c1ccd4b9",
+     "subject": "mysql/mariadb: Support ALTER/CREATE TABLE CHARSET/COLLATE DEFAULT (#7882)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_mariadb.py",
+      "src/sqlfluff/dialects/dialect_mysql.py",
+      "test/fixtures/dialects/mariadb/alter_table.yml",
+      "test/fixtures/dialects/mariadb/create_table.yml",
+      "test/fixtures/dialects/mysql/alter_table.yml",
+      "test/fixtures/dialects/mysql/create_table.yml"
+     ]
+    },
+    {
+     "commit": "2ffb5ec851b76ef995769725e5eb16143cbf41bb",
+     "parent": "514690958e5afdafde117ac74124f8fd8f2bd89f",
+     "subject": "Handle iteration and getting undefined jinja variables (#6364)",
+     "answer": [
+      "src/sqlfluff/core/templaters/jinja.py",
+      "test/core/templaters/jinja_test.py"
+     ]
+    },
+    {
+     "commit": "76973b295bd6082ad7e6de99b8e4dc69c475b655",
+     "parent": "69049bf797a026e50e614abc67bbf257990fc19d",
+     "subject": "fix: Respect inline `noqa` directives in `sqlfluff parse` for PRS/TMP violations (#7604)",
+     "answer": [
+      "src/sqlfluff/cli/commands.py",
+      "src/sqlfluff/cli/formatters.py",
+      "src/sqlfluff/core/linter/linter.py",
+      "src/sqlfluff/core/rules/noqa.py",
+      "test/cli/commands_test.py",
+      "test/core/rules/noqa_test.py"
+     ]
+    },
+    {
+     "commit": "e7763abfa170f2428dcea427f3a9895e4919604f",
+     "parent": "1843aa74f08c29919170d55b944f1a49569912f3",
+     "subject": "duckdb: parse USING SAMPLE / TABLESAMPLE (#8229)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_duckdb.py"
+     ]
+    },
+    {
+     "commit": "153ae7a925369003f200e62ff41d957234c234f7",
+     "parent": "9a83be02882e0a4a0e9e174dc4f1dc5b4ec143ff",
+     "subject": "SQLite: Add support for blob and hexadecimal literals (#7332)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_sqlite.py"
+     ]
+    },
+    {
+     "commit": "604af292f2109ed3e35dc5d6fb2d33f5dc779a7d",
+     "parent": "eb6cbaab5dbb25953fedc180d5730d6d54150f5b",
+     "subject": "oracle: Support `COLUMN_VALUE` as a bare function (#7144)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_oracle.py"
+     ]
+    },
+    {
+     "commit": "d118e55f54ae2a07358323977b5ab727cf6e239b",
+     "parent": "7cb4a527b1a614e60d6ba0ccfac6c8fff4f21a49",
+     "subject": "perf: replace per-token uuid4 with a tagged monotonic counter (Python + Rust) (#7997)",
+     "answer": [
+      "sqlfluffrs/sqlfluffrs_types/src/lib.rs",
+      "sqlfluffrs/sqlfluffrs_types/src/token/construction.rs",
+      "sqlfluffrs/sqlfluffrs_types/src/token/mod.rs",
+      "src/sqlfluff/core/parser/segments/base.py",
+      "src/sqlfluff/core/parser/segments/raw.py"
+     ]
+    },
+    {
+     "commit": "4f6eb2625629ea899c693b9631a23c76bf7c5711",
+     "parent": "cbe4eb3ce1c06c8ac2451c4e1e2d1d40372cfe1b",
+     "subject": "chore(rust): bump pyo3 to 0.29.0 (#7954)",
+     "answer": [
+      "sqlfluffrs/Cargo.toml",
+      "sqlfluffrs/sqlfluffrs_lexer/Cargo.toml",
+      "sqlfluffrs/sqlfluffrs_parser/Cargo.toml",
+      "sqlfluffrs/sqlfluffrs_python/Cargo.toml"
+     ]
+    },
+    {
+     "commit": "9d656921f0076bbfe22c7c3f00512946cb170f50",
+     "parent": "6a753df7281402dcb749f84ca85c8abf0f33ad1e",
+     "subject": "Snowflake: adds EVENT TABLE support (#5995)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_snowflake.py",
+      "src/sqlfluff/dialects/dialect_snowflake_keywords.py",
+      "test/fixtures/dialects/snowflake/alter_account.yml"
+     ]
+    },
+    {
+     "commit": "3844292971191625605cf68490ce0cd8b007cc6c",
+     "parent": "27ef5db7053dfd00c93e1c5283e38780d7f6e0c5",
+     "subject": "TSQL: Add support for CREATE TABLE GRAPH statements (#6948)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py",
+      "src/sqlfluff/dialects/dialect_tsql_keywords.py"
+     ]
+    },
+    {
+     "commit": "20e6b17324f9aabfabf0a867ce30b5328bd5b3b5",
+     "parent": "fa61984c71320bc23b3b37b68fa38486a312ccf2",
+     "subject": "TSQL: Add support for DBCC statements (#7515)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py",
+      "src/sqlfluff/dialects/dialect_tsql_keywords.py"
+     ]
+    },
+    {
+     "commit": "c83c73535e7b97b17e51e75cf78a5b90ab81b399",
+     "parent": "8c63de4277f665714583c77ef15748fed1339042",
+     "subject": "Documentation and small overhaul of parametrized rule test cases (#6380)",
+     "answer": [
+      "plugins/sqlfluff-plugin-example/test/rules/rule_test_cases_test.py",
+      "src/sqlfluff/utils/testing/rules.py",
+      "test/conftest.py",
+      "test/rules/yaml_test_cases_test.py",
+      "test/testing_test.py"
+     ]
+    },
+    {
+     "commit": "dde5eda7fa6c453e11d5613392b486d6f78f4ec4",
+     "parent": "69b4f968b75c194b2dba3736655149f71f5e101b",
+     "subject": "AL07: Fix self-referencing table aliases (#5963)",
+     "answer": [
+      "src/sqlfluff/core/rules/fix.py",
+      "test/fixtures/rules/std_rule_cases/AL07.yml"
+     ]
+    },
+    {
+     "commit": "eb77eb1a5d825ecca9e54e03d659c6a12804fcc9",
+     "parent": "4e7367596ee3fb17d6280d035e465e4e45c70473",
+     "subject": "Prep version 3.2.4 (#6356)",
+     "answer": [
+      "plugins/sqlfluff-templater-dbt/pyproject.toml",
+      "pyproject.toml"
+     ]
+    },
+    {
+     "commit": "6fb5a84e6dd69017434ce8af7627152479b4a8a7",
+     "parent": "a5e05491958f728938289489edd7371d438f2de2",
+     "subject": "Support identifier clause for Databricks (#6377)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_databricks.py",
+      "src/sqlfluff/dialects/dialect_databricks_keywords.py",
+      "test/fixtures/dialects/databricks/alter_view.yml",
+      "test/fixtures/dialects/databricks/create_table.yml",
+      "test/fixtures/dialects/databricks/select.yml",
+      "test/fixtures/dialects/databricks/use_database.yml"
+     ]
+    },
+    {
+     "commit": "7de3f0885ccc83e561bffea5ef0de3f7f0200e0a",
+     "parent": "65895ca3827507d846630c6cf7b58c820a8610fc",
+     "subject": "TSQL: support computed columns (#5792)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py",
+      "test/fixtures/dialects/tsql/alter_table.yml",
+      "test/fixtures/dialects/tsql/create_table.yml"
+     ]
+    },
+    {
+     "commit": "a36f5f2b1c66237e6562550ea7c899870d1f9ef6",
+     "parent": "9357dd635a0e68e52a2501f1cbebaf11492f38b1",
+     "subject": "feat(clickhouse): add support for REGEXP operator (#8235)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_clickhouse.py"
+     ]
+    },
+    {
+     "commit": "e692709b24f85ff8e8d6aa24eb063aff37c6b0b0",
+     "parent": "8df45b30f2664f00e8bfbf1a67b16d01992c65fb",
+     "subject": "Oracle: add column-level USING INDEX support (#8426)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_oracle.py",
+      "test/fixtures/dialects/oracle/alter_table.yml",
+      "test/fixtures/dialects/oracle/using_index.yml"
+     ]
+    },
+    {
+     "commit": "e1448f8e7f459195a77b03cbb7f9010058c429e0",
+     "parent": "2efc07688bdcf454a44634f7c1ee95f3dc1530d2",
+     "subject": "Fix check constraints in `ALTER TABLE` statements in Oracle. (#6661)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_oracle.py",
+      "test/fixtures/dialects/oracle/alter_table.yml"
+     ]
+    },
+    {
+     "commit": "642ee248c7f0cebff1b0950527a4a2a8d68d8908",
+     "parent": "00f865f03718da24b45f042311dda15fa5f85327",
+     "subject": "Allow expressions in ORDER BY for clickhouse (#6311)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_clickhouse.py"
+     ]
+    },
+    {
+     "commit": "642e2e4a34a8e8afd36a45debe8bd3ffcf106c37",
+     "parent": "522761ebc239ffb936f82bd6d63b25eaad43cdcf",
+     "subject": "fix(CV11): preserve the full operand of a shorthand cast (#8392)",
+     "answer": [
+      "src/sqlfluff/rules/convention/CV11.py",
+      "test/fixtures/rules/std_rule_cases/CV11.yml"
+     ]
+    },
+    {
+     "commit": "0990f875bdf0d3e3b95b538ba15fc5b488177db8",
+     "parent": "878cd479e30cf70ca2554fef9dee33352c38106b",
+     "subject": "CLI: Read inline configurations when using `--stdin-filename` (#6900)",
+     "answer": [
+      "src/sqlfluff/cli/commands.py",
+      "src/sqlfluff/core/config/fluffconfig.py",
+      "test/cli/commands_test.py"
+     ]
+    },
+    {
+     "commit": "0513f9a3a1c09f549ffeb266687a64a271d0f1f9",
+     "parent": "d2cd8c07385c6f5a8481d14e89d50796bfdf2af5",
+     "subject": "Oracle: Support `ALTER TABLE ... RENAME CONSTRAINT` (#7045)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_oracle.py",
+      "test/fixtures/dialects/oracle/alter_table.yml"
+     ]
+    },
+    {
+     "commit": "aa302b0a34e58ed9b07ae084b5ce7d37df21bbf0",
+     "parent": "6147525ab312751928ea95d1e9804a45f00449fb",
+     "subject": "MySQL/MariaDB: Support column list in derived table alias (#7179)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_mysql.py",
+      "src/sqlfluff/rules/aliasing/AL05.py"
+     ]
+    },
+    {
+     "commit": "e1e52aaad0ca7ad37d6179cfc163188357ebd366",
+     "parent": "b1a3f0c642dc07ec73cce2b9bb79a0793ee9642f",
+     "subject": "Allow align columns when using leading comma (#6720)",
+     "answer": [
+      "src/sqlfluff/utils/reflow/reindent.py",
+      "src/sqlfluff/utils/reflow/sequence.py",
+      "test/fixtures/rules/std_rule_cases/LT02-indent.yml",
+      "test/utils/reflow/reindent_test.py"
+     ]
+    },
+    {
+     "commit": "d50c62b0dcaaebdf2e3739926c8e0c3cd7880a20",
+     "parent": "a23d78566ea34a6bfe346c6d481a6937e217d301",
+     "subject": "Add support for PRIVATE MATERIALIZED VIEW syntax to databricks dialect (#6882)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_databricks.py",
+      "src/sqlfluff/dialects/dialect_databricks_keywords.py"
+     ]
+    },
+    {
+     "commit": "f1455c7ce192002e4040da273a9f0967727c81e1",
+     "parent": "236e986827c15ebe9332beae28af8de074a6f3e2",
+     "subject": "TSQL: Add DATETRUC to date_part_function_name list (#6283)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py"
+     ]
+    },
+    {
+     "commit": "5e74f8925a13a0f19345e44f3223f22d0d5f1bc9",
+     "parent": "e6e1351d8d03eeb4d29a8b1ed5f8819bec4ebd70",
+     "subject": "Fix RF03 false positive for lambda params in Databricks (#7646)",
+     "answer": [
+      "src/sqlfluff/rules/references/RF03.py",
+      "test/fixtures/rules/std_rule_cases/RF03.yml"
+     ]
+    },
+    {
+     "commit": "79b168374ba04a3af26463b0dbbc8dd66cb86591",
+     "parent": "171c71e6e37a54ff7623c3739ef243ead8c3ecce",
+     "subject": "Add \"target_path\" configuration to the dbt templater (#6423)",
+     "answer": [
+      "plugins/sqlfluff-templater-dbt/sqlfluff_templater_dbt/templater.py",
+      "plugins/sqlfluff-templater-dbt/test/templater_test.py"
+     ]
+    },
+    {
+     "commit": "7d3b9712684b6d4111af650cb1341acc0d32dec2",
+     "parent": "ef33b2d7a105065b31aedaec9a74ed6f5cb6877b",
+     "subject": "TSQL: new rule to remove empty batches (#7280)",
+     "answer": [
+      "src/sqlfluff/rules/layout/LT15.py",
+      "src/sqlfluff/rules/layout/__init__.py",
+      "src/sqlfluff/rules/tsql/__init__.py",
+      "test/fixtures/rules/std_rule_cases/LT15.yml"
+     ]
+    },
+    {
+     "commit": "306274cafd35a8b2bf0ed759b6d3bc7f9a1ec307",
+     "parent": "e70734196f1e8782893256fa9d41f03e26829c05",
+     "subject": "Add DuckDB to RF01 filter for dialects with dot-access (#6554)",
+     "answer": [
+      "src/sqlfluff/rules/references/RF01.py",
+      "test/fixtures/rules/std_rule_cases/RF01.yml"
+     ]
+    },
+    {
+     "commit": "67b5d02630555df964a92a8189448203ba025026",
+     "parent": "0990f875bdf0d3e3b95b538ba15fc5b488177db8",
+     "subject": "Adds support for `<=>` operator in MySQL. (#6929)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_mysql.py"
+     ]
+    },
+    {
+     "commit": "26630cef9ddcea92121d4652a1a2895e01622eb7",
+     "parent": "4722f992bbf7f36066135cd5ad142a7236d8fdda",
+     "subject": "TSQL: allow 'OR ALTER' on 'CREATE TRIGGER' (#5772)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py",
+      "test/fixtures/dialects/tsql/triggers.yml"
+     ]
+    },
+    {
+     "commit": "800fb4663888e0031ca2ea18ae9d04f000bda0a7",
+     "parent": "24903a0fc6c348bbb46adfde33704066b4a2c466",
+     "subject": "feat: Support function calls in MERGE USING clause (#7788)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_ansi.py",
+      "test/fixtures/dialects/bigquery/merge_into.yml"
+     ]
+    },
+    {
+     "commit": "e3cf4b7c3b3f915a5342e608dd4beeaac2a783a2",
+     "parent": "c4204200f2b53ce4d194563eb45326931cfaea75",
+     "subject": "Disable CV01 for teradata (#7409)",
+     "answer": [
+      "src/sqlfluff/rules/convention/CV01.py",
+      "test/fixtures/rules/std_rule_cases/CV01.yml"
+     ]
+    },
+    {
+     "commit": "0fa4ec69fcda481aee366e0ccb8459848198fe0a",
+     "parent": "63e25830ec3d33e291d7d1a00a0e44d4e4c75e29",
+     "subject": "Fix Bracketed GREEDY mode absorbing trailing trivia into unparsable segment (#8118)",
+     "answer": [
+      "sqlfluffrs/sqlfluffrs_parser/src/parser/helpers.rs",
+      "sqlfluffrs/sqlfluffrs_parser/src/parser/table_driven/bracketed.rs",
+      "test/core/parser/rust_parser_test.py"
+     ]
+    },
+    {
+     "commit": "98b9655c1475c524d5c0491c0b25bffb614c5800",
+     "parent": "5d24dd0d6101b621516dc1d50fef0eaef3575666",
+     "subject": "TSQL improve support for CREATE USER (#6608)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py",
+      "src/sqlfluff/dialects/dialect_tsql_keywords.py",
+      "test/fixtures/dialects/tsql/create_user.yml"
+     ]
+    },
+    {
+     "commit": "72c127a77c1228b5bd19b3f8c249a48fe13930e8",
+     "parent": "39a9d059d3187689ec40a145bc3fefda7d72937e",
+     "subject": "fix(CV12): preserve SQLite outer join semantics (#8203)",
+     "answer": [
+      "src/sqlfluff/rules/convention/CV12.py",
+      "test/fixtures/rules/std_rule_cases/AL05_CV12.yml",
+      "test/fixtures/rules/std_rule_cases/CV12.yml"
+     ]
+    },
+    {
+     "commit": "7156b7763b81e2d6fa0431a5c7ccaf1039b22e3f",
+     "parent": "49c2995f8d781e3a768d1749d06f52d8bd648b34",
+     "subject": "TSQL: Parse issues DatatypeMethodSeg in TableRef and TableExp for Merge using (#7802)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py",
+      "test/fixtures/dialects/tsql/datatype_methods.yml",
+      "test/fixtures/dialects/tsql/merge.yml"
+     ]
+    },
+    {
+     "commit": "d10dd9bd38a2d1ee4fdbee0793224a947382c1e4",
+     "parent": "5f2b5ee9193e979d7f522e1d02f3cfd32123f04e",
+     "subject": "DuckDB: Add support for parenthesized expressions in INTERVAL (#7388)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_duckdb.py"
+     ]
+    },
+    {
+     "commit": "0fe6c248f8bec9a7a736268accea2898c33ada92",
+     "parent": "1eb0834c9bdebe3174f4449feb4e41def3348a33",
+     "subject": "Fix LT07 non-idempotent fix for CTE brackets that become multi-line (#8068)",
+     "answer": [
+      "src/sqlfluff/rules/layout/LT07.py",
+      "test/fixtures/rules/std_rule_cases/LT07.yml"
+     ]
+    },
+    {
+     "commit": "0d846e72100c48c05b3ee9805d5b7fbf6d96e571",
+     "parent": "37a29e4fd89ad5603554337a932e15cf292b1f33",
+     "subject": "docs: do not use pandoc for rule generation (#7573)",
+     "answer": [
+      "docsv/scripts/generate-rules-docs.py"
+     ]
+    },
+    {
+     "commit": "c76818c65feaf3499c24abca88cada8166195442",
+     "parent": "7ca1c2a43093cfd48581867ee6aed91f30d73da2",
+     "subject": "Postgres: Allow negative integers in sequences (#6111)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_postgres.py",
+      "test/fixtures/dialects/postgres/alter_sequence.yml",
+      "test/fixtures/dialects/postgres/create_sequence.yml"
+     ]
+    },
+    {
+     "commit": "d28db5732dc5fc28c4b60690bc3f44966f89e5c2",
+     "parent": "6b77cecc299f0dc3bd3aad10d3d4a427e1598ec8",
+     "subject": "TSQL: parse `CREATE/ALTER/DROP MASTER KEY` (#5802)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_tsql.py",
+      "src/sqlfluff/dialects/dialect_tsql_keywords.py"
+     ]
+    },
+    {
+     "commit": "ff6015777a36c29c980fc6068984c524e659d07b",
+     "parent": "951eb0cbbffdfc5f82fc29979f6b13076ac3bd33",
+     "subject": "add regression test for issue 7543 (#7797)",
+     "answer": [
+      "test/fixtures/rules/std_rule_cases/LT02-indent.yml"
+     ]
+    },
+    {
+     "commit": "8d4611bdc21f5d8e2dc7e99d0b220476779f1c91",
+     "parent": "7de3f0885ccc83e561bffea5ef0de3f7f0200e0a",
+     "subject": "BigQuery: Support DEFAULT COLLATE segment (#5790)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_bigquery.py"
+     ]
+    },
+    {
+     "commit": "f78289e36196448e483f6a1c846dda4124b0302e",
+     "parent": "c86e1f76aba5f55d61a5c1b2938c02774072e5e1",
+     "subject": "Bugfix for JJ01 in parallel mode (#6293)",
+     "answer": [
+      "plugins/sqlfluff-templater-dbt/test/conftest.py",
+      "src/sqlfluff/core/config/fluffconfig.py",
+      "src/sqlfluff/rules/jinja/JJ01.py",
+      "test/core/config/fluffconfig_test.py"
+     ]
+    },
+    {
+     "commit": "23ed3ddc05474f6f92b461821f9b9227db9cff38",
+     "parent": "f127018eca8ab55d08ff983078dc23a4b2416214",
+     "subject": "Trino: accept the DISTINCT qualifier on INTERSECT and EXCEPT (#8532)",
+     "answer": [
+      "src/sqlfluff/dialects/dialect_trino.py"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "express",
+   "sha": "a419aa7350389a275ab45fde2e849ed1f02449ef",
+   "lang": "javascript",
+   "poolSize": 537,
+   "dropped": {
+    "bot-or-release-subject": 192,
+    "no-indexable-modified-file": 160,
+    "subject<3-words": 548,
+    "answer>8-files": 12,
+    "subject-names-a-path": 1,
+    "touches>20-files": 3,
+    "duplicate-subject": 47
+   },
+   "questions": [
+    {
+     "commit": "31cb541b881d40cb0a16de2aab3799785a138357",
+     "parent": "7ee56bbe9cadd25a64e900c52d2cc6287d73ba9b",
+     "subject": "Fix constructing application with non-configurable prototype properties",
+     "answer": [
+      "lib/express.js",
+      "package.json"
+     ]
+    },
+    {
+     "commit": "b9fea1224516e372f6f63480cc1830e5f6ee63e6",
+     "parent": "c259c3407f8c503c83d95fb1f30b132b73bb6388",
+     "subject": "build: support Node.js 21.x in appveyor",
+     "answer": [
+      "appveyor.yml"
+     ]
+    },
+    {
+     "commit": "5c145b5490bc00b382d82b52d4308fdfd615c70f",
+     "parent": "d7bef52591876e3fa86ed08b5ac0cb5447ba1684",
+     "subject": "build: add link to homepage",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "6340d1509f83e436f4484be1fb3a6d155ebb6a38",
+     "parent": "344b022fc7ed95cf07b46e097935e61151fd585f",
+     "subject": "remove --bail from test script (#5962)",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "ee1ef41bd3c28fde436c86c31e6959949a3e0f6a",
+     "parent": "1ca803dd5545e97bcacd9821df668eca1b0d3f83",
+     "subject": "ci: add node.js 24 to test matrix (#6504)",
+     "answer": [
+      ".github/workflows/ci.yml"
+     ]
+    },
+    {
+     "commit": "89f198c6a50ab0cb65b741767791dd1b647e3b2c",
+     "parent": "d9a62f983390da932c4f2e21e67a55fa33c164f4",
+     "subject": "lib: use req.socket over deprecated req.connection (#6705)",
+     "answer": [
+      "lib/request.js",
+      "test/req.protocol.js"
+     ]
+    },
+    {
+     "commit": "0b243b1aee0d8774f2b97da2e8ac4340adaed1b3",
+     "parent": "09831580ec64c2b53d712dfbf47a47a5790aa560",
+     "subject": "5.x: Upgrading `merge-descriptors` with allowing minors (#5782)",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "d0421ac7e1f897e15a2f7a9328e9bfd938b95a9f",
+     "parent": "dc538f6e810bd462c98ee7e6aae24c64d4b1da93",
+     "subject": "tests: use supertest to perform assertions",
+     "answer": [
+      "test/app.router.js",
+      "test/res.cookie.js",
+      "test/res.locals.js"
+     ]
+    },
+    {
+     "commit": "1150ca7264fe868a7685302987edb5bb564b0faf",
+     "parent": "4aea02310ad7738fb1b3bac08de5424d82bfe4c6",
+     "subject": "Fix incorrect deprecation warnings on res.download",
+     "answer": [
+      "lib/response.js"
+     ]
+    },
+    {
+     "commit": "04da4aaf1a484e81856fc4713340300e4d84d573",
+     "parent": "2e2d78c4d99829250018c6e4d20f3c6377a90683",
+     "subject": "build: use supertest@3.4.2 for Node.js 6.x",
+     "answer": [
+      ".github/workflows/ci.yml",
+      "appveyor.yml"
+     ]
+    },
+    {
+     "commit": "14a58759c3955d4129990b14ff7f6f621d446855",
+     "parent": "dbc61fc19186b693329895c6be51f32d262da6ea",
+     "subject": "Fix ECONNRESET errors from res.sendFile usage",
+     "answer": [
+      "lib/response.js"
+     ]
+    },
+    {
+     "commit": "97f0a518d8d697e310abf293a71383cf9d04d749",
+     "parent": "7ec5dd2b3c5e7379f68086dae72859f5573c8b9b",
+     "subject": "tests: verify all handlers called in stack tests",
+     "answer": [
+      "test/Router.js"
+     ]
+    },
+    {
+     "commit": "c35284ee7afddb267da747b8c1d66de71982c026",
+     "parent": "023767fe9872e029271df1418f73401bff20ff40",
+     "subject": "chore: group github actions updates (#7460)",
+     "answer": [
+      ".github/dependabot.yml"
+     ]
+    },
+    {
+     "commit": "8da51108e7bb501344c537d3f1f846a7477ae329",
+     "parent": "6bcdfef6ad148672872e4f5930a01a5a45dd9df0",
+     "subject": "Improve error message for null/undefined to res.status",
+     "answer": [
+      "lib/response.js",
+      "test/res.status.js"
+     ]
+    },
+    {
+     "commit": "21cf522dcd94ac2af6898ca81df02b373362bf24",
+     "parent": "a24f27aba7e61ed5a22ba37ab4260fba1b2151f5",
+     "subject": "examples: improve 404 message wording",
+     "answer": [
+      "examples/web-service/index.js",
+      "test/acceptance/web-service.js"
+     ]
+    },
+    {
+     "commit": "7511d083283529f865ade6fedac08716f0efde05",
+     "parent": "2585f209f98f91da68739bdb33b599df45b3a6e6",
+     "subject": "build: use minimatch@3.0.4 for Node.js < 4",
+     "answer": [
+      ".github/workflows/ci.yml",
+      "appveyor.yml"
+     ]
+    },
+    {
+     "commit": "003459b795b3ab2ae97c2131585b0560c1d35716",
+     "parent": "6295b4592014515e137c17e854f83d1c0274198a",
+     "subject": "build: support Node.js 9.x",
+     "answer": [
+      ".travis.yml",
+      "appveyor.yml"
+     ]
+    },
+    {
+     "commit": "9f019c8c6966736803a65eb4a96d0e7e87e85ede",
+     "parent": "cf37240e7306c5085f3d2a232a4649279d020667",
+     "subject": "examples: add comment about Redis install in examples",
+     "answer": [
+      "examples/online/index.js",
+      "examples/search/index.js",
+      "examples/session/index.js"
+     ]
+    },
+    {
+     "commit": "ee40a881f5d8cb4ce71bc45262fde8e4b7640d05",
+     "parent": "26801a0afdd73258ee3c3685e30d5d4040c1558d",
+     "subject": "call callback once on listen error",
+     "answer": [
+      "lib/application.js",
+      "package.json",
+      "test/app.listen.js"
+     ]
+    },
+    {
+     "commit": "71395f59337e8d5b5b3d4c9652a9332a9432af26",
+     "parent": "e3bd14dcca6128afc8ba7f11a4f7e2b34923d66e",
+     "subject": "Remove res.redirect(url, status) signature",
+     "answer": [
+      "lib/response.js",
+      "test/res.redirect.js"
+     ]
+    },
+    {
+     "commit": "54271f69b511fea198471e6ff3400ab805d6b553",
+     "parent": "125bb742a38cd97938a3932b47cc301e41c31f5d",
+     "subject": "fix: don't render redirect values in anchor href",
+     "answer": [
+      "lib/response.js",
+      "test/res.redirect.js"
+     ]
+    },
+    {
+     "commit": "e1057bd7fd485f3ae7f6529ded0353ec78d3bd7d",
+     "parent": "f22937f3d158e5fcb194ec201b1a72ff2d84776d",
+     "subject": "build: support Node.js 0.12",
+     "answer": [
+      ".travis.yml"
+     ]
+    },
+    {
+     "commit": "855176b633a60a4032d5b35f69183b098ccf5609",
+     "parent": "b95f2ee82067bdab2fa282556707fee4888b0620",
+     "subject": "tests: remove more mocking uses",
+     "answer": [
+      "test/req.fresh.js",
+      "test/req.stale.js",
+      "test/res.format.js",
+      "test/res.get.js",
+      "test/res.links.js",
+      "test/res.set.js",
+      "test/res.vary.js"
+     ]
+    },
+    {
+     "commit": "99a369f3d51bafcf0c09657250067249f19d04f5",
+     "parent": "a1dbb113779c45a10f56a910de1bc5f7e750eaea",
+     "subject": "Fix incorrect middleware execution with unanchored RegExps",
+     "answer": [
+      "lib/router/index.js",
+      "test/app.router.js"
+     ]
+    },
+    {
+     "commit": "9784321e89b7d32aaff481aa24a9e8cccef4b101",
+     "parent": "ee1ef41bd3c28fde436c86c31e6959949a3e0f6a",
+     "subject": "ci: update codeql config (#6488)",
+     "answer": [
+      ".github/workflows/codeql.yml"
+     ]
+    },
+    {
+     "commit": "e7a02f6a256a06b670fec65bc1460bc858c9e60e",
+     "parent": "68474059742afae6bbcf60dafaccfa7a648e1de0",
+     "subject": "build: move repository to expressjs",
+     "answer": [
+      "examples/view-constructor/index.js",
+      "examples/web-service/index.js",
+      "package.json",
+      "test/acceptance/web-service.js"
+     ]
+    },
+    {
+     "commit": "a57efea173240961cd038b2336f36183054d7d97",
+     "parent": "4a4ca7347a8ada0de14b83503c9e5c50d4fc97e8",
+     "subject": "Fix original URL parsing in res.location",
+     "answer": [
+      "lib/response.js"
+     ]
+    },
+    {
+     "commit": "09831580ec64c2b53d712dfbf47a47a5790aa560",
+     "parent": "41c054cff1e10f346feb39efe1f66660c0570aab",
+     "subject": "refactor: replace 'path-is-absolute' dep with node:path isAbsolute method (#5830)",
+     "answer": [
+      "lib/response.js",
+      "package.json"
+     ]
+    },
+    {
+     "commit": "f4bd86ed361ea9710ed0f7b4634e66c8e3b88b40",
+     "parent": "2ec589c1133e2eec29a951b4976c50db638f7dd5",
+     "subject": "Replace Appveyor windows testing with GHA (#5599)",
+     "answer": [
+      ".github/workflows/ci.yml",
+      "package.json"
+     ]
+    },
+    {
+     "commit": "21d52daafba1bc7247d6ecdcf30719a21ded4e42",
+     "parent": "a7d15f382e8e0fa4380d459fbe61bd363d059a11",
+     "subject": "Remove req.param()",
+     "answer": [
+      "lib/request.js"
+     ]
+    },
+    {
+     "commit": "256a3d152794e6166f204f80b4400d8acad0f947",
+     "parent": "4f952a953bab47e941ed70a358814ee64c031017",
+     "subject": "Remove unused `depd` dependency",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "99473c593a2de97ee82e5b0266ede4cdb682b68c",
+     "parent": "2d589b644a34c4e748fa650045e5827eaf65bf01",
+     "subject": "feat(deps): body-parser@^2.1.0 (#6332)",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "ddeb71301c98421e0c3cc9fd43e68fdc9b63a45a",
+     "parent": "715401478516c39ea9b2f855d4109d7d6e1131e0",
+     "subject": "tests: add maxAge option tests for res.sendFile",
+     "answer": [
+      "test/res.sendFile.js"
+     ]
+    },
+    {
+     "commit": "7a7f18c20bb5a0edd15092f743a269ce09e9422e",
+     "parent": "b766aad1125edacf7ea765880e68c0ed248e4216",
+     "subject": "build: misc. updates to packaging",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "b274047a5d38db1af0adc4e7ecba39a3a9f8f730",
+     "parent": "082d6d1253c590cb3c8920327c76e70328a1bd80",
+     "subject": "docs: update homepage link http to https (#5920)",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "3910323d09809f3b553af47ffd7b568d8dfd9fd6",
+     "parent": "98c85eb0dd64f23940f1ac5b43d74d0eac659248",
+     "subject": "chore: use node protocol for node builtin module (#6520)",
+     "answer": [
+      "lib/utils.js"
+     ]
+    },
+    {
+     "commit": "3b7e39fe74371ddabc77fed736dd22aa71c14f5c",
+     "parent": "98bd4cd96b250d25e1672c36f49cfc743bc801e7",
+     "subject": "deps: bump qs minimum to 6.16.0 (#7478)",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "f87abb34934c21926f0315162159e4acf7d7dae8",
+     "parent": "cd7d241a5d07eb8fa3df025e96759ee15800e661",
+     "subject": "Remove usage of res._headers private field",
+     "answer": [
+      "lib/request.js",
+      "test/req.fresh.js",
+      "test/req.stale.js"
+     ]
+    },
+    {
+     "commit": "23c22ce3fe2c298add7c06ac881ce0f17f73a6be",
+     "parent": "791cabf9390a029c5ad9b63eae8145c3c73f204e",
+     "subject": "build: support Node.js 5.x",
+     "answer": [
+      ".travis.yml",
+      "appveyor.yml"
+     ]
+    },
+    {
+     "commit": "ca480d7043827884a5fd49d6780c5ccd02aee64f",
+     "parent": "63ab25579bda70b4927a179b580a9c580b6c7ada",
+     "subject": "tests: improve res.download tests",
+     "answer": [
+      "test/res.download.js"
+     ]
+    },
+    {
+     "commit": "8fabed82aa636e10951b6a95f933b07217649e1e",
+     "parent": "f4120a645301366891775d1f03925449239a2cb7",
+     "subject": "Remove path-to-regexp dependency",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "668f545fd4f69cb27dccc6c2d7a21c1637e84933",
+     "parent": "7bc5f1af968175ddb492cc436a37fc53a8026175",
+     "subject": "Skip routing when req.url is not set",
+     "answer": [
+      "lib/router/index.js",
+      "test/Router.js"
+     ]
+    },
+    {
+     "commit": "de129c289dc17d3039c2655c050716b0eff9b0f5",
+     "parent": "e3f7f51f5f5475ca1ad091b1f8b7293f79467d29",
+     "subject": "tests: run mocha with --no-exit to detect hangs",
+     "answer": [
+      "package.json",
+      "test/middleware.basic.js",
+      "test/res.format.js",
+      "test/res.sendFile.js"
+     ]
+    },
+    {
+     "commit": "0bcdd88dd089c8da7f29e76e8f152a40ca0bcf69",
+     "parent": "60aacac1670f01857961fb7d765eb015efb0be5b",
+     "subject": "Add express.raw to parse bodies into Buffer",
+     "answer": [
+      "lib/express.js",
+      "test/exports.js"
+     ]
+    },
+    {
+     "commit": "9a3f7ff4120d7920a2d13809ff5ae78648c8a3d6",
+     "parent": "2cd372e34cd6613f4d00836c2ee122f28bddfcb3",
+     "subject": "Polish HTML structure of the response in the res.redirect() function (#5167)",
+     "answer": [
+      "lib/response.js",
+      "test/res.redirect.js"
+     ]
+    },
+    {
+     "commit": "caa4f68ee8d32474676fa29cc2086dcc1d62208b",
+     "parent": "6ed3439584b6bc77b0f1156f8797700df063fa63",
+     "subject": "feat: Extend res.links() to allow adding multiple links with the same rel (closes #2729) (#4885)",
+     "answer": [
+      "lib/response.js",
+      "test/res.links.js"
+     ]
+    },
+    {
+     "commit": "9a7afb2886247603ebd69a1c8ee5d2f29542a6c0",
+     "parent": "2eb42059f33d9be6ead3bb813d05aa975283d592",
+     "subject": "chore: remove history.md from being packaged on publish (#6780)",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "57d3dfd9f828c4529fa90dde4b3d216898181e99",
+     "parent": "eece3850bc5206c28bfac78c986fbe0c193b34b8",
+     "subject": "examples: merge the jade example into ejs",
+     "answer": [
+      "examples/ejs/index.js",
+      "examples/ejs/views/header.html"
+     ]
+    },
+    {
+     "commit": "2df1ad26a58bf51228d7600df0d62ed17a90ff71",
+     "parent": "12c37124689380837b24a7ed962432596237b440",
+     "subject": "Improve error messages when non-function provided as middleware",
+     "answer": [
+      "lib/application.js",
+      "lib/router/index.js",
+      "lib/router/route.js",
+      "test/Router.js",
+      "test/app.use.js"
+     ]
+    },
+    {
+     "commit": "4d1ee23f84de64a4f317384f61d1cd9925849107",
+     "parent": "0e5613363f3b136e5fa1c159520bdd6e7cd4db99",
+     "subject": "Use etag module to generate ETag headers",
+     "answer": [
+      "lib/utils.js",
+      "package.json",
+      "test/res.send.js",
+      "test/utils.js"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gin",
+   "sha": "0f09c3a9b4626d9fe9979cf4d0521d6ae32ab646",
+   "lang": "go",
+   "poolSize": 844,
+   "dropped": {
+    "no-indexable-modified-file": 278,
+    "bot-or-release-subject": 148,
+    "subject-names-a-path": 34,
+    "subject<3-words": 175,
+    "touches>20-files": 6,
+    "answer>8-files": 13,
+    "duplicate-subject": 2
+   },
+   "questions": [
+    {
+     "commit": "3d44ff82a1fe39b5991f292369eed0d6abf2a430",
+     "parent": "d6b2c13b18cc0986e579e100bc47f3704a0d3bcd",
+     "subject": "Make sure the debug log contains line breaks (#1650)",
+     "answer": [
+      "debug.go"
+     ]
+    },
+    {
+     "commit": "a9c5b36578be3bb817c3578d13de666b0d4c8549",
+     "parent": "e30123ad7314411664a693f23ed0ade498ccdaf0",
+     "subject": "docs: small changes (#4261)",
+     "answer": [
+      "gin.go"
+     ]
+    },
+    {
+     "commit": "202db4fb117768795c0fcc909cc9c3d75b9172b7",
+     "parent": "e5bb4f62a284426de199d68d71900fcbd1285691",
+     "subject": "improve utils code coverage (#1473)",
+     "answer": [
+      "utils_test.go"
+     ]
+    },
+    {
+     "commit": "2c9e5fe47ae55defc55dae30a0e63192e4538bc2",
+     "parent": "0128d74f340ed31065125a5ee6a481f2965c366d",
+     "subject": "rename variable because collide with the imported package name (#3298)",
+     "answer": [
+      "context_1.17_test.go",
+      "gin_test.go"
+     ]
+    },
+    {
+     "commit": "e207a3ce65323c3dda7cd8133fe14f4f1efd2500",
+     "parent": "62749f0db4aa5ee1045779b457fe1f28a553f467",
+     "subject": "Fix context.Copy() race condition (#1020)",
+     "answer": [
+      "context.go",
+      "context_test.go",
+      "githubapi_test.go"
+     ]
+    },
+    {
+     "commit": "7ec82ee8944579c533425bb6826bcb12b5860ecd",
+     "parent": "3d44ff82a1fe39b5991f292369eed0d6abf2a430",
+     "subject": "recovery: fix issue about syscall import on google app engine (#1640)",
+     "answer": [
+      "recovery.go",
+      "recovery_test.go"
+     ]
+    },
+    {
+     "commit": "38e4b1d2fe5b0890dd2f72def7d5852b4a25984f",
+     "parent": "0f80d5ddea481736904bc4bbf5e874379fc89ead",
+     "subject": "Support google appengine for IsTerminal func.",
+     "answer": [
+      "logger.go"
+     ]
+    },
+    {
+     "commit": "2fc2a3e7827d9033f00425eef78ec9f47d08ebf6",
+     "parent": "9abb909731f3158a82b9cb972a6fdc9b97c669ea",
+     "subject": "Rendering error throws a panic()",
+     "answer": [
+      "context.go"
+     ]
+    },
+    {
+     "commit": "f2cd3fcb2a9b4b108f5ce34a9f121ec13ac1cc16",
+     "parent": "c617b6241a1891081b3632ed89c1887dc4c353af",
+     "subject": "chore: fix typo and add a little anotation (#1562)",
+     "answer": [
+      "debug.go",
+      "routergroup.go"
+     ]
+    },
+    {
+     "commit": "8b9c55e8b059a1ffcc69e3b5dc0b9d583958811f",
+     "parent": "51aea73ba0f125f6cacc3b4b695efdf21d9c634f",
+     "subject": "fix(route): redirectSlash bug (#3227)",
+     "answer": [
+      "tree.go",
+      "tree_test.go"
+     ]
+    },
+    {
+     "commit": "8cb390f8fe847854adf21aca97561db9602d4ad8",
+     "parent": "7a374f9a47b150ad2ef601c3f83cf8e0bf026268",
+     "subject": "Yaml binding (#1618)",
+     "answer": [
+      "binding/binding.go",
+      "binding/binding_body_test.go",
+      "binding/binding_test.go",
+      "context.go",
+      "context_test.go"
+     ]
+    },
+    {
+     "commit": "0e4d8eaf07c2d72b548c5157197cbe2115dfb557",
+     "parent": "64e6a7654f134c18e1a21efa9ccd20c477c84f87",
+     "subject": "tree: remove duplicate assignment (#2222)",
+     "answer": [
+      "tree.go"
+     ]
+    },
+    {
+     "commit": "a331dc6a31473b7208c57ec32e14bfcec3062dbb",
+     "parent": "ed6f85c478ba00e5168be1f29ffcdc9a983568b8",
+     "subject": "chore: remove duplicate test 'assert.Equal' (#2617)",
+     "answer": [
+      "routes_test.go"
+     ]
+    },
+    {
+     "commit": "e868fd1d3d350d7186efcdf71f24f56d8e2b8408",
+     "parent": "297b664cf8bbb3b9434e473cf976c98f00528ff7",
+     "subject": "test(TOML): Add some tests for the TOML render (#3401)",
+     "answer": [
+      "render/render_test.go"
+     ]
+    },
+    {
+     "commit": "c6110f970ca5af365283bd4083b8a105e974e92c",
+     "parent": "b7bb9baa642d2b9d5918a5bcd3829dae64c65257",
+     "subject": "Add PureJSON renderer (#694)",
+     "answer": [
+      "context_test.go",
+      "json/json.go",
+      "render/render_test.go"
+     ]
+    },
+    {
+     "commit": "6ebb945bd7ac10b0fec87299129b6d9603e1e4ab",
+     "parent": "9a575a4c05601954e0848ff8271238dd73485536",
+     "subject": "docs: release v1.7.3 (#2802)",
+     "answer": [
+      "version.go"
+     ]
+    },
+    {
+     "commit": "32065bbd4298d566d060d234e452bbf44e92161d",
+     "parent": "b987b6206f13a4c244739e4f4e6c6a2b7dfff9d3",
+     "subject": "chore(response): prevention of Hijack() runtime panics (#4295)",
+     "answer": [
+      "response_writer.go",
+      "response_writer_test.go"
+     ]
+    },
+    {
+     "commit": "98951c44aa637cbee2a17be00931395403bf8001",
+     "parent": "fcfe65685a7936dec782617b7319304f589dd732",
+     "subject": "Return 404 when listing empty directory",
+     "answer": [
+      "routergroup.go",
+      "routes_test.go"
+     ]
+    },
+    {
+     "commit": "3b5e861bb1c7f93424ab861dd779de168cb4c624",
+     "parent": "7742ff50e0a05d079a0c468ccfbf7c6ecfe2414b",
+     "subject": "fix compile error from #2572 (#2600)",
+     "answer": [
+      "internal/bytesconv/bytesconv.go"
+     ]
+    },
+    {
+     "commit": "bb3519d26f52835cf00e5e430b52651a9c378c97",
+     "parent": "82bcd6d39bfe9c22032764ff3b0b6f8ef1673e49",
+     "subject": "chore(IP): add TrustedPlatform constant for Fly.io. (#3839)",
+     "answer": [
+      "context_test.go",
+      "gin.go"
+     ]
+    },
+    {
+     "commit": "bd4f73af679e7d645f6d0277258fa360eda96f2d",
+     "parent": "2282be059be78f9f7f70a72ca4dd3bcfe5f972ee",
+     "subject": "support struct pointer (#1342)",
+     "answer": [
+      "binding/binding_test.go",
+      "binding/form_mapping.go"
+     ]
+    },
+    {
+     "commit": "c617b6241a1891081b3632ed89c1887dc4c353af",
+     "parent": "07f1bf0e63512fbf9c7d7984d235a399eb916244",
+     "subject": "chore: recover go master build, partial revert #1514 (#1561)",
+     "answer": [
+      ".travis.yml"
+     ]
+    },
+    {
+     "commit": "41f2669ebcc24dbbef7dcca705a4cd75b7c43f28",
+     "parent": "82e1c53cc0a3b0bdb7baab6b95d05a7ec796f7a2",
+     "subject": "console logger HTTP status bug fixed and the corresponding unit test added (#3453)",
+     "answer": [
+      "response_writer.go",
+      "response_writer_test.go"
+     ]
+    },
+    {
+     "commit": "9b7e7bdce6e073d47635d57fbacfb3205cb3127e",
+     "parent": "e2b4cf6e2dffb4e59f95f96b78e25e65f9037dec",
+     "subject": "Add tests for context.Stream (#1433)",
+     "answer": [
+      "context_test.go",
+      "test_helpers.go"
+     ]
+    },
+    {
+     "commit": "0d5dc25d39e49efc1ae5a0683562b159c76b184c",
+     "parent": "1228b03914ac7ec8f9ba8c17f599863b0e1883ea",
+     "subject": "Fixes unit test when running in Windows",
+     "answer": [
+      "routes_test.go"
+     ]
+    },
+    {
+     "commit": "ae3f524974fc4f55d18c9e7fae4614503c015226",
+     "parent": "38534e2bf98a06e1f62d6b24384e90b5f78699bf",
+     "subject": "ci: update Go version support to 1.25+ across CI and docs (#4550)",
+     "answer": [
+      ".github/workflows/gin.yml",
+      "debug.go",
+      "debug_test.go"
+     ]
+    },
+    {
+     "commit": "3b08cd7235bd5ad2f055aa9e38135f111f6c5926",
+     "parent": "d8f2d588d7573b3438cfc95b7a47f9ec8966273c",
+     "subject": "fix: reset skipped-nodes stack on getValue entry to prevent slice overflow panic [#4818] (#4819)",
+     "answer": [
+      "routes_test.go",
+      "tree.go"
+     ]
+    },
+    {
+     "commit": "0cbb30aa940a643e31874f8ad8e355219d306756",
+     "parent": "b5ca9898757b45bbdcc1464b73a12f3ca552f94d",
+     "subject": "Update default validator's docs link (#2738)",
+     "answer": [
+      "binding/default_validator.go"
+     ]
+    },
+    {
+     "commit": "f3a6b69fd00d7dba9e7cdb726d3c0fc513259834",
+     "parent": "a46dee3a9af4edd9de1694e3ba3592b20c6a8968",
+     "subject": "Delete unused static const (#2830)",
+     "answer": [
+      "tree.go"
+     ]
+    },
+    {
+     "commit": "690aa2b1b9de7fe61dc15295210f64583dd3b90e",
+     "parent": "e3ee01d1850b018b24ac215a3bb8de3d79e2604b",
+     "subject": "feat(binding): support custom struct tag (#2720)",
+     "answer": [
+      "binding/form_mapping.go",
+      "binding/form_mapping_test.go"
+     ]
+    },
+    {
+     "commit": "49f45a542719df661bd71dd48f1595f0bc1ff6f7",
+     "parent": "0aeac86b05cd51c993304e7bcfc2e11cef025c83",
+     "subject": "docs: remove redundant comments (#3765)",
+     "answer": [
+      "gin.go"
+     ]
+    },
+    {
+     "commit": "865fd560fc2f549cabb73452425dec22738c7b2d",
+     "parent": "be0d86edf49cd5984d727961cda85e8557835524",
+     "subject": "Update some comments, add function name prefix to comment (#3090)",
+     "answer": [
+      "gin.go",
+      "logger.go",
+      "response_writer.go"
+     ]
+    },
+    {
+     "commit": "b235d14ca18ddd0f00e010362ef71b695b213fd1",
+     "parent": "da5be64c9f1db8b3a3d7ffa9c566cd1ad521f626",
+     "subject": "compare the byte array",
+     "answer": [
+      "gin_integration_test.go"
+     ]
+    },
+    {
+     "commit": "500d745123124fa6a8f8ffcae80fc5290307b15a",
+     "parent": "195ea88a282de52802a6443d41b0be08a347fc95",
+     "subject": "PostForm() handles multipart post",
+     "answer": [
+      "context.go"
+     ]
+    },
+    {
+     "commit": "a816f9e9dbf820d7d01e8d363539da976fb8aa40",
+     "parent": "05547037e47317954d30d9858ef2015607483739",
+     "subject": "Remove redundant if err != nil check (#1202)",
+     "answer": [
+      "render/render_test.go"
+     ]
+    },
+    {
+     "commit": "31ac11a29891bf2d7c2da20054507f3fb5350a25",
+     "parent": "d535fcd59842094ea88307eafc48bc163c6a2f35",
+     "subject": "update comment method (#977)",
+     "answer": [
+      "auth.go"
+     ]
+    },
+    {
+     "commit": "f4dec22c5097ba3d7635363b0a8d59766cb8aae6",
+     "parent": "a47a8ca6e778dcdc2932107127df49447733c676",
+     "subject": "fix: buffer should reset when test logger output (#819)",
+     "answer": [
+      "logger_test.go"
+     ]
+    },
+    {
+     "commit": "62265c893c5bd4bb1ba295008809fcc5dbd1d28d",
+     "parent": "2bde107686759098e2d64273bc79d1a0216a4500",
+     "subject": "chore: support min version of go: 1.14 (#2964)",
+     "answer": [
+      ".github/workflows/gin.yml",
+      "debug.go",
+      "debug_test.go"
+     ]
+    },
+    {
+     "commit": "c1d06e3d08692f9eddde381a5e277b41fff5a297",
+     "parent": "bd82c9e351be91e9e8267e5ce011627dd6c55d51",
+     "subject": "add supprt for go1.20 http.rwUnwrapper to gin.responseWriter (#3489)",
+     "answer": [
+      "response_writer.go",
+      "response_writer_test.go"
+     ]
+    },
+    {
+     "commit": "3cb30679b5e3021db16c776ed7e70d380586e9ce",
+     "parent": "cc4e11438cd6c0bcc632fe3492d3817dfa21c337",
+     "subject": "feat(form): add array collection format in form binding (#3986)",
+     "answer": [
+      "binding/form_mapping.go",
+      "binding/form_mapping_test.go"
+     ]
+    },
+    {
+     "commit": "b985857899c60f029f73331b81ce281a25724f94",
+     "parent": "22ee916dfecdaabe7b541b7f76bdc8c64e99c145",
+     "subject": "update func comment (#981)",
+     "answer": [
+      "context.go",
+      "errors.go",
+      "fs.go",
+      "gin.go",
+      "response_writer.go",
+      "tree.go"
+     ]
+    },
+    {
+     "commit": "a28cc088b5e84cb00430f4b32f2b016725a9035a",
+     "parent": "fca3f95d7cdfdef203c78f220b84118f44590512",
+     "subject": "Revert \"Adding ppc64le architecture support on travis-ci (#2538)\" (#2602)",
+     "answer": [
+      ".travis.yml"
+     ]
+    },
+    {
+     "commit": "1bdf86b722026fd650fddfef7fe9bd8342b51b7a",
+     "parent": "e899771392ecf35de8ce10a030ed8fed2207e9cb",
+     "subject": "Remove the tedious named return value (#2620)",
+     "answer": [
+      "internal/bytesconv/bytesconv.go"
+     ]
+    },
+    {
+     "commit": "fa58bff301a823ce25af800614d3f016b10ae586",
+     "parent": "6296175f70e21bd1c09efc424a2c14574904720d",
+     "subject": "chore(dep): Changes minimum support go version to go1.16 (#3361)",
+     "answer": [
+      "debug.go",
+      "debug_test.go"
+     ]
+    },
+    {
+     "commit": "9914178584e42458ff7d23891463a880f58c9d86",
+     "parent": "915e4c90d28ec4cffc6eb146e208ab5a65eac772",
+     "subject": "fix(context): ClientIP handling for multiple X-Forwarded-For header values (#4472)",
+     "answer": [
+      "context.go",
+      "context_test.go"
+     ]
+    },
+    {
+     "commit": "e6288e90eb313122410bf1335d502a062c1ae610",
+     "parent": "7b1081a73fe4559697f4fb5a44261fbdc1d130b2",
+     "subject": "Change color methods in using defaultLogger function to public (#1771)",
+     "answer": [
+      "logger.go",
+      "logger_test.go"
+     ]
+    },
+    {
+     "commit": "beb879e4754af8d25b9f326c20d831e518ad645f",
+     "parent": "79840bc1c62d7d6104e2b1c5d39099f92f9f8d11",
+     "subject": "Change Writter to Writer. (#2079)",
+     "answer": [
+      "response_writer_test.go"
+     ]
+    },
+    {
+     "commit": "60f66918f8a68dc817665cc7a38ba380d00a297c",
+     "parent": "4c639a5049093fd87da09559bdd321a0b1bbf0e9",
+     "subject": "go-colorable does not work in app engine",
+     "answer": [
+      "mode.go"
+     ]
+    },
+    {
+     "commit": "8fb3136664254d7c592127f00d52849caba18a67",
+     "parent": "674522db91d637d179c16c372d87756ea26fa089",
+     "subject": "Revert \"fix(time): binding time with empty value (#4103)\" (#4245)",
+     "answer": [
+      "binding/form_mapping.go",
+      "binding/form_mapping_test.go"
+     ]
+    },
+    {
+     "commit": "4f339e6a35b163d31b30916b37f4176d385f41bd",
+     "parent": "36b0dede4b8c4a67d92c4107cebc5a068364321d",
+     "subject": "fix(context): YAML judgment logic in Negotiate (#3966)",
+     "answer": [
+      "context.go",
+      "context_test.go"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "vite",
+   "sha": "c2c9ef4dcd05b3e4d88844ea3a13dc23819ca2a5",
+   "lang": "typescript",
+   "poolSize": 869,
+   "dropped": {
+    "touches>20-files": 74,
+    "bot-or-release-subject": 271,
+    "no-indexable-modified-file": 229,
+    "answer>8-files": 35,
+    "subject-names-a-path": 7,
+    "subject<3-words": 8,
+    "duplicate-subject": 7
+   },
+   "questions": [
+    {
+     "commit": "ef02435114c57d0422028f0e6987f3df8db72969",
+     "parent": "d62b3360ecebdf11c23e99ffeb4b32e77c9a2ec8",
+     "subject": "docs(build): fix incomplete `@default` for build.minify (#23177)",
+     "answer": [
+      "packages/vite/src/node/build.ts"
+     ]
+    },
+    {
+     "commit": "41f3c6fff88ade015669cac5c42db946e0b6f5c9",
+     "parent": "57f0bf51a08dec0ec507258434cead9b72718e3f",
+     "subject": "fix(utils): match timestamp query parameter with proper delimiters (#23364)",
+     "answer": [
+      "packages/vite/src/node/__tests__/utils.spec.ts",
+      "packages/vite/src/node/utils.ts"
+     ]
+    },
+    {
+     "commit": "bfdb22754f792e8f7e40b125659d79ab590d8a7b",
+     "parent": "cd810de10e32c670f0af5036b1ca6aca6c91cbd6",
+     "subject": "docs: update development tools list (#23363)",
+     "answer": [
+      "docs/_data/acknowledgements.data.ts"
+     ]
+    },
+    {
+     "commit": "e959aa017aabc0a1e5a401a43ada19579fea49d7",
+     "parent": "575c32c29925c554f4ef4068738ab89c6878f615",
+     "subject": "docs: update Evan's description (#22897)",
+     "answer": [
+      "docs/_data/team.js"
+     ]
+    },
+    {
+     "commit": "e899bc7c73a27cdf327875e5d696c50d396a7fc2",
+     "parent": "d52cf887fddcfe9e19b02d20de302fae4bbffd1f",
+     "subject": "test: add sourcemap visualizer link to worker-iife tests (#20661)",
+     "answer": [
+      "playground/test-utils.ts",
+      "playground/vitestSetup.ts",
+      "playground/worker/__tests__/iife/worker-iife.spec.ts"
+     ]
+    },
+    {
+     "commit": "4f9d2f4dadc83191200de7d2154c957a711e8c3d",
+     "parent": "7bdad37a4a772936d24e0116ac32a1f09fd8a055",
+     "subject": "fix(css): keep newline-separated srcset candidates intact (#23265)",
+     "answer": [
+      "packages/vite/src/node/__tests__/utils.spec.ts",
+      "packages/vite/src/node/utils.ts"
+     ]
+    },
+    {
+     "commit": "793cf716df2e38995012c0cdd68c651b4fd881c2",
+     "parent": "70a9530c82565adc9faf32d5c667b14ecfd4a464",
+     "subject": "feat: enable native resolver by default (#346)",
+     "answer": [
+      ".github/workflows/ci.yml",
+      "packages/vite/src/node/config.ts"
+     ]
+    },
+    {
+     "commit": "ef411cee2696af3ba791879fdae9aad165f178b2",
+     "parent": "b4a124b2c7950216eada6284138a00e1610f3923",
+     "subject": "build: remove cjs reference in files field (#20945)",
+     "answer": [
+      "packages/vite/package.json"
+     ]
+    },
+    {
+     "commit": "924997a4bdda9115faee9bdb622fcec4fc8357f0",
+     "parent": "8156684572bdcf73e9d8568ed67971f0467fab60",
+     "subject": "feat(worker): remove worker chunk if it's detected that it's not referenced (#22473)",
+     "answer": [
+      "packages/vite/src/node/plugins/worker.ts",
+      "packages/vite/src/node/plugins/workerImportMetaUrl.ts",
+      "playground/worker/__tests__/es/worker-es.spec.ts",
+      "playground/worker/worker/main-module.js"
+     ]
+    },
+    {
+     "commit": "b2e75aabe93e3219f40fa5ad8755d53cdd2439b5",
+     "parent": "a4e798008ddb95da73746c07c909f5813943a582",
+     "subject": "feat: add `ignoreOutdatedRequests` option to `optimizeDeps` (#21364)",
+     "answer": [
+      "packages/vite/src/node/config.ts",
+      "packages/vite/src/node/optimizer/index.ts",
+      "packages/vite/src/node/plugins/optimizedDeps.ts"
+     ]
+    },
+    {
+     "commit": "8a245726944ed29225920d49be77c33c6e03afc8",
+     "parent": "8c2a87d41fb24536e59643351758084cde4d0dd7",
+     "subject": "feat(config): include column in config incompatibility location (#23064)",
+     "answer": [
+      "packages/vite/src/node/__tests__/config.spec.ts",
+      "packages/vite/src/node/nativeConfigCompat.ts"
+     ]
+    },
+    {
+     "commit": "02e13689165628a12d101ccb43cdeb3ee2aafd5e",
+     "parent": "fb0f2743d8a24b325192f8cf0249fb68f31b3a77",
+     "subject": "docs: enable cleanUrls (#21072)",
+     "answer": [
+      "docs/.vitepress/config.ts"
+     ]
+    },
+    {
+     "commit": "4a261f242831bef92afd2f1aacfb81eab9dec371",
+     "parent": "d9b10a98db1c293ee64300bd75d568b44c8ae931",
+     "subject": "test(module-runner): add TLA circular import case (#23299)",
+     "answer": [
+      "packages/vite/src/node/ssr/runtime/__tests__/server-runtime.spec.ts"
+     ]
+    },
+    {
+     "commit": "242b3215bee94c7109c48caf5900edaa806800dc",
+     "parent": "f4908e4ef327aaadd3b3fdd157522aa1f8ef8d6b",
+     "subject": "feat: update rolldown (#502)",
+     "answer": [
+      "package.json",
+      "packages/vite/package.json",
+      "packages/vite/src/node/config.ts",
+      "packages/vite/src/node/index.ts",
+      "packages/vite/src/node/optimizer/index.ts",
+      "playground/package.json"
+     ]
+    },
+    {
+     "commit": "e38f29ee48bea5ea3178faec5b78708e86f38afb",
+     "parent": "4366ac468343252df6d5706361a6348afa66f9cc",
+     "subject": "feat: use `import.meta.ROLLDOWN_FILE_URL_*` for other plugins (#22894)",
+     "answer": [
+      "packages/vite/src/node/plugins/asset.ts",
+      "packages/vite/src/node/plugins/assetImportMetaUrl.ts",
+      "packages/vite/src/node/plugins/css.ts",
+      "packages/vite/src/node/plugins/wasm.ts",
+      "packages/vite/src/node/plugins/worker.ts",
+      "packages/vite/src/node/plugins/workerImportMetaUrl.ts",
+      "playground/worker/__tests__/relative-base/worker-relative-base.spec.ts"
+     ]
+    },
+    {
+     "commit": "1958eeb34f9eab93f106b785c1c2ddf97b5c3b3a",
+     "parent": "8546520927de03dc4f868db5a1cec39a1826f3d0",
+     "subject": "fix(dev): disable extglobs for consistency (#21745)",
+     "answer": [
+      "packages/vite/src/node/plugins/importMetaGlob.ts",
+      "playground/glob-import/__tests__/glob-import.spec.ts",
+      "playground/glob-import/dir/index.js"
+     ]
+    },
+    {
+     "commit": "cc50822161f43ac60b932f2b4f63129bdb5590dc",
+     "parent": "6e88f40b7b093ed780f0f8da70b763baa2574894",
+     "subject": "feat(legacy)!: bump modern browser threshold to `import.meta.resolve` support (#21662)",
+     "answer": [
+      "packages/plugin-legacy/src/index.ts",
+      "packages/plugin-legacy/src/snippets.ts"
+     ]
+    },
+    {
+     "commit": "f42b908961f7ed9bc3e8ae1cd68c48b23bf70458",
+     "parent": "e006b0374e4cd20a605f732e10adb45bee8673db",
+     "subject": "ci: run issue template check workflow for any issues (#21927)",
+     "answer": [
+      ".github/workflows/issue-template-check.yml"
+     ]
+    },
+    {
+     "commit": "bf3b1f6cfdc1ddccad21cd1ae8c3904a4eef712d",
+     "parent": "105abe87c412cf0f83859ba41fed869221cbb3e0",
+     "subject": "chore: ensure `@vitejs/` scope for private packages names (#20801)",
+     "answer": [
+      "docs/package.json",
+      "package.json",
+      "playground/css/pkg-dep/package.json",
+      "playground/css/postcss-caching/blue-app/package.json",
+      "playground/css/postcss-caching/green-app/package.json",
+      "playground/ssr-deps/nested-external-cjs/package.json"
+     ]
+    },
+    {
+     "commit": "76e8082c56a2872dc8017c5672bc36cba8dcf75d",
+     "parent": "8b3b4894afd98a8807ef985b601410d40b795d79",
+     "subject": "fix(deps): update rolldown-related dependencies (#23338)",
+     "answer": [
+      "docs/package.json",
+      "package.json",
+      "packages/vite/package.json",
+      "playground/js-sourcemap/package.json",
+      "playground/package.json"
+     ]
+    },
+    {
+     "commit": "6864c2727a19270339b9693b8abdd4c26c92d1c3",
+     "parent": "33e74e5ad29342668ebc20c48e5ac2214d3ac8d2",
+     "subject": "fix(deps): update `@clack/prompts` to 1.0.0-alpha.9 (#21421)",
+     "answer": [
+      "packages/create-vite/package.json",
+      "packages/create-vite/src/index.ts"
+     ]
+    },
+    {
+     "commit": "a7e2da8cdb306cfdf1660aa4b1fe24873a8dd873",
+     "parent": "d64a1a5557b3caea9469e70b647ff2c9d9def809",
+     "subject": "feat: track dependencies when loading config with native (#22602)",
+     "answer": [
+      "packages/vite/package.json",
+      "packages/vite/src/node/config.ts"
+     ]
+    },
+    {
+     "commit": "af7cdf6964f124f58d66037e808fe687654948e2",
+     "parent": "1544bb1b7ac92f775e9d0dea97954c99cc6cbd43",
+     "subject": "refactor: replace `find` with `some` (#23554)",
+     "answer": [
+      "packages/vite/src/node/plugins/preAlias.ts"
+     ]
+    },
+    {
+     "commit": "4a472418c02a0821900678778752c2d361bae3bd",
+     "parent": "e1d53be297b0e82eed6b138d75583ba0367c1f99",
+     "subject": "fix(worker): handle `new Worker(..., new URL(import.meta.url))` with trailing comma (#21325)",
+     "answer": [
+      "packages/vite/src/node/__tests__/plugins/workerImportMetaUrl.spec.ts",
+      "packages/vite/src/node/plugins/workerImportMetaUrl.ts"
+     ]
+    },
+    {
+     "commit": "5d8711737a1109c8c86050d9120798ab921828e6",
+     "parent": "29e98dc3efe35efbd978523367c05db7d2e7a278",
+     "subject": "ci: prevent running ecosystem-ci on commits after the trigger comments",
+     "answer": [
+      ".github/workflows/ecosystem-ci-trigger.yml"
+     ]
+    },
+    {
+     "commit": "8abf700eeb2411d8402d08f8e2696effafdbe774",
+     "parent": "ef0dc17ada53d1169ae5a89cb8f6482831466755",
+     "subject": "perf(proxy): pre-compile context matchers at server creation (#23263)",
+     "answer": [
+      "packages/vite/src/node/server/middlewares/proxy.ts"
+     ]
+    },
+    {
+     "commit": "2603932b9e6bb4b9e1f9a1f070111e14eeff846c",
+     "parent": "b37507af18b6e9e81f13226fb92981d1c5e7a8b4",
+     "subject": "fix: respect `rollupOptions.platform` options (#361)",
+     "answer": [
+      "packages/vite/src/node/__tests__/config.spec.ts",
+      "packages/vite/src/node/build.ts"
+     ]
+    },
+    {
+     "commit": "2c8db858d7081e898f63ce9569c3f19a91a10956",
+     "parent": "ef3d59648fd9dd3f9b3118d09d216dc0afcb8c33",
+     "subject": "feat: update rolldown to 1.0.0-beta.55 (#21300)",
+     "answer": [
+      "docs/package.json",
+      "package.json",
+      "packages/vite/package.json",
+      "packages/vite/src/node/server/environments/fullBundleEnvironment.ts",
+      "playground/package.json"
+     ]
+    },
+    {
+     "commit": "e205e30ae8cdc4155d605acaec2f9a7c6ad72364",
+     "parent": "201293095cf0771e17770f0a7f0cbc360efd1bb0",
+     "subject": "chore: update Code of Conduct link in issue templates (#22679)",
+     "answer": [
+      ".github/ISSUE_TEMPLATE/bug_report.yml",
+      ".github/ISSUE_TEMPLATE/feature_request.yml"
+     ]
+    },
+    {
+     "commit": "4c4583ce7a13306e0853901570c5d95517fe81da",
+     "parent": "fe68ab3f6135645f7ee424554ce367a23c125211",
+     "subject": "fix(build): fix ssr environment `emitAssets: true` when `sharedConfigBuild: true` (#20787)",
+     "answer": [
+      "packages/vite/src/node/__tests__/build.spec.ts",
+      "packages/vite/src/node/config.ts"
+     ]
+    },
+    {
+     "commit": "b675c7b6697423275ad9dd521d3ce7c8679761a0",
+     "parent": "66b9eb35188007e0e9a1bd03b4be820016cad60b",
+     "subject": "fix: refer to `rolldownOptions` instead of deprecated `rollupOptions` in messages (#22400)",
+     "answer": [
+      "packages/vite/src/node/__tests__/build.spec.ts",
+      "packages/vite/src/node/build.ts",
+      "packages/vite/src/node/config.ts",
+      "packages/vite/src/node/optimizer/index.ts",
+      "packages/vite/src/node/optimizer/scan.ts"
+     ]
+    },
+    {
+     "commit": "4bfe8bb0344a21d25134d8db06f3a8ae4a8ad69d",
+     "parent": "378ace2e33e8a8e86343f6030dbbdfcde9d36acc",
+     "subject": "test: return empty object for `browser: false` mapped modules (#22842)",
+     "answer": [
+      "playground/resolve/__tests__/resolve.spec.ts",
+      "playground/resolve/index.html"
+     ]
+    },
+    {
+     "commit": "47c4213f134f562c41ed7c031e4788510cf7e31e",
+     "parent": "5c8e98f8b584ac5d42f0f9b8580c49792213b13c",
+     "subject": "fix(dev): fix html-proxy cache key mismatch for /@fs/ HTML paths (#21762)",
+     "answer": [
+      "packages/vite/src/node/server/middlewares/indexHtml.ts"
+     ]
+    },
+    {
+     "commit": "826b394e0efd033d2fe88126fe9a28da9573bd8f",
+     "parent": "aa938149337f5232011f203bfe55c741fbaddd6c",
+     "subject": "fix(deps): update `launch-editor-middleware` (#20569)",
+     "answer": [
+      "packages/vite/package.json"
+     ]
+    },
+    {
+     "commit": "a2594ec5e6206310c6d1c8001a02ecb41cdc4b9c",
+     "parent": "368b93c7ceae88d31db4e09b52ad6e9aa99f4ae1",
+     "subject": "fix(legacy): use remove conditions for normal Vite",
+     "answer": [
+      "packages/plugin-legacy/src/index.ts"
+     ]
+    },
+    {
+     "commit": "8099582e5364f907f2bc6cb8e2d52ae0c4d937e4",
+     "parent": "63244e89f299b81462f855a5fcc808c028158d43",
+     "subject": "refactor: remove unnecessary `minify` parameter from `finalizeCss` (#20701)",
+     "answer": [
+      "packages/vite/src/node/plugins/css.ts"
+     ]
+    },
+    {
+     "commit": "f3d31499c714fe5c5acf8355520624c662f9d79f",
+     "parent": "9fcde3c870896a62fbca19be8ee14efab9393f4a",
+     "subject": "feat(bundled-dev): support worker in initial bundle (#21415)",
+     "answer": [
+      "packages/vite/src/node/plugins/asset.ts",
+      "packages/vite/src/node/plugins/worker.ts"
+     ]
+    },
+    {
+     "commit": "56f94c7c1c1a23188f3ac41925b3bd7e52240c2d",
+     "parent": "2c4159e516d63fd8f180b507fc2c561fbb3ee52e",
+     "subject": "feat: bump rolldown (#344)",
+     "answer": [
+      "packages/vite/package.json",
+      "packages/vite/src/node/__tests__/plugins/define.spec.ts",
+      "packages/vite/src/node/__tests__/plugins/oxc.spec.ts",
+      "packages/vite/src/node/server/pluginContainer.ts",
+      "playground/lib/__tests__/lib.spec.ts",
+      "playground/package.json"
+     ]
+    },
+    {
+     "commit": "f479cc57c425ed41ceb434fecebd63931b1ed4ed",
+     "parent": "5adbc530666531a3dd0ba7e9f64831e74eca78fa",
+     "subject": "fix(dev): trim trailing slash before `server.fs.deny` check (#20968)",
+     "answer": [
+      "packages/vite/src/node/server/middlewares/static.ts",
+      "playground/fs-serve/__tests__/fs-serve.spec.ts"
+     ]
+    },
+    {
+     "commit": "b40292ce6a7dbbbbac9c6dae5f126b7f44c3e1b7",
+     "parent": "f9d92130fa79c638f77a3a8e6e55506f185d5a49",
+     "subject": "refactor: enable some native plugins even with enable native plugin false (#21511)",
+     "answer": [
+      "packages/vite/src/node/plugins/index.ts",
+      "packages/vite/src/node/plugins/json.ts",
+      "packages/vite/src/node/plugins/modulePreloadPolyfill.ts",
+      "packages/vite/src/node/plugins/wasm.ts"
+     ]
+    },
+    {
+     "commit": "ad72fc3ec6d5eac24b21c0413566b9eb1551aabd",
+     "parent": "6c702ccd0b7571079d1a3f3255bf90b37d2da0c4",
+     "subject": "fix: enable minify other than codegen for ES lib mode",
+     "answer": [
+      "packages/vite/src/node/build.ts"
+     ]
+    },
+    {
+     "commit": "8b9f5cd9f19f6002e1323b10155ab943219e86aa",
+     "parent": "a2fff212d9ec6838c2b046e5bcc900d4334df3ff",
+     "subject": "fix(optimizer): skip null-valued exports in expandGlobIds glob resolution (#22611)",
+     "answer": [
+      "packages/vite/src/node/optimizer/resolve.ts"
+     ]
+    },
+    {
+     "commit": "a2df77812814b927880bc4d68aafa8c8fa47daf0",
+     "parent": "246df134dd58441e1e40dd361cf42419d05ea7a5",
+     "subject": "refactor: use `fs.cpSync` (#21019)",
+     "answer": [
+      "packages/create-vite/src/index.ts",
+      "packages/vite/src/node/plugins/prepareOutDir.ts",
+      "packages/vite/src/node/utils.ts"
+     ]
+    },
+    {
+     "commit": "e373d7673230db638c9177c111a76544fb28bdf5",
+     "parent": "4406b5c117feb6990850ccb4c12300cf3c980e3c",
+     "subject": "feat: update rolldown (#467)",
+     "answer": [
+      "package.json",
+      "packages/vite/package.json",
+      "packages/vite/src/node/plugins/asset.ts",
+      "packages/vite/src/node/plugins/css.ts",
+      "packages/vite/src/node/plugins/manifest.ts",
+      "playground/backend-integration/__tests__/backend-integration.spec.ts",
+      "playground/package.json"
+     ]
+    },
+    {
+     "commit": "a5e98e695ee4152127977abb506029dc8f7544fb",
+     "parent": "2367195c5650af33750e3f238169143ce26d4b94",
+     "subject": "feat: add `perEnvironmentWatchChangeDuringDev` (#20996)",
+     "answer": [
+      "packages/vite/src/node/plugin.ts",
+      "packages/vite/src/node/server/index.ts",
+      "packages/vite/src/node/server/pluginContainer.ts"
+     ]
+    },
+    {
+     "commit": "68c5a82b633b28f1aad43e06ac369d8660bf23b0",
+     "parent": "acd2a13c2d80e8c5c721bcf9738dfc03346cbfe1",
+     "subject": "test(cli): use `stripVTControlCharacters` before matching strings (#20493)",
+     "answer": [
+      "playground/cli-module/__tests__/serve.ts",
+      "playground/cli/__tests__/serve.ts"
+     ]
+    },
+    {
+     "commit": "c6c04db9c67d1b390d40fd1fd026d49204957f8d",
+     "parent": "43358e97cd6485513f25ee11133333cba05841e3",
+     "subject": "fix(scanner): respect tsconfig.json (#21547)",
+     "answer": [
+      "packages/vite/src/node/optimizer/scan.ts",
+      "packages/vite/src/node/plugins/oxc.ts"
+     ]
+    },
+    {
+     "commit": "5e4b9ca3dcb24b51f58a765fd2d852614bbf3574",
+     "parent": "64e0a215c24f0522b27b91f93cfd93e317b94481",
+     "subject": "fix(optimize-deps): avoid \"unsupported\" warnings for browser:false mappings (#23590)",
+     "answer": [
+      "packages/vite/src/node/optimizer/rolldownDepPlugin.ts",
+      "playground/optimize-deps/__tests__/optimize-deps.spec.ts",
+      "playground/optimize-deps/index.html",
+      "playground/optimize-deps/package.json"
+     ]
+    },
+    {
+     "commit": "ca96cbc8eff23091c288f9eaf1944af2de3c564f",
+     "parent": "2c00fa9e14c512948e1991ae8f846d86e4193f18",
+     "subject": "fix(optimizer): map relative `new URL` paths to correct relative file location (#21434)",
+     "answer": [
+      "packages/vite/src/node/optimizer/rolldownDepPlugin.ts",
+      "playground/optimize-deps/__tests__/optimize-deps.spec.ts",
+      "playground/optimize-deps/index.html",
+      "playground/optimize-deps/package.json"
+     ]
+    },
+    {
+     "commit": "3ba026dade4af56df08815310d3458fa110f5c5c",
+     "parent": "02cffa9e2d38d5d8f12e4043ee9d0f7abb1471e2",
+     "subject": "fix(bundled-dev): handle lazy request error (#23291)",
+     "answer": [
+      "packages/vite/src/node/server/middlewares/triggerLazyBundling.ts",
+      "playground/hmr-full-bundle-mode/__tests__/hmr-full-bundle-mode.spec.ts"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "excalidraw",
+   "sha": "4c37956ba5f04ec342a9d9d5891a38f22c5b7b4e",
+   "lang": "typescript",
+   "poolSize": 1057,
+   "dropped": {
+    "answer>8-files": 119,
+    "touches>20-files": 136,
+    "no-indexable-modified-file": 92,
+    "bot-or-release-subject": 79,
+    "subject-names-a-path": 12,
+    "subject<3-words": 5
+   },
+   "questions": [
+    {
+     "commit": "f6f9ed03965a8910b641b63d9b749d20fdcb59d4",
+     "parent": "b1b325b9a7562b530eb143c0dea524ecdaccee4f",
+     "subject": "refactor: simplify `ImageExportDialog` (#6578)",
+     "answer": [
+      "src/components/App.tsx",
+      "src/components/ImageExportDialog.tsx",
+      "src/components/LayerUI.tsx",
+      "src/constants.ts",
+      "src/types.ts"
+     ]
+    },
+    {
+     "commit": "a9c5bdb8785be82273761070a270f82cebbe2d44",
+     "parent": "5a0334f37f354af0bd9562190f5210cfa8dd092c",
+     "subject": "fix: sort bound text elements to fix text duplication z-index error (#5130)",
+     "answer": [
+      "src/actions/actionDuplicateSelection.tsx",
+      "src/element/textElement.ts",
+      "src/excalidraw-app/collab/reconciliation.ts",
+      "src/tests/zindex.test.tsx",
+      "src/utils.ts"
+     ]
+    },
+    {
+     "commit": "ceb255e8ee158e38cbd57460696fb0b09b89a4cb",
+     "parent": "ae5b9a4ffdd34eca9f454a15833463e578289332",
+     "subject": "fix: exportToSvg to honor frameRendering also for name not only for frame itself (#7270)",
+     "answer": [
+      "src/scene/export.ts"
+     ]
+    },
+    {
+     "commit": "c1926f33bb5da4d4a5191a56b28753730c7b3d40",
+     "parent": "6539029d2af525c441210dc5c34ecea6dff1c533",
+     "subject": "fix: remove unused param from drawImagePlaceholder (#7991)",
+     "answer": [
+      "packages/excalidraw/renderer/renderElement.ts"
+     ]
+    },
+    {
+     "commit": "d7e63e66a78f513d5bdbb292b22863ad866a4651",
+     "parent": "b660478164a9137f6c48893f38671eedab22b83e",
+     "subject": "fix: rounded left and top clipped image export to SVG (#10387)",
+     "answer": [
+      "packages/excalidraw/renderer/staticSvgScene.ts"
+     ]
+    },
+    {
+     "commit": "ceb637f5eaa7fb01c2303079880545bb8fa69370",
+     "parent": "4c35eba72d13e8fab748d14c243c7c351c27357f",
+     "subject": "fix: elements being dropped/duplicated when added to frame (#7057)",
+     "answer": [
+      "src/frame.test.tsx",
+      "src/frame.ts"
+     ]
+    },
+    {
+     "commit": "9929a2be6f5881900a3a1042fef755d8fdc6d8bf",
+     "parent": "9cccac1458c8ff6b79452305cbbed7032522f18b",
+     "subject": "fix: double state update incorrectly resetting state (#5704)",
+     "answer": [
+      "src/components/App.tsx"
+     ]
+    },
+    {
+     "commit": "e4d8ba226f15836b4572fc3bae6a623e809cf08c",
+     "parent": "ec215362a1723ad9749e70aece84358add20ce94",
+     "subject": "feat: zigzag fill easter egg (#6439)",
+     "answer": [
+      "src/actions/actionProperties.tsx",
+      "src/components/ButtonIconSelect.tsx",
+      "src/components/icons.tsx",
+      "src/element/types.ts"
+     ]
+    },
+    {
+     "commit": "a80ac4c7485e37e8444a6afbce9c23c88fc7c535",
+     "parent": "9f76f8677baa1e95fc1af011e35f31f87631167b",
+     "subject": "ci: add bundle size limit action (#6783)",
+     "answer": [
+      "package.json",
+      "src/packages/excalidraw/package.json"
+     ]
+    },
+    {
+     "commit": "3b9ffd958615103ffd499566248ceb4db84cb530",
+     "parent": "b63689c23095d7a5fcea35a8d1e892f3ddacc1d0",
+     "subject": "fix: elbow arrows do not work within frames (issue: #8964) (#8969)",
+     "answer": [
+      "packages/excalidraw/element/binding.ts"
+     ]
+    },
+    {
+     "commit": "539505affd68fdb75b12e65fb5b22dcad7040c60",
+     "parent": "95d669390fde2550c42d46bd47b19440569fa538",
+     "subject": "fix: resize sometimes throwing on missing null-checks (#6013)",
+     "answer": [
+      "src/element/resizeElements.ts"
+     ]
+    },
+    {
+     "commit": "f8d5c2a1b69a8ebaebb6016a1de043ab3eb05557",
+     "parent": "23b24ea5c3985bee51ce36aaf017fa696286ef88",
+     "subject": "build: allow a range of major node versions (#7306)",
+     "answer": [
+      "package.json"
+     ]
+    },
+    {
+     "commit": "b3d5ba056771c0c2da26fd88e73b66486cc700c4",
+     "parent": "c79e892e558ca88de6623fd60517af7bb2086e77",
+     "subject": "fix: Linear element is not normalized (#9347)",
+     "answer": [
+      "packages/element/src/linearElementEditor.ts",
+      "packages/excalidraw/data/transform.test.ts",
+      "packages/excalidraw/data/transform.ts",
+      "packages/excalidraw/tests/linearElementEditor.test.tsx"
+     ]
+    },
+    {
+     "commit": "57ea4e61d163318edf0f71bec566439821ad7f1b",
+     "parent": "0808532b494cda95815d95a8a9a754a5106a4fc2",
+     "subject": "fix: mixing clientId & socketId in UserList (#7461)",
+     "answer": [
+      "excalidraw-app/collab/Collab.tsx",
+      "excalidraw-app/collab/Portal.tsx",
+      "excalidraw-app/data/index.ts",
+      "packages/excalidraw/actions/actionNavigate.tsx",
+      "packages/excalidraw/components/App.tsx",
+      "packages/excalidraw/components/LaserTool/LaserPathManager.ts",
+      "packages/excalidraw/components/UserList.tsx",
+      "packages/excalidraw/types.ts"
+     ]
+    },
+    {
+     "commit": "65f218b100a90b6b5b18c1f1865d443b8991aeb0",
+     "parent": "807b3c59f2eae4b152142a54b5044e4cc485e579",
+     "subject": "fix: excalidraw issue #9045 flowcharts: align attributes of new node (#9047)",
+     "answer": [
+      "packages/excalidraw/element/flowchart.ts"
+     ]
+    },
+    {
+     "commit": "3d8c12fba475bad8ebee4c238466c59f08a5458c",
+     "parent": "757dfeb6ad64c2c58db8ce356a54e3f440e433c4",
+     "subject": "fix(editor): do not conditionally disable midpoint snapping menu preference (#10906)",
+     "answer": [
+      "packages/excalidraw/components/main-menu/DefaultItems.tsx"
+     ]
+    },
+    {
+     "commit": "d9bbf1eda665f616f46f465f6122da22a850ef47",
+     "parent": "f79fb9aae280f1795bb322dcf6e470d88734b3f6",
+     "subject": "feat: Allow binding only via linear element ends (#7946)",
+     "answer": [
+      "packages/excalidraw/actions/actionFlip.ts",
+      "packages/excalidraw/components/App.tsx",
+      "packages/excalidraw/element/binding.ts",
+      "packages/excalidraw/tests/binding.test.tsx",
+      "packages/excalidraw/tests/history.test.tsx"
+     ]
+    },
+    {
+     "commit": "974b338b7e5fed5176cfd83b7a120b137751a1db",
+     "parent": "d2557474e2a9cfccd0a94ab950a2e763ab12823a",
+     "subject": "fix: Group selection (#11234)",
+     "answer": [
+      "packages/element/src/selection.ts",
+      "packages/excalidraw/tests/selection.test.tsx"
+     ]
+    },
+    {
+     "commit": "e63dd025c97f72101acdfa4f9c9acf3522a9d853",
+     "parent": "15e019706d70ee69dc691faf0430d776752ba5e1",
+     "subject": "fix: allow binding elbow arrows to frame children (#8309)",
+     "answer": [
+      "packages/excalidraw/element/binding.ts"
+     ]
+    },
+    {
+     "commit": "b7d7ccc929696cc17b4cc34452e4afd846d59f4f",
+     "parent": "f14ad61bd0108fc6adfa2f06b64d2c3d75cdb6a5",
+     "subject": "fix: env variable for text-to-diagram and use frozen lock file when install deps in excalidraw-app (#7409)",
+     "answer": [
+      "excalidraw-app/App.tsx",
+      "package.json"
+     ]
+    },
+    {
+     "commit": "b459e5cfd2ebc783a62a77ca719b0ef329c4457b",
+     "parent": "5facc0d6da5e4d388dffcb11029349e5be3d8900",
+     "subject": "fix: context menu does not work after after dragging on StatsDragInput (#8386)",
+     "answer": [
+      "packages/excalidraw/components/Stats/DragInput.tsx"
+     ]
+    },
+    {
+     "commit": "0642e72cfa2d9a71198200e52f37399384610ee3",
+     "parent": "28a9b1711dc0625b8ab5d643dc871810ee13642f",
+     "subject": "fix(editor): Arrows with text are rendered blurry in PNG export with larger scale (#11492)",
+     "answer": [
+      "packages/element/src/renderElement.ts"
+     ]
+    },
+    {
+     "commit": "e7cc2337eac70278ebc4aee830cf3cac91a75731",
+     "parent": "9eb89f9960ef549f659da1bc27052fe4b9d9e8a9",
+     "subject": "feat: add `onChange`, `onPointerDown`, `onPointerUp` api subs (#7154)",
+     "answer": [
+      "src/components/App.tsx",
+      "src/types.ts"
+     ]
+    },
+    {
+     "commit": "f5ab3e4e12e96c25fe2c3aff9990b6220937169b",
+     "parent": "361a9449bb53beaf8a36a0c15338b648aff1cf22",
+     "subject": "fix: remove dependency of t from clipboard and image (#7712)",
+     "answer": [
+      "excalidraw-app/collab/RoomDialog.tsx",
+      "excalidraw-app/share/ShareDialog.tsx",
+      "packages/excalidraw/actions/actionClipboard.tsx",
+      "packages/excalidraw/clipboard.ts",
+      "packages/excalidraw/components/ShareableLinkDialog.tsx",
+      "packages/excalidraw/data/index.ts",
+      "packages/excalidraw/element/image.ts",
+      "packages/excalidraw/locales/en.json"
+     ]
+    },
+    {
+     "commit": "2537b225ac53e12aee2f9866912de5053a6dc6ba",
+     "parent": "4ee48d2729ec23f299d4642d6beaa32838595708",
+     "subject": "fix: hide sidebar when `custom` tool active (#5179)",
+     "answer": [
+      "src/element/showSelectedShapeActions.ts"
+     ]
+    },
+    {
+     "commit": "b1311a407a636c87ee0ca326fd20599d0ce4ba9b",
+     "parent": "2a39d0b9a72b65679d213683cf4786d847a29dc6",
+     "subject": "fix: Revert add version tags to Docker build (#6540)",
+     "answer": [
+      ".github/workflows/publish-docker.yml"
+     ]
+    },
+    {
+     "commit": "afea0df1417b38030d1276a092f3908bfaeb896c",
+     "parent": "d2a508104e19446e9cc4b95f47e74f3c3775b08d",
+     "subject": "feat: renderer tweaks (#6698)",
+     "answer": [
+      "src/constants.ts",
+      "src/element/textWysiwyg.test.tsx",
+      "src/scene/Shape.ts",
+      "src/tests/queries/dom.ts"
+     ]
+    },
+    {
+     "commit": "b2a6a87b10f31babd1ee1a69b02a3f3f24ba492f",
+     "parent": "ab8b3537b386403f7a09288eb5925ce1aae5f21d",
+     "subject": "chore: Remove @tldraw/vec (#8762)",
+     "answer": [
+      "packages/excalidraw/package.json"
+     ]
+    },
+    {
+     "commit": "9ee0b8ffcbd3664a47748a93262860321a203821",
+     "parent": "16b86d7d1671f766580f3a45c79ecb465523cad1",
+     "subject": "Enhancement: grouped together Undo and Redo buttons on mobile (#9109)",
+     "answer": [
+      "packages/excalidraw/components/MobileMenu.tsx"
+     ]
+    },
+    {
+     "commit": "99d8bff1751b0bcfaacd1b0f32689df63ab42f86",
+     "parent": "30983d801a12b658d4f6b3ee4bd7471186291c78",
+     "subject": "fix: elements offset incorrectly when action-duplicated during drag (#9275)",
+     "answer": [
+      "packages/excalidraw/actions/actionDuplicateSelection.tsx",
+      "packages/excalidraw/element/dragElements.ts"
+     ]
+    },
+    {
+     "commit": "4a5c9e990ca2dca3106b7bbe674b21cf58acec7d",
+     "parent": "c09e170bdd50f9e08a82deba2c037043b8fce9e0",
+     "subject": "fix(editor): ensure font picker font names are not quoted (#11036)",
+     "answer": [
+      "packages/excalidraw/components/FontPicker/FontPickerList.tsx"
+     ]
+    },
+    {
+     "commit": "06c40006db969b10b77b6e80266311a555b4cdbe",
+     "parent": "91c7748c3d58a54444193695d3b7d3ced34434ad",
+     "subject": "fix: Elbow arrow routing issue with diamonds and ellipses (#10021)",
+     "answer": [
+      "packages/element/src/binding.ts"
+     ]
+    },
+    {
+     "commit": "938ce241ffeceb50c4fb32b09be1c16c2ce3a195",
+     "parent": "02286465079be6c6af646f41317fbc5178c8dc4d",
+     "subject": "feat: refetch errored/pending images on collab room init load (#5833)",
+     "answer": [
+      "src/excalidraw-app/collab/Collab.tsx",
+      "src/excalidraw-app/index.tsx"
+     ]
+    },
+    {
+     "commit": "ba8c09d529379f36c3f66648f00a023432556471",
+     "parent": "744b3e5d099002e552d5671d0e7b78cf7f62309f",
+     "subject": "fix: Incorrect point offsetting in LinearElementEditor.movePoints() (#8145)",
+     "answer": [
+      "packages/excalidraw/element/linearElementEditor.ts",
+      "packages/excalidraw/tests/linearElementEditor.test.tsx"
+     ]
+    },
+    {
+     "commit": "26d22965785e0b307efaa6dc3b7e9c65f1e84a6b",
+     "parent": "afb68a6467cf433e6738be297f69cd6bfe2ca57f",
+     "subject": "fix: fixed copy to clipboard button (#8426)",
+     "answer": [
+      "excalidraw-app/share/ShareDialog.tsx",
+      "packages/excalidraw/components/FilledButton.tsx",
+      "packages/excalidraw/components/ImageExportDialog.tsx",
+      "packages/excalidraw/components/ShareableLinkDialog.tsx",
+      "packages/excalidraw/components/Spinner.tsx",
+      "packages/excalidraw/locales/en.json"
+     ]
+    },
+    {
+     "commit": "59ec1c6cee2e8150f70fea13464af5715ee2b9b8",
+     "parent": "933c6a2237163ebf438bb1d9b387449d8e7e6216",
+     "subject": "fix: zen-mode exit button not working (#5682)",
+     "answer": [
+      "src/components/Actions.tsx",
+      "src/components/Footer.tsx"
+     ]
+    },
+    {
+     "commit": "5a0334f37f354af0bd9562190f5210cfa8dd092c",
+     "parent": "d8a4ca6911b79ac6a72fd934863dcc3aa9e8219e",
+     "subject": "fix: hide welcome screen on mobile once user interacts (#6185)",
+     "answer": [
+      "src/components/LayerUI.tsx",
+      "src/components/MobileMenu.tsx"
+     ]
+    },
+    {
+     "commit": "6ff56c36e3a19194d9990beaeab6bcac76fbbbc2",
+     "parent": "51ea184938d57637faa345de85028aa8a0930ed2",
+     "subject": "fix: add partial mocking (#8473)",
+     "answer": [
+      "packages/excalidraw/tests/flip.test.tsx",
+      "packages/utils/export.test.ts"
+     ]
+    },
+    {
+     "commit": "9b8de8a12ead14a31de18ab6f8ff4e6c392e4b0a",
+     "parent": "ea677d45819fa71919604e0d1d60c518045cd966",
+     "subject": "test: disable flaky test (#7213)",
+     "answer": [
+      "src/element/textWysiwyg.test.tsx"
+     ]
+    },
+    {
+     "commit": "269fbcc2f33fb30a3a9208ae5857c262e3d8be3d",
+     "parent": "d08179c2154fd8e0664c44a87e98614e07fd48f7",
+     "subject": "docs: remove dragging threshold when interacting with custom elements (#5240)",
+     "answer": [
+      "src/packages/excalidraw/example/App.js"
+     ]
+    },
+    {
+     "commit": "25bb6738ea8619021b27e072fa7707e1b6356c7b",
+     "parent": "9e52c30ce86d7f7e61ffdb5ecad2523e179f620e",
+     "subject": "feat: Add fitToContent and animate to scrollToContent (#6319)",
+     "answer": [
+      "src/actions/actionCanvas.tsx",
+      "src/components/App.tsx",
+      "src/data/restore.ts",
+      "src/utils.ts"
+     ]
+    },
+    {
+     "commit": "d33e42e3a1a955fa95c61310128dfe4ca2e5fdae",
+     "parent": "3b9ffd958615103ffd499566248ceb4db84cb530",
+     "subject": "feat: add crowfoot to arrowheads (#8942)",
+     "answer": [
+      "packages/excalidraw/actions/actionProperties.tsx",
+      "packages/excalidraw/components/IconPicker.tsx",
+      "packages/excalidraw/components/Stats/Collapsible.tsx",
+      "packages/excalidraw/components/icons.tsx",
+      "packages/excalidraw/element/bounds.ts",
+      "packages/excalidraw/element/types.ts",
+      "packages/excalidraw/locales/en.json",
+      "packages/excalidraw/scene/Shape.ts"
+     ]
+    },
+    {
+     "commit": "2db5bbcb29e263f4a5b2609b626d38d93d4758ee",
+     "parent": "0927431d0d9145589554a77f0d6d3fd7c3e7149e",
+     "subject": "fix: Unify binding update options for `updateBoundElements()` (#8832)",
+     "answer": [
+      "packages/excalidraw/components/App.tsx",
+      "packages/excalidraw/components/Stats/MultiDimension.tsx",
+      "packages/excalidraw/components/Stats/utils.ts",
+      "packages/excalidraw/element/binding.ts",
+      "packages/excalidraw/element/resizeElements.ts",
+      "packages/excalidraw/tests/cropElement.test.tsx",
+      "packages/excalidraw/tests/linearElementEditor.test.tsx",
+      "packages/excalidraw/tests/resize.test.tsx"
+     ]
+    },
+    {
+     "commit": "d4900e8f19307e2e8643a394cf50716435cff75c",
+     "parent": "caf2db934c9f64bdc7055b3f528953f3ba55ee2f",
+     "subject": "fix: Linear element complete button disabled (#8492)",
+     "answer": [
+      "packages/excalidraw/actions/actionFinalize.tsx"
+     ]
+    },
+    {
+     "commit": "adfd95be3394a2ea00088e9a8d609cd01cfefcf6",
+     "parent": "ceb255e8ee158e38cbd57460696fb0b09b89a4cb",
+     "subject": "build: support preact 🥳 (#7255)",
+     "answer": [
+      "src/packages/excalidraw/main.js",
+      "src/packages/excalidraw/package.json"
+     ]
+    },
+    {
+     "commit": "1da120e914e87ae2f308ff6eb41c365401e8f583",
+     "parent": "ab0255f21eb40b5408f3e9ed9725474108eda9e6",
+     "subject": "fix(editor): include custom tools in pointer capture (#11826)",
+     "answer": [
+      "packages/excalidraw/components/App.tsx",
+      "packages/excalidraw/tests/viewMode.test.tsx"
+     ]
+    },
+    {
+     "commit": "be4e127f6cca425fdc40ca9d95261add2ad03c92",
+     "parent": "ff0b4394b128958916420c78f44e908a9fd49fab",
+     "subject": "fix: Two finger panning is slow (#7849)",
+     "answer": [
+      "packages/excalidraw/components/App.tsx"
+     ]
+    },
+    {
+     "commit": "d25a7d365b951d84d7c031186ada2275943d4f08",
+     "parent": "e52c2cd0b63fcd8699084e4e8d4f3a4399679cac",
+     "subject": "feat: upgrade mermaid-to-excalidraw to v1.1.0 (#8226)",
+     "answer": [
+      "packages/excalidraw/components/App.tsx",
+      "packages/excalidraw/components/TTDDialog/common.ts",
+      "packages/excalidraw/package.json"
+     ]
+    },
+    {
+     "commit": "adcdbe2907ca6193f7728f914434eabb9fd1aff2",
+     "parent": "230d0edc44f60ba2a00953e02c24591f491affc9",
+     "subject": "fix: re-add Cascadia Code with ligatures (#8291)",
+     "answer": [
+      "packages/excalidraw/fonts/index.ts"
+     ]
+    },
+    {
+     "commit": "b46ca0192b4df0c12bd672205529ba6c6b16954b",
+     "parent": "72b7c937b1b9cd4d1155563f15ccbbac5c71f8dc",
+     "subject": "fix: addFiles clears the whole image cache when each file is added - regression from #8471 (#8490)",
+     "answer": [
+      "packages/excalidraw/components/App.tsx"
+     ]
+    }
+   ]
+  }
+ ]
+}

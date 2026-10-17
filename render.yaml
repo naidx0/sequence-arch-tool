@@ -1,0 +1,150 @@
+# Render Blueprint — Sequence hosted free tier
+# ---------------------------------------------------------------------------
+# Topology (3 resources):
+#   1. sequence-gateway  (Docker web service) — holds the funded OpenRouter key,
+#      enforces the global spend backstop. The ONLY place the funded key lives.
+#   2. sequence-app      (Node web service)   — the analyzer app + built web UI,
+#      OAuth sign-in, per-user metering; talks to the gateway for default-mode AI.
+#   3. sequence-db       (managed Postgres)   — provisioned for per-user usage.
+#
+# SECURITY: no real secret value appears in this file. Every real secret is
+# `sync: false` (entered by hand in the Render dashboard) or `generateValue`
+# (minted by Render). Do NOT commit keys here.
+#
+# BIND HOST: the app binds 127.0.0.1 by default; SEQUENCE_BIND_HOST=0.0.0.0
+# (set below on sequence-app) exposes it so Render can route to 0.0.0.0:$PORT.
+# A non-loopback bind MUST be paired with OAuth — the server warns if you bind
+# public without auth. Both OAuth providers are configured on this service.
+#
+# DATABASE_URL is wired via fromDatabase and consumed by the app: when set, the
+# app uses the Postgres per-user UsageStore (packages/analyzer/schema.sql); when
+# unset it falls back to the local file store.
+#
+# Remaining honest follow-ups (see docs/GO_LIVE.md): the gateway's FileSpendStore
+# spend counter is not durable on Render's ephemeral disk, and multi-user
+# workspace isolation is not yet hardened.
+# ---------------------------------------------------------------------------
+
+databases:
+  - name: sequence-db
+    plan: free
+    databaseName: sequence
+    user: sequence
+    region: oregon
+
+services:
+  # -------------------------------------------------------------------------
+  # 1) Gateway — Docker image built from packages/gateway/Dockerfile.
+  #    Reads PORT (default 8787) and binds all interfaces, so it is
+  #    Render-routable as-is. Health check hits GET /healthz.
+  # -------------------------------------------------------------------------
+  - type: web
+    name: sequence-gateway
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./packages/gateway/Dockerfile
+    dockerContext: ./packages/gateway
+    healthCheckPath: /healthz
+    envVars:
+      # Funded OpenRouter key — REAL SECRET. Paste in the dashboard after deploy.
+      - key: OPENROUTER_API_KEY
+        sync: false
+      # Caller allowlist token. Render mints it; the app copies this exact value
+      # via fromService (see sequence-app below), so the two always match.
+      - key: SEQUENCE_GATEWAY_TOKEN
+        generateValue: true
+      # Strict model allowlist — the funded key can only ever spend on this model.
+      - key: GATEWAY_ALLOWED_MODELS
+        value: deepseek/deepseek-chat
+      # Authoritative hard ceiling (USD) on the funded account.
+      - key: GLOBAL_SPEND_BACKSTOP_USD
+        value: "50"
+      # OPTIONAL, for OpenRouter attribution/leaderboards. Not secret; safe to set
+      # in the dashboard once the app URL is known. Left unset here on purpose.
+      # - key: OPENROUTER_HTTP_REFERER
+      #   sync: false
+      # - key: OPENROUTER_X_TITLE
+      #   value: Sequence
+      #
+      # DURABILITY follow-up: the gateway's spend counter is a file under
+      # GATEWAY_STATE_DIR (FileSpendStore) and is NOT durable across Render
+      # container replacement on the default ephemeral disk. To make the backstop
+      # survive restarts, attach a Render persistent disk and point the state dir
+      # at its mount, e.g.:
+      #   disk:
+      #     name: gateway-state
+      #     mountPath: /var/lib/sequence-gateway
+      #     sizeGB: 1
+      # - key: GATEWAY_STATE_DIR
+      #   value: /var/lib/sequence-gateway
+      # (A persistent disk requires a paid instance type on Render.)
+
+  # -------------------------------------------------------------------------
+  # 2) App — monorepo build (pnpm), serves the built web UI + JSON API.
+  #    Starts with no repo attached; users import a repo via GitHub from the UI.
+  # -------------------------------------------------------------------------
+  - type: web
+    name: sequence-app
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: corepack enable && corepack prepare pnpm@10.33.0 --activate && pnpm install --frozen-lockfile && pnpm build
+    # `serve` accepts --web / --port / --no-open (verified in cli.ts); the bind
+    # host comes from SEQUENCE_BIND_HOST (set to 0.0.0.0 below so Render can route).
+    #
+    # Serves the v2 app. `packages/web` was deleted on 2026-08-20 by the owner's
+    # ruling; web2 draws real nodes from a real scan (Wave 3, verified in Chromium
+    # against the built bundle). The rail and review surfaces are Waves 4 and 5, and
+    # render as honest "built in a later wave" panes rather than broken ones.
+    startCommand: node packages/analyzer/dist/cli.js serve --web packages/web2/dist --port $PORT --no-open
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Expose on all interfaces so Render routes to 0.0.0.0:$PORT (default is
+      # 127.0.0.1). Safe here because OAuth is configured; a public bind without
+      # auth triggers a server warning.
+      - key: SEQUENCE_BIND_HOST
+        value: "0.0.0.0"
+      # --- OAuth (Google) — REAL SECRETS, paste in dashboard ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # --- OAuth (GitHub) — REAL SECRETS, paste in dashboard ---
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      # Session cookie signing key — minted by Render, never entered by hand.
+      - key: SESSION_SECRET
+        generateValue: true
+      # The app's own public URL, used to build the OAuth callback URLs. Render
+      # cannot self-reference a service's external https URL via fromService
+      # (fromService yields host only, no scheme), so set this by hand in the
+      # dashboard to https://sequence-app.onrender.com (your actual app URL).
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # Gateway base URL for default-mode AI. provider.ts builds
+      # `${SEQUENCE_GATEWAY_URL}/v1/chat/completions`, so it needs a full https
+      # URL. Render's fromService can only supply the bare host (no scheme), so
+      # this is set by hand in the dashboard to https://sequence-gateway.onrender.com
+      - key: SEQUENCE_GATEWAY_URL
+        sync: false
+      # Caller token — COPIED from the gateway's generated value so they match
+      # automatically. This is the one piece of gateway wiring fromService does
+      # cleanly (same-value copy, not a URL).
+      - key: SEQUENCE_GATEWAY_TOKEN
+        fromService:
+          name: sequence-gateway
+          type: web
+          envVarKey: SEQUENCE_GATEWAY_TOKEN
+      # Postgres connection string, wired from the managed DB. When set, the app
+      # uses the Postgres per-user UsageStore (schema.sql); unset ⇒ file store.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sequence-db
+          property: connectionString
+      # SEQUENCE_ENABLE_TERMINAL is intentionally UNSET → the pipe terminal stays
+      # OFF on this shared bind (serveRepo defaults terminalEnabled=false unless
+      # this equals "1"). Do NOT set it to "1" on a shared/public deploy.

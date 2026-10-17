@@ -1,0 +1,6 @@
+{
+  "name": "t03-capitalize-empty",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

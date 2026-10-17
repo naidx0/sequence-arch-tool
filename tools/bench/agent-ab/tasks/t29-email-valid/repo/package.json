@@ -1,0 +1,6 @@
+{
+  "name": "t29-email-valid",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

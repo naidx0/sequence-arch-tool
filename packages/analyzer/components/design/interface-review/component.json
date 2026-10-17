@@ -1,0 +1,26 @@
+{
+  "id": "design/interface-review",
+  "group": "design",
+  "label": "Interface Review",
+  "summary": "Reviews a branch, pull request or uncommitted change for the interface problems it introduced or regressed, across accessibility,...",
+  "triggers": [
+    "review this branch ui",
+    "review the pull request interface",
+    "interface regressions",
+    "review ui changes",
+    "check a ui diff"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/interface-review"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/interface-review",
+  "externalRefs": [
+    "src/Dialog.tsx",
+    "src/Toolbar.tsx"
+  ]
+}

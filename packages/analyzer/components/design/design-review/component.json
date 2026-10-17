@@ -1,0 +1,20 @@
+{
+  "id": "design/design-review",
+  "group": "design",
+  "label": "Design Review",
+  "summary": "Design review skill by manish-uxai. Link only: no license is published, so install it from its source repo.",
+  "triggers": [
+    "design review",
+    "review this screen",
+    "ux critique",
+    "review the interface"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "manish-uxai/design-review",
+    "commit": "3ce7ff253e7dd3ad7009171dab56188c6565c7d0",
+    "path": null
+  },
+  "url": "https://github.com/manish-uxai/design-review"
+}

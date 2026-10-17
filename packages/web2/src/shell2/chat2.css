@@ -1,0 +1,1473 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE CHAT, uiarc.dev's (Decision 49) — BArc.dc.html .msgs, .user, .steps, .comp
+   packages/web2/src/shell2/chat2.css
+
+   Values are the artboard's; colours the Ramp Kit tokens through shell2.css's
+   B variables. The composer keeps the one backdrop blur the shell already had
+   (a small floating box over the transcript's end); nothing else here blurs.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the transcript: B's .msgs (gap 14, padding 18) ────────────────────── */
+.s2 .v3-transcript {
+  padding: 18px;
+  gap: 14px;
+}
+/* A scrolling column: nothing in it shrinks. A card with overflow hidden has
+   no min-content floor, so without this the changed-files card was squeezed to
+   2 px behind the composer (UX audit). */
+.s2 .v3-transcript > * {
+  flex-shrink: 0;
+}
+
+/* ── an answer's file and web links (codex cites files by absolute path) ── */
+.s2 .prose-path {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--b-acc);
+  cursor: pointer;
+  /* A button wearing the link look: no chrome, the path opens in Files. */
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--b-edge2);
+  text-underline-offset: 2px;
+}
+.s2 .v3-transcript .prose .prose-path .prose-tick {
+  color: var(--b-acc);
+}
+.s2 .prose-path:hover {
+  text-decoration-color: currentColor;
+}
+.s2 .prose-link {
+  color: var(--b-acc);
+  text-decoration: underline;
+  text-decoration-color: var(--b-edge2);
+  text-underline-offset: 2px;
+}
+
+/* ── a refused turn's notice, above the composer (B's card) ─────────────── */
+.s2-notice {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 12px 12px 12px 14px;
+}
+/* One card for everything that speaks under a reply or above the composer: the refused-turn notice, the ask
+   ledger's line, the repo-note card, the edit row and its undo bar. Their answers are .s2-btn.s2-btn-sm. */
+.s2-notice,
+.s2-note,
+.s2-asks-open,
+.s2-edit-from-row,
+.s2-edit-undo {
+  border-radius: 16px;
+  background: var(--b-s2);
+  border: 1px solid var(--b-edge2);
+  box-shadow: var(--b-shadow);
+}
+.s2-notice-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--b-s3);
+  color: var(--b-acc);
+}
+.s2-notice-text {
+  flex: 1;
+  min-width: 0;
+  margin: 2px 26px 0 0;
+  font-size: var(--t-13);
+  color: var(--b-ink1);
+}
+.s2-notice-text span {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}
+.s2-notice-acts {
+  /* The answers take their own row under the sentence, aligned with it. */
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-left: 34px;
+}
+.s2-notice-acts [data-testid='s2-failure-dismiss'] {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.s2 .v3-transcript > * + *,
+.s2 .v3-transcript > * + .v3-msg-user,
+.s2 .v3-transcript > * + .v3-thinking {
+  margin-top: 0;
+}
+.s2-user {
+  align-self: flex-end;
+  max-width: 84%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: var(--b-s3);
+  color: var(--b-ink1);
+  font-size: var(--t-13);
+  line-height: 18px;
+}
+.s2-user .prose,
+.s2-user p {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+.s2-asst,
+.s2-live {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+.s2-answer {
+  color: var(--b-ink1);
+  font-size: var(--t-13);
+  line-height: 21px;
+}
+.s2-answer .prose p {
+  margin: 0 0 8px;
+}
+.s2-answer .prose p:last-child {
+  margin-bottom: 0;
+}
+.s2-bill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+}
+.s2-vb {
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  margin: 0 2px;
+  background: var(--b-edge2);
+  vertical-align: middle;
+}
+.s2-ok {
+  color: var(--b-ok);
+}
+.s2-del {
+  color: var(--b-del);
+}
+
+/* ── B's step list ──────────────────────────────────────────────────────── */
+.s2-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--b-edge);
+  background: var(--b-s1);
+  box-shadow: var(--b-shadow);
+  overflow: hidden;
+}
+.s2-st + .s2-st {
+  border-top: 1px solid var(--b-edge);
+}
+.s2-st-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12-5);
+  color: var(--b-ink2);
+  text-align: left;
+  cursor: pointer;
+}
+.s2-st-row:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.s2-st-row:not(:disabled):hover {
+  background: var(--b-glass);
+  color: var(--b-ink1);
+}
+.s2-st[data-state='running'] .s2-st-row {
+  color: var(--b-ink1);
+}
+.s2-st-chev {
+  color: var(--b-ink3);
+}
+.s2-st-body {
+  margin: 0;
+  padding: 8px 12px 10px 36px;
+  font-family: var(--font-mono);
+  font-size: var(--t-11-5);
+  line-height: 18px;
+  color: var(--b-ink3);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow: auto;
+}
+
+/* ── the thought, folded: one row of B's shape ─────────────────────────── */
+.s2-think {
+  border-radius: 16px;
+  border: 1px solid var(--b-edge);
+  background: var(--b-s1);
+  box-shadow: var(--b-shadow);
+  overflow: hidden;
+}
+.s2-think-h {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12-5);
+  color: var(--b-ink2);
+  cursor: pointer;
+  text-align: left;
+}
+.s2-think-h > .s2-i:first-child {
+  color: var(--b-acc);
+}
+.s2-think-h:hover {
+  color: var(--b-ink1);
+}
+.s2-think-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-2) var(--ease);
+}
+.s2-think-wrap[data-open='yes'] {
+  grid-template-rows: 1fr;
+}
+.s2-think-wrap > * {
+  overflow: hidden;
+  min-height: 0;
+}
+.s2-think-b {
+  padding: 0 12px 10px 36px;
+  font-size: var(--t-12);
+  line-height: 18px;
+  color: var(--b-ink3);
+  white-space: pre-wrap;
+}
+
+/* ── the live row ───────────────────────────────────────────────────────── */
+.s2-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--b-edge);
+  background: var(--b-s1);
+  box-shadow: var(--b-shadow);
+  font-size: var(--t-12-5);
+  color: var(--b-ink1);
+  white-space: nowrap;
+}
+.s2-live-phase {
+  min-width: 9ch;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-live-tokens {
+  min-width: 7ch;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+  font-variant-numeric: tabular-nums;
+}
+.s2-live-elapsed {
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── the composer: B's .comp, .ta, .cb, .pill, .send ───────────────────── */
+.s2-compwrap {
+  flex: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+.s2-comp {
+  position: relative;
+  border-radius: 22px;
+  background: var(--b-s1);
+  border: 1px solid var(--b-edge2);
+  box-shadow: var(--b-shadow);
+}
+/* The field has focus: B's accent ring, visible (UX audit). Only for the
+   field itself, so a click on a pill in the bar does not light the box. */
+.s2-comp:has(.s2-ta:focus-visible),
+.s2-comp:has(.s2-ta:focus) {
+  border-color: var(--b-acc);
+  box-shadow: var(--b-shadow), 0 0 0 3px var(--b-accw);
+}
+.s2-ta {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  max-height: 200px;
+  padding: 14px 16px 8px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-13);
+  line-height: 18px;
+  color: var(--b-ink1);
+  box-sizing: border-box;
+}
+.s2-ta::placeholder {
+  color: var(--b-ink3);
+}
+.s2-cb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 10px 10px;
+}
+.s2-anchor {
+  position: relative;
+  display: inline-flex;
+}
+.s2-ibtn.s2-round {
+  border-radius: var(--r-full);
+}
+.s2-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--row-h);
+  max-width: 180px;
+  padding: 0 10px;
+  border-radius: var(--r-full);
+  background: var(--b-glass);
+  border: 1px solid var(--b-glassedge);
+  color: var(--b-ink1);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.s2-pill {
+  box-shadow: var(--b-shadow);
+}
+.s2-pill:hover,
+.s2-pill[aria-expanded='true'] {
+  background: var(--b-glass-hover);
+  border-color: var(--glass-ctl-edge-hover);
+}
+.s2-pill:focus-visible,
+.s2-send:focus-visible {
+  outline: 2px solid var(--b-acc);
+  outline-offset: 1px;
+}
+.s2-pill-l {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s2-ctx {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+}
+.s2-ctx .ctxring-used {
+  stroke: var(--b-acc);
+}
+.s2-ctx .ctxring-wrap[data-level='warn'] .ctxring-used {
+  stroke: var(--spills);
+}
+.s2-ctx .ctxring-wrap[data-level='full'] .ctxring-used {
+  stroke: var(--wont);
+}
+.s2-ctx .ctxring-wrap {
+  border-radius: 50%;
+  padding: var(--sp-2);
+  transition: background var(--dur-1) var(--ease);
+}
+.s2-ctx .ctxring-wrap:hover,
+.s2-ctx .ctxring-wrap[data-open='pinned'] {
+  background: var(--b-accw);
+}
+.s2-ctx .ctxring-track {
+  stroke: var(--b-edge2);
+  opacity: 1;
+}
+.s2-ctx .ctxring-panel {
+  padding: var(--sp-12) var(--sp-16);
+}
+.s2-ctx .ctxring-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.s2-ctx .ctxring-title {
+  font-size: var(--t-12-5);
+  color: var(--b-ink2);
+}
+.s2-ctx .ctxring-pct {
+  font-size: var(--t-20);
+  line-height: 24px;
+  font-weight: var(--fw-body);
+  color: var(--b-ink1);
+  font-variant-numeric: tabular-nums;
+}
+.s2-ctx .ctxring-pct[data-level='warn'] {
+  color: var(--spills);
+}
+.s2-ctx .ctxring-pct[data-level='full'] {
+  color: var(--wont);
+}
+.s2-ctx .ctxring-pair {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.s2-ctx .ctxring-pair .ctxring-head {
+  margin: 0;
+  font-size: var(--t-12-5);
+}
+.s2-ctx .ctxring-unit {
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+}
+.s2-ctx .ctxring-meter {
+  display: flex;
+  height: var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--b-edge);
+  overflow: hidden;
+}
+.s2-ctx .ctxring-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--b-ink2);
+  transition: width var(--dur-2) var(--ease);
+}
+/* A part is a segment of the window; depth not hue, set per segment. */
+.s2-ctx .ctxring-seg {
+  display: block;
+  flex: none;
+  height: 100%;
+  background: var(--b-ink2);
+  min-width: 0;
+}
+.s2-ctx .ctxring-seg + .ctxring-seg {
+  border-left: 1px solid var(--b-bg);
+}
+.s2-ctx .ctxring-meter[data-level='warn'] .ctxring-seg,
+.s2-ctx .ctxring-meter[data-level='warn'] .ctxring-meter-fill {
+  background: var(--spills);
+}
+.s2-ctx .ctxring-meter[data-level='full'] .ctxring-seg,
+.s2-ctx .ctxring-meter[data-level='full'] .ctxring-meter-fill {
+  background: var(--wont);
+}
+.s2-ctx .ctxring-panel-list {
+  margin: var(--sp-8) 0 0;
+  padding: var(--sp-8) 0 0;
+  border-top: 1px solid var(--b-edge);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.s2-ctx .ctxring-panel-list li {
+  display: grid;
+  grid-template-columns: var(--sp-8) minmax(0, 1fr) auto var(--sp-32);
+  align-items: center;
+  column-gap: var(--sp-8);
+  font-size: var(--t-12);
+}
+.s2-ctx .ctxring-key {
+  width: var(--sp-8);
+  height: var(--sp-8);
+  border-radius: var(--r-full);
+  background: var(--b-ink2);
+}
+.s2-ctx .ctxring-sec-label {
+  color: var(--b-ink1);
+}
+.s2-ctx .ctxring-sec-tokens {
+  color: var(--b-ink2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.s2-ctx .ctxring-sec-pct {
+  color: var(--b-ink3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.s2-ctx .ctxring-left {
+  margin: 6px 0 10px;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.s2-ctx .ctxring-left[data-level='warn'] {
+  color: var(--spills);
+}
+.s2-ctx .ctxring-left[data-level='full'] {
+  color: var(--wont);
+}
+.s2-ctx .ctxring-sub {
+  margin: 0 0 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--b-edge);
+  font-size: var(--t-11);
+  letter-spacing: 0.02em;
+  color: var(--b-ink3);
+}
+.s2-ctx .ctxring-panel-empty {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--b-edge);
+  /* Round 14 (Jaden: "when the context window is empty it's also hard to read"): ink 2, 12 px, not the faint 11 px line. */
+  font-size: var(--t-12);
+  color: var(--b-ink2);
+}
+.s2-ctx .ctxring-panel {
+  border-radius: var(--r-10);
+  background: var(--b-s2);
+  border: 1px solid var(--b-edge2);
+  box-shadow: var(--b-shadow);
+}
+.s2-ctx .ctxring-note {
+  margin: 6px 0 0;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.s2-send {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--b-ink1);
+  color: var(--b-bg);
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.s2-send svg {
+  width: 16px;
+  height: 16px;
+}
+.s2-send:active {
+  transform: scale(0.95);
+}
+.s2-send:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.s2-send.is-stop {
+  background: var(--b-ink1);
+}
+
+/* ── menus that open from the composer: B's .menu, opening upward ─────── */
+.s2-menu-up {
+  left: 0;
+  bottom: calc(100% + 8px);
+  transform-origin: bottom left;
+}
+.s2-menu-up.s2-menu-right {
+  left: auto;
+  right: 0;
+  transform-origin: bottom right;
+  width: 264px;
+}
+.s2-menu-h {
+  margin: 4px 10px 2px;
+  font-family: var(--font-mono);
+  font-size: var(--t-10-5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--b-ink3);
+}
+.s2-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--b-edge);
+}
+.s2-menu-note {
+  margin: 4px 10px 6px;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.s2-mi-foot {
+  justify-content: space-between;
+  color: var(--b-ink3);
+  font-size: var(--t-11-5);
+  cursor: default;
+}
+.s2-mi-foot:hover {
+  background: transparent;
+  color: var(--b-ink3);
+}
+.s2-mi-l {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--b-ink1);
+}
+.s2-mi .s2-mi-d .s2-mi-sub {
+  color: var(--b-ink3);
+  font-size: var(--t-11-5);
+}
+.s2-mi-more {
+  justify-content: center;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.s2-menu-sec + .s2-menu-sec {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--b-edge);
+}
+.s2-slash,
+.s2-mention {
+  left: 0;
+  right: 0;
+  width: auto;
+  bottom: calc(100% + 8px);
+  max-height: 360px;
+  overflow-y: auto;
+  transform-origin: bottom left;
+}
+.s2-menu-model {
+  width: 280px;
+}
+.s2-mi.s2-mi-model {
+  height: 32px;
+  padding: 0 8px 0 4px;
+  gap: 8px;
+}
+.s2-mi-name {
+  flex: none;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--b-ink1);
+  font-size: var(--t-12-5);
+}
+.s2-mi-muted .s2-mi-name {
+  color: var(--b-ink3);
+}
+.s2-mi-muted:hover .s2-mi-name {
+  color: var(--b-ink1);
+}
+.s2-mi-note {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+/* Codex's reasoning slider: a slim track, the stops, the labels under them. */
+.s2-effort .s2-menu-gh {
+  display: flex;
+  align-items: center;
+}
+.s2-effort-now {
+  font-size: var(--t-11-5);
+  color: var(--b-ink1);
+}
+/* The reasoning slider: a track with a draggable thumb, snapped stops, labels under. */
+.s2-slider {
+  position: relative;
+  margin: 4px 22px 6px;
+}
+.s2-slider-hit {
+  position: relative;
+  height: 24px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+.s2-slider-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 10px;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--b-edge2);
+}
+.s2-slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: var(--b-acc);
+  transition: width var(--dur-1) var(--ease);
+}
+.s2-slider-tick {
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--b-s2);
+  border: 1px solid var(--b-edge2);
+  box-sizing: border-box;
+}
+.s2-slider-tick.is-past {
+  background: var(--b-acc);
+  border-color: var(--b-acc);
+}
+.s2-slider-thumb {
+  position: absolute;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: var(--b-ink1);
+  border: 2px solid var(--b-s2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--b-acc);
+  box-sizing: border-box;
+  cursor: grab;
+  transition: left var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.s2-slider[data-dragging='true'] .s2-slider-thumb {
+  cursor: grabbing;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 4px var(--b-accw);
+}
+.s2-slider[data-dragging='true'] .s2-slider-fill,
+.s2-slider[data-dragging='true'] .s2-slider-thumb {
+  transition: none;
+}
+.s2-slider-thumb:focus-visible {
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 4px var(--b-accw);
+}
+.s2-slider-labels {
+  position: relative;
+  height: 18px;
+}
+.s2-stop {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.s2-stop:hover,
+.s2-stop.is-on {
+  color: var(--b-ink1);
+}
+.s2-pillrow {
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px 2px;
+}
+.s2-pillchoice {
+  flex: 1;
+  height: var(--control-h);
+  padding: 0 8px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  color: var(--b-ink2);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.s2-pillchoice:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.s2-pillchoice.is-on {
+  background: var(--b-accs);
+  border-color: transparent;
+  color: var(--accent-on-solid);
+  box-shadow: var(--b-shadow);
+}
+/* The / rows: chip, command, what it does, on one line. */
+.s2-slash {
+  display: flex;
+  flex-direction: column;
+  max-height: 380px;
+  overflow: hidden;
+}
+.s2-slash-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s2-mi.s2-mi-line {
+  height: 32px;
+  padding: 0 10px 0 4px;
+  gap: 10px;
+}
+.s2-mi-line .s2-chipicon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: transparent;
+}
+.s2-mi-line .s2-chipicon .s2-i {
+  width: 16px;
+  height: 16px;
+}
+.s2-slash-name {
+  flex: none;
+  font-size: var(--t-12-5);
+  font-weight: var(--fw-body);
+  color: var(--b-ink1);
+}
+.s2-slash-name mark {
+  background: var(--b-accw);
+  color: var(--b-acc);
+  border-radius: 3px;
+}
+.s2-slash-desc {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-12-5);
+  color: var(--b-ink3);
+}
+.s2-slash > .s2-mi-foot {
+  margin-top: 4px;
+  border-top: 1px solid var(--b-edge);
+  border-radius: 0 0 11px 11px;
+  gap: 6px;
+}
+.s2-seg.s2-seg-fill {
+  display: flex;
+  margin: 2px 6px;
+  padding: 3px;
+}
+.s2-seg.s2-seg-fill button {
+  flex: 1;
+  height: var(--row-h-tool);
+  padding: 0 8px;
+  font-size: var(--t-12);
+}
+
+/* ── what the message carries: chips inside the box ────────────────────── */
+.s2-attach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+.s2-attach-group {
+  display: contents;
+}
+.s2-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--row-h-tool);
+  max-width: 220px;
+  padding: 0 4px 0 9px;
+  border-radius: var(--r-full);
+  background: var(--b-glass);
+  border: 1px solid var(--b-glassedge);
+  font-size: var(--t-12);
+  color: var(--b-ink1);
+}
+.s2-chip-l {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--b-ink3);
+  cursor: pointer;
+}
+.s2-chip-x:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+
+/* ── the place, only while the status bar is off ──────────────────────── */
+.s2-where {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: var(--t-11);
+  color: var(--b-ink3);
+  min-width: 0;
+}
+.s2-where-path {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.s2-where-branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+}
+
+/* ── an agent's run, in B's shapes (chat/AgentRunThread.tsx) ───────────── */
+.s2-run {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.s2-run-prompt {
+  white-space: pre-wrap;
+}
+.s2-run-steer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.s2-run-steer .s2-meta {
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.s2-run-node {
+  align-self: flex-end;
+  height: 24px;
+  font-size: var(--t-11-5);
+  cursor: default;
+}
+.s2-run-note,
+.s2-run-error {
+  margin: 0;
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}
+.s2-run-error {
+  color: var(--b-del);
+}
+/* The ask ledger (t3gap/asks): one line in the notice's card under a reply that left an ask open. */
+.s2-asks-open {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 6px 0 0;
+  padding: 8px 12px;
+  font-size: var(--t-12);
+  color: var(--b-ink3);
+}
+.s2-asks-open ul {
+  display: contents;
+  list-style: none;
+}
+.s2-asks-open li {
+  color: var(--b-ink1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.s2-asks-open-label,
+.s2-asks-why {
+  color: var(--b-ink3);
+}
+.s2-asks-open li + li::before {
+  content: '; ';
+  color: var(--b-ink3);
+}
+.s2-asks-asked,
+.s2-asks-open .s2-btn {
+  margin-left: auto;
+}
+.s2-asks-asked {
+  color: var(--b-ink3);
+}
+.s2-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* Consecutive cards read as one of B's step lists. */
+.s2-agcard,
+.s2-agfold {
+  border: 1px solid var(--b-edge);
+  background: var(--b-s1);
+  box-shadow: var(--b-shadow);
+  border-radius: 16px;
+  overflow: hidden;
+}
+/* Consecutive cards close up into one list (the joined edge is the next
+   card's top border). Plain sibling selectors: jsdom's selector engine and
+   older engines reject a relative :has(). */
+.s2-agcard + .s2-agcard,
+.s2-agcard + .s2-agfold,
+.s2-agfold + .s2-agcard,
+.s2-agfold + .s2-agfold {
+  margin-top: -11px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.s2-agcard-hd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.s2-agcard-hd .s2-st-row {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.s2-agmark {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.s2-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--b-acc);
+  box-shadow: 0 0 0 3px var(--b-accw);
+  flex: none;
+}
+.s2-ring {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--b-edge2);
+  flex: none;
+}
+.s2-agcard-acts {
+  /* The answers take their own row under the title (an approval's title, status
+     and time keep the whole width), and wrap rather than clip in a narrow column. */
+  flex: 1 1 100%;
+  min-width: 0;
+  padding: 0 10px 10px 32px;
+}
+.s2-agcard-acts .s2-gate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.s2-agcard-body,
+.s2-agfold-body {
+  border-top: 1px solid var(--b-edge);
+}
+.s2-agfold-body > .s2-agcard {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+}
+.s2-agfold-body > .s2-agcard + .s2-agcard {
+  border-top: 1px solid var(--b-edge);
+}
+.s2-fold.s2-fold-static {
+  margin: 0;
+  cursor: default;
+}
+.s2-agdiff {
+  min-width: 0;
+}
+.s2-agdiff-file + .s2-agdiff-file {
+  border-top: 1px solid var(--b-edge);
+}
+.s2-agappr-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 9px 12px;
+  font-size: var(--t-12);
+  color: var(--b-ink2);
+}
+.s2-agappr .s2-cmd {
+  margin: 0 12px 10px;
+}
+.s2-plan {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+}
+.s2-plan-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  font-size: var(--t-12-5);
+  color: var(--b-ink2);
+}
+.s2-plan-step[data-status='completed'] {
+  color: var(--b-ink3);
+}
+.s2-plan-step[data-status='in_progress'] {
+  color: var(--b-ink1);
+}
+.s2-gate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.s2-btn.s2-btn-sm {
+  height: var(--icon-btn);
+  padding: 0 10px;
+  font-size: var(--t-12);
+  gap: 6px;
+}
+.s2-pill.s2-pill-static {
+  cursor: default;
+}
+
+/* ── the composer's menus open above the box, never over the text ─────── */
+.s2-cb .s2-anchor {
+  position: static;
+}
+.s2-comp > .s2-cb .s2-menu-up,
+.s2-cb .s2-menu-up {
+  bottom: calc(100% + 8px);
+  left: 0;
+}
+.s2-cb .s2-menu-up.s2-menu-right {
+  left: auto;
+  right: 0;
+}
+
+/* ── the agent's question, in the takeover: B's rows with number keys ──── */
+.s2-q {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  outline: none;
+}
+.s2-q-item {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.s2-q-title {
+  padding: 0;
+  margin: 0 0 4px;
+  font-size: var(--t-13-5);
+  font-weight: var(--fw-head);
+  line-height: 20px;
+  color: var(--b-ink1);
+}
+.s2-q-head {
+  display: block;
+  font-size: var(--t-11-5);
+  font-weight: var(--fw-label);
+  color: var(--b-ink3);
+}
+.s2-q-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s2-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  border: 1px solid var(--b-edge);
+  background: var(--b-s1);
+  font: inherit;
+  color: var(--b-ink1);
+  text-align: left;
+  cursor: pointer;
+}
+.s2-opt:hover {
+  background: var(--b-glass-hover);
+}
+.s2-opt.is-on {
+  border-color: color-mix(in srgb, var(--b-acc) 55%, transparent);
+  background: var(--b-accw);
+}
+.s2-num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--b-edge2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-11);
+  color: var(--b-ink2);
+}
+.s2-opt.is-on .s2-num {
+  background: var(--b-accs);
+  border-color: transparent;
+  color: var(--accent-on-solid);
+}
+.s2-q-text {
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--b-edge);
+  background: var(--b-s1);
+  padding: 0 10px;
+  font: inherit;
+  font-size: var(--t-12-5);
+  color: var(--b-ink1);
+  outline: none;
+}
+.s2-q-text:focus {
+  border-color: var(--accent-edge);
+}
+.s2-q-folded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  font-size: var(--t-12);
+  color: var(--b-ink2);
+  min-width: 0;
+}
+.s2-q-what {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* One question at a time: the body scrolls, the footer stays. */
+.s2-take.s2-take-q {
+  /* At most about half the column. A percentage here resolved against the
+     composer box it sits in, which had sized itself to the card's uncapped
+     height, so the box kept the empty difference under the card (final
+     shots, r6). The viewport is a definite base. */
+  max-height: 55vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.s2-take-q .s2-q {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.s2-q-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.s2-q-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+}
+.s2-q-foot .s2-btn {
+  height: 32px;
+  padding: 0 12px;
+}
+.s2-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.s2-flip {
+  transform: scaleX(-1);
+}
+.s2-opt {
+  align-items: center;
+  height: 36px;
+  padding: 0 10px;
+}
+.s2-opt-l {
+  flex: none;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-12-5);
+}
+.s2-opt-d {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROUND 8: THE COMPOSER, LIGHTER (Jaden: "too much depth and shadows and the
+   buttons on the chat box... appear really large... add the transparency on
+   those buttons and remove a little of that shadowing")
+   The card keeps a faint lift and its hairline; its pills and the + are
+   thinner glass with a hairline and no drop shadow, 28 px; the send is 30 px
+   and a softened ink rather than the full one. Every target stays 24 px or
+   more. The focus ring is unchanged.
+   ══════════════════════════════════════════════════════════════════════════ */
+.s2 {
+  --comp-lift: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --comp-glass: rgba(255, 255, 255, 0.022);
+  --comp-glass-hover: rgba(255, 255, 255, 0.06);
+  --comp-glass-edge: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme='light'] .s2 {
+  --comp-lift: 0 1px 2px rgba(43, 42, 39, 0.05);
+  --comp-glass: rgba(43, 42, 39, 0.02);
+  --comp-glass-hover: rgba(43, 42, 39, 0.055);
+  --comp-glass-edge: rgba(43, 42, 39, 0.1);
+}
+.s2-comp {
+  box-shadow: var(--comp-lift);
+}
+.s2-comp:has(.s2-ta:focus-visible),
+.s2-comp:has(.s2-ta:focus) {
+  box-shadow: var(--comp-lift), 0 0 0 3px var(--b-accw);
+}
+.s2-comp .s2-cb .s2-pill,
+.s2-comp .s2-cb .s2-ibtn.s2-g {
+  height: var(--control-h);
+  background: var(--comp-glass);
+  border-color: var(--comp-glass-edge);
+  box-shadow: none;
+}
+.s2-comp .s2-cb .s2-ibtn.s2-g {
+  width: var(--control-h);
+}
+.s2-comp .s2-cb .s2-pill:hover,
+.s2-comp .s2-cb .s2-pill[aria-expanded='true'],
+.s2-comp .s2-cb .s2-ibtn.s2-g:hover,
+.s2-comp .s2-cb .s2-ibtn.s2-g[aria-expanded='true'] {
+  background: var(--comp-glass-hover);
+  border-color: var(--glass-ctl-edge);
+}
+.s2-comp .s2-send {
+  width: var(--row-h);
+  height: var(--row-h);
+  background: color-mix(in srgb, var(--b-ink1) 84%, var(--b-s1));
+  box-shadow: none;
+}
+.s2-comp .s2-send:hover:not(:disabled) {
+  background: var(--b-ink1);
+}
+.s2-comp .s2-send svg {
+  /* Round 13 (N1): 16 px, an even size in the 30 px button, so the glyph starts on a whole pixel (15 px put the
+     stop square on half pixels, one half pixel low and right in the dark button). */
+  width: 16px;
+  height: 16px;
+}
+.s2-comp .s2-send:disabled {
+  opacity: 0.3;
+}
+
+/* ── ROUND 12 (Jaden): chat messages are a left-aligned reading column ───
+   The transcript column used to centre itself (auto side margins) once the
+   chat was wider than its cap, and the empty state centred its text. In the
+   chat card the column starts at the left edge and its text reads from the
+   left; the composer and the strip under it start there too. */
+.s2-chat .chat-scope .tcol,
+.s2-chat .chat-scope .composerwrap .inner,
+.s2-chat .chat-scope .session-home,
+.s2-chat .chat-scope .undercomposer {
+  margin-left: 0;
+  margin-right: auto;
+  text-align: left;
+}
+.s2-chat .chat-scope .emptychat {
+  align-items: flex-start;
+  margin: auto auto auto 0;
+  text-align: left;
+}
+
+/* The @ menu's rows are one line and one height: the name, then what tells two matches apart, then the kind. A
+   two-line row beside a one-line one made the list uneven, and a detail that only repeated the name is not drawn. */
+.s2-mention .s2-mi {
+  height: var(--row-h);
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.s2-mention .s2-mi-d {
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--sp-8);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.s2-mention .s2-mi-d span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

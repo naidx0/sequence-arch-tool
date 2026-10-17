@@ -1,0 +1,4089 @@
+From aaa964c04ba894bf344a9a73fff2551ca1ea7f86 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 13:58:17 -0400
+Subject: [PATCH 1/2] Draw-language A/B kit on head: cloud patches 0011
+ (schema), 0014, 0016 and 0018 (schema, tools)
+
+Adds --temperature (default keeps 0) and lets the worker's sockets close before exit,
+which crashed every batch on Windows. tools/ci/draw-lang-ab 3/6 -> 6/6 (3 runs), schema 481/481.
+---
+ packages/schema/src/bridgeChart.test.ts       |   67 +
+ packages/schema/src/chart.ts                  |  155 ++
+ packages/schema/src/drawLanguages.test.ts     |  531 +++++++
+ packages/schema/src/drawLanguages.ts          | 1389 +++++++++++++++++
+ packages/schema/src/flowLines.test.ts         |  126 ++
+ packages/schema/src/flowLines.ts              |  267 ++++
+ packages/schema/src/groundingEdgeKeys.test.ts |   47 +
+ packages/schema/src/index.ts                  |    5 +
+ tools/ci/draw-lang-ab.test.mjs                |  343 ++++
+ tools/measure/draw-lang-ab.mjs                |  662 ++++++++
+ tools/measure/fake-openai.mjs                 |   99 ++
+ tools/measure/fixtures/shopfront.scan.json    |   77 +
+ tools/measure/questions.ml-harness.json       |   32 +
+ tools/measure/questions.shopfront-hard.json   |   92 ++
+ tools/measure/questions.shopfront.json        |   58 +
+ 15 files changed, 3950 insertions(+)
+ create mode 100644 packages/schema/src/bridgeChart.test.ts
+ create mode 100644 packages/schema/src/drawLanguages.test.ts
+ create mode 100644 packages/schema/src/drawLanguages.ts
+ create mode 100644 packages/schema/src/flowLines.test.ts
+ create mode 100644 packages/schema/src/flowLines.ts
+ create mode 100644 packages/schema/src/groundingEdgeKeys.test.ts
+ create mode 100644 tools/ci/draw-lang-ab.test.mjs
+ create mode 100644 tools/measure/draw-lang-ab.mjs
+ create mode 100644 tools/measure/fake-openai.mjs
+ create mode 100644 tools/measure/fixtures/shopfront.scan.json
+ create mode 100644 tools/measure/questions.ml-harness.json
+ create mode 100644 tools/measure/questions.shopfront-hard.json
+ create mode 100644 tools/measure/questions.shopfront.json
+
+diff --git a/packages/schema/src/bridgeChart.test.ts b/packages/schema/src/bridgeChart.test.ts
+new file mode 100644
+index 00000000..e0e64e7c
+--- /dev/null
++++ b/packages/schema/src/bridgeChart.test.ts
+@@ -0,0 +1,67 @@
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++import { bridgeChart, groundingEdgeKeys, validateChart, type SeqChart } from './index.js';
++
++/*
++ * gateway -> routes -> client -> stripe, plus two routes from routes to db, so
++ * a skipped hop to db has no single answer. invoice reaches nothing.
++ */
++const EDGES = [
++  { srcId: 'gateway', dstId: 'routes' },
++  { srcId: 'routes', dstId: 'client' },
++  { srcId: 'client', dstId: 'stripe' },
++  { srcId: 'routes', dstId: 'models' },
++  { srcId: 'routes', dstId: 'repo' },
++  { srcId: 'models', dstId: 'db' },
++  { srcId: 'repo', dstId: 'db' },
++  { srcId: 'invoice', dstId: 'db' },
++];
++const NODES = new Set(['gateway', 'routes', 'client', 'stripe', 'models', 'repo', 'db', 'invoice']);
++const KEYS = groundingEdgeKeys(EDGES);
++const label = (id: string) => `${id}.py`;
++
++function chart(parts: string[], links: [string, string][]): SeqChart {
++  return {
++    version: 1,
++    kind: 'data-flow',
++    title: 't',
++    items: parts.map((p) => ({ id: p, label: p, nodeId: p })),
++    links: links.map(([from, to]) => ({ from, to })),
++  };
++}
++
++test('a skipped hop with one shortest route is filled in from the scan', () => {
++  const r = bridgeChart(chart(['gateway', 'client'], [['gateway', 'client']]), NODES, KEYS, label);
++  assert.equal(r.bridged, 1);
++  assert.equal(r.dropped, 0);
++  assert.deepEqual(
++    r.chart.links?.map((l) => `${l.from}>${l.to}`),
++    ['gateway>via1', 'via1>client'],
++  );
++  assert.deepEqual(r.chart.items[2], { id: 'via1', label: 'routes.py', nodeId: 'routes' });
++  assert.equal(validateChart(r.chart, NODES, KEYS).ok, true);
++});
++
++test('an invented link with no route, or two equally short ones, is dropped and the parts stay', () => {
++  const r = bridgeChart(
++    chart(['invoice', 'client', 'routes', 'db'], [['invoice', 'client'], ['routes', 'db']]),
++    NODES,
++    KEYS,
++    label,
++  );
++  assert.equal(r.bridged, 0);
++  assert.equal(r.dropped, 2);
++  assert.equal(r.chart.items.length, 4);
++  assert.equal(r.chart.links?.length, 0);
++  assert.equal(validateChart(r.chart, NODES, KEYS).ok, true);
++});
++
++test('real links are kept as drawn; a part the scan lacks goes with its links', () => {
++  const c = chart(['gateway', 'routes', 'ghost'], [['gateway', 'routes'], ['routes', 'ghost']]);
++  c.links![0].label = 'POST /orders';
++  const r = bridgeChart(c, NODES, KEYS, label);
++  assert.equal(r.droppedParts, 1);
++  assert.deepEqual(r.chart.links, [{ from: 'gateway', to: 'routes', label: 'POST /orders' }]);
++  assert.equal(validateChart(chart(['gateway', 'routes', 'ghost'], [['gateway', 'routes']]), NODES, KEYS).ok, false);
++  assert.equal(validateChart(r.chart, NODES, KEYS).ok, true);
++});
+diff --git a/packages/schema/src/chart.ts b/packages/schema/src/chart.ts
+index d1b8a80d..4a47f42b 100644
+--- a/packages/schema/src/chart.ts
++++ b/packages/schema/src/chart.ts
+@@ -541,3 +541,158 @@ export function validateChart(
+      does. */
+   return { ok: true, chart: (out.version === 1 ? out : { ...out, version: 1 }) as SeqChart };
+ }
++
++/**
++ * THE EDGE SET A CHART IS GROUNDED AGAINST, in the direction a reader draws.
++ *
++ * A scan stores a queue consumer's edge as `consumer -> topic`: the subscribe
++ * call is in the consumer's code. Data moves the other way, and that is how a
++ * person and a model both draw it: `topic -> worker`. validateChart treats
++ * direction as part of the claim, so the reader's drawing of a real
++ * subscription was refused as an invented connection. On the hard A/B set,
++ * that was 12 of the 44 refusals, in every language.
++ *
++ * So a `queue_consume` edge is accepted either way round, and no other kind
++ * is: `a -> b` still does not stand for `b -> a` on an http, grpc, import or
++ * publish edge.
++ */
++export function groundingEdgeKeys(
++  edges: readonly { srcId: string; dstId: string; kind?: string }[],
++): Set<string> {
++  const keys = new Set<string>();
++  for (const e of edges) {
++    keys.add(`${e.srcId}>${e.dstId}`);
++    if (e.kind === 'queue_consume') keys.add(`${e.dstId}>${e.srcId}`);
++  }
++  return keys;
++}
++
++export interface BridgeResult {
++  chart: SeqChart;
++  /** Refused links replaced by the one shortest route the scan has. */
++  bridged: number;
++  /** Refused links with no route, or more than one equally short route. */
++  dropped: number;
++  /** Parts that name nothing in the scan, removed with their links. */
++  droppedParts: number;
++}
++
++/**
++ * Repairs a refused chart in code instead of asking the model again. A link
++ * the scan doesn't have is replaced by the scan's shortest route between the
++ * same two parts (at most `maxHops` hops) when exactly one such route exists,
++ * adding the parts in between. Any other refused link is dropped, and so is
++ * any part that names nothing in the scan. What comes out passes
++ * validateChart against the same node and edge sets.
++ */
++export function bridgeChart(
++  chart: SeqChart,
++  known: ReadonlySet<string>,
++  knownEdges: ReadonlySet<string>,
++  labelOf: (nodeId: string) => string,
++  maxHops = 3,
++): BridgeResult {
++  const out = new Map<string, string[]>();
++  for (const k of knownEdges) {
++    const at = k.indexOf('>');
++    const a = k.slice(0, at);
++    const list = out.get(a) ?? [];
++    list.push(k.slice(at + 1));
++    out.set(a, list);
++  }
++  const kept = chart.items.filter((it) => typeof it.nodeId === 'string' && known.has(it.nodeId));
++  const droppedParts = chart.items.length - kept.length;
++  const items = kept.map((it) => ({ ...it }));
++  const itemOfNode = new Map<string, string>();
++  const nodeOfItem = new Map<string, string>();
++  for (const it of items) {
++    nodeOfItem.set(it.id, it.nodeId as string);
++    if (!itemOfNode.has(it.nodeId as string)) itemOfNode.set(it.nodeId as string, it.id);
++  }
++  const ids = new Set(items.map((it) => it.id));
++  const itemFor = (nodeId: string): string => {
++    const have = itemOfNode.get(nodeId);
++    if (have !== undefined) return have;
++    let n = 1;
++    while (ids.has(`via${n}`)) n += 1;
++    const id = `via${n}`;
++    ids.add(id);
++    items.push({ id, label: labelOf(nodeId), nodeId });
++    itemOfNode.set(nodeId, id);
++    nodeOfItem.set(id, nodeId);
++    return id;
++  };
++  const links: ChartLink[] = [];
++  const seen = new Set<string>();
++  const push = (l: ChartLink) => {
++    const key = `${l.from}>${l.to}`;
++    if (seen.has(key)) return;
++    seen.add(key);
++    links.push(l);
++  };
++  let bridged = 0;
++  let dropped = 0;
++  for (const l of chart.links ?? []) {
++    const a = nodeOfItem.get(l.from);
++    const z = nodeOfItem.get(l.to);
++    if (a === undefined || z === undefined) {
++      dropped += 1;
++      continue;
++    }
++    if (knownEdges.has(`${a}>${z}`)) {
++      push({ ...l });
++      continue;
++    }
++    const route = onlyShortestRoute(out, a, z, maxHops);
++    if (route === undefined) {
++      dropped += 1;
++      continue;
++    }
++    bridged += 1;
++    for (let k = 1; k < route.length; k += 1) {
++      const from = k === 1 ? l.from : itemFor(route[k - 1]);
++      const to = k === route.length - 1 ? l.to : itemFor(route[k]);
++      push(k === 1 && l.label !== undefined ? { from, to, label: l.label } : { from, to });
++    }
++  }
++  const next: SeqChart = { ...chart, items, links };
++  if (next.focusItemId !== undefined && !ids.has(next.focusItemId)) delete next.focusItemId;
++  return { chart: next, bridged, dropped, droppedParts };
++}
++
++/** The route from a to z when it is the only shortest one within maxHops (and longer than one hop). */
++function onlyShortestRoute(
++  out: ReadonlyMap<string, readonly string[]>,
++  a: string,
++  z: string,
++  maxHops: number,
++): string[] | undefined {
++  const count = new Map<string, number>([[a, 1]]);
++  const prev = new Map<string, string>();
++  const depth = new Map<string, number>([[a, 0]]);
++  let frontier = [a];
++  for (let d = 1; d <= maxHops && frontier.length > 0; d += 1) {
++    const next: string[] = [];
++    for (const u of frontier) {
++      for (const v of out.get(u) ?? []) {
++        const dv = depth.get(v);
++        if (dv === undefined) {
++          depth.set(v, d);
++          count.set(v, count.get(u) ?? 0);
++          prev.set(v, u);
++          next.push(v);
++        } else if (dv === d) {
++          count.set(v, (count.get(v) ?? 0) + (count.get(u) ?? 0));
++        }
++      }
++    }
++    if (depth.get(z) === d) {
++      if (count.get(z) !== 1 || d < 2) return undefined;
++      const route = [z];
++      while (route[0] !== a) route.unshift(prev.get(route[0]) as string);
++      return route;
++    }
++    frontier = next;
++  }
++  return undefined;
++}
+diff --git a/packages/schema/src/drawLanguages.test.ts b/packages/schema/src/drawLanguages.test.ts
+new file mode 100644
+index 00000000..e8895437
+--- /dev/null
++++ b/packages/schema/src/drawLanguages.test.ts
+@@ -0,0 +1,531 @@
++/**
++ * Draw languages (patch 0014): every language round-trips the model's real
++ * charts, names the line of an ungrounded edge, and the numbered map is
++ * deterministic and bounded.
++ */
++import assert from 'node:assert';
++import { test } from 'node:test';
++import type { ChartItem, ChartLink } from './chart.js';
++import {
++  DRAW_LANGS,
++  type DrawLang,
++  type NumberedMap,
++  type ScanLike,
++  asciiMap,
++  compileDrawing,
++  drawPrompt,
++  groundDrawing,
++  hopCoverage,
++  instructionFor,
++  isPointingLang,
++  namedView,
++  numberedMap,
++  printDrawing,
++  roughTokens,
++  scanResolver,
++} from './drawLanguages.js';
++
++/* The model's three real propose_chart calls from the owner's chat, verbatim
++   (extra item fields `kind` and `name` included: the model wrote them). */
++const REAL_CHARTS = [
++  {
++    kind: 'system-architecture',
++    title: 'ml-harness-app as a modular Solid.js web app',
++    items: [
++      { id: 'svc', label: 'Service', detail: 'svc:ml-harness-app', kind: 'service' },
++      { id: 'platform', label: 'Platform', detail: 'mod:ml-harness-app/0', kind: 'module' },
++      { id: 'panes', label: 'Panes', detail: 'mod:ml-harness-app/1', kind: 'module' },
++      { id: 'readers', label: 'Readers', detail: 'mod:ml-harness-app/2', kind: 'module' },
++      { id: 'engine', label: 'Engine', detail: 'mod:ml-harness-app/3', kind: 'module' },
++      { id: 'ui', label: 'Ui', detail: 'mod:ml-harness-app/4', kind: 'module' },
++      { id: 'shims', label: 'shims', detail: 'mod:ml-harness-app/5', kind: 'module' },
++    ],
++    links: [
++      { from: 'svc', to: 'platform', label: 'contains' },
++      { from: 'svc', to: 'panes', label: 'contains' },
++      { from: 'svc', to: 'readers', label: 'contains' },
++      { from: 'svc', to: 'engine', label: 'contains' },
++      { from: 'svc', to: 'ui', label: 'contains' },
++      { from: 'svc', to: 'shims', label: 'contains' },
++    ],
++  },
++  {
++    kind: 'data-flow',
++    title: 'How a request reaches the model',
++    items: [
++      { id: 'ui', label: 'Composer' },
++      { id: 'srv', label: 'Ask pipeline' },
++      { id: 'llm', label: 'Provider' },
++    ],
++    links: [
++      { from: 'ui', to: 'srv', label: 'POST /api/ask' },
++      { from: 'srv', to: 'llm' },
++    ],
++    focusItemId: 'srv',
++  },
++  {
++    kind: 'system-architecture',
++    title: 'ml-harness-app as a modular Solid.js web app',
++    items: [
++      { id: 'service', label: 'Service', detail: 'svc:ml-harness-app', name: 'ml-harness-app' },
++      { id: 'module_platform', label: 'Platform Module', detail: 'mod:ml-harness-app/0' },
++      { id: 'module_panes', label: 'Panes Module', detail: 'mod:ml-harness-app/1' },
++      { id: 'module_readers', label: 'Readers Module', detail: 'mod:ml-harness-app/2' },
++      { id: 'module_engine', label: 'Engine Module', detail: 'mod:ml-harness-app/3' },
++      { id: 'module_ui', label: 'Ui Module', detail: 'mod:ml-harness-app/4' },
++      { id: 'module_shims', label: 'shims Module', detail: 'mod:ml-harness-app/5' },
++    ],
++    links: [
++      { from: 'service', to: 'module_platform', label: 'contains' },
++      { from: 'service', to: 'module_panes', label: 'contains' },
++      { from: 'service', to: 'module_readers', label: 'contains' },
++      { from: 'service', to: 'module_engine', label: 'contains' },
++      { from: 'service', to: 'module_ui', label: 'contains' },
++      { from: 'service', to: 'module_shims', label: 'contains' },
++    ],
++  },
++] as const;
++
++/* The shopfront fixture's scan (packages/analyzer/test/fixtures/shopfront),
++   files by path, other parts by node id, edges deduplicated. */
++const SHOP_NODES = [
++  'svc:gateway', 'svc:orders', 'svc:payments', 'svc:notifications', 'svc:inventory', 'svc:shipping',
++  'svc:invoices', 'svc:edge', 'ds:postgres', 'ds:redis', 'topic:order.created',
++  'gateway/src/index.ts', 'gateway/src/lib/http.ts', 'gateway/src/routes/invoices.ts',
++  'gateway/src/routes/orders.ts', 'gateway/src/routes/payments.ts', 'gateway/src/routes/shipments.ts',
++  'orders/app/db.py', 'orders/app/events.py', 'orders/app/inventory_client.py', 'orders/app/main.py',
++  'orders/app/models.py', 'orders/app/payments_client.py', 'orders/app/routes.py', 'payments/src/db.js',
++  'payments/src/index.js', 'payments/src/stripe.js', 'notifications/worker.py', 'inventory/server.py',
++  'shipping/main.go', 'shipping/subscriber.go',
++  'invoices/src/main/java/shop/invoices/InvoiceController.java',
++  'invoices/src/main/java/shop/invoices/PaymentClient.java',
++  'invoices/src/main/resources/application.properties', 'edge/default.conf',
++];
++const SHOP_EDGES = [
++  'gateway/src/routes/invoices.ts > invoices/src/main/java/shop/invoices/InvoiceController.java',
++  'gateway/src/routes/orders.ts > orders/app/routes.py',
++  'gateway/src/routes/payments.ts > payments/src/index.js',
++  'gateway/src/routes/shipments.ts > shipping/main.go',
++  'orders/app/payments_client.py > payments/src/index.js',
++  'invoices/src/main/java/shop/invoices/PaymentClient.java > payments/src/index.js',
++  'edge/default.conf > gateway/src/routes/invoices.ts',
++  'orders/app/inventory_client.py > inventory/server.py',
++  'orders/app/events.py > topic:order.created',
++  'notifications/worker.py > topic:order.created',
++  'shipping/subscriber.go > topic:order.created',
++  'orders/app/db.py > ds:postgres',
++  'orders/app/models.py > ds:postgres',
++  'payments/src/db.js > ds:postgres',
++  'shipping/main.go > ds:postgres',
++  'invoices/src/main/java/shop/invoices/InvoiceController.java > ds:postgres',
++  'invoices/src/main/resources/application.properties > ds:postgres',
++  'gateway/src/index.ts > gateway/src/routes/invoices.ts',
++  'gateway/src/index.ts > gateway/src/routes/orders.ts',
++  'gateway/src/index.ts > gateway/src/routes/payments.ts',
++  'gateway/src/index.ts > gateway/src/routes/shipments.ts',
++  'gateway/src/routes/invoices.ts > gateway/src/lib/http.ts',
++  'gateway/src/routes/orders.ts > gateway/src/lib/http.ts',
++  'gateway/src/routes/shipments.ts > gateway/src/lib/http.ts',
++  'orders/app/main.py > orders/app/routes.py',
++  'orders/app/routes.py > orders/app/db.py',
++  'orders/app/routes.py > orders/app/events.py',
++  'orders/app/routes.py > orders/app/inventory_client.py',
++  'orders/app/routes.py > orders/app/payments_client.py',
++  'payments/src/index.js > payments/src/db.js',
++  'payments/src/index.js > payments/src/stripe.js',
++];
++const fid = (s: string): string => (s.includes('/') ? `file:${s}` : s);
++const SHOP: ScanLike = {
++  nodes: SHOP_NODES.map((s) =>
++    s.includes('/')
++      ? { id: fid(s), kind: 'file', label: s.slice(s.lastIndexOf('/') + 1), path: s }
++      : { id: s, kind: s.split(':')[0] === 'svc' ? 'service' : s.startsWith('ds:') ? 'datastore' : 'topic', label: s.split(':')[1]! },
++  ),
++  edges: SHOP_EDGES.map((e) => {
++    const [a, z] = e.split(' > ');
++    return { srcId: fid(a!), dstId: fid(z!) };
++  }),
++};
++const FOCUS = ['orders/app/main.py', 'orders/app/routes.py', 'orders/app/payments_client.py', 'payments/src/index.js'];
++const HEAD = { kind: 'data-flow' as const, title: 'How an order is paid' };
++
++type Norm = { items: unknown[]; links: unknown[] };
++const pick = (it: ChartItem, keys: readonly (keyof ChartItem)[]): Record<string, unknown> => {
++  const o: Record<string, unknown> = {};
++  for (const k of keys) if (it[k] !== undefined) o[k] = it[k];
++  return o;
++};
++const CARRIES: Record<DrawLang, readonly (keyof ChartItem)[]> = {
++  json: ['id', 'label', 'nodeId', 'detail'],
++  flow: ['id', 'label', 'nodeId', 'detail'],
++  mermaid: ['id', 'label'],
++  dot: ['id', 'label', 'nodeId', 'detail'],
++  path: ['id', 'label'],
++  ascii: ['id', 'label'],
++};
++const norm = (lang: DrawLang, items: readonly ChartItem[], links: readonly ChartLink[]): Norm => ({
++  items: items.map((it) => pick(it, CARRIES[lang])),
++  links: links.map((l) => ({ from: l.from, to: l.to, ...(l.label !== undefined ? { label: l.label } : {}) })),
++});
++
++/** A chart about ideas has no scan; for the pointing languages its own parts are the map. */
++function scanOfChart(items: readonly ChartItem[], links: readonly ChartLink[]): ScanLike {
++  return {
++    nodes: items.map((it) => ({ id: it.id, label: it.label })),
++    edges: links.map((l) => ({ srcId: l.from, dstId: l.to })),
++  };
++}
++function mapFor(lang: DrawLang, scan: ScanLike, focus: string[]): NumberedMap | undefined {
++  if (!isPointingLang(lang)) return undefined;
++  return lang === 'path' ? numberedMap(scan, focus, { maxNodes: 40 }) : asciiMap(scan, focus, { maxNodes: 40 });
++}
++
++for (const lang of DRAW_LANGS) {
++  test(`${lang}: the three real propose_chart calls round-trip to the same parts and hops`, () => {
++    for (const real of REAL_CHARTS) {
++      const items = real.items as unknown as ChartItem[];
++      const links = real.links as unknown as ChartLink[];
++      const scan = scanOfChart(items, links);
++      const map = mapFor(lang, scan, items.map((i) => i.id));
++      const text = printDrawing(lang, { items, links }, map ? { map } : {});
++      const back = compileDrawing(lang, text, { head: { kind: real.kind, title: real.title }, ...(map ? { map } : {}) });
++      assert.ok(back.ok, `${lang} did not compile its own print:\n${text}\n${JSON.stringify(!back.ok && back.problems)}`);
++      if (lang === 'json') {
++        /* Identity: every field the model wrote comes back, extra ones too. */
++        assert.deepStrictEqual(back.chart.items, items);
++        assert.deepStrictEqual(back.chart.links, links);
++      }
++      assert.deepStrictEqual(norm(lang, back.chart.items, back.chart.links ?? []), norm(lang, items, links), text);
++      if (map !== undefined) {
++        /* Every part came through the map, so it is grounded by construction. */
++        const g = groundDrawing(lang, text, scan, { head: HEAD, map });
++        assert.ok(g.grounded, g.problems.join('\n'));
++      }
++    }
++  });
++}
++
++test('the prints are what a model would write (one shopfront chart, every language)', () => {
++  const items: ChartItem[] = [
++    { id: 'main', label: 'orders/app/main.py', nodeId: 'orders/app/main.py' },
++    { id: 'routes', label: 'orders/app/routes.py', nodeId: 'orders/app/routes.py' },
++  ];
++  const links: ChartLink[] = [{ from: 'main', to: 'routes', label: 'mounts' }];
++  assert.strictEqual(
++    printDrawing('mermaid', { items, links }),
++    'flowchart LR\n  main[orders/app/main.py]\n  routes[orders/app/routes.py]\n  main -->|mounts| routes',
++  );
++  assert.strictEqual(
++    printDrawing('dot', { items, links }),
++    'digraph G {\n  main [label="orders/app/main.py", path="orders/app/main.py"];\n' +
++      '  routes [label="orders/app/routes.py", path="orders/app/routes.py"];\n  main -> routes [label="mounts"];\n}',
++  );
++  const map = numberedMap(SHOP, FOCUS);
++  const grounded = items.map((it) => ({ ...it, nodeId: `file:${it.nodeId}` }));
++  assert.strictEqual(
++    printDrawing('path', { items: grounded, links }, { map, steps: [{ from: 'main', to: 'routes', say: 'the app mounts the routes' }] }),
++    `${map.numberOf('file:orders/app/main.py')} > ${map.numberOf('file:orders/app/routes.py')}: mounts | the app mounts the routes`,
++  );
++});
++
++/* ---- grounding: one real hop, one invented hop, the invented one on line 3 ---- */
++
++const REAL = ['orders/app/main.py', 'orders/app/routes.py'] as const;
++const FAKE = ['orders/app/main.py', 'orders/app/db.py'] as const; /* both real files, no such edge */
++
++function answerWithFakeEdge(lang: DrawLang, map: NumberedMap): string {
++  const n = (p: string): number => map.numberOf(`file:${p}`)!;
++  switch (lang) {
++    case 'json':
++      return [
++        '{"items":[{"id":"main","label":"Main","nodeId":"orders/app/main.py"},{"id":"routes","label":"Routes","nodeId":"orders/app/routes.py"},{"id":"db","label":"DB","nodeId":"orders/app/db.py"}],"links":[',
++        '{"from":"main","to":"routes"},',
++        '{"from":"main","to":"db","label":"reads"}',
++        ']}',
++      ].join('\n');
++    case 'flow':
++      return `main "Main" = ${REAL[0]}\nmain -> routes: mounts | x\nmain -> db: reads | y\nroutes = ${REAL[1]}\ndb = ${FAKE[1]}`;
++    case 'mermaid':
++      return `flowchart LR\n  main[${REAL[0]}] -->|mounts| routes[${REAL[1]}]\n  main -->|reads| db[${FAKE[1]}]`;
++    case 'dot':
++      return `digraph G {\n  "${REAL[0]}" -> "${REAL[1]}" [label="mounts"];\n  "${FAKE[0]}" -> "${FAKE[1]}" [label="reads"];\n}`;
++    case 'path':
++    case 'ascii':
++      return `${n(REAL[0])} > ${n(REAL[1])} | the app mounts the routes\n\n${n(FAKE[0])} > ${n(FAKE[1])} | the app reads the db`;
++  }
++}
++
++for (const lang of DRAW_LANGS) {
++  test(`${lang}: an invented edge between real parts is refused on the line that drew it`, () => {
++    const map = lang === 'ascii' ? asciiMap(SHOP, FOCUS) : numberedMap(SHOP, FOCUS);
++    const text = answerWithFakeEdge(lang, map);
++    const g = groundDrawing(lang, text, SHOP, { head: HEAD, map });
++    assert.ok(g.parsed, g.problems.join('\n'));
++    assert.strictEqual(g.grounded, false);
++    assert.strictEqual(g.nodesGrounded, g.nodes, 'every part is real');
++    assert.strictEqual(g.edges, 2);
++    assert.strictEqual(g.edgesGrounded, 1);
++    assert.strictEqual(g.problems.length, 1, g.problems.join('\n'));
++    assert.match(g.problems[0]!, /^line 3 \(.+\): no edge file:orders\/app\/main\.py -> file:orders\/app\/db\.py/);
++    if (isPointingLang(lang)) {
++      const pair = `${map.numberOf('file:orders/app/main.py')} > ${map.numberOf('file:orders/app/db.py')}`;
++      assert.ok(g.problems[0]!.startsWith(`line 3 (${pair}):`), g.problems[0]);
++    }
++  });
++}
++
++for (const lang of ['json', 'flow', 'mermaid', 'dot'] as const) {
++  test(`${lang}: an invented part is refused on its line, with the nearest real one`, () => {
++    const text = {
++      json: '{"items":[\n{"id":"a","label":"A","nodeId":"orders/app/main.py"},\n{"id":"b","label":"B","nodeId":"orders/app/rotes.py"}\n],"links":[{"from":"a","to":"b"}]}',
++      flow: 'a = orders/app/main.py\na -> b\nb = orders/app/rotes.py',
++      mermaid: 'flowchart LR\n  a[orders/app/main.py]\n  b[orders/app/rotes.py]\n  a --> b',
++      dot: 'digraph G {\n  "orders/app/main.py";\n  "orders/app/rotes.py";\n  "orders/app/main.py" -> "orders/app/rotes.py";\n}',
++    }[lang];
++    const g = groundDrawing(lang, text, SHOP, { head: HEAD });
++    assert.ok(g.parsed);
++    assert.strictEqual(g.grounded, false);
++    assert.strictEqual(g.nodesGrounded, 1);
++    const p = g.problems.find((x) => /rotes/.test(x));
++    assert.ok(p, g.problems.join('\n'));
++    assert.match(p!, /^line 3 \(/);
++    assert.match(p!, /Did you mean "file:orders\/app\/routes\.py"\?/);
++  });
++}
++
++test('a grounded answer in every language grounds, and covers the expected route', () => {
++  const map = numberedMap(SHOP, FOCUS);
++  const amap = asciiMap(SHOP, FOCUS);
++  const n = (m: NumberedMap, p: string): number => m.numberOf(`file:${p}`)!;
++  const route = ['orders/app/main.py', 'orders/app/routes.py', 'orders/app/payments_client.py', 'payments/src/index.js'];
++  const answers: Record<DrawLang, string> = {
++    json: JSON.stringify({
++      items: route.map((p, i) => ({ id: `p${i}`, label: p, nodeId: p })),
++      links: [0, 1, 2].map((i) => ({ from: `p${i}`, to: `p${i + 1}` })),
++    }),
++    flow: `m = orders/app/main.py\nr = orders/app/routes.py\nc = orders/app/payments_client.py\np = payments/src/index.js\nm -> r | a\nr -> c | b\nc -> p | c`,
++    mermaid: '```mermaid\nflowchart LR\n  m[orders/app/main.py] --> r[orders/app/routes.py] -- pays --> c[orders/app/payments_client.py]\n  c -->|POST /charge| p[payments/src/index.js]\n```',
++    dot: 'digraph { "app/main.py" -> "app/routes.py" -> "payments_client.py" -> "payments/src/index.js" [label="calls"] }',
++    path: `${route.map((p) => n(map, p)).join(' > ')}`,
++    ascii: `${n(amap, route[0]!)} > ${n(amap, route[1]!)} | one\n> ${n(amap, route[2]!)} | two\n> ${n(amap, route[3]!)} | three`,
++  };
++  for (const lang of DRAW_LANGS) {
++    const m = lang === 'ascii' ? amap : map;
++    const g = groundDrawing(lang, answers[lang], SHOP, { head: HEAD, map: m });
++    assert.ok(g.grounded, `${lang}: ${g.problems.join('\n')}`);
++    assert.strictEqual(g.edges, 3, lang);
++    assert.strictEqual(g.edgesGrounded, 3, lang);
++    assert.strictEqual(hopCoverage(SHOP, g.nodePairs, route), 1, lang);
++    assert.strictEqual(hopCoverage(SHOP, g.nodePairs.slice(0, 1), route), 1 / 3, lang);
++  }
++});
++
++/* ---- compile problems name lines ---- */
++
++test('compile problems name the line the author wrote, in every language', () => {
++  const map = numberedMap(SHOP, FOCUS);
++  const cases: [DrawLang, string, RegExp][] = [
++    ['json', '{"items":[\n{"id":"a",\n"label" "A"}\n]}', /^line 3: not valid JSON/],
++    ['json', '{"nodes":[]}', /^line 1: the JSON has no "items" list/],
++    ['flow', 'a -> b\na -> b -> c', /^line 2: .*chains 2 hops/],
++    ['mermaid', 'flowchart LR\n  a --> b\n  a --> ???', /^line 3: cannot read `a --> \?\?\?`/],
++    ['dot', 'digraph G {\n  a -> b;\n  a -> [label="x"];\n}', /^line 3: cannot read/],
++    ['dot', 'digraph G {\n  a -> "b;\n}', /^line 2: cannot read .*unclosed quote/],
++    ['dot', 'digraph G {\n  a -> b;\n}\nThis shows a call.', /^line 4: `This shows a call\.` is outside the graph block/],
++    ['path', '3 > 7\n3 > 99', /^line 2: 99 is not on the map; its numbers run 1-24/],
++    ['path', '1 > orders/app/main.py', /^line 1: `orders\/app\/main\.py` is not a number from the map\. "orders\/app\/main\.py" is \d+ on the map/],
++    ['path', '> 3', /^line 1: `> 3` continues a path that has not started/],
++    ['path', '', /the drawing has no parts/],
++  ];
++  for (const [lang, text, want] of cases) {
++    const r = compileDrawing(lang, text, { head: HEAD, map });
++    assert.ok(!r.ok, `${lang} accepted:\n${text}`);
++    assert.match(r.problems[0]!.message, want, `${lang}: ${r.problems[0]!.message}`);
++  }
++});
++
++test('mermaid: the syntax models write is read, and the noise is skipped', () => {
++  const text = [
++    '```mermaid',
++    'graph TD',
++    '%% a comment',
++    'subgraph orders',
++    '  A["Orders API"] -- creates --> B(Queue)',
++    '  B -.-> C{{Worker}} & D[(Postgres)]',
++    'end',
++    'classDef hot fill:#f00',
++    'style A fill:#fff',
++    'C ==>|writes| D;',
++    '```',
++  ].join('\n');
++  const r = compileDrawing('mermaid', text, { head: HEAD });
++  assert.ok(r.ok, JSON.stringify(!r.ok && r.problems));
++  assert.deepStrictEqual(r.chart.items.map((i) => [i.id, i.label]), [
++    ['A', 'Orders API'], ['B', 'Queue'], ['C', 'Worker'], ['D', 'Postgres'],
++  ]);
++  assert.deepStrictEqual(r.chart.links, [
++    { from: 'A', to: 'B', label: 'creates' },
++    { from: 'B', to: 'C' },
++    { from: 'B', to: 'D' },
++    { from: 'C', to: 'D', label: 'writes' },
++  ]);
++  assert.deepStrictEqual(r.linkLine, [5, 6, 6, 10]);
++});
++
++test('dot: headers, attributes, quoted ids, comments and one-line graphs', () => {
++  const text = [
++    '```dot',
++    'strict digraph "orders" {',
++    '  rankdir=LR; // left to right',
++    '  node [shape=box];',
++    '  # a comment',
++    '  "app/main.py" [label="Main", tooltip="entry"];',
++    '  "app/main.py" -> "app/routes.py" [label="mounts"];',
++    '  subgraph cluster_a { "app/routes.py" -> db }',
++    '  /* a',
++    '     block */ db -> "app/main.py";',
++    '}',
++    '```',
++  ].join('\n');
++  const r = compileDrawing('dot', text, { head: HEAD });
++  assert.ok(r.ok, JSON.stringify(!r.ok && r.problems));
++  assert.deepStrictEqual(r.chart.items, [
++    { id: 'app/main.py', label: 'Main', detail: 'entry' },
++    { id: 'app/routes.py', label: 'app/routes.py' },
++    { id: 'db', label: 'db' },
++  ]);
++  assert.deepStrictEqual(r.chart.links, [
++    { from: 'app/main.py', to: 'app/routes.py', label: 'mounts' },
++    { from: 'app/routes.py', to: 'db' },
++    { from: 'db', to: 'app/main.py' },
++  ]);
++  assert.deepStrictEqual(r.linkLine, [7, 8, 10]);
++});
++
++test('path: prefixes, bullets, arrows, continuations and trailing names are tolerated', () => {
++  const map = numberedMap(SHOP, FOCUS);
++  const n = (p: string): number => map.numberOf(`file:${p}`)!;
++  const [m, r, c] = [n('orders/app/main.py'), n('orders/app/routes.py'), n('orders/app/payments_client.py')];
++  const text = `Answer: ${m} (main.py) -> ${r}: mounts | the app mounts the routes\n- > ${c} | routes pays.\n`;
++  const out = compileDrawing('path', text, { head: HEAD, map });
++  assert.ok(out.ok, JSON.stringify(!out.ok && out.problems));
++  assert.deepStrictEqual(out.chart.links, [
++    { from: 'file:orders/app/main.py', to: 'file:orders/app/routes.py', label: 'mounts' },
++    { from: 'file:orders/app/routes.py', to: 'file:orders/app/payments_client.py' },
++  ]);
++  assert.deepStrictEqual(out.steps.map((s) => s.say), ['the app mounts the routes', 'routes pays']);
++  assert.deepStrictEqual(out.linkText, [`${m} > ${r}`, `${r} > ${c}`]);
++  assert.strictEqual(out.chart.items[0]!.label, 'orders/app/main.py');
++});
++
++/* ---- the numbered map ---- */
++
++test('numberedMap is deterministic: same text whatever order the scan lists things in', () => {
++  const a = numberedMap(SHOP, FOCUS);
++  const shuffled: ScanLike = { nodes: [...SHOP.nodes].reverse(), edges: [...SHOP.edges].reverse() };
++  const b = numberedMap(shuffled, FOCUS);
++  assert.strictEqual(a.text, b.text);
++  assert.strictEqual(asciiMap(SHOP, FOCUS).text, asciiMap(shuffled, FOCUS).text);
++  assert.strictEqual(namedView(SHOP, FOCUS), namedView(shuffled, FOCUS));
++  assert.strictEqual(numberedMap(SHOP, FOCUS).text, a.text);
++});
++
++test('numberedMap: focus first, neighbours up to maxNodes, numbered by name, arrows inside the map only', () => {
++  const m = numberedMap(SHOP, FOCUS, { maxNodes: 6 });
++  assert.strictEqual(m.size, 6);
++  const lines = m.text.split('\n');
++  assert.strictEqual(lines.length, 6);
++  const ids = lines.map((_, i) => m.idOf(i + 1)!);
++  for (const f of FOCUS) assert.ok(ids.includes(`file:${f}`), f);
++  const names = lines.map((l) => l.split(' ')[1]!);
++  assert.deepStrictEqual(names, [...names].sort(), 'numbered by name, so the order leaks no answer');
++  for (const [i, l] of lines.entries()) {
++    assert.ok(l.startsWith(`${i + 1} `));
++    const outs = /→ (.*)$/.exec(l)?.[1]?.split(', ').map(Number) ?? [];
++    for (const o of outs) {
++      assert.ok(o >= 1 && o <= 6);
++      assert.ok(SHOP.edges.some((e) => e.srcId === m.idOf(i + 1) && e.dstId === m.idOf(o)), l);
++    }
++  }
++  assert.strictEqual(m.idOf(0), undefined);
++  assert.strictEqual(m.idOf(7), undefined);
++  assert.strictEqual(m.idOf(1.5), undefined);
++  for (let k = 1; k <= 6; k += 1) assert.strictEqual(m.numberOf(m.idOf(k)!), k);
++  /* The default bound, and a map never grows past the scan. */
++  assert.strictEqual(numberedMap(SHOP, FOCUS).size, 24);
++  assert.ok(numberedMap(SHOP, FOCUS, { maxNodes: 999 }).size <= SHOP.nodes.length);
++  /* Focus beyond the bound is cut in the order given; a bound of 1 is one line. */
++  assert.strictEqual(numberedMap(SHOP, FOCUS, { maxNodes: 1 }).text, `1 ${FOCUS[0]} `.trim());
++});
++
++test('numberedMap: unknown and ambiguous focus is reported, not guessed', () => {
++  const m = numberedMap(SHOP, ['orders/app/main.py', 'nope.py', 'db']);
++  assert.deepStrictEqual(m.missing, ['nope.py', 'db']);
++  assert.ok(m.size > 1);
++  const r = scanResolver(SHOP);
++  assert.deepStrictEqual(r('app/main.py'), { id: 'file:orders/app/main.py' });
++  assert.deepStrictEqual(r('main'), { ambiguous: ['file:orders/app/main.py', 'file:shipping/main.go'] });
++  assert.deepStrictEqual(r('ds:postgres'), { id: 'ds:postgres' });
++  assert.strictEqual(r('nope'), undefined);
++});
++
++test('numberedMap: a focus with no edges (a service) opens onto its children', () => {
++  const scan: ScanLike = {
++    nodes: [
++      { id: 'svc:a', kind: 'service', label: 'a' },
++      { id: 'file:a/x.py', kind: 'file', path: 'a/x.py', parentId: 'svc:a' },
++      { id: 'file:a/y.py', kind: 'file', path: 'a/y.py', parentId: 'svc:a' },
++    ],
++    edges: [{ srcId: 'file:a/x.py', dstId: 'file:a/y.py' }],
++  };
++  assert.strictEqual(numberedMap(scan, ['svc:a']).text, '1 a/x.py → 2\n2 a/y.py\n3 svc:a');
++});
++
++test('sizes: the map stays short and the ascii picture stays under 1.5x of it', () => {
++  const m = numberedMap(SHOP, FOCUS);
++  const a = asciiMap(SHOP, FOCUS);
++  const v = namedView(SHOP, FOCUS);
++  const [mt, at, vt] = [roughTokens(m.text), roughTokens(a.text), roughTokens(v)];
++  assert.ok(mt < 300, `map ${mt}`);
++  assert.ok(at < 1.5 * mt, `ascii ${at} vs map ${mt}`);
++  assert.ok(mt < vt, `the numbered map (${mt}) is smaller than the named list (${vt})`);
++  /* Same parts, same numbers: the two pictures are one slice. */
++  for (let k = 1; k <= m.size; k += 1) assert.strictEqual(a.idOf(k), m.idOf(k));
++});
++
++/* ---- instructions ---- */
++
++test('every instruction is short, and its worked example compiles and grounds', () => {
++  const example: ScanLike = {
++    nodes: ['web/app.ts', 'api/server.py', 'api/db.py'].map((p) => ({ id: `file:${p}`, kind: 'file', path: p })),
++    edges: [
++      { srcId: 'file:web/app.ts', dstId: 'file:api/server.py' },
++      { srcId: 'file:api/server.py', dstId: 'file:api/db.py' },
++    ],
++  };
++  for (const lang of DRAW_LANGS) {
++    const s = instructionFor(lang);
++    assert.ok(roughTokens(s) <= 230, `${lang}: ${roughTokens(s)}`);
++    const answer = s.slice(s.indexOf('Example answer:\n') + 'Example answer:\n'.length);
++    const map = lang === 'ascii' ? asciiMap(example, ['web/app.ts']) : numberedMap(example, ['web/app.ts']);
++    if (lang === 'path') assert.ok(s.includes(map.text), 'the example map is the real map of the example');
++    if (lang === 'ascii') assert.ok(s.includes(map.text), 'the example picture is the real picture of the example');
++    if (!isPointingLang(lang)) assert.ok(s.includes(namedView(example, ['web/app.ts'])), 'the example list is the real view');
++    const g = groundDrawing(lang, answer, example, { head: HEAD, map });
++    assert.ok(g.grounded, `${lang}: ${g.problems.join('\n')}\n${answer}`);
++    assert.ok(g.edges >= 1);
++  }
++  assert.throws(() => instructionFor('svg' as DrawLang), /unknown language/);
++});
++
++test('drawPrompt: every language sees the same slice, in its own view', () => {
++  const q = 'How does an order get paid?';
++  const ps = DRAW_LANGS.map((l) => drawPrompt(l, q, SHOP, FOCUS));
++  for (const p of ps) assert.ok(p.user.startsWith(q));
++  assert.ok(ps[4]!.user.endsWith(numberedMap(SHOP, FOCUS).text));
++  assert.ok(ps[5]!.user.endsWith(asciiMap(SHOP, FOCUS).text));
++  for (const p of ps.slice(0, 4)) assert.ok(p.user.endsWith(namedView(SHOP, FOCUS)));
++  assert.ok(ps[4]!.map !== undefined && ps[0]!.map === undefined);
++  assert.deepStrictEqual(drawPrompt('json', q, SHOP, ['x.py']).missing, ['x.py']);
++  assert.throws(() => compileDrawing('path', '1 > 2', { head: HEAD }), /needs the map/);
++});
+diff --git a/packages/schema/src/drawLanguages.ts b/packages/schema/src/drawLanguages.ts
+new file mode 100644
+index 00000000..d84462d1
+--- /dev/null
++++ b/packages/schema/src/drawLanguages.ts
+@@ -0,0 +1,1389 @@
++/**
++ * DRAW LANGUAGES — which way of writing a chart does a small model ground best?
++ *
++ * The owner (2026-09-23) asked Sequence to try drawing languages it had not
++ * tried, and to borrow from other kinds of programs. Their example was memory
++ * carried as a picture: the model looks at one small section of a picture
++ * instead of every object. This module is the pure half of the A/B kit that
++ * answers the question with numbers instead of taste
++ * (tools/measure/draw-lang-ab.mjs is the GPU half).
++ *
++ * Every language compiles into the SAME SeqChart and then through the SAME
++ * validateChart, so the only thing that differs between arms is how the model
++ * writes the picture:
++ *
++ *   json     the propose_chart items/links we ship today (identity)
++ *   flow     patch 0011's flow lines: `a -> b: label | narration`
++ *   mermaid  flowchart syntax: `a[web/app.ts] -->|calls| b[api/server.py]`
++ *   dot      Graphviz: `"web/app.ts" -> "api/server.py" [label="calls"];`
++ *   path     POINT, DON'T GENERATE. The harness shows a small NUMBERED MAP of
++ *            the scan slice, one line per part (`3 app/main.py → 7, 12`), and
++ *            the model answers with numbers only: `3 > 7 | narration`. Every
++ *            number resolves through the map, so every part is grounded by
++ *            construction and only the hops can be wrong. It is the owner's
++ *            picture-memory idea done in text: the model reads one small
++ *            picture of the slice and points into it.
++ *   ascii    the same numbers drawn as an indented box-and-arrow tree of the
++ *            same slice. Same answer (a numeric path), different picture.
++ *
++ * Compile problems name the line the author wrote, the same way
++ * flowProblemLine does, because a refusal that points at a line gets a line
++ * fixed, and one that points at `links[3].to` gets the whole answer rewritten.
++ *
++ * Pure and browser-safe. No I/O, no clocks, no randomness: the same scan and
++ * focus always give the same map, byte for byte (tested).
++ */
++
++import {
++  type ChartItem,
++  type ChartKind,
++  type ChartLink,
++  type ChartProblem,
++  type SeqChart,
++  validateChart,
++  groundingEdgeKeys,
++} from './chart.js';
++import {
++  type FlowLineProblem,
++  type FlowStep,
++  chartToFlowLines,
++  compileFlowLines,
++  flowProblemLine,
++  labelOfId,
++} from './flowLines.js';
++
++export const DRAW_LANGS = ['json', 'flow', 'mermaid', 'dot', 'path', 'ascii'] as const;
++export type DrawLang = (typeof DRAW_LANGS)[number];
++
++export function isDrawLang(value: unknown): value is DrawLang {
++  return typeof value === 'string' && (DRAW_LANGS as readonly string[]).includes(value);
++}
++
++/** The languages whose answer is a numeric path into a numbered picture. */
++export function isPointingLang(lang: DrawLang): lang is 'path' | 'ascii' {
++  return lang === 'path' || lang === 'ascii';
++}
++
++/* ------------------------------------------------------------ scan input -- */
++
++/** The slice of an ArchGraph this module reads. A full scan.json fits it. */
++export interface ScanNodeLike {
++  id: string;
++  kind?: string;
++  label?: string;
++  path?: string;
++  parentId?: string;
++}
++export interface ScanEdgeLike {
++  srcId: string;
++  dstId: string;
++  kind?: string;
++}
++export interface ScanLike {
++  nodes: readonly ScanNodeLike[];
++  edges: readonly ScanEdgeLike[];
++}
++
++/**
++ * The crude token proxy the flow-line measurement used: word runs, number
++ * runs, and every other non-space character counted once. Not a tokenizer; a
++ * stable ruler for comparing two texts against each other.
++ */
++export function roughTokens(text: string): number {
++  return (String(text).match(/[A-Za-z]+|\d+|\S/g) ?? []).length;
++}
++
++/** What a part is called in every view: its path for a file, else its node id. */
++export function displayOf(node: ScanNodeLike): string {
++  return node.path !== undefined && (node.kind === undefined || node.kind === 'file')
++    ? node.path.replace(/\\/g, '/')
++    : node.kind === undefined && node.label !== undefined
++      ? node.label
++      : node.id;
++}
++
++export type RefResolution = { id: string } | { ambiguous: string[] } | undefined;
++
++/**
++ * Resolve what an author wrote to a scan node id.
++ *
++ * Keys, lowercased: the node id, its display name, and for a node with a path
++ * every `/`-suffix of that path (`orders/app/main.py`, `app/main.py`,
++ * `main.py`) plus the basename without its extension (`main`). This is the
++ * analyzer's resolveNodeIdStems rule widened by the path suffixes, because
++ * the owner's own question writes `app/main.py` for a file that may sit
++ * deeper. Labels are NOT keys for nodes that have a path, for the analyzer's
++ * reason: two parts can share a label, and a silent pick is a fabrication. A
++ * key that names two nodes resolves to neither and says so.
++ */
++export function scanResolver(scan: ScanLike): (ref: string) => RefResolution {
++  const byKey = new Map<string, Set<string>>();
++  const ids = new Set(scan.nodes.map((n) => n.id));
++  const add = (key: string | undefined, id: string): void => {
++    if (key === undefined || key === '') return;
++    const k = key.toLowerCase();
++    const set = byKey.get(k) ?? new Set<string>();
++    set.add(id);
++    byKey.set(k, set);
++  };
++  for (const n of scan.nodes) {
++    add(displayOf(n), n.id);
++    if (n.path === undefined) continue;
++    const parts = n.path.replace(/\\/g, '/').split('/').filter((p) => p !== '');
++    for (let i = 0; i < parts.length; i += 1) add(parts.slice(i).join('/'), n.id);
++    const base = parts[parts.length - 1] ?? '';
++    const dot = base.lastIndexOf('.');
++    if (dot > 0) add(base.slice(0, dot), n.id);
++  }
++  return (ref: string) => {
++    const raw = String(ref ?? '').trim().replace(/^["'`]|["'`]$/g, '');
++    if (raw === '') return undefined;
++    if (ids.has(raw)) return { id: raw };
++    const hit = byKey.get(raw.toLowerCase().replace(/\\/g, '/').replace(/^\.\//, ''));
++    if (hit === undefined) return undefined;
++    if (hit.size === 1) return { id: [...hit][0]! };
++    return { ambiguous: [...hit].sort() };
++  };
++}
++
++/* ------------------------------------------------------------- the slice -- */
++
++export interface SliceOptions {
++  /** Most parts shown. Default 24: a map a 2.5B model can hold in view. */
++  maxNodes?: number;
++}
++
++interface Slice {
++  /** Selected node ids, numbered: ids[n - 1] is number n. */
++  ids: string[];
++  display: Map<string, string>;
++  /** Out-neighbours inside the slice, deduplicated. */
++  outs: Map<string, string[]>;
++  /** Focus refs that named no node (or named several). */
++  missing: string[];
++}
++
++const byString = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
++
++/**
++ * Pick the focus parts and their neighbours, breadth first, up to maxNodes.
++ *
++ * Within one ring the candidate most connected to what is already picked goes
++ * first, then the lexically smaller id, so the pick never depends on the
++ * order the scan listed things. Numbering is by display name, NOT by pick
++ * order: a map numbered in focus order would hand the model the answer
++ * (`1 > 2 > 3`) and measure nothing.
++ */
++function selectSlice(scan: ScanLike, focus: readonly string[], opts: SliceOptions = {}): Slice {
++  const maxNodes = Math.max(1, Math.floor(opts.maxNodes ?? 24));
++  const nodeById = new Map(scan.nodes.map((n) => [n.id, n] as const));
++  const resolve = scanResolver(scan);
++  const missing: string[] = [];
++  const picked: string[] = [];
++  const has = new Set<string>();
++  const pick = (id: string): void => {
++    if (!has.has(id) && picked.length < maxNodes) {
++      has.add(id);
++      picked.push(id);
++    }
++  };
++  for (const ref of focus) {
++    const r = resolve(ref);
++    if (r !== undefined && 'id' in r) pick(r.id);
++    else missing.push(ref);
++  }
++
++  const pairKeys = new Set<string>();
++  const adj = new Map<string, Set<string>>();
++  const outAll = new Map<string, Set<string>>();
++  const link = (a: string, b: string): void => {
++    const s = adj.get(a) ?? new Set<string>();
++    s.add(b);
++    adj.set(a, s);
++  };
++  for (const e of scan.edges) {
++    if (e.srcId === e.dstId || !nodeById.has(e.srcId) || !nodeById.has(e.dstId)) continue;
++    const key = `${e.srcId}>${e.dstId}`;
++    if (pairKeys.has(key)) continue;
++    pairKeys.add(key);
++    link(e.srcId, e.dstId);
++    link(e.dstId, e.srcId);
++    const o = outAll.get(e.srcId) ?? new Set<string>();
++    o.add(e.dstId);
++    outAll.set(e.srcId, o);
++  }
++  /* A focus with no edges is a container (a service, a module): its direct
++     children are its first ring, or the map would be one lonely box. */
++  const children = new Map<string, string[]>();
++  for (const n of scan.nodes) {
++    if (n.parentId === undefined) continue;
++    const c = children.get(n.parentId) ?? [];
++    c.push(n.id);
++    children.set(n.parentId, c);
++  }
++
++  let ring = [...picked];
++  const firstRingExtra = new Set<string>();
++  for (const id of ring) {
++    if ((adj.get(id)?.size ?? 0) === 0) for (const c of children.get(id) ?? []) firstRingExtra.add(c);
++  }
++  let first = true;
++  while (ring.length > 0 && picked.length < maxNodes) {
++    const cand = new Set<string>();
++    for (const id of ring) for (const nb of adj.get(id) ?? []) if (!has.has(nb)) cand.add(nb);
++    if (first) for (const c of firstRingExtra) if (!has.has(c)) cand.add(c);
++    first = false;
++    const scored = [...cand].map((id) => {
++      let score = 0;
++      for (const nb of adj.get(id) ?? []) if (has.has(nb)) score += 1;
++      return { id, score };
++    });
++    scored.sort((a, b) => b.score - a.score || byString(a.id, b.id));
++    const next: string[] = [];
++    for (const s of scored) {
++      if (picked.length >= maxNodes) break;
++      pick(s.id);
++      next.push(s.id);
++    }
++    ring = next;
++  }
++
++  const display = new Map<string, string>();
++  for (const id of picked) display.set(id, displayOf(nodeById.get(id)!));
++  const ids = [...picked].sort((a, b) => byString(display.get(a)!, display.get(b)!) || byString(a, b));
++  const outs = new Map<string, string[]>();
++  for (const id of ids) {
++    outs.set(id, [...(outAll.get(id) ?? [])].filter((d) => has.has(d)));
++  }
++  return { ids, display, outs, missing };
++}
++
++/* ---------------------------------------------------------- the pictures -- */
++
++export interface NumberedMap {
++  /** What the model is shown. */
++  text: string;
++  /** The node id behind a map number, or undefined when it is not on the map. */
++  idOf(n: number): string | undefined;
++  /** The map number of a node id. */
++  numberOf(id: string): number | undefined;
++  /** What the map calls number n (a path, or a node id for a non-file part). */
++  labelOf(n: number): string | undefined;
++  /** How many numbers the map has (they run 1..size). */
++  size: number;
++  /** Focus refs that named no node, or more than one. */
++  missing: string[];
++}
++
++function mapFrom(slice: Slice, text: string): NumberedMap {
++  const num = new Map(slice.ids.map((id, i) => [id, i + 1] as const));
++  return {
++    text,
++    idOf: (n) => (Number.isInteger(n) && n >= 1 ? slice.ids[n - 1] : undefined),
++    numberOf: (id) => num.get(id),
++    labelOf: (n) => {
++      const id = Number.isInteger(n) && n >= 1 ? slice.ids[n - 1] : undefined;
++      return id === undefined ? undefined : slice.display.get(id);
++    },
++    size: slice.ids.length,
++    missing: [...slice.missing],
++  };
++}
++
++/**
++ * The numbered map: one line per part, `3 app/main.py → 7, 12`, where the
++ * arrow lists the parts it calls on this map. This is the whole picture the
++ * `path` language points into.
++ */
++export function numberedMap(
++  scan: ScanLike,
++  focusIds: readonly string[],
++  opts: SliceOptions = {},
++): NumberedMap {
++  const slice = selectSlice(scan, focusIds, opts);
++  const num = new Map(slice.ids.map((id, i) => [id, i + 1] as const));
++  const lines = slice.ids.map((id, i) => {
++    const outs = slice.outs.get(id)!.map((d) => num.get(d)!).sort((a, b) => a - b);
++    return `${i + 1} ${slice.display.get(id)}${outs.length > 0 ? ` → ${outs.join(', ')}` : ''}`;
++  });
++  return mapFrom(slice, lines.join('\n'));
++}
++
++/**
++ * The same slice and the same numbers, drawn as a picture: an indented tree of
++ * numbered boxes, `[3 app/main.py]`, each child one `->` deeper. A part the
++ * tree has already drawn is pointed at by its number alone, `-> [7]`, so every
++ * edge on the map appears exactly once.
++ */
++export function asciiMap(
++  scan: ScanLike,
++  focusIds: readonly string[],
++  opts: SliceOptions = {},
++): NumberedMap {
++  const slice = selectSlice(scan, focusIds, opts);
++  const num = new Map(slice.ids.map((id, i) => [id, i + 1] as const));
++  const indeg = new Map<string, number>(slice.ids.map((id) => [id, 0]));
++  for (const id of slice.ids) for (const d of slice.outs.get(id)!) indeg.set(d, indeg.get(d)! + 1);
++  const drawn = new Set<string>();
++  const lines: string[] = [];
++  const box = (id: string): string => `[${num.get(id)} ${slice.display.get(id)}]`;
++  const walk = (id: string, depth: number): void => {
++    const lead = depth === 0 ? '' : `${'   '.repeat(depth - 1)}-> `;
++    if (drawn.has(id)) {
++      lines.push(`${lead}[${num.get(id)}]`);
++      return;
++    }
++    drawn.add(id);
++    lines.push(`${lead}${box(id)}`);
++    const outs = [...slice.outs.get(id)!].sort((a, b) => num.get(a)! - num.get(b)!);
++    for (const d of outs) walk(d, depth + 1);
++  };
++  for (const id of slice.ids) if (indeg.get(id) === 0 && !drawn.has(id)) walk(id, 0);
++  for (const id of slice.ids) if (!drawn.has(id)) walk(id, 0); /* cycles */
++  return mapFrom(slice, lines.join('\n'));
++}
++
++/**
++ * The view every NAMING language gets: the same slice as the numbered map,
++ * one line per part with the parts it calls, but by name instead of number.
++ * Same information, so the A/B compares the language and not the context.
++ */
++export function namedView(scan: ScanLike, focusIds: readonly string[], opts: SliceOptions = {}): string {
++  const slice = selectSlice(scan, focusIds, opts);
++  return slice.ids
++    .map((id) => {
++      const outs = slice.outs.get(id)!.map((d) => slice.display.get(d)!).sort(byString);
++      return `${slice.display.get(id)}${outs.length > 0 ? ` -> ${outs.join(', ')}` : ''}`;
++    })
++    .join('\n');
++}
++
++/* ------------------------------------------------------------ compiling -- */
++
++export interface DrawHead {
++  kind: ChartKind;
++  title: string;
++  caption?: string;
++  focusItemId?: string;
++}
++
++export interface CompiledDrawing {
++  lang: DrawLang;
++  /** Unvalidated: run it through groundDrawing / validateChart before trusting it. */
++  chart: Omit<SeqChart, 'version'> & { version: 1 };
++  /** One per link, in the order written; `say` is the narration when the language has one. */
++  steps: FlowStep[];
++  /** item id -> the line that declared it. */
++  itemLine: Map<string, number>;
++  /** links[i] -> its line. */
++  linkLine: number[];
++  /** How the author wrote links[i], when that reads better than item ids (`3 > 7`). */
++  linkText?: string[];
++}
++
++export type CompileDrawingResult =
++  | ({ ok: true } & CompiledDrawing)
++  | { ok: false; problems: FlowLineProblem[] };
++
++export interface CompileContext {
++  head: DrawHead;
++  /** Required for `path` and `ascii`: the map the model was shown. */
++  map?: NumberedMap;
++}
++
++/** Items, lines and hops as they are read, shared by the hand-written parsers. */
++class Builder {
++  readonly items = new Map<string, ChartItem>();
++  readonly itemLine = new Map<string, number>();
++  readonly links: ChartLink[] = [];
++  readonly linkLine: number[] = [];
++  readonly linkText: string[] = [];
++  readonly steps: FlowStep[] = [];
++  readonly problems: FlowLineProblem[] = [];
++
++  /** What a part with no label is called: Mermaid and Graphviz both show the id itself. */
++  constructor(private readonly defaultLabel: (id: string) => string = (id) => id) {}
++
++  touch(id: string, line: number, label?: string): ChartItem {
++    const clean = label?.trim();
++    let it = this.items.get(id);
++    if (it === undefined) {
++      it = { id, label: clean || this.defaultLabel(id) };
++      this.items.set(id, it);
++      this.itemLine.set(id, line);
++    } else if (clean && it.label === this.defaultLabel(id)) {
++      it.label = clean;
++      /* A problem about this part belongs on the line that named it. */
++      this.itemLine.set(id, line);
++    }
++    return it;
++  }
++
++  hop(from: string, to: string, line: number, label?: string, say?: string, text?: string): void {
++    const l: ChartLink = { from, to };
++    const lab = label?.trim();
++    if (lab) l.label = lab;
++    this.links.push(l);
++    this.linkLine.push(line);
++    this.linkText.push(text ?? `${from} -> ${to}`);
++    const step: FlowStep = { from, to };
++    if (say?.trim()) step.say = say.trim();
++    this.steps.push(step);
++  }
++
++  problem(line: number, message: string): void {
++    this.problems.push({ line, message: `line ${line}: ${message}` });
++  }
++
++  finish(lang: DrawLang, head: DrawHead, shapes: string, keepLinkText = false): CompileDrawingResult {
++    if (this.problems.length === 0 && this.items.size === 0) {
++      this.problems.push({ line: 1, message: `the drawing has no parts. Write ${shapes}` });
++    }
++    if (this.problems.length > 0) return { ok: false, problems: this.problems };
++    const chart: CompiledDrawing['chart'] = {
++      version: 1,
++      kind: head.kind,
++      title: head.title,
++      items: [...this.items.values()],
++      links: this.links,
++    };
++    if (head.caption !== undefined) chart.caption = head.caption;
++    if (head.focusItemId !== undefined) chart.focusItemId = head.focusItemId;
++    const out: { ok: true } & CompiledDrawing = {
++      ok: true,
++      lang,
++      chart,
++      steps: this.steps,
++      itemLine: this.itemLine,
++      linkLine: this.linkLine,
++    };
++    if (keepLinkText) out.linkText = this.linkText;
++    return out;
++  }
++}
++
++const FENCE = /^```/;
++
++/* ---- json ---- */
++
++function lineAt(text: string, index: number): number {
++  let n = 1;
++  for (let i = 0; i < index && i < text.length; i += 1) if (text[i] === '\n') n += 1;
++  return n;
++}
++
++function compileJson(text: string, head: DrawHead): CompileDrawingResult {
++  const src = String(text ?? '');
++  const start = src.indexOf('{');
++  const end = src.lastIndexOf('}');
++  const shapes = '{"items":[{"id":"a","label":"A","nodeId":"path/to/file"}],"links":[{"from":"a","to":"b"}]}';
++  if (start < 0 || end <= start) {
++    return { ok: false, problems: [{ line: 1, message: `line 1: no JSON object found. Write ${shapes}` }] };
++  }
++  let value: unknown;
++  try {
++    value = JSON.parse(src.slice(start, end + 1));
++  } catch (e) {
++    const msg = e instanceof Error ? e.message : String(e);
++    const pos = /position (\d+)/.exec(msg);
++    const lc = /line (\d+)/.exec(msg);
++    const line = pos ? lineAt(src, start + Number(pos[1])) : lc ? lineAt(src, start) + Number(lc[1]) - 1 : lineAt(src, start);
++    return { ok: false, problems: [{ line, message: `line ${line}: not valid JSON (${msg}). Write ${shapes}` }] };
++  }
++  let o = value as Record<string, unknown> | null;
++  if (o && typeof o === 'object' && !Array.isArray(o.items) && o.chart && typeof o.chart === 'object') {
++    o = o.chart as Record<string, unknown>;
++  }
++  if (!o || typeof o !== 'object' || !Array.isArray(o.items)) {
++    return { ok: false, problems: [{ line: lineAt(src, start), message: `line ${lineAt(src, start)}: the JSON has no "items" list. Write ${shapes}` }] };
++  }
++  const items = o.items as ChartItem[];
++  const links = (o.links ?? []) as ChartLink[];
++  /* Where each item id and each link was written, so a validator problem can
++     name a line: an item on the line that carries its "id", link i on the line
++     of the i-th "from". */
++  const itemLine = new Map<string, number>();
++  for (const it of items) {
++    if (!it || typeof it.id !== 'string' || itemLine.has(it.id)) continue;
++    const esc = JSON.stringify(it.id).slice(1, -1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
++    const m = new RegExp(`"id"\\s*:\\s*"${esc}"`).exec(src);
++    if (m) itemLine.set(it.id, lineAt(src, m.index));
++  }
++  const linkLine: number[] = [];
++  const fromRe = /"from"\s*:/g;
++  let m: RegExpExecArray | null;
++  while ((m = fromRe.exec(src)) !== null) linkLine.push(lineAt(src, m.index));
++  const chart = {
++    ...(o as object),
++    version: 1 as const,
++    kind: (o.kind ?? head.kind) as ChartKind,
++    title: (typeof o.title === 'string' && o.title !== '' ? o.title : head.title) as string,
++    items,
++    links,
++  } as CompiledDrawing['chart'];
++  const steps: FlowStep[] = Array.isArray(links)
++    ? links.map((l) => ({ from: String(l?.from), to: String(l?.to) }))
++    : [];
++  return { ok: true, lang: 'json', chart, steps, itemLine, linkLine };
++}
++
++/* ---- mermaid ---- */
++
++const MERMAID_SKIP =
++  /^(?:(?:flowchart|graph)(?:\s+(?:TD|TB|LR|RL|BT))?|subgraph\b.*|end|direction\s+\w+|classDef\b.*|class\s.*|style\s.*|linkStyle\b.*|click\s.*|accTitle\b.*|accDescr\b.*|title\s.*|---)$/i;
++const M_ID = /\s*([A-Za-z0-9_]+(?:[.\-][A-Za-z0-9_]+)*)/y;
++const M_TEXT_ARROW = /\s*(?:--|==|-\.)\s+(.+?)\s+(?:-{2,}>|={2,}>|\.+->|-{3,}|={3,})/y;
++const M_ARROW = /\s*(?:<?-{2,}>|<?={2,}>|<?-\.+->|-\.+-|-{3,}|={3,}|--[xo](?=\s|[A-Za-z0-9_])|->|~~~)/y;
++const M_PIPE = /\s*\|([^|]*)\|/y;
++const M_AMP = /\s*&/y;
++const M_SHAPES = '`a[path/to/file] -->|what moves| b[other/file]`, one hop or chain per line';
++
++function mermaidShapeLabel(line: string, at: number): { label: string; end: number } | undefined {
++  const open = line[at];
++  if (open === undefined || !'[({>'.includes(open)) return undefined;
++  let i = at;
++  while (i < line.length && '[({>/\\'.includes(line[i]!)) i += 1;
++  let label: string;
++  if (line[i] === '"') {
++    const close = line.indexOf('"', i + 1);
++    if (close < 0) return undefined;
++    label = line.slice(i + 1, close);
++    i = close + 1;
++  } else {
++    let j = i;
++    while (j < line.length && !'])}'.includes(line[j]!)) j += 1;
++    if (j >= line.length) return undefined;
++    label = line.slice(i, j).replace(/[/\\]+$/, '');
++    i = j;
++  }
++  while (i < line.length && '])}/\\'.includes(line[i]!)) i += 1;
++  return { label: label.replace(/#quot;/g, '"').trim(), end: i };
++}
++
++function compileMermaid(text: string, head: DrawHead): CompileDrawingResult {
++  const b = new Builder();
++  String(text ?? '')
++    .split(/\r?\n/)
++    .forEach((raw, idx) => {
++      const n = idx + 1;
++      const line = raw.trim().replace(/;\s*$/, '');
++      if (line === '' || line.startsWith('%%') || FENCE.test(line) || MERMAID_SKIP.test(line)) return;
++      let pos = 0;
++      const readNode = (): { id: string; label?: string } | undefined => {
++        M_ID.lastIndex = pos;
++        const m = M_ID.exec(line);
++        if (!m) return undefined;
++        pos = M_ID.lastIndex;
++        const shape = mermaidShapeLabel(line, pos);
++        if (shape !== undefined) {
++          pos = shape.end;
++          return { id: m[1]!, label: shape.label };
++        }
++        return { id: m[1]! };
++      };
++      const readGroup = (): { id: string; label?: string }[] | undefined => {
++        const first = readNode();
++        if (!first) return undefined;
++        const group = [first];
++        for (;;) {
++          M_AMP.lastIndex = pos;
++          if (!M_AMP.exec(line)) break;
++          pos = M_AMP.lastIndex;
++          const next = readNode();
++          if (!next) return undefined;
++          group.push(next);
++        }
++        return group;
++      };
++      const fail = (): void => b.problem(n, `cannot read \`${line}\`. Write ${M_SHAPES}`);
++      let from = readGroup();
++      if (!from) return fail();
++      for (const g of from) b.touch(g.id, n, g.label);
++      const pending: { from: string[]; to: string[]; label?: string }[] = [];
++      for (;;) {
++        let label: string | undefined;
++        M_TEXT_ARROW.lastIndex = pos;
++        const t = M_TEXT_ARROW.exec(line);
++        if (t) {
++          label = t[1];
++          pos = M_TEXT_ARROW.lastIndex;
++        } else {
++          M_ARROW.lastIndex = pos;
++          if (!M_ARROW.exec(line)) break;
++          pos = M_ARROW.lastIndex;
++          M_PIPE.lastIndex = pos;
++          const p = M_PIPE.exec(line);
++          if (p) {
++            label = p[1];
++            pos = M_PIPE.lastIndex;
++          }
++        }
++        const to = readGroup();
++        if (!to) return fail();
++        for (const g of to) b.touch(g.id, n, g.label);
++        const hop: { from: string[]; to: string[]; label?: string } = {
++          from: from.map((g) => g.id),
++          to: to.map((g) => g.id),
++        };
++        if (label !== undefined) hop.label = label;
++        pending.push(hop);
++        from = to;
++      }
++      let rest = line.slice(pos).trim();
++      /* flowLines' `a --> b: label` suffix, which models carry over. */
++      const colon = /^:\s*(.*)$/.exec(rest);
++      if (colon && pending.length > 0 && pending[pending.length - 1]!.label === undefined) {
++        pending[pending.length - 1]!.label = colon[1];
++        rest = '';
++      }
++      if (rest !== '') return fail();
++      for (const h of pending) {
++        for (const f of h.from) for (const t of h.to) b.hop(f, t, n, h.label);
++      }
++    });
++  return b.finish('mermaid', head, M_SHAPES);
++}
++
++/* ---- dot ---- */
++
++interface DotTok {
++  kind: 'id' | 'str' | 'punct';
++  value: string;
++  line: number;
++}
++
++function dotTokens(text: string): { toks: DotTok[]; bad?: number } {
++  const toks: DotTok[] = [];
++  let line = 1;
++  let i = 0;
++  const s = text;
++  while (i < s.length) {
++    const c = s[i]!;
++    if (c === '\n') {
++      line += 1;
++      i += 1;
++      continue;
++    }
++    if (/\s/.test(c)) {
++      i += 1;
++      continue;
++    }
++    const atLineStart = /(^|\n)[ \t]*$/.test(s.slice(Math.max(0, i - 200), i)) || i === 0;
++    if ((c === '/' && s[i + 1] === '/') || (c === '#' && atLineStart) || (c === '`' && s.startsWith('```', i) && atLineStart)) {
++      while (i < s.length && s[i] !== '\n') i += 1;
++      continue;
++    }
++    if (c === '/' && s[i + 1] === '*') {
++      const end = s.indexOf('*/', i + 2);
++      const stop = end < 0 ? s.length : end + 2;
++      for (let k = i; k < stop; k += 1) if (s[k] === '\n') line += 1;
++      i = stop;
++      continue;
++    }
++    if (c === '"') {
++      let j = i + 1;
++      let v = '';
++      const startLine = line;
++      while (j < s.length && s[j] !== '"') {
++        if (s[j] === '\\' && s[j + 1] === '"') {
++          v += '"';
++          j += 2;
++          continue;
++        }
++        if (s[j] === '\\' && s[j + 1] === '\n') {
++          line += 1;
++          j += 2;
++          continue;
++        }
++        if (s[j] === '\n') line += 1;
++        v += s[j];
++        j += 1;
++      }
++      if (j >= s.length) return { toks, bad: startLine };
++      toks.push({ kind: 'str', value: v, line: startLine });
++      i = j + 1;
++      continue;
++    }
++    if (c === '<') {
++      /* An HTML label: kept as text, tags and all. */
++      let depth = 0;
++      let j = i;
++      const startLine = line;
++      for (; j < s.length; j += 1) {
++        if (s[j] === '<') depth += 1;
++        else if (s[j] === '>') depth -= 1;
++        else if (s[j] === '\n') line += 1;
++        if (depth === 0) break;
++      }
++      toks.push({ kind: 'str', value: s.slice(i + 1, j).replace(/<[^>]*>/g, ' ').trim(), line: startLine });
++      i = j + 1;
++      continue;
++    }
++    if (s.startsWith('->', i) || s.startsWith('--', i)) {
++      toks.push({ kind: 'punct', value: '->', line });
++      i += 2;
++      continue;
++    }
++    if ('{}[];,=:'.includes(c)) {
++      toks.push({ kind: 'punct', value: c, line });
++      i += 1;
++      continue;
++    }
++    const m = /^(?:-?(?:\.\d+|\d+(?:\.\d*)?)|[A-Za-z_\u0080-￿][\w\u0080-￿]*)/.exec(s.slice(i, i + 400));
++    if (!m) {
++      /* A character DOT has no use for (prose punctuation, mostly): kept as a
++         token so the parser refuses the statement it sits in, on its line. */
++      toks.push({ kind: 'punct', value: c, line });
++      i += 1;
++      continue;
++    }
++    toks.push({ kind: 'id', value: m[0], line });
++    i += m[0].length;
++  }
++  return { toks };
++}
++
++const DOT_SHAPES = '`"path/to/a" -> "path/to/b" [label="what moves"];` or `a [label="A"];`';
++
++function compileDot(text: string, head: DrawHead): CompileDrawingResult {
++  const b = new Builder();
++  const src = String(text ?? '');
++  const lines = src.split(/\r?\n/);
++  const { toks, bad } = dotTokens(src);
++  if (bad !== undefined) b.problem(bad, `cannot read \`${(lines[bad - 1] ?? '').trim()}\` (an unclosed quote?). Write ${DOT_SHAPES}`);
++  let i = 0;
++  const peek = (k = 0): DotTok | undefined => toks[i + k];
++  const isP = (t: DotTok | undefined, v: string): boolean => t !== undefined && t.kind === 'punct' && t.value === v;
++  const kw = (t: DotTok | undefined, v: string): boolean => t !== undefined && t.kind === 'id' && t.value.toLowerCase() === v;
++  const isId = (t: DotTok | undefined): boolean => t !== undefined && (t.kind === 'id' || t.kind === 'str');
++  const fail = (t: DotTok | undefined): void => {
++    const line = t?.line ?? lines.length;
++    b.problem(line, `cannot read \`${(lines[line - 1] ?? '').trim()}\`. Write ${DOT_SHAPES}`);
++    /* Recover at the next statement: a `;`, a new line, or a brace. */
++    const from = t?.line;
++    while (i < toks.length && !isP(peek(), ';') && !isP(peek(), '}') && peek()!.line === from) i += 1;
++    if (isP(peek(), ';')) i += 1;
++  };
++  const attrs = (): Map<string, string> | undefined => {
++    const out = new Map<string, string>();
++    while (isP(peek(), '[')) {
++      i += 1;
++      while (!isP(peek(), ']')) {
++        if (!isId(peek())) return undefined;
++        const k = peek()!.value.toLowerCase();
++        i += 1;
++        if (!isP(peek(), '=') || !isId(peek(1))) return undefined;
++        out.set(k, peek(1)!.value);
++        i += 2;
++        if (isP(peek(), ',') || isP(peek(), ';')) i += 1;
++      }
++      i += 1;
++    }
++    return out;
++  };
++  const nodeRef = (): DotTok | undefined => {
++    if (!isId(peek())) return undefined;
++    const t = peek()!;
++    i += 1;
++    /* A port (`a:n`) names a side of the box, not a different box. */
++    if (isP(peek(), ':') && isId(peek(1))) i += 2;
++    if (isP(peek(), ':') && isId(peek(1))) i += 2;
++    return t;
++  };
++  /* When the answer has a graph block, anything outside it is prose, not
++     structure: refused like any other unreadable line instead of being read as
++     a pile of bare node names. With no block, the statements stand alone. */
++  const hasBlock = toks.some(
++    (t, k) => (kw(t, 'digraph') || kw(t, 'graph')) && (isP(toks[k + 1], '{') || isP(toks[k + 2], '{')),
++  );
++  const outside = (t: DotTok): void => {
++    b.problem(t.line, `\`${(lines[t.line - 1] ?? '').trim()}\` is outside the graph block. Write only the graph: ${DOT_SHAPES}`);
++    const from = t.line;
++    while (i < toks.length && peek()!.line === from) i += 1;
++  };
++  const stmts = (depth: number): void => {
++    while (i < toks.length) {
++      const t = peek()!;
++      const header =
++        kw(t, 'strict') || ((kw(t, 'digraph') || kw(t, 'graph')) && !isP(peek(1), '['));
++      if (hasBlock && depth === 0 && !header) {
++        outside(t);
++        continue;
++      }
++      if (isP(t, '}')) {
++        i += 1;
++        if (depth > 0) return;
++        continue;
++      }
++      if (isP(t, ';') || isP(t, ',')) {
++        i += 1;
++        continue;
++      }
++      if (kw(t, 'strict')) {
++        i += 1;
++        continue;
++      }
++      if (kw(t, 'digraph') || kw(t, 'graph') || kw(t, 'subgraph')) {
++        if (!isP(peek(1), '[')) {
++          i += 1;
++          if (isId(peek()) && !isP(peek(), '{')) i += 1;
++          if (isP(peek(), '{')) {
++            i += 1;
++            stmts(depth + 1);
++          }
++          continue;
++        }
++      }
++      if (isP(t, '{')) {
++        i += 1;
++        stmts(depth + 1);
++        continue;
++      }
++      if ((kw(t, 'node') || kw(t, 'edge') || kw(t, 'graph')) && isP(peek(1), '[')) {
++        i += 1;
++        if (attrs() === undefined) fail(t);
++        continue;
++      }
++      if (isId(t) && isP(peek(1), '=')) {
++        /* A graph attribute: rankdir=LR, label="...". */
++        i += 2;
++        if (isId(peek())) i += 1;
++        continue;
++      }
++      const first = nodeRef();
++      if (first === undefined) {
++        fail(t);
++        continue;
++      }
++      const chain: DotTok[] = [first];
++      let broken = false;
++      while (isP(peek(), '->')) {
++        i += 1;
++        const next = nodeRef();
++        if (next === undefined) {
++          broken = true;
++          break;
++        }
++        chain.push(next);
++      }
++      if (broken) {
++        fail(peek() ?? first);
++        continue;
++      }
++      const a = attrs();
++      if (a === undefined) {
++        fail(first);
++        continue;
++      }
++      if (chain.length === 1) {
++        const it = b.touch(first.value, first.line, a.get('label'));
++        if (a.has('label')) b.itemLine.set(first.value, first.line);
++        const path = a.get('path');
++        if (path) it.nodeId = path;
++        const detail = a.get('tooltip');
++        if (detail) it.detail = detail;
++      } else {
++        for (const c of chain) b.touch(c.value, c.line);
++        for (let k = 1; k < chain.length; k += 1) {
++          b.hop(chain[k - 1]!.value, chain[k]!.value, chain[k]!.line, a.get('label'));
++        }
++      }
++    }
++  };
++  if (bad === undefined) stmts(0);
++  return b.finish('dot', head, DOT_SHAPES);
++}
++
++/* ---- path / ascii ---- */
++
++const PATH_SEP = /\s*(?:-+>|→|⟶|=>|>)\s*/;
++const PATH_SHAPES = '`3 > 7 | what happens`, numbers from the map, one hop per line';
++
++function compilePath(lang: 'path' | 'ascii', text: string, head: DrawHead, map: NumberedMap): CompileDrawingResult {
++  const b = new Builder();
++  let last: string | undefined;
++  const nameIndex = new Map<string, number[]>();
++  for (let k = 1; k <= map.size; k += 1) {
++    const label = map.labelOf(k)!.toLowerCase();
++    const base = label.slice(label.lastIndexOf('/') + 1);
++    for (const key of new Set([label, base])) nameIndex.set(key, [...(nameIndex.get(key) ?? []), k]);
++  }
++  String(text ?? '')
++    .split(/\r?\n/)
++    .forEach((raw, idx) => {
++      const n = idx + 1;
++      let line = raw.trim();
++      if (line === '' || FENCE.test(line) || /^(?:%%|#|\/\/)/.test(line)) return;
++      line = line
++        .replace(/^(?:answer|path)\s*:\s*/i, '')
++        .replace(/^[-*•]\s+/, '')
++        .replace(/^\d+[.)]\s+(?=\[?#?\d+\]?\s*(?:-+>|→|>))/, '')
++        .replace(/[.;]\s*$/, '');
++      const bar = line.indexOf('|');
++      let body = bar >= 0 ? line.slice(0, bar).trim() : line;
++      const say = bar >= 0 ? line.slice(bar + 1).trim() : undefined;
++      let label: string | undefined;
++      const lab = /^(.*?\d\]?)\s*:\s*(.+)$/.exec(body);
++      if (lab) {
++        body = lab[1]!;
++        label = lab[2]!;
++      }
++      const continues = /^(?:-+>|→|⟶|=>|>)/.test(body);
++      const parts = body.split(PATH_SEP).map((p) => p.trim());
++      if (continues) parts.shift();
++      const nums: number[] = [];
++      for (const p of parts) {
++        const m = /^\[?#?(\d+)\]?(?:\s.*)?$/.exec(p);
++        if (!m) {
++          const hit = nameIndex.get(p.toLowerCase().replace(/^\[|\]$/g, ''));
++          const hint = hit?.length === 1 ? ` "${p}" is ${hit[0]} on the map.` : '';
++          b.problem(n, `\`${p || line}\` is not a number from the map.${hint} Write ${PATH_SHAPES}`);
++          return;
++        }
++        const num = Number(m[1]);
++        if (map.idOf(num) === undefined) {
++          b.problem(n, `${num} is not on the map; its numbers run 1-${map.size}. Write ${PATH_SHAPES}`);
++          return;
++        }
++        nums.push(num);
++      }
++      if (nums.length === 0) {
++        b.problem(n, `cannot read \`${line}\`. Write ${PATH_SHAPES}`);
++        return;
++      }
++      const ids = nums.map((k) => map.idOf(k)!);
++      if (continues) {
++        if (last === undefined) {
++          b.problem(n, `\`${line}\` continues a path that has not started. Write ${PATH_SHAPES}`);
++          return;
++        }
++        ids.unshift(last);
++        nums.unshift(map.numberOf(last)!);
++      }
++      ids.forEach((id, k) => {
++        const it = b.touch(id, n, map.labelOf(nums[k]!));
++        it.nodeId = id;
++      });
++      for (let k = 1; k < ids.length; k += 1) {
++        const lastHop = k === ids.length - 1;
++        b.hop(ids[k - 1]!, ids[k]!, n, lastHop ? label : undefined, lastHop ? say : undefined, `${nums[k - 1]} > ${nums[k]}`);
++      }
++      last = ids[ids.length - 1];
++    });
++  return b.finish(lang, head, PATH_SHAPES, true);
++}
++
++/**
++ * Compile what the author wrote in `lang` into a chart. Structural only: the
++ * chart is unvalidated. Use {@link groundDrawing} to check it against a scan.
++ */
++export function compileDrawing(lang: DrawLang, text: string, ctx: CompileContext): CompileDrawingResult {
++  switch (lang) {
++    case 'json':
++      return compileJson(text, ctx.head);
++    case 'flow': {
++      const r = compileFlowLines(text, ctx.head);
++      return r.ok ? { ...r, lang: 'flow' } : r;
++    }
++    case 'mermaid':
++      return compileMermaid(text, ctx.head);
++    case 'dot':
++      return compileDot(text, ctx.head);
++    case 'path':
++    case 'ascii':
++      if (ctx.map === undefined) throw new TypeError(`compileDrawing: ${lang} needs the map the model was shown`);
++      return compilePath(lang, text, ctx.head, ctx.map);
++    default:
++      throw new TypeError(`compileDrawing: unknown language ${String(lang)}`);
++  }
++}
++
++/**
++ * Put a validator problem back on the line the author wrote. Same contract as
++ * flowProblemLine; a pointing language names the hop by its numbers.
++ */
++export function drawingProblemLine(
++  compiled: Pick<CompiledDrawing, 'chart' | 'itemLine' | 'linkLine' | 'linkText'>,
++  problem: ChartProblem,
++): string {
++  const link = /^links\[(\d+)\]/.exec(problem.path);
++  if (link && compiled.linkText !== undefined) {
++    const i = Number(link[1]);
++    const n = compiled.linkLine[i];
++    const t = compiled.linkText[i];
++    if (n !== undefined && t !== undefined) return `line ${n} (${t}): ${problem.message}`;
++  }
++  return flowProblemLine(compiled, problem);
++}
++
++/* ------------------------------------------------------------ grounding -- */
++
++export interface GroundResult {
++  /** The text compiled into a chart. */
++  parsed: boolean;
++  /** Every part is a scan node and every hop a scan edge (validateChart passed). */
++  grounded: boolean;
++  /** Line-named problems: compile problems, or validator problems mapped to lines. */
++  problems: string[];
++  /** The chart with every part's nodeId resolved, when it parsed. */
++  chart?: CompiledDrawing['chart'];
++  steps?: FlowStep[];
++  nodes: number;
++  nodesGrounded: number;
++  edges: number;
++  edgesGrounded: number;
++  /** Each link as a scan-node pair, when both ends resolved. */
++  nodePairs: [string, string][];
++}
++
++/**
++ * Compile, resolve every part to a scan node, and validate against the scan.
++ *
++ * ONE RULE FOR EVERY LANGUAGE: each part must stand for a real node. A part's
++ * explicit nodeId is resolved first, then its label, then its id; whatever it
++ * finally names is handed to validateChart with the scan's node and edge sets,
++ * so an invented part and an invented arrow are refused by exactly the check
++ * propose_chart already uses. A pointing language gets this for free: its
++ * parts come from the map.
++ */
++export function groundDrawing(
++  lang: DrawLang,
++  text: string,
++  scan: ScanLike,
++  ctx: CompileContext,
++): GroundResult {
++  const empty = { nodes: 0, nodesGrounded: 0, edges: 0, edgesGrounded: 0, nodePairs: [] as [string, string][] };
++  let compiled: CompileDrawingResult;
++  try {
++    compiled = compileDrawing(lang, text, ctx);
++  } catch (e) {
++    if (e instanceof TypeError && /needs the map|unknown language/.test(e.message)) throw e;
++    return { parsed: false, grounded: false, problems: [String(e)], ...empty };
++  }
++  if (!compiled.ok) {
++    return { parsed: false, grounded: false, problems: compiled.problems.map((p) => p.message), ...empty };
++  }
++  const resolve = scanResolver(scan);
++  const known = new Set(scan.nodes.map((n) => n.id));
++  const knownEdges = groundingEdgeKeys(scan.edges);
++  const problems: string[] = [];
++  const rawItems = Array.isArray(compiled.chart.items) ? compiled.chart.items : [];
++  const ambiguousAt = new Set<number>();
++  const items = rawItems.map((it, i) => {
++    if (!it || typeof it !== 'object') return it;
++    /* An explicit nodeId is the author's claim and is the only ref tried, as
++       in the analyzer: a wrong path is not rescued by a lucky label. */
++    const refs = (typeof it.nodeId === 'string' && it.nodeId !== '' ? [it.nodeId] : [it.label, it.id]).filter(
++      (r): r is string => typeof r === 'string' && r !== '',
++    );
++    for (const ref of refs) {
++      const r = resolve(ref);
++      if (r === undefined) continue;
++      if ('ambiguous' in r) {
++        const n = compiled.itemLine.get(it.id);
++        problems.push(
++          `${n === undefined ? `item ${it.id}` : `line ${n} (${it.id})`}: "${ref}" matches ${r.ambiguous.length} ` +
++            `parts (${r.ambiguous.join(', ')}). Name the one you mean`,
++        );
++        ambiguousAt.add(i);
++        return { ...it, nodeId: ref };
++      }
++      return { ...it, nodeId: r.id };
++    }
++    return { ...it, nodeId: refs[0] ?? it.id };
++  });
++  const chart = { ...compiled.chart, items } as CompiledDrawing['chart'];
++  const nodeOf = new Map<string, string>();
++  for (const it of items) if (it && typeof it.nodeId === 'string') nodeOf.set(it.id, it.nodeId);
++  const links = Array.isArray(chart.links) ? chart.links : [];
++  const nodePairs: [string, string][] = [];
++  let edgesGrounded = 0;
++  for (const l of links) {
++    const a = l ? nodeOf.get(l.from) : undefined;
++    const z = l ? nodeOf.get(l.to) : undefined;
++    if (a !== undefined && z !== undefined && known.has(a) && known.has(z)) {
++      nodePairs.push([a, z]);
++      if (knownEdges.has(`${a}>${z}`)) edgesGrounded += 1;
++    }
++  }
++  const v = validateChart(chart, known, knownEdges);
++  if (!v.ok) {
++    const withLines = { ...compiled, chart };
++    for (const p of v.problems) {
++      /* Already named above, with the candidates; the validator would only
++         repeat it as "not a node". */
++      const at = /^items\[(\d+)\]\.nodeId$/.exec(p.path);
++      if (at && ambiguousAt.has(Number(at[1]))) continue;
++      problems.push(drawingProblemLine(withLines, p));
++    }
++  }
++  return {
++    parsed: true,
++    grounded: problems.length === 0,
++    problems,
++    chart,
++    steps: compiled.steps,
++    nodes: items.length,
++    nodesGrounded: items.filter((it) => it && typeof it.nodeId === 'string' && known.has(it.nodeId)).length,
++    edges: links.length,
++    edgesGrounded,
++    nodePairs,
++  };
++}
++
++/**
++ * The share of the expected route the answer drew: consecutive pairs of
++ * `expect` (scan refs, resolved like everything else) that appear as a link in
++ * the same direction. Undefined when there is no hop to expect.
++ */
++export function hopCoverage(
++  scan: ScanLike,
++  nodePairs: readonly (readonly [string, string])[],
++  expect: readonly string[],
++): number | undefined {
++  const resolve = scanResolver(scan);
++  const ids = expect.map((r) => {
++    const x = resolve(r);
++    return x !== undefined && 'id' in x ? x.id : `?${r}`;
++  });
++  if (ids.length < 2) return undefined;
++  const have = new Set(nodePairs.map(([a, z]) => `${a}>${z}`));
++  let hit = 0;
++  for (let k = 1; k < ids.length; k += 1) if (have.has(`${ids[k - 1]}>${ids[k]}`)) hit += 1;
++  return hit / (ids.length - 1);
++}
++
++/* ------------------------------------------------------------- printing -- */
++
++/**
++ * Compiling a printed chart puts declared parts first, then the rest in order
++ * of first mention. When that would reorder the items, every part is declared.
++ */
++function declaredFirst(chart: Pick<SeqChart, 'items' | 'links'>, plain: (it: ChartItem) => boolean): ChartItem[] {
++  const mention: string[] = [];
++  for (const l of chart.links ?? []) for (const id of [l.from, l.to]) if (!mention.includes(id)) mention.push(id);
++  const declared = chart.items.filter((it) => !plain(it) || !mention.includes(it.id));
++  const ids = new Set(declared.map((it) => it.id));
++  const order = [...declared.map((it) => it.id), ...mention.filter((id) => !ids.has(id))];
++  return order.join('\n') === chart.items.map((it) => it.id).join('\n') ? declared : chart.items;
++}
++
++const MERMAID_ID = /^[A-Za-z0-9_]+(?:[.\-][A-Za-z0-9_]+)*$/;
++
++function mermaidLabel(label: string): string {
++  return /^[\w ./:-]*$/.test(label) ? label : `"${label.replace(/"/g, '#quot;')}"`;
++}
++
++function chartToMermaid(chart: Pick<SeqChart, 'items' | 'links'>): string {
++  const bad = chart.items.find((it) => !MERMAID_ID.test(it.id));
++  if (bad) throw new TypeError(`chartToMermaid: "${bad.id}" is not a Mermaid node id`);
++  const out = ['flowchart LR'];
++  for (const it of declaredFirst(chart, (it) => it.label === it.id)) {
++    out.push(`  ${it.id}[${mermaidLabel(it.label)}]`);
++  }
++  for (const l of chart.links ?? []) {
++    const lab = l.label !== undefined ? `|${l.label.replace(/\|/g, '/')}|` : '';
++    out.push(`  ${l.from} -->${lab} ${l.to}`);
++  }
++  return out.join('\n');
++}
++
++const DOT_KEYWORDS = new Set(['node', 'edge', 'graph', 'digraph', 'subgraph', 'strict']);
++function dotId(id: string): string {
++  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(id) && !DOT_KEYWORDS.has(id.toLowerCase())
++    ? id
++    : `"${id.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
++}
++const dotStr = (s: string): string => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
++
++function chartToDot(chart: Pick<SeqChart, 'items' | 'links'>): string {
++  const out = ['digraph G {'];
++  for (const it of declaredFirst(chart, (it) => it.label === it.id && it.nodeId === undefined && it.detail === undefined)) {
++    const a: string[] = [];
++    if (it.label !== it.id) a.push(`label=${dotStr(it.label)}`);
++    if (it.nodeId !== undefined) a.push(`path=${dotStr(it.nodeId)}`);
++    if (it.detail !== undefined) a.push(`tooltip=${dotStr(it.detail)}`);
++    out.push(`  ${dotId(it.id)}${a.length > 0 ? ` [${a.join(', ')}]` : ''};`);
++  }
++  for (const l of chart.links ?? []) {
++    out.push(`  ${dotId(l.from)} -> ${dotId(l.to)}${l.label !== undefined ? ` [label=${dotStr(l.label)}]` : ''};`);
++  }
++  out.push('}');
++  return out.join('\n');
++}
++
++function chartToJson(chart: Pick<SeqChart, 'items' | 'links'>): string {
++  const items = chart.items.map((it) => JSON.stringify(it));
++  const links = (chart.links ?? []).map((l) => JSON.stringify(l));
++  return `{"items":[\n${items.join(',\n')}\n],"links":[\n${links.join(',\n')}\n]}`;
++}
++
++function chartToPath(
++  chart: Pick<SeqChart, 'items' | 'links'>,
++  map: NumberedMap,
++  steps?: readonly FlowStep[],
++): string {
++  const itemNode = new Map(chart.items.map((it) => [it.id, it.nodeId ?? it.id] as const));
++  const num = (itemId: string): number => {
++    const k = map.numberOf(itemNode.get(itemId) ?? itemId);
++    if (k === undefined) throw new TypeError(`chartToPath: "${itemId}" is not on the map`);
++    return k;
++  };
++  const out: string[] = [];
++  for (const it of declaredFirst(chart, () => true)) out.push(String(num(it.id)));
++  (chart.links ?? []).forEach((l, i) => {
++    let line = `${num(l.from)} > ${num(l.to)}`;
++    if (l.label !== undefined) line += `: ${l.label.replace(/\|/g, '/')}`;
++    const say = steps?.[i]?.say;
++    if (say) line += ` | ${say}`;
++    out.push(line);
++  });
++  return out.join('\n');
++}
++
++/**
++ * Print a chart in `lang`: what a model would have written to draw it.
++ * Compiling the result gives back the same parts and hops (tested on the
++ * model's real propose_chart calls). What each language carries: json all of
++ * it; flow and dot id, label, nodeId, detail, link labels; mermaid id, label,
++ * link labels; path/ascii the map's parts and link labels plus narration.
++ */
++export function printDrawing(
++  lang: DrawLang,
++  chart: Pick<SeqChart, 'items' | 'links'>,
++  opts: { map?: NumberedMap; steps?: readonly FlowStep[] } = {},
++): string {
++  switch (lang) {
++    case 'json':
++      return chartToJson(chart);
++    case 'flow':
++      return chartToFlowLines(chart, opts.steps);
++    case 'mermaid':
++      return chartToMermaid(chart);
++    case 'dot':
++      return chartToDot(chart);
++    case 'path':
++    case 'ascii':
++      if (opts.map === undefined) throw new TypeError(`printDrawing: ${lang} needs a map`);
++      return chartToPath(chart, opts.map, opts.steps);
++    default:
++      throw new TypeError(`printDrawing: unknown language ${String(lang)}`);
++  }
++}
++
++/* --------------------------------------------------------- instructions -- */
++
++/*
++ * Written for a 2.5B model: one rule per sentence, the answer shape stated
++ * first, and one worked example on a made-up three-file app so the example
++ * never leaks the answer to a real question. Every example obeys its own
++ * rules and compiles (tested).
++ */
++const EXAMPLE_VIEW = 'api/db.py\napi/server.py -> api/db.py\nweb/app.ts -> api/server.py';
++const EXAMPLE_MAP = '1 api/db.py\n2 api/server.py → 1\n3 web/app.ts → 2';
++
++const INSTRUCTIONS: Record<DrawLang, string> = {
++  json: [
++    'Draw the answer as JSON only: {"items":[...],"links":[...]}.',
++    'Each item is {"id","label","nodeId"}; nodeId is a file copied from the code list.',
++    'Each link is {"from","to","label"} joining item ids, only where the list has an arrow.',
++    'Example code list:',
++    EXAMPLE_VIEW,
++    'Example answer:',
++    '{"items":[{"id":"app","label":"App","nodeId":"web/app.ts"},{"id":"srv","label":"Server","nodeId":"api/server.py"}],' +
++      '"links":[{"from":"app","to":"srv","label":"sends the request"}]}',
++  ].join('\n'),
++  flow: [
++    'Draw the answer as flow lines only.',
++    'Declare a part as: id "Label" = file (the file copied from the code list).',
++    'Write each hop on its own line as: a -> b: what moves | what happens.',
++    'Only draw a hop where the code list has an arrow.',
++    'Example code list:',
++    EXAMPLE_VIEW,
++    'Example answer:',
++    'app "App" = web/app.ts',
++    'srv "Server" = api/server.py',
++    'app -> srv: the request | The app sends the request to the server',
++  ].join('\n'),
++  mermaid: [
++    'Draw the answer as a Mermaid flowchart only.',
++    'Write each hop as: a[file] -->|what moves| b[file], with files copied from the code list.',
++    'Only draw a hop where the code list has an arrow.',
++    'Example code list:',
++    EXAMPLE_VIEW,
++    'Example answer:',
++    'flowchart LR',
++    '  app[web/app.ts] -->|request| srv[api/server.py]',
++  ].join('\n'),
++  dot: [
++    'Draw the answer as a Graphviz digraph only.',
++    'Name each node by its file in quotes, copied from the code list.',
++    'Write each hop as: "a" -> "b" [label="what moves"]; only where the code list has an arrow.',
++    'Example code list:',
++    EXAMPLE_VIEW,
++    'Example answer:',
++    'digraph G {',
++    '  "web/app.ts" -> "api/server.py" [label="request"];',
++    '}',
++  ].join('\n'),
++  path: [
++    'You are shown a numbered map. Each line is: number, file, → the numbers it calls.',
++    'Answer ONLY with numbers from the map. Follow the arrows.',
++    'Write one hop per line as: 3 > 7 | what happens.',
++    'Example map:',
++    EXAMPLE_MAP,
++    'Example answer:',
++    '3 > 2 | the app sends the request to the server',
++    '2 > 1 | the server reads the database',
++  ].join('\n'),
++  ascii: [
++    'You are shown a numbered picture. Each box is [number file]; -> points at what it calls.',
++    'Answer ONLY with numbers from the picture. Follow the arrows.',
++    'Write one hop per line as: 3 > 7 | what happens.',
++    'Example picture:',
++    '[3 web/app.ts]\n-> [2 api/server.py]\n   -> [1 api/db.py]',
++    'Example answer:',
++    '3 > 2 | the app sends the request to the server',
++    '2 > 1 | the server reads the database',
++  ].join('\n'),
++};
++
++/** The system prompt for `lang`: a short rule set plus one worked example. */
++export function instructionFor(lang: DrawLang): string {
++  const s = INSTRUCTIONS[lang];
++  if (s === undefined) throw new TypeError(`instructionFor: unknown language ${String(lang)}`);
++  return s;
++}
++
++export interface DrawPrompt {
++  system: string;
++  user: string;
++  /** The view of the scan slice the model sees (map, picture, or named list). */
++  view: string;
++  /** For pointing languages: the map the answer's numbers resolve through. */
++  map?: NumberedMap;
++  /** Focus refs that named no node. */
++  missing: string[];
++}
++
++/**
++ * The whole call for one question in one language. The slice is the same for
++ * every language; only its view differs.
++ */
++export function drawPrompt(
++  lang: DrawLang,
++  question: string,
++  scan: ScanLike,
++  focus: readonly string[],
++  opts: SliceOptions = {},
++): DrawPrompt {
++  const system = instructionFor(lang);
++  if (isPointingLang(lang)) {
++    const map = lang === 'path' ? numberedMap(scan, focus, opts) : asciiMap(scan, focus, opts);
++    const head = lang === 'path' ? 'Map (number, file → numbers it calls):' : 'Picture (numbered boxes, -> what each calls):';
++    return { system, user: `${question}\n\n${head}\n${map.text}`, view: map.text, map, missing: map.missing };
++  }
++  const view = namedView(scan, focus, opts);
++  const missing = numberedMap(scan, focus, opts).missing;
++  return { system, user: `${question}\n\nCode list (file -> files it calls):\n${view}`, view, missing };
++}
+diff --git a/packages/schema/src/flowLines.test.ts b/packages/schema/src/flowLines.test.ts
+new file mode 100644
+index 00000000..24ac9df0
+--- /dev/null
++++ b/packages/schema/src/flowLines.test.ts
+@@ -0,0 +1,126 @@
++/**
++ * Flow lines: the plain-text way to write a flow chart (canvas plan, Slice 1).
++ */
++import assert from 'node:assert';
++import { test } from 'node:test';
++import { validateChart } from './chart.js';
++import { chartToFlowLines, compileFlowLines, flowProblemLine } from './flowLines.js';
++
++const HEAD = { kind: 'data-flow' as const, title: 'How a search runs' };
++
++const PLAN_EXAMPLE = [
++  'ui "Search page" = web/src/pages/search.tsx',
++  'ui -> api: the query | The page sends what was typed to the server',
++  'api -> engine: a prompt | The server turns it into a prompt for the engine',
++].join('\n');
++
++test('the plan example compiles: parts, hops in order, narration, grounding path', () => {
++  const r = compileFlowLines(PLAN_EXAMPLE, HEAD);
++  assert.ok(r.ok, JSON.stringify(!r.ok && r.problems));
++  assert.deepStrictEqual(r.chart.items, [
++    { id: 'ui', label: 'Search page', nodeId: 'web/src/pages/search.tsx' },
++    { id: 'api', label: 'api' },
++    { id: 'engine', label: 'engine' },
++  ]);
++  assert.deepStrictEqual(r.chart.links, [
++    { from: 'ui', to: 'api', label: 'the query' },
++    { from: 'api', to: 'engine', label: 'a prompt' },
++  ]);
++  assert.deepStrictEqual(r.steps.map((s) => s.say), [
++    'The page sends what was typed to the server',
++    'The server turns it into a prompt for the engine',
++  ]);
++  assert.strictEqual(r.chart.kind, 'data-flow');
++  assert.strictEqual(r.chart.title, 'How a search runs');
++  assert.ok(validateChart(r.chart).ok);
++});
++
++test('what models write unprompted is tolerated: -->, Mermaid labels, D2 declarations, fences', () => {
++  const text = [
++    '```mermaid',
++    'flowchart LR',
++    '%% the request path',
++    'gateway[API gateway] -->|order| orders("Orders service")',
++    'orders --> db: a row',
++    'db: Postgres',
++    '```',
++  ].join('\n');
++  const r = compileFlowLines(text, HEAD);
++  assert.ok(r.ok, JSON.stringify(!r.ok && r.problems));
++  assert.deepStrictEqual(
++    r.chart.items.map((i) => [i.id, i.label]),
++    [['gateway', 'API gateway'], ['orders', 'Orders service'], ['db', 'Postgres']],
++  );
++  assert.deepStrictEqual(r.chart.links, [
++    { from: 'gateway', to: 'orders', label: 'order' },
++    { from: 'orders', to: 'db', label: 'a row' },
++  ]);
++});
++
++test('a chain on one line is refused with the line number and the fix', () => {
++  const r = compileFlowLines('a -> b\nb -> c -> d', HEAD);
++  assert.strictEqual(r.ok, false);
++  assert.strictEqual(r.ok === false && r.problems[0]!.line, 2);
++  assert.match(r.ok === false ? r.problems[0]!.message : '', /one hop per line/);
++});
++
++test('an unreadable line names itself and shows both shapes that work', () => {
++  const r = compileFlowLines('ui -> api\n  the page talks to the server ', HEAD);
++  assert.strictEqual(r.ok, false);
++  const msg = r.ok === false ? r.problems[0]!.message : '';
++  assert.match(msg, /^line 2: cannot read `the page talks to the server`/);
++  assert.match(msg, /a -> b: what moves \| what happens/);
++  assert.match(msg, /a "Label" = path\/to\/file/);
++});
++
++test('empty text and a part declared twice are refused', () => {
++  assert.strictEqual(compileFlowLines('\n# nothing\n', HEAD).ok, false);
++  const twice = compileFlowLines('ui = a.ts\nui = b.ts', HEAD);
++  assert.strictEqual(twice.ok, false);
++  assert.match(twice.ok === false ? twice.problems[0]!.message : '', /already declared on line 1/);
++});
++
++test('a grounding refusal from validateChart comes back on the line the author wrote', () => {
++  const text = ['ui = file:web/page.tsx', 'db = file:db/schema.sql', 'ui -> db: rows'].join('\n');
++  const r = compileFlowLines(text, HEAD);
++  assert.ok(r.ok);
++  const known = new Set(['file:web/page.tsx', 'file:db/schema.sql']);
++  const edges = new Set(['file:db/schema.sql>file:web/page.tsx']);
++  const v = validateChart(r.chart, known, edges);
++  assert.strictEqual(v.ok, false);
++  const lines = v.ok ? [] : v.problems.map((p) => flowProblemLine(r, p));
++  assert.match(lines[0]!, /^line 3 \(ui -> db\): no edge file:web\/page.tsx -> file:db\/schema.sql/);
++  assert.match(lines[0]!, /The scan has file:db\/schema.sql -> file:web\/page.tsx/);
++
++  const ghost = compileFlowLines('ui = file:web/page.tsx\nx = file:nope.ts\nui -> x', HEAD);
++  assert.ok(ghost.ok);
++  const g = validateChart(ghost.chart, known, edges);
++  assert.strictEqual(g.ok, false);
++  assert.match(g.ok ? '' : flowProblemLine(ghost, g.problems[0]!), /^line 2 \(x\): "file:nope.ts" is not a node/);
++});
++
++test('printing a chart and compiling it back gives the same items and links', () => {
++  const charts = [
++    compileFlowLines(PLAN_EXAMPLE, HEAD),
++    compileFlowLines('a -> b\nb -> c: x\nc -> a', HEAD),
++    compileFlowLines('lonely "A part with no hops" | shown anyway\nz -> y', HEAD),
++    compileFlowLines('z -> y\ny -> x\nx "Declared late" = src/x.ts', HEAD),
++  ];
++  for (const r of charts) {
++    assert.ok(r.ok);
++    const text = chartToFlowLines(r.chart, r.steps);
++    const back = compileFlowLines(text, HEAD);
++    assert.ok(back.ok, text);
++    assert.deepStrictEqual(back.chart.items, r.chart.items, text);
++    assert.deepStrictEqual(back.chart.links, r.chart.links, text);
++    assert.deepStrictEqual(back.steps, r.steps, text);
++  }
++});
++
++test('the plan example is far shorter than the same chart as JSON', () => {
++  const r = compileFlowLines(PLAN_EXAMPLE, HEAD);
++  assert.ok(r.ok);
++  const asJson = JSON.stringify({ items: r.chart.items, links: r.chart.links });
++  const bare = PLAN_EXAMPLE.replace(/ \|.*$/gm, '');
++  assert.ok(bare.length * 1.5 < asJson.length, `${bare.length} vs ${asJson.length}`);
++});
+diff --git a/packages/schema/src/flowLines.ts b/packages/schema/src/flowLines.ts
+new file mode 100644
+index 00000000..ed31d2e4
+--- /dev/null
++++ b/packages/schema/src/flowLines.ts
+@@ -0,0 +1,267 @@
++/**
++ * FLOW LINES — a chart written the way a model already writes a flow.
++ *
++ * The owner asked (2026-09-23) whether Sequence should invent a drawing
++ * language. The ruling in docs/canvas-language-plan.md is no: the same
++ * 6-part/7-hop flow costs ~291 tokens as chart JSON and ~60 as Mermaid/D2 edge
++ * lines, DSL syntax errors do not shrink with model size, and a 7B model
++ * already writes `a -> b: label` unprompted. So a flow is a few plain lines, a
++ * strict subset of D2/Mermaid edge syntax, compiled into the SeqChart we
++ * already validate and draw:
++ *
++ *   ui "Search page" = web/src/pages/search.tsx
++ *   ui -> api: the query | The page sends what was typed to the server
++ *   api -> engine: a prompt | The server turns it into a prompt for the engine
++ *
++ * - `id "Label" = path | detail` declares a part. Every piece after the id is
++ *   optional. `= path` grounds the part to the scan: it becomes the item's
++ *   nodeId, and the caller resolves a path to the node the graph knows.
++ * - `a -> b: label | narration` is one hop. Line order IS step order; there is
++ *   no second list to keep in sync. Everything after `|` is what a stepper
++ *   reads out.
++ * - A part named only in a hop is declared by that hop.
++ *
++ * Tolerated, because models write them without being asked: `-->`, D2's
++ * `id: Label` declaration, Mermaid's `id[Label]` / `id("Label")` endpoints and
++ * `a -->|label| b`, `%%` / `#` / `//` comments, and a ```mermaid fence or a
++ * `flowchart LR` header, which are skipped.
++ *
++ * Every problem names its line and the shape that would have worked, because a
++ * refusal that only names the offending value makes the model guess the same
++ * way twice (see validateChart).
++ *
++ * Pure and browser-safe: the web canvas can print a chart back to lines for a
++ * person to edit ({@link chartToFlowLines}), and the round trip is exact.
++ */
++
++import type { ChartItem, ChartKind, ChartLink, SeqChart } from './chart.js';
++
++export interface FlowStep {
++  from: string;
++  to: string;
++  /** What the stepper reads out for this hop (text after `|`). */
++  say?: string;
++}
++
++export interface FlowLineProblem {
++  /** 1-based line in the text the author wrote. */
++  line: number;
++  message: string;
++}
++
++export interface CompiledFlow {
++  /** Unvalidated: run it through validateChart with the graph before trusting it. */
++  chart: Omit<SeqChart, 'version'> & { version: 1 };
++  /** One entry per hop, in the order written. */
++  steps: FlowStep[];
++  /** item id -> the line that declared it (first mention). */
++  itemLine: Map<string, number>;
++  /** links[i] -> its line. */
++  linkLine: number[];
++}
++
++export type CompileFlowResult =
++  | ({ ok: true } & CompiledFlow)
++  | { ok: false; problems: FlowLineProblem[] };
++
++const ID = String.raw`[A-Za-z_][\w.-]*`;
++/** An endpoint: `id`, `id[Label]`, `id["Label"]`, `id(Label)`. */
++const END = String.raw`(${ID})(?:\s*[\[(]\s*"?([^\])"]*)"?\s*[\])])?`;
++const ARROW = String.raw`\s*(?:-->|->)\s*`;
++const EDGE = new RegExp(
++  String.raw`^${END}` +
++    String.raw`(?:${ARROW}|\s*-->\s*\|([^|]*)\|\s*)` +
++    String.raw`${END}\s*(?::\s*([^|]*?))?\s*(?:\|\s*(.*))?$`,
++);
++const CHAIN_ARROWS = /(?:-->|->)/g;
++const DECL = new RegExp(
++  String.raw`^(${ID})` +
++    String.raw`(?:\s+"([^"]*)"|\s*:\s*(?!\s*=)([^=|]*?))?` +
++    String.raw`(?:\s*=\s*(?:"([^"]+)"|(\S+)))?` +
++    String.raw`\s*(?:\|\s*(.*))?$`,
++);
++const SKIP = /^(?:```.*|(?:flowchart|graph)\s+(?:TD|TB|LR|RL|BT)\s*;?|direction\s*:\s*\w+)$/i;
++const COMMENT = /^(?:%%|#|\/\/)/;
++
++/** `search_page` -> `search page`: the label a bare id gets. */
++export function labelOfId(id: string): string {
++  return id.replace(/[_.-]+/g, ' ').trim() || id;
++}
++
++const SHAPES =
++  '`a -> b: what moves | what happens` for a hop, or `a "Label" = path/to/file | detail` for a part';
++
++/**
++ * Compile flow lines into a chart. Structural only: grounding (does the path
++ * exist, is the hop a real scanned edge) is validateChart's job, and
++ * {@link flowProblemLine} maps its complaints back to these lines.
++ */
++export function compileFlowLines(
++  text: string,
++  head: { kind: ChartKind; title: string; caption?: string; focusItemId?: string },
++): CompileFlowResult {
++  const problems: FlowLineProblem[] = [];
++  const items = new Map<string, ChartItem>();
++  const itemLine = new Map<string, number>();
++  const links: ChartLink[] = [];
++  const linkLine: number[] = [];
++  const steps: FlowStep[] = [];
++
++  const touch = (id: string, line: number, label?: string): void => {
++    const have = items.get(id);
++    const clean = label?.trim();
++    if (have === undefined) {
++      items.set(id, { id, label: clean || labelOfId(id) });
++      itemLine.set(id, line);
++    } else if (clean && have.label === labelOfId(id)) {
++      have.label = clean;
++    }
++  };
++
++  const lines = String(text ?? '').split(/\r?\n/);
++  lines.forEach((rawLine, i) => {
++    const n = i + 1;
++    const line = rawLine.trim().replace(/;\s*$/, '');
++    if (line === '' || COMMENT.test(line) || SKIP.test(line)) return;
++
++    const arrows = line.replace(/\|[^|]*\|/, '').split('|')[0]!.match(CHAIN_ARROWS)?.length ?? 0;
++    if (arrows > 1) {
++      problems.push({
++        line: n,
++        message:
++          `line ${n}: \`${line}\` chains ${arrows} hops on one line. Write one hop per line, ` +
++          'because each hop is one step and carries its own label and narration',
++      });
++      return;
++    }
++    if (arrows === 1) {
++      const m = EDGE.exec(line);
++      if (!m) {
++        problems.push({ line: n, message: `line ${n}: cannot read \`${line}\`. Write ${SHAPES}` });
++        return;
++      }
++      const [, a, aLabel, pipeLabel, b, bLabel, colonLabel, say] = m;
++      touch(a!, n, aLabel);
++      touch(b!, n, bLabel);
++      const label = (colonLabel ?? pipeLabel)?.trim();
++      const link: ChartLink = { from: a!, to: b! };
++      if (label) link.label = label;
++      links.push(link);
++      linkLine.push(n);
++      const step: FlowStep = { from: a!, to: b! };
++      if (say?.trim()) step.say = say.trim();
++      steps.push(step);
++      return;
++    }
++    const d = DECL.exec(line);
++    if (!d) {
++      problems.push({ line: n, message: `line ${n}: cannot read \`${line}\`. Write ${SHAPES}` });
++      return;
++    }
++    const [, id, quoted, colon, quotedPath, barePath, detail] = d;
++    if (items.has(id!) && itemLine.get(id!) !== n) {
++      const first = items.get(id!)!;
++      if (first.nodeId !== undefined || first.detail !== undefined || first.label !== labelOfId(id!)) {
++        problems.push({
++          line: n,
++          message: `line ${n}: "${id}" is already declared on line ${itemLine.get(id!)}. Declare each part once`,
++        });
++        return;
++      }
++    }
++    touch(id!, n, quoted ?? colon);
++    /* A problem about this part belongs on the line that grounds it. */
++    itemLine.set(id!, n);
++    const it = items.get(id!)!;
++    const path = (quotedPath ?? barePath)?.trim();
++    if (path) it.nodeId = path;
++    if (detail?.trim()) it.detail = detail.trim();
++  });
++
++  if (problems.length === 0 && items.size === 0) {
++    problems.push({ line: 1, message: `the flow has no parts. Write ${SHAPES}` });
++  }
++  if (problems.length > 0) return { ok: false, problems };
++
++  const chart: CompiledFlow['chart'] = {
++    version: 1,
++    kind: head.kind,
++    title: head.title,
++    items: [...items.values()],
++    links,
++  };
++  if (head.caption !== undefined) chart.caption = head.caption;
++  if (head.focusItemId !== undefined) chart.focusItemId = head.focusItemId;
++  return { ok: true, chart, steps, itemLine, linkLine };
++}
++
++/**
++ * Put a validateChart problem back on the line the author wrote, so the retry
++ * edits a line instead of re-deriving JSON paths it never saw.
++ */
++export function flowProblemLine(
++  compiled: Pick<CompiledFlow, 'chart' | 'itemLine' | 'linkLine'>,
++  problem: { path: string; message: string },
++): string {
++  const item = /^items\[(\d+)\]/.exec(problem.path);
++  if (item) {
++    const it = compiled.chart.items[Number(item[1])];
++    const n = it === undefined ? undefined : compiled.itemLine.get(it.id);
++    if (n !== undefined) return `line ${n} (${it!.id}): ${problem.message}`;
++  }
++  const link = /^links\[(\d+)\]/.exec(problem.path);
++  if (link) {
++    const i = Number(link[1]);
++    const l = compiled.chart.links?.[i];
++    const n = compiled.linkLine[i];
++    if (l !== undefined && n !== undefined) return `line ${n} (${l.from} -> ${l.to}): ${problem.message}`;
++  }
++  return `${problem.path || '(root)'}: ${problem.message}`;
++}
++
++function quote(value: string): string {
++  return /[\s"|=]/.test(value) ? `"${value.replace(/"/g, "'")}"` : value;
++}
++
++/**
++ * Print a chart as flow lines: the text a person reads and edits on the
++ * canvas. Parts that carry anything beyond their id are declared first, in
++ * item order; then one line per hop, in link order. Compiling the result gives
++ * back the same items and links (tested).
++ */
++export function chartToFlowLines(
++  chart: Pick<SeqChart, 'items' | 'links'>,
++  steps?: readonly FlowStep[],
++): string {
++  const out: string[] = [];
++  const plain = (it: ChartItem): boolean =>
++    it.label === labelOfId(it.id) && it.nodeId === undefined && it.detail === undefined;
++  /* Compiling puts declared parts first, then the rest in order of first
++     mention. When that would reorder the items, every part is declared. */
++  const mentionOrder: string[] = [];
++  for (const l of chart.links ?? []) {
++    for (const id of [l.from, l.to]) if (!mentionOrder.includes(id)) mentionOrder.push(id);
++  }
++  const declared = chart.items.filter((it) => !plain(it) || !mentionOrder.includes(it.id));
++  const declaredIds = new Set(declared.map((it) => it.id));
++  const compiledOrder = [
++    ...declared.map((it) => it.id),
++    ...mentionOrder.filter((id) => !declaredIds.has(id)),
++  ];
++  const keepsOrder = compiledOrder.join('\n') === chart.items.map((it) => it.id).join('\n');
++  for (const it of keepsOrder ? declared : chart.items) {
++    let line = it.id;
++    if (it.label !== labelOfId(it.id)) line += ` "${it.label.replace(/"/g, "'")}"`;
++    if (it.nodeId !== undefined) line += ` = ${quote(it.nodeId)}`;
++    if (it.detail !== undefined) line += ` | ${it.detail}`;
++    out.push(line);
++  }
++  (chart.links ?? []).forEach((l, i) => {
++    let line = `${l.from} -> ${l.to}`;
++    if (l.label !== undefined) line += `: ${l.label.replace(/\|/g, '/')}`;
++    const say = steps?.[i]?.say;
++    if (say) line += ` | ${say}`;
++    out.push(line);
++  });
++  return out.join('\n');
++}
+diff --git a/packages/schema/src/groundingEdgeKeys.test.ts b/packages/schema/src/groundingEdgeKeys.test.ts
+new file mode 100644
+index 00000000..c4086d07
+--- /dev/null
++++ b/packages/schema/src/groundingEdgeKeys.test.ts
+@@ -0,0 +1,47 @@
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++import { groundingEdgeKeys, validateChart } from './index.js';
++
++/*
++ * A queue consumer's scan edge points at the topic (the subscribe call lives
++ * in the consumer), but data flows from the topic to the consumer, and that is
++ * how people and models draw it. Only that edge kind reads both ways.
++ */
++const EDGES = [
++  { srcId: 'file:events.py', dstId: 'topic:order.created', kind: 'queue_publish' },
++  { srcId: 'file:worker.py', dstId: 'topic:order.created', kind: 'queue_consume' },
++  { srcId: 'file:gateway.ts', dstId: 'file:routes.py', kind: 'http' },
++];
++const NODES = new Set(['file:events.py', 'file:worker.py', 'file:gateway.ts', 'file:routes.py', 'topic:order.created']);
++
++function chart(from: string, to: string) {
++  return {
++    kind: 'data-flow',
++    title: 't',
++    items: [
++      { id: 'a', label: 'a', nodeId: from },
++      { id: 'b', label: 'b', nodeId: to },
++    ],
++    links: [{ from: 'a', to: 'b' }],
++  };
++}
++
++test('every scanned edge is kept in its own direction', () => {
++  const keys = groundingEdgeKeys(EDGES);
++  for (const e of EDGES) assert.ok(keys.has(`${e.srcId}>${e.dstId}`));
++});
++
++test('a subscription may be drawn in data-flow direction, topic -> consumer', () => {
++  const keys = groundingEdgeKeys(EDGES);
++  assert.equal(validateChart(chart('topic:order.created', 'file:worker.py'), NODES, keys).ok, true);
++  /* The old edge set refused exactly this drawing. */
++  const old = new Set(EDGES.map((e) => `${e.srcId}>${e.dstId}`));
++  assert.equal(validateChart(chart('topic:order.created', 'file:worker.py'), NODES, old).ok, false);
++});
++
++test('no other kind reads backwards: publish, http', () => {
++  const keys = groundingEdgeKeys(EDGES);
++  assert.equal(validateChart(chart('topic:order.created', 'file:events.py'), NODES, keys).ok, false);
++  assert.equal(validateChart(chart('file:routes.py', 'file:gateway.ts'), NODES, keys).ok, false);
++  assert.equal(keys.size, 4);
++});
+diff --git a/packages/schema/src/index.ts b/packages/schema/src/index.ts
+index 2464ebbf..ff0e427a 100644
+--- a/packages/schema/src/index.ts
++++ b/packages/schema/src/index.ts
+@@ -505,6 +505,11 @@ export * from './starters/index.js';
+ export * from './impact.js';
+ export * from './risks.js';
+ export * from './chart.js';
++export * from './flowLines.js';
++// `drawLanguages.ts` (patch 0014) — the draw-language A/B: json, flow, mermaid, dot and the
++// pointing languages (`path` into a numbered map, `ascii` into a numbered picture), each
++// compiled into the same SeqChart and grounded by the same validateChart.
++export * from './drawLanguages.js';
+ export * from './cycles.js';
+ // `paths.ts` (pathsBetween) — the route, where the three above return SETS. Two
+ // services can each sit in the other's closure with the reader still unable to
+diff --git a/tools/ci/draw-lang-ab.test.mjs b/tools/ci/draw-lang-ab.test.mjs
+new file mode 100644
+index 00000000..ddf5719b
+--- /dev/null
++++ b/tools/ci/draw-lang-ab.test.mjs
+@@ -0,0 +1,343 @@
++import assert from 'node:assert/strict';
++import { spawn } from 'node:child_process';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import test from 'node:test';
++import url from 'node:url';
++
++import { startFakeOpenAI } from '../measure/fake-openai.mjs';
++
++/**
++ * THE DRAW-LANGUAGE A/B DRIVER, END TO END, WITH NO CARD (patch 0014).
++ *
++ * A fake OpenAI-compatible server stands in for the small model and answers
++ * the way one does: mostly right, sometimes an arrow backwards, sometimes
++ * prose, sometimes wrapped in a fence. Its answers are written the honest way,
++ * by READING THE PROMPT it was sent (the numbered map for the pointing
++ * languages, the code list for the rest), so a prompt the driver builds wrong
++ * shows up as a wrong score here.
++ *
++ * The card lock is real: tools/ci/gpu-lock.mjs, pointed at a temporary lock
++ * directory through SEQUENCE_GPU_LOCK, exactly as gpu-lock-log.test.mjs does.
++ * The cases check that every model call happens while the lock is held, that
++ * it is taken and released once per language, and that a card held by another
++ * lane is waited for rather than overridden.
++ *
++ * Set DRAW_AB_KEEP=<dir> to keep the live run's output (summary.md) there.
++ */
++const HERE = path.dirname(url.fileURLToPath(import.meta.url));
++const ROOT = path.resolve(HERE, '..', '..');
++const DRIVER = path.join(ROOT, 'tools', 'measure', 'draw-lang-ab.mjs');
++const SCAN = path.join(ROOT, 'tools', 'measure', 'fixtures', 'shopfront.scan.json');
++const QUESTIONS = path.join(ROOT, 'tools', 'measure', 'questions.shopfront.json');
++const QS = JSON.parse(fs.readFileSync(QUESTIONS, 'utf8')).questions;
++const LANGS = ['json', 'flow', 'mermaid', 'dot', 'path', 'ascii'];
++const BUILT = fs.existsSync(path.join(ROOT, 'packages', 'schema', 'dist', 'drawLanguages.js'));
++
++function sandbox() {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'draw-ab-'));
++  return { dir, lock: path.join(dir, 'lock', 'gpu.lock'), log: path.join(dir, 'lock', 'gpu.lock.log'), out: path.join(dir, 'out') };
++}
++
++function runDriver(args, env = {}) {
++  return new Promise((resolve) => {
++    const p = spawn(process.execPath, [DRIVER, ...args], {
++      env: { ...process.env, SEQUENCE_GPU_LANE: 'drawab', ...env },
++      stdio: ['ignore', 'pipe', 'pipe'],
++    });
++    let out = '';
++    p.stdout.on('data', (c) => (out += c));
++    p.stderr.on('data', (c) => (out += c));
++    p.on('exit', (code) => resolve({ code, out }));
++  });
++}
++
++/* ---- the stand-in model ---- */
++
++const langOf = (system) =>
++  system.startsWith('You are shown a numbered map') ? 'path'
++    : system.startsWith('You are shown a numbered picture') ? 'ascii'
++      : system.includes('as JSON only') ? 'json'
++        : system.includes('as flow lines only') ? 'flow'
++          : system.includes('Mermaid') ? 'mermaid'
++            : system.includes('Graphviz') ? 'dot'
++              : undefined;
++
++const chainsOf = (q) => (Array.isArray(q.expectPath[0]) ? q.expectPath : [q.expectPath]);
++
++/** Every hop the question expects, as [from, to] display names. */
++const hopsOf = (q) => chainsOf(q).flatMap((c) => c.slice(1).map((to, i) => [c[i], to]));
++
++/** Read the numbers off the picture the prompt carried, as a model would. */
++function numbersIn(user, lang) {
++  const n = new Map();
++  const re = lang === 'path' ? /^(\d+) (\S+)/gm : /\[(\d+) ([^\]]+)\]/g;
++  for (const m of user.matchAll(re)) n.set(m[2], Number(m[1]));
++  return n;
++}
++
++function write(lang, hops, user, wrap) {
++  const parts = [...new Set(hops.flat())];
++  const id = (p) => `p${parts.indexOf(p)}`;
++  let text;
++  switch (lang) {
++    case 'json':
++      text = JSON.stringify({
++        items: parts.map((p) => ({ id: id(p), label: p.split('/').pop(), nodeId: p })),
++        links: hops.map(([a, z]) => ({ from: id(a), to: id(z), label: 'calls' })),
++      });
++      break;
++    case 'flow':
++      text = [...parts.map((p) => `${id(p)} = ${p}`), ...hops.map(([a, z]) => `${id(a)} -> ${id(z)}: calls | ${a} calls ${z}`)].join('\n');
++      break;
++    case 'mermaid':
++      text = ['flowchart LR', ...hops.map(([a, z]) => `  ${id(a)}[${a}] -->|calls| ${id(z)}[${z}]`)].join('\n');
++      break;
++    case 'dot':
++      text = ['digraph G {', ...hops.map(([a, z]) => `  "${a}" -> "${z}" [label="calls"];`), '}'].join('\n');
++      break;
++    default: {
++      const n = numbersIn(user, lang);
++      text = hops.map(([a, z]) => `${n.get(a)} > ${n.get(z)} | ${a.split('/').pop()} calls ${z.split('/').pop()}`).join('\n');
++    }
++  }
++  return wrap ? `Here is the drawing:\n\n\`\`\`${lang}\n${text}\n\`\`\`\n\nEach arrow is a call.` : text;
++}
++
++/**
++ * The canned behaviour, by language, question and run: right by default, and
++ * wrong in the specific ways small models are wrong.
++ */
++function cannedAnswer(lang, q, run, user) {
++  const hops = hopsOf(q);
++  const flip = ([a, z]) => [z, a];
++  if (lang === 'json' && q.id === 'order-event') return write(lang, hops.map(flip), user); /* backwards: ungrounded */
++  if (lang === 'flow' && q.id === 'stock-check') return 'The orders service asks the inventory client, which calls the inventory server.'; /* prose */
++  if (lang === 'mermaid' && (q.id === 'get-order' || q.id === 'invoice-read')) {
++    return write(lang, [...hops.slice(0, -1), flip(hops[hops.length - 1])], user); /* last arrow backwards */
++  }
++  if (lang === 'dot') return write(lang, hops, user, true); /* right, inside a fence and prose */
++  if (lang === 'path' && run === 2 && q.id === 'charge-payment') return write(lang, [hops[0], [hops[0][0], hops[2][1]]], user); /* a skipped hop */
++  if (lang === 'ascii' && run === 1) return write(lang, hops.slice(0, 1), user); /* stops after one hop */
++  return write(lang, hops, user);
++}
++
++function standInModel({ lockFile, seen } = {}) {
++  const count = new Map();
++  return ({ system, user }) => {
++    const lang = langOf(system);
++    const q = QS.find((x) => user.startsWith(x.question));
++    if (lang === undefined || q === undefined) throw new Error('the stand-in cannot read this prompt');
++    const key = `${lang}#${q.id}`;
++    const run = (count.get(key) ?? 0) + 1;
++    count.set(key, run);
++    if (seen) seen.push({ lang, qid: q.id, locked: lockFile ? fs.existsSync(lockFile) : null, lockText: lockFile && fs.existsSync(lockFile) ? fs.readFileSync(lockFile, 'utf8') : '' });
++    return cannedAnswer(lang, q, run, user);
++  };
++}
++
++const readJsonl = (f) => fs.readFileSync(f, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
++
++/* ---- cases ---- */
++
++test('live: every call runs under the card lock, taken and released once per language, and scores what came back', { skip: !BUILT && 'schema not built' }, async () => {
++  const s = sandbox();
++  const seen = [];
++  const fake = await startFakeOpenAI(standInModel({ lockFile: s.lock, seen }));
++  try {
++    const { code, out } = await runDriver(
++      ['--base-url', fake.baseUrl, '--model', 'stand-in', '--scan', SCAN, '--questions', QUESTIONS, '--runs', '2', '--out', s.out, '--lock-poll-s', '0.2'],
++      { SEQUENCE_GPU_LOCK: s.lock },
++    );
++    assert.equal(code, 0, out);
++    const calls = QS.length * LANGS.length * 2;
++    assert.equal(fake.calls.length, calls);
++    /* Every call made while THIS lane held the card. */
++    assert.ok(seen.every((x) => x.locked && /lane=drawab /.test(x.lockText)), 'a call ran without the lock');
++    for (const l of LANGS) assert.ok(seen.filter((x) => x.lang === l).every((x) => x.lockText.includes(`draw-lang-ab ${l}:`)));
++    /* One take and one release per language, alternating: the card is free between batches. */
++    const log = fs.readFileSync(s.log, 'utf8').trim().split('\n');
++    assert.equal(log.length, LANGS.length * 2, log.join('\n'));
++    log.forEach((line, i) => assert.ok(i % 2 === 0 ? line.startsWith('lane=drawab ') : line.startsWith('released lane=drawab '), line));
++    assert.ok(!fs.existsSync(s.lock), 'the lock outlived the run');
++    /* The request shape: plain chat completion, temperature 0, capped, streamed. */
++    const b = fake.calls[0].body;
++    assert.equal(b.temperature, 0);
++    assert.equal(b.max_tokens, 400);
++    assert.equal(b.stream, true);
++    assert.equal(b.model, 'stand-in');
++    assert.deepEqual(b.messages.map((m) => m.role), ['system', 'user']);
++
++    const rows = readJsonl(path.join(s.out, 'results.jsonl'));
++    assert.equal(rows.length, calls);
++    const row = (l, q, r) => rows.find((x) => x.lang === l && x.qid === q && x.run === r);
++    assert.equal(row('json', 'get-order', 1).grounded, true);
++    assert.equal(row('json', 'get-order', 1).hopCoverage, 1);
++    assert.equal(row('json', 'order-event', 1).grounded, false);
++    assert.equal(row('json', 'order-event', 1).parsed, true);
++    assert.equal(row('json', 'order-event', 1).hopCoverage, 0);
++    assert.equal(row('flow', 'stock-check', 1).parsed, false);
++    assert.equal(row('flow', 'stock-check', 1).hopCoverage, 0);
++    assert.equal(row('mermaid', 'get-order', 1).hopCoverage, 0.75);
++    assert.match(row('mermaid', 'get-order', 1).firstProblems[0], /^line \d+ \(.+\): no edge ds:postgres -> file:orders\/app\/db\.py.*The scan has file:orders\/app\/db\.py -> ds:postgres/);
++    assert.equal(row('dot', 'who-calls-payments', 2).extracted, 'fence');
++    assert.equal(row('dot', 'who-calls-payments', 2).grounded, true);
++    assert.equal(row('dot', 'who-calls-payments', 2).hopCoverage, 1);
++    assert.equal(row('path', 'charge-payment', 1).grounded, true);
++    assert.equal(row('path', 'charge-payment', 2).grounded, false);
++    assert.equal(row('ascii', 'get-order', 1).hopCoverage, 0.25);
++    assert.equal(row('ascii', 'get-order', 2).hopCoverage, 1);
++    for (const r of rows) {
++      assert.equal(r.outTokensFrom, 'usage');
++      assert.ok(r.outTokens > 0 && r.ms >= 0 && r.firstTokenMs >= 0, JSON.stringify(r));
++    }
++
++    const md = fs.readFileSync(path.join(s.out, 'summary.md'), 'utf8');
++    assert.match(md, /^\| lang \| n \| parse rate \| grounded rate \| edges real \| mean hop cov \| median out tok \| median ms \| median 1st-tok ms \|$/m);
++    assert.match(md, /^\| json \| 14 \| 100% \| 86% \|/m);
++    assert.match(md, /^\| flow \| 14 \| 86% \| 86% \|/m);
++    assert.match(md, /^\| dot \| 14 \| 100% \| 100% \| 100% \| 1\.00 \|/m);
++    assert.match(md, /^\| ascii \| 2 \| 14 \| 100% ± 0% \| 100% ± 0% \| 0\.68 ± 0\.45 \|/m);
++    if (process.env.DRAW_AB_KEEP) fs.cpSync(s.out, process.env.DRAW_AB_KEEP, { recursive: true });
++
++    /* Re-running resumes: nothing is asked twice. */
++    const again = await runDriver(
++      ['--base-url', fake.baseUrl, '--scan', SCAN, '--questions', QUESTIONS, '--runs', '2', '--out', s.out],
++      { SEQUENCE_GPU_LOCK: s.lock },
++    );
++    assert.equal(again.code, 0, again.out);
++    assert.equal(fake.calls.length, calls);
++    assert.match(again.out, /json: every call already on disk — skipping/);
++  } finally {
++    await fake.close();
++  }
++});
++
++test('live: a card held by another lane is waited for, never overridden', { skip: !BUILT && 'schema not built' }, async () => {
++  const s = sandbox();
++  fs.mkdirSync(path.dirname(s.lock), { recursive: true });
++  /* born=unknown: the reaper cannot decide this holder, so `run` must refuse it. */
++  fs.writeFileSync(s.lock, 'lane=mlharness since=2026-09-23T00:00:00Z pid=1 born=unknown what=training\n');
++  const seen = [];
++  const fake = await startFakeOpenAI(standInModel({ lockFile: s.lock, seen }));
++  try {
++    const run = runDriver(
++      ['--base-url', fake.baseUrl, '--scan', SCAN, '--questions', QUESTIONS, '--langs', 'path', '--runs', '1', '--out', s.out, '--lock-poll-s', '0.2', '--lock-wait-s', '30'],
++      { SEQUENCE_GPU_LOCK: s.lock },
++    );
++    await new Promise((r) => setTimeout(r, 1500));
++    assert.equal(fake.calls.length, 0, 'called the model while another lane held the card');
++    assert.match(fs.readFileSync(s.lock, 'utf8'), /lane=mlharness/, 'the other lane\'s lock was touched');
++    fs.rmSync(s.lock);
++    const { code, out } = await run;
++    assert.equal(code, 0, out);
++    assert.match(out, /path: the card is held — waiting/);
++    assert.equal(fake.calls.length, QS.length);
++    assert.ok(seen.every((x) => /lane=drawab /.test(x.lockText)));
++  } finally {
++    await fake.close();
++  }
++
++  /* And a card that stays held stops the run with the lock's own exit code. */
++  const t = sandbox();
++  fs.mkdirSync(path.dirname(t.lock), { recursive: true });
++  fs.writeFileSync(t.lock, 'lane=mlharness since=2026-09-23T00:00:00Z pid=1 born=unknown what=training\n');
++  const stuck = await runDriver(
++    ['--base-url', 'http://127.0.0.1:9/v1', '--scan', SCAN, '--questions', QUESTIONS, '--langs', 'flow', '--out', t.out, '--lock-poll-s', '0.1', '--lock-wait-s', '0.5'],
++    { SEQUENCE_GPU_LOCK: t.lock },
++  );
++  assert.equal(stuck.code, 3, stuck.out);
++  assert.match(stuck.out, /flow: the card stayed held/);
++  assert.match(fs.readFileSync(t.lock, 'utf8'), /lane=mlharness/);
++});
++
++test('live: the lock is on by default and refuses to run without a lock path', { skip: !BUILT && 'schema not built' }, async () => {
++  const s = sandbox();
++  const env = { ...process.env };
++  delete env.SEQUENCE_GPU_LOCK;
++  const r = await new Promise((resolve) => {
++    const p = spawn(process.execPath, [DRIVER, '--scan', SCAN, '--questions', QUESTIONS, '--out', s.out], { env, stdio: ['ignore', 'pipe', 'pipe'] });
++    let out = '';
++    p.stdout.on('data', (c) => (out += c));
++    p.stderr.on('data', (c) => (out += c));
++    p.on('exit', (code) => resolve({ code, out }));
++  });
++  assert.equal(r.code, 2);
++  assert.match(r.out, /SEQUENCE_GPU_LOCK is not set/);
++});
++
++test('--emit-prompts writes exactly the messages live mode sends, and takes no lock', { skip: !BUILT && 'schema not built' }, async () => {
++  const s = sandbox();
++  const dir = path.join(s.dir, 'prompts');
++  const { code, out } = await runDriver(['--scan', SCAN, '--questions', QUESTIONS, '--emit-prompts', dir], { SEQUENCE_GPU_LOCK: s.lock });
++  assert.equal(code, 0, out);
++  assert.doesNotMatch(out, /CHECK/, 'every shopfront expectPath hop is a real, on-slice scan edge');
++  const files = fs.readdirSync(dir).filter((f) => !f.startsWith('_'));
++  assert.equal(files.length, QS.length * LANGS.length);
++  assert.ok(!fs.existsSync(s.log), 'emitting prompts touched the card lock');
++
++  const fake = await startFakeOpenAI(standInModel());
++  try {
++    const live = await runDriver(['--base-url', fake.baseUrl, '--scan', SCAN, '--questions', QUESTIONS, '--runs', '1', '--no-lock', '--no-stream', '--out', s.out]);
++    assert.equal(live.code, 0, live.out);
++    for (const c of fake.calls) {
++      const lang = langOf(c.system);
++      const q = QS.find((x) => c.user.startsWith(x.question));
++      const emitted = JSON.parse(fs.readFileSync(path.join(dir, `${q.id}.${lang}.json`), 'utf8'));
++      assert.deepEqual(emitted, { system: c.system, user: c.user });
++    }
++    assert.equal(fake.calls[0].body.stream, false);
++  } finally {
++    await fake.close();
++  }
++});
++
++test('--score-answers scores answer files with the same scorer: mean ± sd over runs, n, rough tokens', { skip: !BUILT && 'schema not built' }, async () => {
++  const s = sandbox();
++  const dir = path.join(s.dir, 'answers');
++  const e = await runDriver(['--scan', SCAN, '--questions', QUESTIONS, '--emit-prompts', dir]);
++  assert.equal(e.code, 0, e.out);
++  for (const q of QS) {
++    for (const l of ['path', 'json']) {
++      const { user } = JSON.parse(fs.readFileSync(path.join(dir, `${q.id}.${l}.json`), 'utf8'));
++      for (const run of [1, 2, 3]) fs.writeFileSync(path.join(dir, `${q.id}.${l}.r${run}.txt`), cannedAnswer(l === 'path' ? 'path' : 'json', q, run, user));
++    }
++  }
++  /* A leading intro line is dropped, by the same rule for every language. */
++  const intro = path.join(dir, 'order-event.path.r1.txt');
++  fs.writeFileSync(intro, `Here is the path:\n${fs.readFileSync(intro, 'utf8')}`);
++  /* One path answer with a hop that is not on the map, in run 3. */
++  fs.writeFileSync(path.join(dir, 'stock-check.path.r3.txt'), '19 > 99 | nowhere');
++  const { code, out } = await runDriver(['--scan', SCAN, '--questions', QUESTIONS, '--score-answers', dir, '--langs', 'json,path', '--model', 'claude-haiku (stand-in)']);
++  assert.equal(code, 0, out);
++  const rows = readJsonl(path.join(dir, 'results.jsonl'));
++  assert.equal(rows.length, QS.length * 2 * 3);
++  assert.ok(rows.every((r) => r.outTokensFrom === 'rough' && r.outTokens > 0 && r.ms === null));
++  const introRow = rows.find((r) => r.lang === 'path' && r.qid === 'order-event' && r.run === 1);
++  assert.equal(introRow.extracted, 'after-intro');
++  assert.equal(introRow.grounded, true);
++  const bad = rows.find((r) => r.lang === 'path' && r.qid === 'stock-check' && r.run === 3);
++  assert.equal(bad.parsed, false);
++  const md = fs.readFileSync(path.join(dir, 'summary.md'), 'utf8');
++  assert.match(md, /^# Draw-language A\/B: claude-haiku \(stand-in\) on shopfront\.scan\.json$/m);
++  assert.match(md, /^\| path \| 3 \| 21 \| 95% ± 8% \| 90% ± 8% \| 0\.92 ± 0\.07 \| \d+ ± \d+ \|$/m);
++  assert.match(md, /^\| json \| 3 \| 21 \| 100% ± 0% \| 86% ± 0% \|/m);
++  assert.match(md, /a word-and-punctuation count \(no usage field\)/);
++
++  /* Answers scored against a different slice than they were written to are refused. */
++  const wrong = await runDriver(['--scan', SCAN, '--questions', QUESTIONS, '--score-answers', dir, '--langs', 'path', '--max-nodes', '10']);
++  assert.equal(wrong.code, 2);
++  assert.match(wrong.out, /is not the prompt this scan\/questions\/--max-nodes would send/);
++});
++
++test('the ML Harness questions are flagged as unchecked, and the driver says which lines do not resolve', { skip: !BUILT && 'schema not built' }, async () => {
++  const q = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'measure', 'questions.ml-harness.json'), 'utf8'));
++  assert.match(q.about, /^CHECK THE PATHS BEFORE A RUN/);
++  const s = sandbox();
++  /* Against the wrong repo every path is unresolved, and each one is named. */
++  const { code, out } = await runDriver(['--scan', SCAN, '--questions', path.join(ROOT, 'tools', 'measure', 'questions.ml-harness.json'), '--emit-prompts', path.join(s.dir, 'p')]);
++  assert.equal(code, 0, out);
++  assert.match(out, /CHECK — mlh-teach-path: focus "frontend\/src\/lib\/engine\/client\.ts" names no single node in the scan/);
++  assert.match(out, /CHECK — mlh-diagnosis: expectPath "app\/diagnosis\.py" names no single node in the scan/);
++});
+diff --git a/tools/measure/draw-lang-ab.mjs b/tools/measure/draw-lang-ab.mjs
+new file mode 100644
+index 00000000..36d514c1
+--- /dev/null
++++ b/tools/measure/draw-lang-ab.mjs
+@@ -0,0 +1,662 @@
++#!/usr/bin/env node
++/**
++ * DRAW-LANGUAGE A/B — which way of writing a chart does a small model ground best?
++ *
++ * The GPU half of patch 0014 (the pure half is packages/schema/src/drawLanguages.ts).
++ * Same questions, same scan slice, one language per arm:
++ *
++ *   json     propose_chart items/links, as shipped
++ *   flow     patch 0011's flow lines
++ *   mermaid  flowchart syntax
++ *   dot      Graphviz
++ *   path     point, don't generate: numbers into a numbered map of the slice
++ *   ascii    the same numbers, into an indented box-and-arrow picture
++ *
++ * ── RUN IT (live, on the card) ────────────────────────────────────────────
++ *
++ *   pnpm --filter @sequence/schema build          # once; the analyzer too for --repo
++ *   SEQUENCE_GPU_LOCK=<your lock path> node tools/measure/draw-lang-ab.mjs \
++ *     --repo <path/to/repo> --questions tools/measure/questions.shopfront.json \
++ *     --runs 3 --out out/draw-lang-ab
++ *
++ *   --base-url  http://127.0.0.1:11434/v1 (Ollama; llama-server is :8080/v1)
++ *   --model     minicpm5-hermes
++ *   --scan      a scan.json (`node packages/analyzer/dist/cli.js scan <repo> --out scan.json`)
++ *   --repo      or a repo: scanned here with the built analyzer, --no-cache, so
++ *               nothing is written into the repo
++ *   --questions [{id, question, focus: [paths], expectPath?: [paths] | [[paths], ...]}]
++ *   --langs     json,flow,mermaid,dot,path,ascii
++ *   --runs 3  --max-tokens 400  --max-nodes 24  --timeout-s 180
++ *   --no-stream  (default streams, to time the first token)
++ *   --no-lock    (default: take the card lock, see below)
++ *   --lock-wait-s 1800 --lock-poll-s 30
++ *
++ * ── THE CARD LOCK IS TAKEN PER LANGUAGE, AND RELEASED BETWEEN ─────────────
++ *
++ * Each language's batch runs as its own `tools/ci/gpu-lock.mjs run -- ...`, the
++ * same pattern as tools/bench/night-window.mjs, so the lock file, the take and
++ * release lines in gpu.lock.log, the dead-holder reaper and the signal-safe
++ * release (patch 0005) are that script's and not re-implemented here. Between
++ * batches the card is free, so the ML harness lane can slot in. A batch that
++ * finds the card held waits (--lock-poll-s) and retries until --lock-wait-s,
++ * then stops with exit 3; re-running resumes, because every call is appended
++ * to raw.<lang>.jsonl as it lands and a finished (question, run) is skipped.
++ * Scoring happens after the last batch, outside the lock: card-free work does
++ * not hold the card.
++ *
++ * ── TWO CARD-FREE MODES (a stand-in model driven by hand) ─────────────────
++ *
++ *   --emit-prompts <dir>   write <qid>.<lang>.json = {system, user}: exactly the
++ *                          messages live mode sends. No model call, no lock.
++ *   --score-answers <dir>  read <qid>.<lang>.r<k>.txt answers, score them with
++ *                          the same scorer, write results.jsonl + summary.md
++ *                          (into --out, default <dir>).
++ *   --repair bridge        score a refused chart after the in-code repair
++ *                          (schema bridgeChart: a refused link becomes the
++ *                          scan's one shortest route, else it is dropped), to
++ *                          compare against asking the model again.
++ *
++ * ── THE SCORE IS DETERMINISTIC ────────────────────────────────────────────
++ *
++ * parsed     the answer compiled in its language (a fenced block is scored
++ *            when there is one; a <think> block is dropped)
++ * grounded   validateChart passed against the scan: every part a scan node,
++ *            every hop a scan edge
++ * edges real share of drawn hops that are scan edges
++ * hop cov    share of expectPath hops drawn, same direction (0 when unparsed)
++ * out tok    usage.completion_tokens, else a word-and-punctuation count
++ * ms / 1st   wall time and time to the first content token
++ */
++import { spawn, spawnSync } from 'node:child_process';
++import fs from 'node:fs';
++import path from 'node:path';
++import { fileURLToPath, pathToFileURL } from 'node:url';
++
++const HERE = path.dirname(fileURLToPath(import.meta.url));
++const ROOT = path.resolve(HERE, '..', '..');
++const SELF = fileURLToPath(import.meta.url);
++
++/* ------------------------------------------------------------------ args -- */
++
++const argv = process.argv.slice(2);
++const has = (name) => argv.includes(`--${name}`);
++const flag = (name, dflt) => {
++  const i = argv.indexOf(`--${name}`);
++  return i >= 0 && i + 1 < argv.length ? argv[i + 1] : dflt;
++};
++const num = (name, dflt) => {
++  const v = Number(flag(name, dflt));
++  if (!Number.isFinite(v)) die(`--${name} must be a number`);
++  return v;
++};
++function die(msg, code = 2) {
++  console.error(`draw-lang-ab: ${msg}`);
++  process.exit(code);
++}
++const log = (msg) => console.log(`draw-lang-ab: ${msg}`);
++
++const ALL_LANGS = ['json', 'flow', 'mermaid', 'dot', 'path', 'ascii'];
++const opts = {
++  baseUrl: String(flag('base-url', 'http://127.0.0.1:11434/v1')).replace(/\/+$/, ''),
++  model: flag('model', 'minicpm5-hermes'),
++  scan: flag('scan'),
++  repo: flag('repo'),
++  questions: flag('questions'),
++  langs: String(flag('langs', ALL_LANGS.join(','))).split(',').map((s) => s.trim()).filter(Boolean),
++  runs: Math.max(1, Math.floor(num('runs', 3))),
++  out: flag('out'),
++  lock: !has('no-lock'),
++  maxTokens: Math.floor(num('max-tokens', 400)),
++  maxNodes: Math.floor(num('max-nodes', 24)),
++  stream: !has('no-stream'),
++  timeoutMs: num('timeout-s', 180) * 1000,
++  /* `default` sends no temperature, so the server's own applies. On this Windows card Ollama
++     hangs about one call in seven at 0, and 0 makes every run the same, so runs measure no noise. */
++  temperature: flag('temperature', '0') === 'default' ? undefined : num('temperature', 0),
++  lockWaitMs: num('lock-wait-s', 1800) * 1000,
++  lockPollMs: num('lock-poll-s', 30) * 1000,
++  emitPrompts: flag('emit-prompts'),
++  scoreAnswers: flag('score-answers'),
++  repair: flag('repair'),
++  worker: flag('worker'),
++};
++for (const l of opts.langs) if (!ALL_LANGS.includes(l)) die(`unknown language "${l}" (have ${ALL_LANGS.join(', ')})`);
++
++/* ------------------------------------------------------------- the worker -- */
++/*
++ * The only code that runs INSIDE the lock: read the frozen plan, make this
++ * language's calls, append each one as it lands. It needs nothing built.
++ */
++if (opts.worker !== undefined) {
++  if (!opts.out) die('--worker needs --out');
++  await runWorker(opts.worker, opts.out);
++  /* Let fetch's sockets finish closing first: on Windows (Node 24) an exit while one is
++     still closing trips a libuv assertion, and the batch reads as a crash (3221226505). */
++  await new Promise((r) => setTimeout(r, 250));
++  process.exit(0);
++}
++
++async function runWorker(lang, out) {
++  const plan = JSON.parse(fs.readFileSync(path.join(out, 'plan.json'), 'utf8'));
++  const rawFile = path.join(out, `raw.${lang}.jsonl`);
++  const done = new Set(readJsonl(rawFile).filter((r) => r.error === undefined).map((r) => `${r.qid}#${r.run}`));
++  const calls = plan.calls.filter((c) => c.lang === lang && !done.has(`${c.qid}#${c.run}`));
++  log(`${lang}: ${calls.length} call(s) to make (${done.size} already on disk)`);
++  for (const c of calls) {
++    const r = await chat(plan, c);
++    fs.appendFileSync(rawFile, `${JSON.stringify({ lang, qid: c.qid, run: c.run, ...r })}\n`);
++    log(`${lang} ${c.qid} r${c.run}: ${r.error ?? `${r.ms} ms, ${r.usage?.completion_tokens ?? '?'} tok`}`);
++  }
++}
++
++async function chat(plan, c) {
++  const body = {
++    model: plan.model,
++    messages: [
++      { role: 'system', content: c.system },
++      { role: 'user', content: c.user },
++    ],
++    ...(plan.temperature === undefined ? {} : { temperature: plan.temperature }),
++    max_tokens: plan.maxTokens,
++    stream: plan.stream,
++  };
++  if (plan.stream) body.stream_options = { include_usage: true };
++  const headers = { 'content-type': 'application/json' };
++  const key = process.env.SEQUENCE_AI_API_KEY ?? process.env.OPENAI_API_KEY;
++  if (key) headers.authorization = `Bearer ${key}`;
++  const t0 = performance.now();
++  const ctl = new AbortController();
++  const timer = setTimeout(() => ctl.abort(), plan.timeoutMs);
++  try {
++    const res = await fetch(`${plan.baseUrl}/chat/completions`, {
++      method: 'POST',
++      headers,
++      body: JSON.stringify(body),
++      signal: ctl.signal,
++    });
++    if (!res.ok) return { error: `HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`, ms: ms(t0) };
++    if (!plan.stream) {
++      const j = await res.json();
++      return {
++        content: j.choices?.[0]?.message?.content ?? '',
++        finishReason: j.choices?.[0]?.finish_reason ?? null,
++        usage: j.usage ?? null,
++        ms: ms(t0),
++        firstTokenMs: null,
++      };
++    }
++    let content = '';
++    let usage = null;
++    let finishReason = null;
++    let firstTokenMs = null;
++    let buf = '';
++    const dec = new TextDecoder();
++    for await (const chunk of res.body) {
++      buf += dec.decode(chunk, { stream: true });
++      let nl;
++      while ((nl = buf.indexOf('\n')) >= 0) {
++        const line = buf.slice(0, nl).trim();
++        buf = buf.slice(nl + 1);
++        if (!line.startsWith('data:')) continue;
++        const data = line.slice(5).trim();
++        if (data === '[DONE]') continue;
++        let j;
++        try {
++          j = JSON.parse(data);
++        } catch {
++          continue;
++        }
++        const d = j.choices?.[0]?.delta?.content;
++        if (typeof d === 'string' && d !== '') {
++          if (firstTokenMs === null) firstTokenMs = ms(t0);
++          content += d;
++        }
++        if (j.choices?.[0]?.finish_reason) finishReason = j.choices[0].finish_reason;
++        if (j.usage) usage = j.usage;
++      }
++    }
++    return { content, finishReason, usage, ms: ms(t0), firstTokenMs };
++  } catch (e) {
++    return { error: e?.name === 'AbortError' ? `timeout after ${plan.timeoutMs} ms` : String(e?.message ?? e), ms: ms(t0) };
++  } finally {
++    clearTimeout(timer);
++  }
++}
++
++function ms(t0) {
++  return Math.round(performance.now() - t0);
++}
++
++function readJsonl(file) {
++  if (!fs.existsSync(file)) return [];
++  return fs
++    .readFileSync(file, 'utf8')
++    .split('\n')
++    .filter((l) => l.trim() !== '')
++    .flatMap((l) => {
++      try {
++        return [JSON.parse(l)];
++      } catch {
++        return [];
++      }
++    });
++}
++
++/* ---------------------------------------------------------------- inputs -- */
++
++const schemaFile = path.join(ROOT, 'packages', 'schema', 'dist', 'drawLanguages.js');
++if (!fs.existsSync(schemaFile)) die('packages/schema is not built: run `pnpm --filter @sequence/schema build` first');
++const D = await import(pathToFileURL(schemaFile).href);
++const C = await import(pathToFileURL(path.join(ROOT, 'packages', 'schema', 'dist', 'chart.js')).href);
++
++if (!opts.questions) die('--questions <file.json> is required');
++const questions = loadQuestions(opts.questions);
++
++const outDir = path.resolve(opts.out ?? opts.scoreAnswers ?? opts.emitPrompts ?? path.join(ROOT, 'out', 'draw-lang-ab'));
++fs.mkdirSync(outDir, { recursive: true });
++const scan = loadScan();
++const scanName = opts.scan ? path.basename(opts.scan) : path.basename(path.resolve(opts.repo));
++
++function loadQuestions(file) {
++  let q;
++  try {
++    q = JSON.parse(fs.readFileSync(file, 'utf8'));
++  } catch (e) {
++    die(`cannot read ${file}: ${e.message}`);
++  }
++  const list = Array.isArray(q) ? q : q.questions;
++  if (!Array.isArray(list) || list.length === 0) die(`${file}: expected a list of questions`);
++  const seen = new Set();
++  for (const x of list) {
++    if (typeof x?.id !== 'string' || !/^[\w-]+$/.test(x.id)) die(`${file}: every question needs an id of letters, digits, - or _`);
++    if (seen.has(x.id)) die(`${file}: duplicate id ${x.id}`);
++    seen.add(x.id);
++    if (typeof x.question !== 'string' || x.question.trim() === '') die(`${file}: ${x.id} has no question`);
++    if (!Array.isArray(x.focus) || x.focus.length === 0) die(`${file}: ${x.id} needs a focus list of paths`);
++  }
++  return list;
++}
++
++function loadScan() {
++  let file = opts.scan;
++  if (!file) {
++    if (!opts.repo) die('give --scan <scan.json> or --repo <path>');
++    const cli = path.join(ROOT, 'packages', 'analyzer', 'dist', 'cli.js');
++    if (!fs.existsSync(cli)) {
++      die(
++        'the analyzer is not built, so --repo cannot scan. Build it (`pnpm -r build`) or pass --scan ' +
++          'from `node packages/analyzer/dist/cli.js scan <repo> --out scan.json --no-cache`',
++      );
++    }
++    file = path.join(outDir, 'scan.json');
++    log(`scanning ${opts.repo} (card-free)`);
++    const r = spawnSync(process.execPath, [cli, 'scan', path.resolve(opts.repo), '--out', file, '--no-cache'], {
++      encoding: 'utf8',
++    });
++    if (r.status !== 0 || !fs.existsSync(file)) die(`scan failed:\n${r.stderr || r.stdout}`);
++  }
++  const g = JSON.parse(fs.readFileSync(file, 'utf8'));
++  if (!Array.isArray(g.nodes) || !Array.isArray(g.edges)) die(`${file} is not a scan (no nodes/edges)`);
++  return g;
++}
++
++/** expectPath as chains: a list of paths is one chain, a list of lists is several. */
++function chainsOf(q) {
++  const e = q.expectPath;
++  if (!Array.isArray(e) || e.length === 0) return [];
++  return Array.isArray(e[0]) ? e : [e];
++}
++
++function hopCoverageOf(nodePairs, q) {
++  const chains = chainsOf(q);
++  let hops = 0;
++  let hit = 0;
++  for (const c of chains) {
++    const cov = D.hopCoverage(scan, nodePairs, c);
++    if (cov === undefined) continue;
++    hops += c.length - 1;
++    hit += cov * (c.length - 1);
++  }
++  return hops === 0 ? undefined : hit / hops;
++}
++
++/** Can a grounded answer cover the question at all? Said before any call is spent. */
++function checkQuestions() {
++  const resolve = D.scanResolver(scan);
++  const edges = new Set(scan.edges.map((e) => `${e.srcId}>${e.dstId}`));
++  const warnings = [];
++  for (const q of questions) {
++    const map = D.numberedMap(scan, q.focus, { maxNodes: opts.maxNodes });
++    for (const m of map.missing) warnings.push(`${q.id}: focus "${m}" names no single node in the scan`);
++    for (const chain of chainsOf(q)) {
++      const ids = chain.map((p) => {
++        const r = resolve(p);
++        if (r === undefined || !('id' in r)) warnings.push(`${q.id}: expectPath "${p}" names no single node in the scan`);
++        else if (map.numberOf(r.id) === undefined) warnings.push(`${q.id}: expectPath "${p}" is not on the ${opts.maxNodes}-part slice`);
++        return r && 'id' in r ? r.id : undefined;
++      });
++      for (let k = 1; k < ids.length; k += 1) {
++        if (ids[k - 1] && ids[k] && !edges.has(`${ids[k - 1]}>${ids[k]}`)) {
++          warnings.push(`${q.id}: expected hop ${chain[k - 1]} -> ${chain[k]} is not a scan edge, so no grounded answer can draw it`);
++        }
++      }
++    }
++  }
++  for (const w of warnings) console.error(`draw-lang-ab: CHECK — ${w}`);
++  return warnings;
++}
++
++function promptsFor(q, lang) {
++  return D.drawPrompt(lang, q.question, scan, q.focus, { maxNodes: opts.maxNodes });
++}
++
++/* --------------------------------------------------------------- scoring -- */
++
++/**
++ * The drawing inside an answer, by one rule for every language: drop any
++ * <think> block; take the first fenced block when there is one; otherwise the
++ * whole text minus one leading intro line that ends in a colon ("Here is the
++ * path:"). Prose anywhere else stays in, and each language refuses it on its
++ * line; JSON alone ignores text outside its outermost braces, because JSON is
++ * delimited and every JSON consumer reads it that way.
++ */
++function extractDrawing(content) {
++  const text = String(content ?? '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
++  const fence = /```[^\n]*\n([\s\S]*?)```/.exec(text);
++  if (fence) return { text: fence[1], from: 'fence' };
++  const intro = /^[^\n]*:[ \t]*\n/.exec(text);
++  if (intro && !/[{}\[\]>|=]|->/.test(intro[0])) return { text: text.slice(intro[0].length), from: 'after-intro' };
++  return { text, from: 'whole' };
++}
++
++function scoreOne(q, lang, content) {
++  const p = promptsFor(q, lang);
++  const { text, from } = extractDrawing(content);
++  const head = { kind: 'data-flow', title: q.question.slice(0, 80) };
++  let g = D.groundDrawing(lang, text, scan, { head, ...(p.map ? { map: p.map } : {}) });
++  let repair;
++  if (opts.repair === 'bridge' && g.parsed && !g.grounded && g.chart) {
++    const known = new Set(scan.nodes.map((n) => n.id));
++    const knownEdges = C.groundingEdgeKeys(scan.edges);
++    const byId = new Map(scan.nodes.map((n) => [n.id, n]));
++    const r = C.bridgeChart(g.chart, known, knownEdges, (id) => D.displayOf(byId.get(id)));
++    const v = C.validateChart(r.chart, known, knownEdges);
++    const nodeOf = new Map(r.chart.items.map((it) => [it.id, it.nodeId]));
++    const nodePairs = (r.chart.links ?? []).map((l) => [nodeOf.get(l.from), nodeOf.get(l.to)]);
++    g = {
++      ...g,
++      grounded: v.ok,
++      problems: v.ok ? [] : v.problems.map((x) => x.message ?? String(x)),
++      nodes: r.chart.items.length,
++      nodesGrounded: r.chart.items.length,
++      edges: nodePairs.length,
++      edgesGrounded: nodePairs.filter(([a, z]) => knownEdges.has(`${a}>${z}`)).length,
++      nodePairs,
++    };
++    repair = { bridged: r.bridged, dropped: r.dropped, droppedParts: r.droppedParts };
++  }
++  const cov = hopCoverageOf(g.nodePairs, q);
++  return {
++    parsed: g.parsed,
++    grounded: g.grounded,
++    problems: g.problems.length,
++    firstProblems: g.problems.slice(0, 3),
++    nodes: g.nodes,
++    nodesGrounded: g.nodesGrounded,
++    edges: g.edges,
++    edgesGrounded: g.edgesGrounded,
++    hopCoverage: cov === undefined ? null : g.parsed ? cov : 0,
++    extracted: from,
++    ...(repair ? { repair } : {}),
++  };
++}
++
++function score(records) {
++  const byId = new Map(questions.map((q) => [q.id, q]));
++  return records.map((r) => {
++    const q = byId.get(r.qid);
++    const base = { lang: r.lang, qid: r.qid, run: r.run };
++    if (!q) return { ...base, error: `unknown question ${r.qid}` };
++    const outTokens = r.usage?.completion_tokens ?? (r.content !== undefined ? D.roughTokens(r.content) : null);
++    const outTokensFrom = r.usage?.completion_tokens !== undefined ? 'usage' : 'rough';
++    const timing = { ms: r.ms ?? null, firstTokenMs: r.firstTokenMs ?? null, finishReason: r.finishReason ?? null };
++    if (r.error !== undefined) {
++      return { ...base, error: r.error, parsed: false, grounded: false, hopCoverage: chainsOf(q).length ? 0 : null, outTokens: null, outTokensFrom, ...timing };
++    }
++    return { ...base, ...scoreOne(q, r.lang, r.content), outTokens, outTokensFrom, ...timing };
++  });
++}
++
++const mean = (xs) => (xs.length === 0 ? null : xs.reduce((a, b) => a + b, 0) / xs.length);
++const sd = (xs) => {
++  if (xs.length < 2) return xs.length === 1 ? 0 : null;
++  const m = mean(xs);
++  return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1));
++};
++const median = (xs) => {
++  const s = xs.filter((x) => typeof x === 'number').sort((a, b) => a - b);
++  if (s.length === 0) return null;
++  const h = Math.floor(s.length / 2);
++  return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2;
++};
++const pct = (x) => (x === null ? '—' : `${Math.round(x * 100)}%`);
++const f2 = (x) => (x === null ? '—' : x.toFixed(2));
++const f0 = (x) => (x === null ? '—' : String(Math.round(x)));
++const pm = (xs, fmt) => (xs.length === 0 ? '—' : `${fmt(mean(xs))} ± ${fmt(sd(xs))}`);
++
++function summarize(results, meta) {
++  const langs = opts.langs.filter((l) => results.some((r) => r.lang === l));
++  const lines = [];
++  lines.push(`# Draw-language A/B: ${meta.model} on ${scanName}`);
++  lines.push('');
++  lines.push(
++    `${questions.length} question(s) × ${langs.length} language(s), runs ${meta.runs}; ` +
++      `max_tokens ${opts.maxTokens}, slice ${opts.maxNodes} parts, temperature ${opts.temperature ?? 'server default'}. ${meta.mode}.`,
++  );
++  lines.push('');
++  lines.push('| lang | n | parse rate | grounded rate | edges real | mean hop cov | median out tok | median ms | median 1st-tok ms |');
++  lines.push('|---|---|---|---|---|---|---|---|---|');
++  for (const l of langs) {
++    const rs = results.filter((r) => r.lang === l);
++    const edges = rs.reduce((a, r) => a + (r.edges ?? 0), 0);
++    const real = rs.reduce((a, r) => a + (r.edgesGrounded ?? 0), 0);
++    const covs = rs.map((r) => r.hopCoverage).filter((x) => typeof x === 'number');
++    lines.push(
++      `| ${l} | ${rs.length} | ${pct(mean(rs.map((r) => (r.parsed ? 1 : 0))))} | ${pct(mean(rs.map((r) => (r.grounded ? 1 : 0))))} | ` +
++        `${edges === 0 ? '—' : pct(real / edges)} | ${f2(mean(covs))} | ${f0(median(rs.map((r) => r.outTokens)))} | ` +
++        `${f0(median(rs.map((r) => r.ms)))} | ${f0(median(rs.map((r) => r.firstTokenMs)))} |`,
++    );
++  }
++  lines.push('');
++  lines.push('Across runs (each run scored over all questions, then mean ± sample sd over runs):');
++  lines.push('');
++  lines.push('| lang | runs | n | parse | grounded | hop cov | out tok |');
++  lines.push('|---|---|---|---|---|---|---|');
++  for (const l of langs) {
++    const rs = results.filter((r) => r.lang === l);
++    const runs = [...new Set(rs.map((r) => r.run))].sort((a, b) => a - b);
++    const per = runs.map((k) => rs.filter((r) => r.run === k));
++    const parse = per.map((x) => mean(x.map((r) => (r.parsed ? 1 : 0))));
++    const grounded = per.map((x) => mean(x.map((r) => (r.grounded ? 1 : 0))));
++    const cov = per.map((x) => mean(x.map((r) => r.hopCoverage).filter((v) => typeof v === 'number'))).filter((v) => v !== null);
++    const tok = per.map((x) => mean(x.map((r) => r.outTokens).filter((v) => typeof v === 'number'))).filter((v) => v !== null);
++    lines.push(
++      `| ${l} | ${runs.length} | ${rs.length} | ${pm(parse, pct)} | ${pm(grounded, pct)} | ${pm(cov, f2)} | ${pm(tok, f0)} |`,
++    );
++  }
++  lines.push('');
++  lines.push('Grounded answers per question (of runs):');
++  lines.push('');
++  lines.push(`| question | ${langs.join(' | ')} |`);
++  lines.push(`|---|${langs.map(() => '---').join('|')}|`);
++  for (const q of questions) {
++    const cells = langs.map((l) => {
++      const rs = results.filter((r) => r.lang === l && r.qid === q.id);
++      return rs.length === 0 ? '—' : `${rs.filter((r) => r.grounded).length}/${rs.length}`;
++    });
++    lines.push(`| ${q.id} | ${cells.join(' | ')} |`);
++  }
++  lines.push('');
++  lines.push('Prompt sizes (word-and-punctuation count; view = mean over questions):');
++  lines.push('');
++  lines.push('| lang | instruction | view |');
++  lines.push('|---|---|---|');
++  for (const l of langs) {
++    const views = questions.map((q) => D.roughTokens(promptsFor(q, l).view));
++    lines.push(`| ${l} | ${D.roughTokens(D.instructionFor(l))} | ${f0(mean(views))} |`);
++  }
++  const froms = new Set(results.map((r) => r.outTokensFrom));
++  lines.push('');
++  lines.push(
++    `Out tok: ${froms.has('rough') ? (froms.has('usage') ? 'usage where the server sent it, else ' : '') + 'a word-and-punctuation count (no usage field)' : "the server's usage.completion_tokens"}. ` +
++      'Grounded = validateChart passed against the scan. Hop cov counts an unparsed answer as 0.',
++  );
++  if (meta.warnings.length > 0) {
++    lines.push('');
++    lines.push('Question checks:');
++    lines.push('');
++    for (const w of meta.warnings) lines.push(`- ${w}`);
++  }
++  const errors = results.filter((r) => r.error);
++  if (errors.length > 0) {
++    lines.push('');
++    lines.push(`${errors.length} call(s) failed; they count as unparsed. First: ${errors[0].lang} ${errors[0].qid} r${errors[0].run}: ${errors[0].error}`);
++  }
++  return `${lines.join('\n')}\n`;
++}
++
++function writeResults(results, meta) {
++  fs.writeFileSync(path.join(outDir, 'results.jsonl'), results.map((r) => JSON.stringify(r)).join('\n') + '\n');
++  const md = summarize(results, meta);
++  fs.writeFileSync(path.join(outDir, 'summary.md'), md);
++  console.log('');
++  console.log(md);
++  log(`wrote ${path.join(outDir, 'results.jsonl')} and summary.md`);
++}
++
++/* ----------------------------------------------------------------- modes -- */
++
++const warnings = checkQuestions();
++
++if (opts.emitPrompts !== undefined) {
++  const dir = path.resolve(opts.emitPrompts);
++  fs.mkdirSync(dir, { recursive: true });
++  const manifest = { scan: scanName, maxNodes: opts.maxNodes, maxTokens: opts.maxTokens, langs: opts.langs, prompts: [], warnings };
++  for (const q of questions) {
++    for (const l of opts.langs) {
++      const p = promptsFor(q, l);
++      const file = `${q.id}.${l}.json`;
++      fs.writeFileSync(path.join(dir, file), `${JSON.stringify({ system: p.system, user: p.user }, null, 2)}\n`);
++      manifest.prompts.push({ file, qid: q.id, lang: l, systemTok: D.roughTokens(p.system), userTok: D.roughTokens(p.user) });
++    }
++  }
++  fs.writeFileSync(path.join(dir, '_manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
++  log(`wrote ${manifest.prompts.length} prompt(s) to ${dir} (answers go in <qid>.<lang>.r<k>.txt)`);
++  process.exit(0);
++}
++
++if (opts.scoreAnswers !== undefined) {
++  const dir = path.resolve(opts.scoreAnswers);
++  const re = new RegExp(`^([\\w-]+)\\.(${ALL_LANGS.join('|')})\\.r(\\d+)\\.txt$`);
++  const records = [];
++  for (const f of fs.readdirSync(dir).sort()) {
++    const m = re.exec(f);
++    if (!m || !opts.langs.includes(m[2])) continue;
++    const [, qid, lang, run] = m;
++    /* The prompt this answer was written to, when it sits beside it, must be
++       the prompt this scorer rebuilds, or the map's numbers mean something else. */
++    const pf = path.join(dir, `${qid}.${lang}.json`);
++    const q = questions.find((x) => x.id === qid);
++    if (q && fs.existsSync(pf)) {
++      const emitted = JSON.parse(fs.readFileSync(pf, 'utf8'));
++      if (emitted.user !== promptsFor(q, lang).user) {
++        die(`${pf} is not the prompt this scan/questions/--max-nodes would send: score with the same inputs you emitted with`);
++      }
++    }
++    records.push({ lang, qid, run: Number(run), content: fs.readFileSync(path.join(dir, f), 'utf8') });
++  }
++  if (records.length === 0) die(`no <qid>.<lang>.r<k>.txt answers in ${dir}`);
++  const runs = Math.max(...records.map((r) => r.run));
++  writeResults(score(records), { model: flag('model', 'answers on disk'), runs, mode: `Scored from ${records.length} answer file(s) in ${dir}`, warnings });
++  process.exit(0);
++}
++
++/* live */
++const plan = {
++  model: opts.model,
++  baseUrl: opts.baseUrl,
++  maxTokens: opts.maxTokens,
++  temperature: opts.temperature,
++  stream: opts.stream,
++  timeoutMs: opts.timeoutMs,
++  calls: [],
++};
++for (const l of opts.langs) {
++  for (const q of questions) {
++    const p = promptsFor(q, l);
++    for (let k = 1; k <= opts.runs; k += 1) plan.calls.push({ lang: l, qid: q.id, run: k, system: p.system, user: p.user });
++  }
++}
++fs.writeFileSync(path.join(outDir, 'plan.json'), `${JSON.stringify(plan, null, 1)}\n`);
++
++const lockCli = path.join(ROOT, 'tools', 'ci', 'gpu-lock.mjs');
++if (opts.lock && !process.env.SEQUENCE_GPU_LOCK) {
++  die('the card lock is on and SEQUENCE_GPU_LOCK is not set. Set it to the machine\'s lock path, or pass --no-lock.');
++}
++
++const pending = (l) => {
++  const done = new Set(readJsonl(path.join(outDir, `raw.${l}.jsonl`)).filter((r) => r.error === undefined).map((r) => `${r.qid}#${r.run}`));
++  return plan.calls.filter((c) => c.lang === l && !done.has(`${c.qid}#${c.run}`)).length;
++};
++
++function runBatch(l) {
++  const workerArgs = [SELF, '--worker', l, '--out', outDir];
++  if (!opts.lock) {
++    return new Promise((resolve) => {
++      const p = spawn(process.execPath, workerArgs, { stdio: 'inherit' });
++      p.on('exit', (code) => resolve(code ?? 1));
++    });
++  }
++  return new Promise((resolve) => {
++    const p = spawn(
++      process.execPath,
++      [lockCli, 'run', '--what', `draw-lang-ab ${l}: ${pending(l)} call(s) to ${opts.model}`, '--', process.execPath, ...workerArgs],
++      { stdio: 'inherit', env: { ...process.env, SEQUENCE_AI_BASE_URL: opts.baseUrl } },
++    );
++    p.on('exit', (code) => resolve(code ?? 1));
++  });
++}
++
++for (const l of opts.langs) {
++  if (pending(l) === 0) {
++    log(`${l}: every call already on disk — skipping`);
++    continue;
++  }
++  const started = Date.now();
++  for (;;) {
++    log(`${l}: ${opts.lock ? 'taking the card' : 'no lock'} for ${pending(l)} call(s)`);
++    const code = await runBatch(l);
++    if (code === 0) break;
++    if (code === 3 && opts.lock && Date.now() - started < opts.lockWaitMs) {
++      log(`${l}: the card is held — waiting ${opts.lockPollMs / 1000}s (up to ${Math.round(opts.lockWaitMs / 1000)}s)`);
++      await new Promise((r) => setTimeout(r, opts.lockPollMs));
++      continue;
++    }
++    if (code === 3) die(`${l}: the card stayed held for ${Math.round(opts.lockWaitMs / 1000)}s. Re-run to resume; finished calls are kept.`, 3);
++    die(`${l}: the batch exited ${code}. Re-run to resume; finished calls are kept.`, 1);
++  }
++  log(`${l}: done — card released`);
++}
++
++const raw = opts.langs.flatMap((l) => {
++  /* The last record per (question, run) wins, so a retried failure counts once. */
++  const last = new Map();
++  for (const r of readJsonl(path.join(outDir, `raw.${l}.jsonl`))) last.set(`${r.qid}#${r.run}`, r);
++  return [...last.values()].filter((r) => r.run <= opts.runs && questions.some((q) => q.id === r.qid));
++});
++writeResults(score(raw), {
++  model: opts.model,
++  runs: opts.runs,
++  mode: `Live against ${opts.baseUrl}${opts.stream ? ', streamed' : ''}${opts.lock ? ', card lock per language' : ', no lock'}`,
++  warnings,
++});
+diff --git a/tools/measure/fake-openai.mjs b/tools/measure/fake-openai.mjs
+new file mode 100644
+index 00000000..84a27cd7
+--- /dev/null
++++ b/tools/measure/fake-openai.mjs
+@@ -0,0 +1,99 @@
++/**
++ * A FAKE OPENAI-COMPATIBLE SERVER, for proving a driver end to end with no card.
++ *
++ *   import { startFakeOpenAI } from './fake-openai.mjs';
++ *   const fake = await startFakeOpenAI(({ system, user, body }) => 'the answer');
++ *   // fake.baseUrl is http://127.0.0.1:<port>/v1; fake.calls lists every request
++ *   await fake.close();
++ *
++ * Serves `POST /v1/chat/completions` both ways a local runtime does: one JSON
++ * body, or Server-Sent Events when `stream: true` (content deltas, then a
++ * usage chunk when `stream_options.include_usage` asks for one, then
++ * `[DONE]`). `GET /api/ps` answers like Ollama with no model resident, so
++ * gpu-lock's release probe reads `models=0` instead of timing out.
++ *
++ * Usage counts are the word-and-punctuation count of the text, not a real
++ * tokenizer: the point is that the field is present and plausible.
++ */
++import http from 'node:http';
++
++const rough = (s) => (String(s).match(/[A-Za-z]+|\d+|\S/g) ?? []).length;
++
++/**
++ * @param {(req: {system: string, user: string, body: any}) => string | Promise<string>} answer
++ * @param {{ delayMs?: number, chunkChars?: number }} [opts]
++ */
++export async function startFakeOpenAI(answer, opts = {}) {
++  const calls = [];
++  const server = http.createServer((req, res) => {
++    if (req.method === 'GET' && req.url === '/api/ps') {
++      res.writeHead(200, { 'content-type': 'application/json' });
++      res.end(JSON.stringify({ models: [] }));
++      return;
++    }
++    if (req.method !== 'POST' || !/\/v1\/chat\/completions$/.test(req.url ?? '')) {
++      res.writeHead(404);
++      res.end('not found');
++      return;
++    }
++    let raw = '';
++    req.on('data', (c) => (raw += c));
++    req.on('end', async () => {
++      let body;
++      try {
++        body = JSON.parse(raw);
++      } catch {
++        res.writeHead(400);
++        res.end('bad json');
++        return;
++      }
++      const msgs = Array.isArray(body.messages) ? body.messages : [];
++      const system = msgs.find((m) => m.role === 'system')?.content ?? '';
++      const user = msgs.find((m) => m.role === 'user')?.content ?? '';
++      calls.push({ system, user, body, at: Date.now() });
++      let text;
++      try {
++        text = String(await answer({ system, user, body }));
++      } catch (e) {
++        res.writeHead(500);
++        res.end(String(e));
++        return;
++      }
++      if (opts.delayMs) await new Promise((r) => setTimeout(r, opts.delayMs));
++      const usage = {
++        prompt_tokens: rough(system) + rough(user),
++        completion_tokens: rough(text),
++        total_tokens: rough(system) + rough(user) + rough(text),
++      };
++      if (!body.stream) {
++        res.writeHead(200, { 'content-type': 'application/json' });
++        res.end(
++          JSON.stringify({
++            id: 'fake',
++            object: 'chat.completion',
++            model: body.model,
++            choices: [{ index: 0, message: { role: 'assistant', content: text }, finish_reason: 'stop' }],
++            usage,
++          }),
++        );
++        return;
++      }
++      res.writeHead(200, { 'content-type': 'text/event-stream' });
++      const size = opts.chunkChars ?? 7;
++      for (let i = 0; i < text.length; i += size) {
++        const chunk = { choices: [{ index: 0, delta: { content: text.slice(i, i + size) }, finish_reason: null }] };
++        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
++      }
++      res.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] })}\n\n`);
++      if (body.stream_options?.include_usage) res.write(`data: ${JSON.stringify({ choices: [], usage })}\n\n`);
++      res.end('data: [DONE]\n\n');
++    });
++  });
++  await new Promise((r) => server.listen(0, '127.0.0.1', r));
++  const { port } = server.address();
++  return {
++    baseUrl: `http://127.0.0.1:${port}/v1`,
++    calls,
++    close: () => new Promise((r) => server.close(() => r())),
++  };
++}
+diff --git a/tools/measure/fixtures/shopfront.scan.json b/tools/measure/fixtures/shopfront.scan.json
+new file mode 100644
+index 00000000..c40c0cbe
+--- /dev/null
++++ b/tools/measure/fixtures/shopfront.scan.json
+@@ -0,0 +1,77 @@
++{"about":"Trimmed scan of packages/analyzer/test/fixtures/shopfront (node id/kind/label/path/parentId, edge src/dst/kind), made with: node packages/analyzer/dist/cli.js scan packages/analyzer/test/fixtures/shopfront --out scan.json --no-cache","repoName":"shopfront","nodes":[
++{"id":"repo","kind":"repo","label":"shopfront"},
++{"id":"svc:gateway","kind":"service","label":"gateway","path":"gateway","parentId":"repo"},
++{"id":"svc:orders","kind":"service","label":"orders","path":"orders","parentId":"repo"},
++{"id":"svc:payments","kind":"service","label":"payments","path":"payments","parentId":"repo"},
++{"id":"svc:notifications","kind":"service","label":"notifications","path":"notifications","parentId":"repo"},
++{"id":"svc:inventory","kind":"service","label":"inventory","path":"inventory","parentId":"repo"},
++{"id":"svc:shipping","kind":"service","label":"shipping","path":"shipping","parentId":"repo"},
++{"id":"svc:invoices","kind":"service","label":"invoices","path":"invoices","parentId":"repo"},
++{"id":"svc:edge","kind":"service","label":"edge","path":"edge","parentId":"repo"},
++{"id":"ds:postgres","kind":"datastore","label":"postgres","parentId":"repo"},
++{"id":"ds:redis","kind":"datastore","label":"redis","parentId":"repo"},
++{"id":"topic:order.created","kind":"topic","label":"order.created","parentId":"ds:redis"},
++{"id":"file:gateway/src/index.ts","kind":"file","label":"index.ts","path":"gateway/src/index.ts","parentId":"svc:gateway"},
++{"id":"file:gateway/src/lib/http.ts","kind":"file","label":"http.ts","path":"gateway/src/lib/http.ts","parentId":"svc:gateway"},
++{"id":"file:gateway/src/routes/invoices.ts","kind":"file","label":"invoices.ts","path":"gateway/src/routes/invoices.ts","parentId":"svc:gateway"},
++{"id":"file:gateway/src/routes/orders.ts","kind":"file","label":"orders.ts","path":"gateway/src/routes/orders.ts","parentId":"svc:gateway"},
++{"id":"file:gateway/src/routes/payments.ts","kind":"file","label":"payments.ts","path":"gateway/src/routes/payments.ts","parentId":"svc:gateway"},
++{"id":"file:gateway/src/routes/shipments.ts","kind":"file","label":"shipments.ts","path":"gateway/src/routes/shipments.ts","parentId":"svc:gateway"},
++{"id":"file:orders/app/db.py","kind":"file","label":"db.py","path":"orders/app/db.py","parentId":"svc:orders"},
++{"id":"file:orders/app/events.py","kind":"file","label":"events.py","path":"orders/app/events.py","parentId":"svc:orders"},
++{"id":"file:orders/app/inventory_client.py","kind":"file","label":"inventory_client.py","path":"orders/app/inventory_client.py","parentId":"svc:orders"},
++{"id":"file:orders/app/main.py","kind":"file","label":"main.py","path":"orders/app/main.py","parentId":"svc:orders"},
++{"id":"file:orders/app/models.py","kind":"file","label":"models.py","path":"orders/app/models.py","parentId":"svc:orders"},
++{"id":"file:orders/app/payments_client.py","kind":"file","label":"payments_client.py","path":"orders/app/payments_client.py","parentId":"svc:orders"},
++{"id":"file:orders/app/routes.py","kind":"file","label":"routes.py","path":"orders/app/routes.py","parentId":"svc:orders"},
++{"id":"file:payments/src/db.js","kind":"file","label":"db.js","path":"payments/src/db.js","parentId":"svc:payments"},
++{"id":"file:payments/src/index.js","kind":"file","label":"index.js","path":"payments/src/index.js","parentId":"svc:payments"},
++{"id":"file:payments/src/stripe.js","kind":"file","label":"stripe.js","path":"payments/src/stripe.js","parentId":"svc:payments"},
++{"id":"file:notifications/worker.py","kind":"file","label":"worker.py","path":"notifications/worker.py","parentId":"svc:notifications"},
++{"id":"file:inventory/server.py","kind":"file","label":"server.py","path":"inventory/server.py","parentId":"svc:inventory"},
++{"id":"file:shipping/main.go","kind":"file","label":"main.go","path":"shipping/main.go","parentId":"svc:shipping"},
++{"id":"file:shipping/subscriber.go","kind":"file","label":"subscriber.go","path":"shipping/subscriber.go","parentId":"svc:shipping"},
++{"id":"file:invoices/src/main/java/shop/invoices/InvoiceController.java","kind":"file","label":"InvoiceController.java","path":"invoices/src/main/java/shop/invoices/InvoiceController.java","parentId":"svc:invoices"},
++{"id":"file:invoices/src/main/java/shop/invoices/PaymentClient.java","kind":"file","label":"PaymentClient.java","path":"invoices/src/main/java/shop/invoices/PaymentClient.java","parentId":"svc:invoices"},
++{"id":"file:invoices/src/main/resources/application.properties","kind":"file","label":"application.properties","path":"invoices/src/main/resources/application.properties","parentId":"svc:invoices"},
++{"id":"file:edge/default.conf","kind":"file","label":"default.conf","path":"edge/default.conf","parentId":"svc:edge"}],"edges":[
++{"srcId":"file:gateway/src/routes/invoices.ts","dstId":"file:invoices/src/main/java/shop/invoices/InvoiceController.java","kind":"http"},
++{"srcId":"file:gateway/src/routes/orders.ts","dstId":"file:orders/app/routes.py","kind":"http"},
++{"srcId":"file:gateway/src/routes/orders.ts","dstId":"file:orders/app/routes.py","kind":"http"},
++{"srcId":"file:gateway/src/routes/payments.ts","dstId":"file:payments/src/index.js","kind":"http"},
++{"srcId":"file:gateway/src/routes/shipments.ts","dstId":"file:shipping/main.go","kind":"http"},
++{"srcId":"file:orders/app/payments_client.py","dstId":"file:payments/src/index.js","kind":"http"},
++{"srcId":"file:invoices/src/main/java/shop/invoices/PaymentClient.java","dstId":"file:payments/src/index.js","kind":"http"},
++{"srcId":"file:edge/default.conf","dstId":"file:gateway/src/routes/invoices.ts","kind":"http"},
++{"srcId":"file:orders/app/inventory_client.py","dstId":"file:inventory/server.py","kind":"grpc"},
++{"srcId":"file:orders/app/events.py","dstId":"topic:order.created","kind":"queue_publish"},
++{"srcId":"file:notifications/worker.py","dstId":"topic:order.created","kind":"queue_consume"},
++{"srcId":"file:shipping/subscriber.go","dstId":"topic:order.created","kind":"queue_consume"},
++{"srcId":"file:orders/app/db.py","dstId":"ds:postgres","kind":"db_read"},
++{"srcId":"file:orders/app/db.py","dstId":"ds:postgres","kind":"db_write"},
++{"srcId":"file:orders/app/models.py","dstId":"ds:postgres","kind":"db_access"},
++{"srcId":"file:payments/src/db.js","dstId":"ds:postgres","kind":"db_write"},
++{"srcId":"file:payments/src/db.js","dstId":"ds:postgres","kind":"db_read"},
++{"srcId":"file:payments/src/db.js","dstId":"ds:postgres","kind":"db_read"},
++{"srcId":"file:shipping/main.go","dstId":"ds:postgres","kind":"db_read"},
++{"srcId":"file:shipping/main.go","dstId":"ds:postgres","kind":"db_write"},
++{"srcId":"file:invoices/src/main/java/shop/invoices/InvoiceController.java","dstId":"ds:postgres","kind":"db_read"},
++{"srcId":"file:invoices/src/main/java/shop/invoices/InvoiceController.java","dstId":"ds:postgres","kind":"db_read"},
++{"srcId":"file:orders/app/db.py","dstId":"ds:postgres","kind":"db_access"},
++{"srcId":"file:payments/src/db.js","dstId":"ds:postgres","kind":"db_access"},
++{"srcId":"file:shipping/main.go","dstId":"ds:postgres","kind":"db_access"},
++{"srcId":"file:invoices/src/main/resources/application.properties","dstId":"ds:postgres","kind":"db_access"},
++{"srcId":"file:gateway/src/index.ts","dstId":"file:gateway/src/routes/invoices.ts","kind":"import"},
++{"srcId":"file:gateway/src/index.ts","dstId":"file:gateway/src/routes/orders.ts","kind":"import"},
++{"srcId":"file:gateway/src/index.ts","dstId":"file:gateway/src/routes/payments.ts","kind":"import"},
++{"srcId":"file:gateway/src/index.ts","dstId":"file:gateway/src/routes/shipments.ts","kind":"import"},
++{"srcId":"file:gateway/src/routes/invoices.ts","dstId":"file:gateway/src/lib/http.ts","kind":"import"},
++{"srcId":"file:gateway/src/routes/orders.ts","dstId":"file:gateway/src/lib/http.ts","kind":"import"},
++{"srcId":"file:gateway/src/routes/shipments.ts","dstId":"file:gateway/src/lib/http.ts","kind":"import"},
++{"srcId":"file:orders/app/main.py","dstId":"file:orders/app/routes.py","kind":"import"},
++{"srcId":"file:orders/app/routes.py","dstId":"file:orders/app/db.py","kind":"import"},
++{"srcId":"file:orders/app/routes.py","dstId":"file:orders/app/events.py","kind":"import"},
++{"srcId":"file:orders/app/routes.py","dstId":"file:orders/app/inventory_client.py","kind":"import"},
++{"srcId":"file:orders/app/routes.py","dstId":"file:orders/app/payments_client.py","kind":"import"},
++{"srcId":"file:payments/src/index.js","dstId":"file:payments/src/db.js","kind":"import"},
++{"srcId":"file:payments/src/index.js","dstId":"file:payments/src/stripe.js","kind":"import"}]}
+diff --git a/tools/measure/questions.ml-harness.json b/tools/measure/questions.ml-harness.json
+new file mode 100644
+index 00000000..b6e518a5
+--- /dev/null
++++ b/tools/measure/questions.ml-harness.json
+@@ -0,0 +1,32 @@
++{
++  "about": "CHECK THE PATHS BEFORE A RUN. Built around the owner's real teach-question target in the ML Harness repo: client.ts -> app/main.py -> app/providers/__init__.py, plus app/diagnosis.py. The paths are the ones earlier teach runs printed (frontend/src/lib/engine/client.ts, app/main.py, app/providers/__init__.py, app/diagnosis.py) and have NOT been checked against a scan of that repo. Run with --emit-prompts first: the driver prints a CHECK line for every focus or expectPath entry that names no node, and for every expected hop that is not a scan edge (a grounded answer cannot draw a hop the scan lacks). Fix those lines here, then run live.",
++  "questions": [
++    {
++      "id": "mlh-teach-path",
++      "question": "Teach me how a question typed in the frontend reaches the model provider. Draw the path through the code.",
++      "focus": ["frontend/src/lib/engine/client.ts", "app/providers/__init__.py"],
++      "expectPath": ["frontend/src/lib/engine/client.ts", "app/main.py", "app/providers/__init__.py"]
++    },
++    {
++      "id": "mlh-diagnosis",
++      "question": "Where does app/main.py hand a failing run to diagnosis? Draw the hop.",
++      "focus": ["app/main.py", "app/diagnosis.py"],
++      "expectPath": ["app/main.py", "app/diagnosis.py"]
++    },
++    {
++      "id": "mlh-whole-ask",
++      "question": "Draw the whole ask: from the frontend client to the server, then to the providers and to diagnosis.",
++      "focus": ["frontend/src/lib/engine/client.ts", "app/main.py", "app/providers/__init__.py", "app/diagnosis.py"],
++      "expectPath": [
++        ["frontend/src/lib/engine/client.ts", "app/main.py", "app/providers/__init__.py"],
++        ["app/main.py", "app/diagnosis.py"]
++      ]
++    },
++    {
++      "id": "mlh-who-calls-providers",
++      "question": "What calls app/providers/__init__.py? Draw every caller with an arrow to it.",
++      "focus": ["app/providers/__init__.py"],
++      "expectPath": ["app/main.py", "app/providers/__init__.py"]
++    }
++  ]
++}
+diff --git a/tools/measure/questions.shopfront-hard.json b/tools/measure/questions.shopfront-hard.json
+new file mode 100644
+index 00000000..736b9b97
+--- /dev/null
++++ b/tools/measure/questions.shopfront-hard.json
+@@ -0,0 +1,92 @@
++{
++  "about": "Harder draw-language A/B questions over the shopfront fixture, to separate arms that all ground the easy set. Every question needs a 5+ hop chain, a fan-out to 3+ backends, or two flows that meet; several invite a plausible shortcut the scan does NOT have (noted per question in trap). Every expectPath hop is a real, same-direction scan edge; the driver re-checks that. focus starts with \"repo\" so the slice is the whole 36-node repo at --max-nodes 36: the repo's edgeless focus pulls in its services and stores, and the breadth-first walk reaches every file.",
++  "questions": [
++    {
++      "id": "card-charge-every-way",
++      "kind": "join, 5+ hops",
++      "question": "Starting at the gateway's entry file, draw every way a request can end up at the Stripe code in the payments service. Show each file it passes through.",
++      "focus": ["repo", "gateway/src/index.ts", "payments/src/stripe.js"],
++      "trap": "orders/app/routes.py -> payments/src/index.js (skipping payments_client.py) is not a scan edge",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/payments.ts", "payments/src/index.js", "payments/src/stripe.js"],
++        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/stripe.js"]
++      ]
++    },
++    {
++      "id": "gateway-fanout",
++      "kind": "fan-out to 4 backends",
++      "question": "Draw every backend file the gateway's entry file reaches through its route files, and which route files use the gateway's shared HTTP helper.",
++      "focus": ["repo", "gateway/src/index.ts", "gateway/src/lib/http.ts"],
++      "trap": "gateway/src/routes/payments.ts -> gateway/src/lib/http.ts is not a scan edge (the other three routes import it)",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java"],
++        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py"],
++        ["gateway/src/index.ts", "gateway/src/routes/payments.ts", "payments/src/index.js"],
++        ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go"],
++        ["gateway/src/routes/invoices.ts", "gateway/src/lib/http.ts"],
++        ["gateway/src/routes/orders.ts", "gateway/src/lib/http.ts"],
++        ["gateway/src/routes/shipments.ts", "gateway/src/lib/http.ts"]
++      ]
++    },
++    {
++      "id": "order-notify",
++      "kind": "4-hop chain + topic shared by two services",
++      "question": "How does a customer get notified after placing an order through the gateway? Draw from the gateway's entry file to the notifications worker, with arrows in the direction the scan records them.",
++      "focus": ["repo", "gateway/src/index.ts", "notifications/worker.py"],
++      "trap": "orders/app/events.py -> notifications/worker.py is not a scan edge, and neither is order.created -> notifications/worker.py (the worker's edge points at the topic)",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
++        ["notifications/worker.py", "topic:order.created"]
++      ]
++    },
++    {
++      "id": "invoice-and-charge",
++      "kind": "two flows joining at a store",
++      "question": "An invoice request comes in at the edge proxy. Draw how it reaches invoice data, and how the invoice service's payment calls reach stored payments. Show where the two flows meet.",
++      "focus": ["repo", "edge/default.conf", "invoices/src/main/java/shop/invoices/PaymentClient.java"],
++      "trap": "InvoiceController.java -> PaymentClient.java is not a scan edge; the controller and the payment client are not linked",
++      "expectPath": [
++        ["edge/default.conf", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"],
++        ["invoices/src/main/java/shop/invoices/PaymentClient.java", "payments/src/index.js", "payments/src/db.js", "ds:postgres"]
++      ]
++    },
++    {
++      "id": "postgres-sharers",
++      "kind": "store reached from 4 services",
++      "question": "Which services share the postgres database? For each one, draw the path from that service's entry file to postgres. Leave out services that never touch it.",
++      "focus": ["repo", "ds:postgres"],
++      "trap": "inventory/server.py -> postgres and payments/src/stripe.js -> postgres are not scan edges",
++      "expectPath": [
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"],
++        ["payments/src/index.js", "payments/src/db.js", "ds:postgres"],
++        ["shipping/main.go", "ds:postgres"],
++        ["invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"]
++      ]
++    },
++    {
++      "id": "shipping-two-triggers",
++      "kind": "two flows into one service",
++      "question": "The shipping service is reached two ways: a gateway request and the order.created event. Draw both, the request all the way to where the shipment is stored and the event from the orders code that publishes it.",
++      "focus": ["repo", "shipping/main.go", "shipping/subscriber.go"],
++      "trap": "shipping/subscriber.go -> shipping/main.go is not a scan edge (the subscriber does not hand off to main.go), and order.created -> subscriber.go is backwards",
++      "expectPath": [
++        ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go", "ds:postgres"],
++        ["orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
++        ["shipping/subscriber.go", "topic:order.created"]
++      ]
++    },
++    {
++      "id": "orders-main-fanout",
++      "kind": "fan-out to 4 backends, one 5-hop branch",
++      "question": "Starting at the orders service's main file, draw every backend it reaches (other services, stores and topics), following each branch to its end.",
++      "focus": ["repo", "orders/app/main.py"],
++      "trap": "inventory/server.py -> postgres and orders/app/routes.py -> orders/app/models.py are not scan edges",
++      "expectPath": [
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/inventory_client.py", "inventory/server.py"],
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/db.js", "ds:postgres"],
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/events.py", "topic:order.created"],
++        ["orders/app/main.py", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"]
++      ]
++    }
++  ]
++}
+diff --git a/tools/measure/questions.shopfront.json b/tools/measure/questions.shopfront.json
+new file mode 100644
+index 00000000..0e54d5b4
+--- /dev/null
++++ b/tools/measure/questions.shopfront.json
+@@ -0,0 +1,58 @@
++{
++  "about": "Draw-language A/B questions over the shopfront fixture (packages/analyzer/test/fixtures/shopfront). Every expectPath hop is a real edge of its scan; the driver re-checks that before any call. expectPath is one chain of paths, or a list of chains when the honest answer branches.",
++  "questions": [
++    {
++      "id": "get-order",
++      "kind": "request flow",
++      "question": "Draw how a request to fetch an order travels from the gateway's entry file to the database.",
++      "focus": ["gateway/src/index.ts", "ds:postgres"],
++      "expectPath": ["gateway/src/index.ts", "gateway/src/routes/orders.ts", "orders/app/routes.py", "orders/app/db.py", "ds:postgres"]
++    },
++    {
++      "id": "charge-payment",
++      "kind": "request flow",
++      "question": "When the orders service charges a payment, which files does the call pass through until the payment is stored?",
++      "focus": ["orders/app/routes.py", "ds:postgres"],
++      "expectPath": ["orders/app/routes.py", "orders/app/payments_client.py", "payments/src/index.js", "payments/src/db.js", "ds:postgres"]
++    },
++    {
++      "id": "invoice-read",
++      "kind": "data path",
++      "question": "Trace the invoice data: how does a request for an invoice that arrives at the edge proxy reach the rows it reads?",
++      "focus": ["edge/default.conf", "ds:postgres"],
++      "expectPath": ["edge/default.conf", "gateway/src/routes/invoices.ts", "invoices/src/main/java/shop/invoices/InvoiceController.java", "ds:postgres"]
++    },
++    {
++      "id": "order-event",
++      "kind": "data path",
++      "question": "Where does the orders service publish the order-created event? Draw the path from the route handler to the topic.",
++      "focus": ["orders/app/routes.py", "topic:order.created"],
++      "expectPath": ["orders/app/routes.py", "orders/app/events.py", "topic:order.created"]
++    },
++    {
++      "id": "who-calls-payments",
++      "kind": "what calls X",
++      "question": "What calls payments/src/index.js? Draw every caller with an arrow to it.",
++      "focus": ["payments/src/index.js"],
++      "expectPath": [
++        ["gateway/src/routes/payments.ts", "payments/src/index.js"],
++        ["orders/app/payments_client.py", "payments/src/index.js"],
++        ["invoices/src/main/java/shop/invoices/PaymentClient.java", "payments/src/index.js"]
++      ]
++    },
++    {
++      "id": "stock-check",
++      "kind": "short 2-hop",
++      "question": "How does the orders service check stock? Keep it short.",
++      "focus": ["orders/app/routes.py", "inventory/server.py"],
++      "expectPath": ["orders/app/routes.py", "orders/app/inventory_client.py", "inventory/server.py"]
++    },
++    {
++      "id": "shipment-lookup",
++      "kind": "request flow",
++      "question": "Draw how the gateway looks up a shipment, from its entry file to where the shipment is stored.",
++      "focus": ["gateway/src/index.ts", "shipping/main.go"],
++      "expectPath": ["gateway/src/index.ts", "gateway/src/routes/shipments.ts", "shipping/main.go", "ds:postgres"]
++    }
++  ]
++}
+-- 
+2.51.1.windows.1
+

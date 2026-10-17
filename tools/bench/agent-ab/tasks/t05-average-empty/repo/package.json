@@ -1,0 +1,6 @@
+{
+  "name": "t05-average-empty",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

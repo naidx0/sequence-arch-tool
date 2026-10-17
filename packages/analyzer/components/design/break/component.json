@@ -1,0 +1,22 @@
+{
+  "id": "design/break",
+  "group": "design",
+  "label": "Break",
+  "summary": "Renders a component you choose under every scenario that can reach it on a temporary page and stress tests it.",
+  "triggers": [
+    "break a component",
+    "stress test a component",
+    "every scenario for a component",
+    "edge cases for a component",
+    "temporary test page"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/break"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/break"
+}

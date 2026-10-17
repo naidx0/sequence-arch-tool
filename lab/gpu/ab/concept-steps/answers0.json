@@ -1,0 +1,335 @@
+{
+ "b0-1": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-2": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-3": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-4": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-5": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-6": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-7": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-8": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-9": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-10": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-11": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-12": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-13": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-14": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-15": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-16": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-17": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-18": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-19": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-20": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-21": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-22": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-23": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-24": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-25": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-26": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-27": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-28": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-29": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-30": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-31": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-32": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-33": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-34": {
+  "clear": "tie",
+  "visual": "1",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "1",
+  "why": "Text is identical; answer 1 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ },
+ "b0-35": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-36": {
+  "clear": "tie",
+  "visual": "tie",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "tie",
+  "why": "Text is identical; the only difference is edge labels and ordered steps on a picture that does not show the flow asked about, so neither picture helps."
+ },
+ "b0-37": {
+  "clear": "tie",
+  "visual": "2",
+  "teaches": "tie",
+  "kind": "tie",
+  "true": "tie",
+  "overall": "2",
+  "why": "Text is identical; answer 2 labels each edge by kind and plays the relevant flow as ordered steps, while the other shows bare unlabeled arrows."
+ }
+}

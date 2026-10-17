@@ -1,0 +1,41 @@
+{
+  "description": "Sequence security edits to the vendored morluto/rea skill, per the security review (SHIP WITH EDITS). Applied by tools/components/vendor.mjs; each find string must occur exactly once.",
+  "review": "docs/research/rea-security-review.md (seq-018-be, dbe2b2e1), verdict SHIP WITH EDITS",
+  "edits": [
+    {
+      "file": "SKILL.md",
+      "ref": "SKILL.md:34-35",
+      "why": "C1: no unpinned npx on the agent own judgement of scope; ask the user to install the pinned package.",
+      "find": "Prefer an existing `rea` CLI. When none is installed and REA package acquisition\nis within the authorized scope, use `npx -y rea-agents@latest` in its place.",
+      "replace": "Prefer an existing `rea` CLI. If none is installed, stop and ask the user to install `rea-agents@6.4.0` themselves."
+    },
+    {
+      "file": "references/connection-and-recovery.md",
+      "ref": "connection-and-recovery.md:7-8",
+      "why": "C2: same as C1 for every recovery command.",
+      "find": "Commands below use an installed `rea`. If none is available, use the package\ninvocation in `SKILL.md` when acquiring REA is authorized.",
+      "replace": "Commands below use an installed `rea`. If none is available, stop and ask the user to install `rea-agents@6.4.0` themselves."
+    },
+    {
+      "file": "references/connection-and-recovery.md",
+      "ref": "connection-and-recovery.md:53-59",
+      "why": "C4: drop the loophole that lets a write run when its scope is not already authorized.",
+      "find": "Obtain approval for writes when that concrete scope is not already authorized,",
+      "replace": "Obtain the user's yes in chat for this exact write before running it,"
+    },
+    {
+      "file": "references/connection-and-recovery.md",
+      "ref": "connection-and-recovery.md:76-94",
+      "why": "C6: delete the persistent per-tool auto-approve (approval_mode) preapproval section.",
+      "find": "For an operator who explicitly wants to preapprove named operations in a\ndisposable Codex profile, current Codex supports per-tool configuration. For\nexample, opening and closing an analysis session can be scoped independently:\n\n```toml\n[mcp_servers.rea.tools.open_binary]\napproval_mode = \"approve\"\n\n[mcp_servers.rea.tools.close_binary]\napproval_mode = \"approve\"\n```\n\nUse the actual server ID and only the operations whose effects were approved;\nthis example does not approve inspection, extraction or runtime execution.\nShow the proposed config edit and preserve unrelated entries and backups before\nwriting. Managed policy can constrain client settings. Consult the\n[Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)\nfor the installed client's supported settings. This is an optional recovery\nchoice, not a prerequisite for every REA task.\n\n",
+      "replace": ""
+    },
+    {
+      "file": "references/native-and-artifacts.md",
+      "ref": "native-and-artifacts.md:74-75",
+      "why": "C8: the entitlement line invites re-signing to weaken code signing; the agent must not add it.",
+      "find": "`get-task-allow` entitlement.",
+      "replace": "`get-task-allow` entitlement. Do not add the entitlement yourself; report it as a blocker."
+    }
+  ]
+}

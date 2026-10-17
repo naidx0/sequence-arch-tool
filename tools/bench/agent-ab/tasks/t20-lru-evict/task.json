@@ -1,0 +1,23 @@
+{
+  "id": "t20-lru-evict",
+  "prompt": "LRU.get should mark the key as most recently used so the next eviction removes the least recently used key. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "LRU"
+    ]
+  }
+}

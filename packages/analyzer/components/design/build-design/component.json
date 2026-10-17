@@ -1,0 +1,22 @@
+{
+  "id": "design/build-design",
+  "group": "design",
+  "label": "Build Design",
+  "summary": "Builds UI from a Figma file or a design image so it matches the design, using your project's existing tokens and components.",
+  "triggers": [
+    "build from figma",
+    "implement a design image",
+    "match this design",
+    "build ui from a mockup",
+    "use the design tokens"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/build-design"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/build-design"
+}

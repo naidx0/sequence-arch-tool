@@ -1,0 +1,42 @@
+[
+  {"id": "ml-harness-e1", "repo": "ml-harness", "questions": [
+    "hi, my manager sent me this project and said 'check if we should use it'. what actually is it, in plain words? who is it built for?",
+    "ok im still a bit lost. you said it tells people whether to train a model or not — but what do i actually get at the end, like a report? a trained model? something else?",
+    "fair enough. so honestly is it worth using for a small team that just wants a chatbot for support tickets, or would we be better off with something else?"
+  ]},
+  {"id": "ml-harness-e2", "repo": "ml-harness", "questions": [
+    "eli5 pls. what does this thing do",
+    "can u draw me the steps a person goes thru from opening it to getting an answer? like a flowchart",
+    "zoom in on the part where it decides yes train / no dont train. what does it look at to decide"
+  ]},
+  {"id": "shopfront-e1", "repo": "shopfront", "questions": [
+    "Good afternoon. I am a new student and I have been given this project to study. Could you please explain what kind of business this software is for, and what a customer would experience when using it?",
+    "Thank you. I am sorry, I still do not understand how the pieces connect. When somebody buys something, what happens first, and what happens after? Could you make a diagram?",
+    "Could you explain only the payment part more slowly? What happens if the payment does not succeed?"
+  ]},
+  {"id": "shopfront-e2", "repo": "shopfront", "questions": [
+    "what's this for. short answer",
+    "why split it into so many little services instead of one app? seems like overkill for a shop",
+    "so compared to just using shopify or woocommerce, would anyone actually want this?"
+  ]},
+  {"id": "makemore-e1", "repo": "makemore", "questions": [
+    "so i'm learning ml on my own and a friend pointed me here and said it 'makes up names'?? what is it really and why would someone build this, it seems kind of pointless lol",
+    "i don't get it still. how does it go from a list of names to making new ones? walk me through it like start to finish",
+    "could you sketch that as a picture, the whole path from the name list to a new made-up name"
+  ]},
+  {"id": "makemore-e2", "repo": "makemore", "questions": [
+    "Quick one: who is this project aimed at, and what does a person get out of running it?",
+    "There seem to be two approaches in here, one simple and one with a neural net. How do they compare, and why include both?",
+    "Just the last step then, where it actually spits out a name. How does it pick each letter? And is this worth my team's time as a teaching exercise, yes or no?"
+  ]},
+  {"id": "sequence-e1", "repo": "sequence", "questions": [
+    "I manage a team of about twelve engineers and our architecture docs are always out of date. Someone suggested this tool. What does it do, and what problem is it really solving?",
+    "How is that different from just drawing diagrams in something like Miro, or asking ChatGPT to describe our codebase? I need to justify it to my director.",
+    "Bottom line: is it worth rolling out to the team? What would a typical day using it look like for one of my devs?"
+  ]},
+  {"id": "sequence-e2", "repo": "sequence", "questions": [
+    "hey so what is this app. i opened it and theres a chat and some kind of graph thing and im confused",
+    "wait so i still dont get what happens when i point it at my repo. what are the steps, from install to seeing my stuff on the board? can u draw it",
+    "what does it mean when a line is dashed vs solid? like at that stage what is it telling me"
+  ]}
+]

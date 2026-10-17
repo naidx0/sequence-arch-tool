@@ -1,0 +1,29 @@
+Source: npm package @lobehub/icons-static-svg 1.95.1 (https://github.com/lobehub/lobe-icons)
+Files: icons/codex.svg, icons/codex-color.svg, icons/openai.svg, icons/claude.svg, icons/claude-color.svg (unmodified copies)
+License: MIT (package.json "license": "MIT"; README: "Copyright © 2023 LobeHub. This project is MIT licensed.")
+Also used, sanitised to shapes in currentColor (settings/logos/build-lobe-marks.mjs, SOURCES.md): icons/nousresearch.svg
+(https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/nousresearch.svg), fetched 2026-10-16 on Jaden's instruction for the Hermes Agent mark.
+The marks themselves are trademarks of their owners (OpenAI, Anthropic, Nous Research); used here to identify those providers.
+Downloaded 2026-10-06 on Jaden's explicit instruction in this session ("GPT and Codex should have the Codex icons. Download those.").
+
+MIT License
+
+Copyright (c) 2023 LobeHub
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

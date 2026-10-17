@@ -1,0 +1,170 @@
+From f4d1b9515f945cd28a5fe1d990a038ae9d15df0d Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 00:27:36 -0400
+Subject: [PATCH 29/37] A teach answer that repeats the last one is sent back
+ once, behind SEQUENCE_TEACH_REPEAT_GUARD=1
+
+Product-mode run 2: a prompt line did not stop MiniCPM5 resending the same answer to three
+different questions (similarity 0.79 and 1.0). The grader now compares the draft with the last
+assistant answer in the history (5-gram Jaccard >= 0.6), bounces it once for a new answer to the
+new question, and never keeps it as the richer draft. 2 full-turn tests; bench arm 'guard'.
+---
+ packages/analyzer/src/server/askPipeline.ts   | 53 +++++++++++++++++--
+ .../analyzer/src/test/ask-tool-loop.test.ts   | 41 ++++++++++++++
+ tools/bench/product-question-ab.mjs           |  5 +-
+ 3 files changed, 93 insertions(+), 6 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 8525f984..7b8f4f1e 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -3463,6 +3463,43 @@ export function teachOneChange(problems: readonly string[], draft: string, overv
+   return `Make this ONE change and keep the rest of your draft as it is: ${change}. Your draft:\n\n${draft.trim()}`;
+ }
+ 
++/*
++ * AN ANSWER IS NOT SENT TWICE (SEQUENCE_TEACH_REPEAT_GUARD=1, off by default).
++ *
++ * 2026-09-24: the owner asked three different product questions and got the same
++ * answer three times; a prompt line telling the model not to repeat itself did
++ * not stop it (product-mode run 2, similarity 0.79 and 1.0). So the grader checks
++ * the draft against the last assistant answer in the history, and a draft that is
++ * mostly the same (character 5-gram Jaccard >= 0.6) is sent back once for a new
++ * answer, and is never kept as the "richer" one.
++ */
++const REPEAT_PROBLEM = 'it repeats your previous answer almost word for word';
++const REPEAT_THRESHOLD = 0.6;
++
++function fiveGrams(text: string): Set<string> {
++  const s = text.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
++  const out = new Set<string>();
++  for (let i = 0; i + 5 <= s.length; i += 1) out.add(s.slice(i, i + 5));
++  return out;
++}
++
++export function answerSimilarity(a: string, b: string): number {
++  const A = fiveGrams(a);
++  const B = fiveGrams(b);
++  if (A.size === 0 || B.size === 0) return 0;
++  let shared = 0;
++  for (const g of A) if (B.has(g)) shared += 1;
++  return shared / (A.size + B.size - shared);
++}
++
++export function repeatsLastAnswer(text: string, historyLines?: readonly string[]): boolean {
++  if (process.env.SEQUENCE_TEACH_REPEAT_GUARD !== '1') return false;
++  const last = [...(historyLines ?? [])].reverse().find((l) => l.startsWith('Assistant: '));
++  if (last === undefined) return false;
++  /* The history keeps 1,200 characters of an answer; compare like with like. */
++  return answerSimilarity(text.slice(0, 1200), last.slice('Assistant: '.length).replace(/… \[memory trimmed\]$/, '')) >= REPEAT_THRESHOLD;
++}
++
+ /** The one line that says the kept answer is the earlier, fuller one. */
+ export const KEPT_RICHER_NOTE =
+   '(The rewrite the lesson contract asked for came back shorter than this earlier answer, ' +
+@@ -5658,6 +5695,8 @@ ${lastToolSectionText}`);
+           /* 2026-09-23: a comprehension question mid-lesson is what the mode
+              wants. r1 was bounced for one and ended on its thinner retry. */
+           .filter((p) => !MID_LESSON_QUESTION_PROBLEM.test(p));
++        const repeated = bouncedDraft === undefined ? repeatsLastAnswer(text, input.historyLines) : false;
++        if (repeated) problems.push(REPEAT_PROBLEM);
+         /*
+          * REPAIR FIRST, BOUNCE ONCE, NEVER END THINNER (2026-09-23; see
+          * `unreadCitations`, `misplacedCitations`, `removeClosingOffer` and
+@@ -5712,6 +5751,7 @@ ${lastToolSectionText}`);
+         } else if (problems.length > 0) {
+           if (
+             (rest.length === 0 || isShapeOnlyBounce(rest)) &&
++            !repeated &&
+             !isPlanningNotAnswer(text) &&
+             marked.length > (keptAnswer?.length ?? -1)
+           ) {
+@@ -5723,11 +5763,14 @@ ${lastToolSectionText}`);
+             bouncedDraft = text;
+             rounds++;
+             const listed = citeNotes.length > 0 ? rest : problems;
+-            const bounce =
+-              '### harness (teach contract): your lesson turn is REJECTED — ' +
+-              (listed.length > 0 ? listed.join('; ') : 'it is not yet a lesson for the learner') +
+-              '. ' +
+-              teachOneChange(listed, marked, overviewTurn);
++            const bounce = repeated
++              ? `### harness (teach contract): your answer is REJECTED — ${REPEAT_PROBLEM}. ` +
++                `The learner asked something new: "${input.question}". Write a NEW answer to that question: ` +
++                'do not reuse your previous sentences, and give information your last answer did not.'
++              : '### harness (teach contract): your lesson turn is REJECTED — ' +
++                (listed.length > 0 ? listed.join('; ') : 'it is not yet a lesson for the learner') +
++                '. ' +
++                teachOneChange(listed, marked, overviewTurn);
+             evidenceLedger.push({ round: rounds, body: bounce });
+             if (!seenEvidence.has(bounce)) seenEvidence.add(bounce);
+             lastToolSectionText = renderToolResultsSection(
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index cf228507..c9a642c0 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -7571,3 +7571,44 @@ test('askPipeline teach deflection floor, =drop: the hand-back sentence is gone
+   /* The model's other sentence survives. */
+   assert.ok(result.text.includes('I have looked at the scan.'));
+ });
++
++/* ======================================== an answer is not sent twice ===== */
++
++const LAST_ANSWER =
++  'The shopfront is a set of services: the gateway takes the request and hands it to the orders service, which stores it in postgres and tells the other services through a queue. Did this make sense so far?';
++const NEW_ANSWER =
++  'Think of it as a shop counter: a customer places an order, the counter checks stock and payment, and then shipping and notifications hear about it. What would you check first if an order never shipped?';
++
++async function repeatTeachTurn(flag: string | undefined) {
++  const repo = shopfrontRepo();
++  const { callProvider } = makeProviderScript([{ text: LAST_ANSWER }, { text: NEW_ANSWER }]);
++  const base = await makeAttachedInput(repo, callProvider);
++  const before = process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++  if (flag === undefined) delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++  else process.env.SEQUENCE_TEACH_REPEAT_GUARD = flag;
++  try {
++    return await runAskPipeline(
++      {
++        ...base,
++        question: 'i still dont get it, why does it exist?',
++        teach: true,
++        historyLines: ['--- PRIOR CHAT (same workspace; continue coherently) ---', 'User: what is this app?', `Assistant: ${LAST_ANSWER}`],
++      },
++      () => {},
++    );
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
++    else process.env.SEQUENCE_TEACH_REPEAT_GUARD = before;
++  }
++}
++
++test('askPipeline teach, SEQUENCE_TEACH_REPEAT_GUARD=1: a draft that repeats the last answer is sent back once and the new answer goes out', async () => {
++  const result = await repeatTeachTurn('1');
++  assert.match(result.text, /shop counter/);
++  assert.doesNotMatch(result.text, /hands it to the orders service/);
++});
++
++test('askPipeline teach, repeat guard off: the repeated draft goes out as before', async () => {
++  const result = await repeatTeachTurn(undefined);
++  assert.match(result.text, /hands it to the orders service/);
++});
+diff --git a/tools/bench/product-question-ab.mjs b/tools/bench/product-question-ab.mjs
+index 25966530..c2f9b6d2 100644
+--- a/tools/bench/product-question-ab.mjs
++++ b/tools/bench/product-question-ab.mjs
+@@ -30,8 +30,11 @@ const arg = (k, d) => {
+ const ARM = arg('--arm', 'off');
+ const RUNS = Number(arg('--runs', '1'));
+ const OUT = arg('--out', path.join(root, 'tools/bench/out', `product-question-${ARM}.json`));
+-if (ARM === 'on') process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
++/* Arms: off (neither flag), on (product mode), guard (product mode + repeat guard). */
++if (ARM === 'on' || ARM === 'guard') process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
+ else delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++if (ARM === 'guard') process.env.SEQUENCE_TEACH_REPEAT_GUARD = '1';
++else delete process.env.SEQUENCE_TEACH_REPEAT_GUARD;
+ 
+ const { runAskPipeline } = await import(dist('server/askPipeline.js'));
+ const { scanRepoCached } = await import(dist('index.js'));
+-- 
+2.51.1.windows.1
+

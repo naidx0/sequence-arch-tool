@@ -1,0 +1,4 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:session","resumed":false,"threadId":"thread-signed-out-1"}
+{"type":"acp:model","model":"gpt-5-codex"}
+{"type":"acp:error","error":"ACP agent failed: codex turn failed: unexpected status 401 Unauthorized: Your authentication token has expired. Please log in again.","recovery":{"kind":"signIn","cause":"signedOut","provider":"codex"}}

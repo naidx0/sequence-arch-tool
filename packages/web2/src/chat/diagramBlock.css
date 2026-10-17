@@ -1,0 +1,510 @@
+/* A diagram or drawing in an answer (DiagramBlock.tsx). Quiet: no card, a hairline frame. */
+.dgm {
+  margin: 6px 0;
+  /* The tool-call card's frame (.s2-agcard): one radius, one hairline. */
+  border: 1px solid var(--b-edge);
+  border-radius: 16px;
+  overflow: hidden;
+  background: transparent;
+}
+.dgm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px;
+  min-height: var(--row-h);
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+/* R11: the action is a quiet transparent film. It fades in when the diagram is hovered or holds focus, and
+   is always reachable by keyboard (focus shows it). Touch has no hover, so it stays shown there. */
+.dgm-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--sp-24);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background: color-mix(in srgb, var(--b-ink1) 5%, transparent);
+  font: inherit;
+  color: var(--b-ink3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-1, 120ms) var(--ease, ease), background-color var(--dur-1, 120ms) var(--ease, ease), color var(--dur-1, 120ms) var(--ease, ease);
+}
+.dgm:hover .dgm-toggle,
+.dgm:focus-within .dgm-toggle,
+.dgm-toggle:focus-visible,
+.dgm-toggle[aria-pressed='true'],
+.dgm:not([data-state='drawn']) .dgm-toggle {
+  opacity: 1;
+}
+.dgm-toggle:hover {
+  background: color-mix(in srgb, var(--b-ink1) 9%, transparent);
+  color: var(--b-ink1);
+}
+.dgm-toggle:focus-visible {
+  outline: var(--w-hair) solid var(--b-acc);
+  outline-offset: var(--w-hair);
+}
+@media (hover: none) {
+  .dgm-toggle {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dgm-toggle {
+    transition: none;
+  }
+}
+.dgm-art {
+  padding: 2px 8px 8px;
+  overflow: hidden;
+  text-align: center;
+  color: var(--b-ink1);
+}
+.dgm-art svg {
+  /* Scaled to the column and to a tall maximum, centred: the drawing never gets a scroll area of its own. */
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  max-height: 960px; /* DIAGRAM_MAX_H */
+  height: auto;
+}
+.dgm-note {
+  margin: 0;
+  padding: 6px 10px 8px;
+  font-size: var(--t-11-5);
+  color: var(--b-ink3);
+}
+.dgm > .r9-code {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.dgm-label {
+  letter-spacing: 0.02em;
+}
+
+/* R10: a mermaid diagram draws at its natural size (its labels stay readable); a wide one scrolls sideways. */
+.dgm[data-kind='mermaid'] .dgm-art {
+  text-align: left;
+  overflow-x: hidden;
+}
+.dgm[data-kind='mermaid'] .dgm-art svg {
+  max-width: none;
+  height: auto;
+}
+.dgm[data-kind='mermaid'] .dgm-art svg text,
+.dgm[data-kind='mermaid'] .dgm-art svg .nodeLabel,
+.dgm[data-kind='mermaid'] .dgm-art svg .edgeLabel {
+  font-size: max(1em, var(--t-12));
+}
+
+/* A wide drawing is scaled to the column (DiagramBlock fitMermaid): no sideways scrollbar, no hint. */
+.dgm[data-kind='mermaid'] .dgm-art {
+  padding-top: 0;
+  padding-bottom: var(--sp-4);
+}
+/* A block svg has no baseline gap under it: the crop's own pad is the only margin. */
+.dgm[data-kind='mermaid'] .dgm-art svg {
+  display: block;
+}
+
+/* ```html in an answer (VisualBlock.tsx): the frame is the page itself on the thread's surface. */
+.dgm-frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+/* A page taller than the frame's maximum scrolls inside the frame. When the card clips the frame (the default cap, or a
+   dragged height) the frame follows the clip, so its one thin bar is whole and on screen instead of running on under the
+   clip with the thumb scrolling out of sight. A page that fits is clipped by the card at 1:1 as before (no nested scroll). */
+.dgm-frame[data-scrolls='true'] {
+  max-height: var(--card-h, none);
+}
+
+/* Open: a scratch viewer over the thread. */
+.s2-dlg.dgm-open-card {
+  /* The confirm dialog's frame (scrim, radius, fill, shadow), at the size a preview and an editor need. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  width: min(1100px, 100%);
+  height: min(720px, 100%);
+  padding: var(--sp-12);
+  overflow: hidden;
+}
+.dgm-open-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  font-size: var(--t-11-5);
+  color: var(--ink-3);
+}
+.dgm-open-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.dgm-open-pane {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+@media (max-width: 720px) {
+  .dgm-open-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+.dgm-open-pane > *,
+.dgm-open-pane .files-preview,
+.dgm-open-pane .files-edit {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+.dgm-open-pane.files-scope {
+  display: block;
+}
+
+/* v2: quieter title and id on the card; the id is the handle a person can reference. */
+.dgm-bar {
+  gap: var(--sp-4, 4px);
+  /* One line, always: nothing in the header wraps. The title is cut with an ellipsis, the actions keep their size. */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.dgm-label {
+  flex: none;
+  white-space: nowrap;
+  font-weight: var(--fw-body);
+  margin-right: 0;
+}
+.dgm-title {
+  /* The title only, on one line: a long one is cut with an ellipsis and read whole in its tooltip (with the id
+     and file name). Nothing else in the header takes text width; the actions are icons. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: var(--sp-8);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+.dgm-id {
+  /* The file name (shown where a card still carries it) takes the room it needs and the bar wraps before it is cut. */
+  flex: 1 1 14ch;
+  min-width: 0;
+  overflow-wrap: break-word; /* the name carries <wbr> after - _ . so it wraps between words; break-word only rescues one long word */
+  margin-left: var(--sp-8, 8px);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--t-11);
+  color: var(--ink-3);
+  user-select: all;
+}
+.dgm-bar .dgm-toggle {
+  flex: none;
+  white-space: nowrap;
+  padding: 0 var(--sp-6, 6px);
+  margin-left: 0;
+}
+
+/* What a drawing an agent writes by hand gets from the app, in both themes. It leaves anything the agent coloured
+   itself alone (every rule needs the attribute to be missing): text with no fill is the ink, not the SVG default
+   black; a connector with a stroke and no width is 1.5px, not a hairline; an arrowhead with no fill follows the
+   stroke of the line it ends, so a marker is never black on a dark card. */
+.dgm[data-kind='svg'] .dgm-art svg text:not([fill]),
+.dgm[data-kind='svg'] .dgm-art svg tspan:not([fill]) {
+  fill: currentColor;
+}
+.dgm[data-kind='svg'] .dgm-art svg :is(line, polyline, path)[stroke]:not([stroke-width]) {
+  stroke-width: 1.5px;
+}
+.dgm[data-kind='svg'] .dgm-art svg marker :is(path, polygon, polyline, circle):not([fill]) {
+  fill: currentColor;
+  fill: context-stroke;
+}
+
+/* Card body: clipped to the reduced height; an svg is scaled into it instead. */
+.dgm-body {
+  min-width: 0;
+  overflow: hidden;
+}
+.dgm-body[hidden] {
+  display: none;
+}
+/* A clipped card shows the top of the drawing at 1:1 (never scaled to the height, so its text keeps its size), with the bottom edge fading out; the bar drags it open. */
+.dgm-body[data-clipped='true'] {
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - var(--sp-24)), transparent);
+  mask-image: linear-gradient(to bottom, black calc(100% - var(--sp-24)), transparent);
+}
+.dgm[data-state='drawn'] .dgm-body {
+  transition: max-height var(--dur-2, 160ms) var(--ease, ease);
+}
+.dgm[data-dragging='true'] .dgm-body {
+  transition: none;
+}
+.dgm[data-dragging='true'] {
+  user-select: none;
+}
+.dgm-body[data-preview-collapse='true'] {
+  opacity: 0.4;
+}
+
+/* The one-line row a collapsed card becomes: title and chevron. */
+.dgm-row {
+  appearance: none;
+  width: 100%;
+  min-height: var(--row-h);
+  padding: 0 var(--sp-8, 8px);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+}
+.dgm-row .dgm-title {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dgm-row:hover {
+  background: color-mix(in srgb, var(--b-ink1) 5%, transparent);
+  color: var(--b-ink1);
+}
+.dgm-row:focus-visible,
+.dgm-grip:focus-visible {
+  outline: var(--w-hair, 1px) solid var(--b-acc);
+  outline-offset: calc(var(--w-hair, 1px) * -1);
+}
+.dgm-chev {
+  flex: none;
+  color: var(--b-ink3);
+  transition: transform var(--dur-1, 120ms) var(--ease, ease);
+}
+
+/* The drag bar on the bottom edge. The pill shows on hover and focus, and always on touch. */
+.dgm-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--sp-20);
+  cursor: ns-resize;
+  touch-action: none;
+  border-top: 1px solid transparent;
+  background: transparent;
+}
+.dgm-grip-pill {
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--b-ink3);
+  opacity: 0;
+  transition: opacity var(--dur-1, 120ms) var(--ease, ease), width var(--dur-1, 120ms) var(--ease, ease), height var(--dur-1, 120ms) var(--ease, ease);
+}
+/* The hit area is the whole 20px strip. Pointing at it grows the pill and tints the strip, so the handle is plainly there; a card held at its cap shows the pill at rest, since there is more to see. */
+.dgm-grip:hover {
+  background: color-mix(in srgb, var(--b-ink1) 5%, transparent);
+}
+.dgm .dgm-grip:hover .dgm-grip-pill,
+.dgm[data-dragging='true'] .dgm-grip .dgm-grip-pill {
+  width: 40px;
+  height: 4px;
+  opacity: 0.9;
+}
+.dgm[data-capped='true'] .dgm-grip-pill {
+  opacity: 0.45;
+}
+.dgm:hover .dgm-grip-pill,
+.dgm-grip:focus-visible .dgm-grip-pill {
+  opacity: 0.55;
+}
+.dgm[data-locked='true'] .dgm-grip {
+  border-top-color: color-mix(in srgb, var(--b-ink1) 9%, transparent);
+}
+.dgm[data-locked='true'] .dgm-grip-pill {
+  opacity: 0.85;
+}
+@media (hover: none) {
+  .dgm-grip-pill {
+    opacity: 0.4;
+  }
+}
+/* A finger needs the hit-target floor; the pill stays the same size in the middle of it. */
+@media (pointer: coarse) {
+  .dgm-grip {
+    height: var(--target-min);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dgm[data-state='drawn'] .dgm-body,
+  .dgm-grip-pill,
+  .dgm-chev {
+    transition: none;
+  }
+}
+
+/* The header actions: quiet 26px icons, right-aligned, never wrapping the title. Shown while the card is hovered
+   or holds focus, always on touch; each names itself in a tooltip on hover (after a beat) and at once on keyboard
+   focus. A click's result (Copied, Referenced) holds the tooltip open for a moment. */
+.dgm-acts {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+/* Built on the kit's .s2-ibtn .s2-ibtn-sm (transparent ghost icon, hover wash); this adds the reveal and the tooltip. */
+.dgm-act {
+  /* The box, radius, hover fill and colour are .s2-ibtn.s2-ibtn-sm's (shell2/shell2.css); this adds the reveal. */
+  position: relative;
+  color: var(--ink-3);
+  opacity: 0;
+}
+.dgm-act .i {
+  width: 14px;
+  height: 14px;
+}
+.dgm:hover .dgm-act,
+.dgm:focus-within .dgm-act,
+.dgm-act[data-flash='true'],
+.dgm:not([data-state='drawn']) .dgm-act {
+  opacity: 1;
+}
+.dgm-act::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + var(--sp-4));
+  right: 0;
+  z-index: 2;
+  width: max-content;
+  max-width: 240px;
+  padding: var(--sp-4) var(--sp-8);
+  border: 1px solid var(--glass-ctl-edge);
+  border-radius: var(--r-10);
+  background: var(--float-fill);
+  box-shadow: var(--b-lift);
+  color: var(--ink-1);
+  font-size: var(--t-11-5);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-body);
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+.dgm-act:hover::after,
+.dgm-act:focus-visible::after,
+.dgm-act[data-flash='true']::after {
+  opacity: 1;
+  visibility: visible;
+}
+@media (hover: none) {
+  .dgm-act {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dgm-act {
+    transition: opacity var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .dgm-act:hover::after {
+    transition: opacity var(--dur-1) var(--ease) 400ms, visibility 0s linear 400ms;
+  }
+}
+/* Announced, not shown: the result of Copy and Reference for a screen reader. */
+.dgm-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 0.1.5 header: a fold button on the left (one click collapses), the title centred, the actions on the right.
+   The side cells are equal (1fr) so the title sits on the middle of the card; the collapsed row has the same three cells. */
+.dgm-bar,
+.dgm-row {
+  display: grid;
+  grid-template-columns: minmax(min(var(--dgm-side, 28px), 27%), 1fr) minmax(0, auto) minmax(min(var(--dgm-side, 28px), 27%), 1fr);
+  align-items: center;
+  column-gap: var(--sp-4);
+}
+.dgm-bar {
+  padding: var(--sp-2) var(--sp-8);
+}
+.dgm-bar > .dgm-title,
+.dgm-row > .dgm-title {
+  justify-self: center;
+  max-width: 100%;
+  margin: 0;
+  text-align: center;
+}
+.dgm-bar > .dgm-acts {
+  justify-self: end;
+  margin-left: 0;
+}
+.dgm-fold {
+  justify-self: start;
+  color: var(--ink-3);
+}
+.dgm-fold:hover {
+  color: var(--ink-1);
+}
+.dgm-fold-gap {
+  justify-self: start;
+}
+.dgm-row > .dgm-chev {
+  justify-self: start;
+}
+.dgm-chev {
+  transform: rotate(-90deg);
+}
+.dgm-chev[data-open='true'] {
+  transform: none;
+}
+
+/* ONE SURFACE (owner 2026-10-10: two borders, three backgrounds, too much meshing). The preview and the source sit
+   on the dialog's own glass: no frame, ground, card or title of their own. The one divider is the hairline between
+   the two panes; the source's own edge, gutter edge and status rule are put away here, and its gutter takes the
+   dialog's fill (it must still hide text scrolled under it, so it cannot be clear). */
+.s2-dlg .dgm-open-pane.files-scope + .dgm-open-pane.files-scope {
+  border-left: var(--w-hair) solid var(--edge-faint);
+}
+.s2-dlg .dgm-open-pane.files-scope .files-ed {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.s2-dlg .dgm-open-pane.files-scope .files-ed-status {
+  border-top: 0;
+}
+.s2-dlg .dgm-open-pane.files-scope .files-ed-gutter {
+  border-right: 0;
+  background: var(--b-s2);
+}
+@media (max-width: 720px) {
+  .s2-dlg .dgm-open-pane.files-scope + .dgm-open-pane.files-scope {
+    border-left: 0;
+    border-top: var(--w-hair) solid var(--edge-faint);
+  }
+}

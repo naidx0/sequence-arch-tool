@@ -1,0 +1,7 @@
+/* The in-app sign-in terminal under a Connect an agent row (ConnectAgents.tsx). */
+.s2-agent-term {
+  height: 168px;
+  overflow: hidden;
+  border: 1px solid var(--b-edge);
+  border-radius: 6px;
+}

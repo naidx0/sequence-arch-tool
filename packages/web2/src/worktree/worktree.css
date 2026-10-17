@@ -1,0 +1,220 @@
+/* S7 — the worktree chip (WorktreeChip.tsx). Graphite tokens only: a glass
+   control at the label weight, the branch in the mono face. */
+.wt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: 24px;
+  max-width: 240px;
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-11);
+  cursor: pointer;
+}
+.wt-chip:hover {
+  background: var(--glass-ctl-hover);
+  border-color: var(--glass-ctl-edge-hover);
+  color: var(--ink-1);
+}
+.wt-chip .i {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+}
+.wt-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+}
+.wt-chip-state {
+  color: var(--fits);
+  font-size: var(--t-10);
+}
+
+/* The rail's "In a worktree" toggle and its status line (V3SessionsRail). */
+.wt-new {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.wt-new input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+.wt-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-6);
+  margin: var(--sp-4) var(--sp-8);
+  padding: var(--sp-6) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+}
+.wt-note[data-kind='error'] {
+  border-color: var(--wont-edge);
+}
+.wt-note-x {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+/* The merge-back panel (MergePanel.tsx): a floating card under the chip. */
+.wt-panel {
+  position: absolute;
+  z-index: 20;
+  width: min(420px, calc(100vw - 32px));
+  max-height: 60vh;
+  overflow: auto;
+  padding: var(--sp-8) var(--sp-12) var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--float-fill, var(--surface-2));
+  color: var(--ink-1);
+  font-size: var(--t-12);
+}
+.wt-panel-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: var(--row-h-thread);
+  font-family: var(--font-mono);
+}
+.wt-panel-x {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+.wt-panel-line {
+  margin: var(--sp-4) 0;
+  color: var(--ink-2);
+}
+.wt-files {
+  margin: var(--sp-4) 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-2);
+}
+.wt-files li[data-status='conflict'] {
+  color: var(--wont);
+}
+.wt-file-status {
+  display: inline-block;
+  min-width: 8ch;
+  color: var(--ink-3);
+}
+.wt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-8);
+  margin-top: var(--sp-8);
+}
+.wt-actions-end {
+  justify-content: flex-end;
+}
+.wt-btn {
+  min-height: var(--row-h-thread);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  color: var(--ink-1);
+  font: inherit;
+  cursor: pointer;
+}
+.wt-btn.is-primary {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.wt-btn.is-danger {
+  border-color: var(--wont-edge);
+  color: var(--wont);
+}
+.wt-removal {
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-8);
+  border-top: var(--w-hair) solid var(--wont-edge);
+}
+
+/* The chip's row in the chat (v3/V3Chat.tsx); the panel floats from it. */
+.v3-wt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-8) var(--sp-4);
+}
+/* The row sits above the composer: the panel opens upward, over the thread, so it never covers its own chip or the field. */
+.v3-wt-row .wt-panel {
+  bottom: calc(100% + var(--sp-4));
+  left: var(--sp-8);
+  width: min(420px, calc(100% - 2 * var(--sp-8)));
+}
+
+.wt-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Pull request section of the worktree panel (PrSection.tsx). */
+.wt-pr {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.wt-pr-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.wt-pr-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  color: var(--ink-2);
+  font-size: var(--t-11);
+}
+.wt-pr-field input,
+.wt-pr-field textarea {
+  font: inherit;
+  font-size: var(--t-12);
+  color: var(--ink-1);
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  padding: var(--sp-4) var(--sp-8);
+}
+.wt-pr-field input:focus,
+.wt-pr-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.wt-pr-held {
+  margin-top: var(--sp-6);
+}
+.wt-pr-hold {
+  display: flex;
+  gap: var(--sp-6);
+  align-items: center;
+}

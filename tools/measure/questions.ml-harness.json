@@ -1,0 +1,32 @@
+{
+  "about": "CHECK THE PATHS BEFORE A RUN. Built around the owner's real teach-question target in the ML Harness repo: client.ts -> app/main.py -> app/providers/__init__.py, plus app/diagnosis.py. The paths are the ones earlier teach runs printed (frontend/src/lib/engine/client.ts, app/main.py, app/providers/__init__.py, app/diagnosis.py) and have NOT been checked against a scan of that repo. Run with --emit-prompts first: the driver prints a CHECK line for every focus or expectPath entry that names no node, and for every expected hop that is not a scan edge (a grounded answer cannot draw a hop the scan lacks). Fix those lines here, then run live.",
+  "questions": [
+    {
+      "id": "mlh-teach-path",
+      "question": "Teach me how a question typed in the frontend reaches the model provider. Draw the path through the code.",
+      "focus": ["frontend/src/lib/engine/client.ts", "app/providers/__init__.py"],
+      "expectPath": ["frontend/src/lib/engine/client.ts", "app/main.py", "app/providers/__init__.py"]
+    },
+    {
+      "id": "mlh-diagnosis",
+      "question": "Where does app/main.py hand a failing run to diagnosis? Draw the hop.",
+      "focus": ["app/main.py", "app/diagnosis.py"],
+      "expectPath": ["app/main.py", "app/diagnosis.py"]
+    },
+    {
+      "id": "mlh-whole-ask",
+      "question": "Draw the whole ask: from the frontend client to the server, then to the providers and to diagnosis.",
+      "focus": ["frontend/src/lib/engine/client.ts", "app/main.py", "app/providers/__init__.py", "app/diagnosis.py"],
+      "expectPath": [
+        ["frontend/src/lib/engine/client.ts", "app/main.py", "app/providers/__init__.py"],
+        ["app/main.py", "app/diagnosis.py"]
+      ]
+    },
+    {
+      "id": "mlh-who-calls-providers",
+      "question": "What calls app/providers/__init__.py? Draw every caller with an arrow to it.",
+      "focus": ["app/providers/__init__.py"],
+      "expectPath": ["app/main.py", "app/providers/__init__.py"]
+    }
+  ]
+}

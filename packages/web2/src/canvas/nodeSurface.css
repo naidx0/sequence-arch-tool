@@ -1,0 +1,50 @@
+/* The node sub-surface: a glass card docked to the board's right edge (the Diff view's card language). */
+.board-scope .ns-panel {
+  position: absolute;
+  z-index: 6;
+  top: calc(var(--sp-12) * 2 + 30px);
+  right: var(--sp-12);
+  /* Above the zoom bar, which centres along the bottom edge. */
+  bottom: calc(var(--sp-12) + 52px);
+  width: min(320px, 42%);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-18);
+  background: var(--board-card);
+  box-shadow: var(--e2, 0 8px 28px rgb(0 0 0 / 0.3));
+  color: var(--ink-2);
+  font-size: var(--t-12);
+  overflow: hidden;
+}
+.board-scope .ns-hd { display: flex; align-items: flex-start; gap: var(--sp-8); padding: var(--sp-12) var(--sp-12) var(--sp-8); }
+.board-scope .ns-title { flex: 1 1 auto; min-width: 0; }
+.board-scope .ns-kind { font-family: var(--font-mono); font-size: var(--t-10); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.board-scope .ns-label { margin: 0; font-size: var(--t-14); font-weight: var(--fw-head); color: var(--ink-1); overflow-wrap: anywhere; }
+.board-scope .ns-x {
+  flex: none; display: grid; place-items: center; width: var(--icon-btn, 24px); height: var(--icon-btn, 24px);
+  border: 0; border-radius: var(--r-full); background: transparent; color: var(--ink-3); font-size: var(--t-14); line-height: 1; cursor: pointer;
+}
+.board-scope .ns-x:hover { background: var(--state-hover); color: var(--ink-1); }
+.board-scope .ns-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 var(--sp-12) var(--sp-8); }
+.board-scope .ns-desc { margin: 0 0 var(--sp-8); color: var(--ink-2); }
+.board-scope .ns-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-12); margin: 0 0 var(--sp-8); }
+.board-scope .ns-fact dt { font-size: var(--t-10); color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+.board-scope .ns-fact dd { margin: 0; color: var(--ink-1); font-family: var(--font-mono); font-size: var(--t-11); }
+.board-scope .ns-sec { min-width: 0; }
+.board-scope .ns-h { margin: var(--sp-8) 0 var(--sp-4); font-family: var(--font-mono); font-size: var(--t-10); font-weight: var(--fw-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.board-scope .ns-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.board-scope .ns-row { display: flex; align-items: baseline; gap: var(--sp-6); min-width: 0; padding: 2px var(--sp-6); border-radius: var(--r-8); }
+.board-scope .ns-row:hover { background: var(--state-hover); }
+.board-scope .ns-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-1); }
+.board-scope .ns-via { margin-left: auto; flex: none; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--t-10); }
+.board-scope .ns-n { flex: none; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--t-10); }
+.board-scope .ns-method { flex: none; min-width: 4ch; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--t-10); }
+.board-scope .ns-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-2); }
+.board-scope .ns-more { padding: 2px var(--sp-6); color: var(--ink-3); font-size: var(--t-11); }
+.board-scope .ns-ft { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8); padding: var(--sp-8) var(--sp-12) var(--sp-12); border-top: var(--w-hair) solid var(--glass-ctl-edge); }
+.board-scope .ns-gen { flex: 1 1 auto; }
+.board-scope.board-stack .ns-panel { width: min(320px, 90%); }
+.board-scope .ns-status { flex: 1 0 100%; margin: 0; font-size: var(--t-11); color: var(--ink-2); }
+.board-scope .ns-status.is-fail { color: var(--wont); }

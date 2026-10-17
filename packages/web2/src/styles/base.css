@@ -1,0 +1,139 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   BASE — reset, document, and the one place the typeface is bound
+   packages/web2/src/styles/base.css
+
+   HUE BUDGET: 0. This sheet declares no hue of its own and never will. Every
+   colour below is a var(--…) read out of tokens/graphite.css. Dividers,
+   headings, borders and chrome are never coloured.
+
+   No hex literal, no px font-size, no invented spacing. tokens/graphite.css is
+   the only file allowed to declare those; test/firewall.test.ts (item 0.6)
+   fails the build if this sheet ever grows one.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* S4 (Decision 41): the still ASCII field for the empty board and boot. */
+@import './asciiField.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; padding: 0; }
+
+/* NATIVE SCROLL (Decision 52). The app shell never rubber-bands: a pull past the end of the page moves nothing,
+   so only a panel that is meant to scroll does, and each of those keeps its own `overscroll-behavior: contain`.
+   Smooth scrolling is opt-in with [data-scroll-smooth] and only for a region that is scrolled by code to a
+   place the reader asked for (a jump to a heading, a revealed row). Never on a region that follows a stream
+   (the transcript, the terminal): there it would lag the live edge. Reduced motion: it jumps. */
+html, body { overscroll-behavior: none; }
+@media (prefers-reduced-motion: no-preference) {
+  [data-scroll-smooth] { scroll-behavior: smooth; }
+}
+
+/* THE TYPEFACE BINDING — item 0.1, Decision 49.
+   This single declaration is what test/font.test.tsx asserts against:
+   getComputedStyle(document.body).fontFamily must start with "Inter" (Decision
+   32, and again under Decision 49 after Archivo). It reads --font-sans and never
+   restates the stack, so the family lives in exactly one place. Changing the
+   token moves the whole app; there is no second declaration to forget.
+
+   THE WEIGHT IS A TOKEN, AND THE RECONCILIATION THIS COMMENT USED TO PROMISE
+   HAS HAPPENED. It used to read "Body weight is 450 per Graphite … reconciling
+   the ladder is item 2.2's" and declare a literal 450. Item 2.2 landed the
+   ramp at what actually paints — @fontsource/instrument-sans ships 400/500/
+   600/700, and CSS Fonts 4 searches UPWARD, so a declared 450 painted 500 and
+   body text shipped one cut heavy. The literal stayed behind. It is now
+   --fw-body, and test/firewall.test.ts rule 5 is why it cannot come back. */
+body {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  font-weight: var(--fw-body);
+  color: var(--ink-1);
+  background: var(--bg-base);
+  /* NOT `geometricPrecision`. It was switched to that on 2026-09-16 with the
+     note "keeps chrome/glyphs on the pixel grid", and it does the opposite in
+     Chromium on Windows: geometricPrecision disables font hinting and turns on
+     fractional glyph positioning, so 11–13px DM Sans went soft across the whole
+     shell — the "fonts loading a little weird" the owner reported the next
+     day. optimizeLegibility keeps kerning and ligatures and leaves hinting to
+     the platform. (`-webkit-font-smoothing` is macOS-only and harmless here.) */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* No synthetic bold: a request for a weight no cut carries paints the
+   nearest real cut, never a smeared synthetic one (Decisions 44 and 49).
+   On the root, so a portal mounted outside <body>'s subtree inherits it too. */
+:root { font-synthesis-weight: none; }
+
+/* The UA sets these bold (700): they take the heading weight instead, so a
+   heading in prose reads at the ladder's step, not a heavier one. */
+b, strong, th, h1, h2, h3, h4, h5, h6 { font-weight: var(--fw-head); }
+
+/* FORM CONTROLS DO NOT INHERIT TYPE, AND THE UA'S ANSWER IS OFF THE LADDER.
+   `button`, `input`, `select` and `textarea` start from the user-agent sheet
+   rather than from `body`, and Chrome's is `13.3333px Arial` — a size that is
+   on no rung of the ladder above and a family that is not the one this app
+   binds. An audit of the running app found 83 elements painting at 13.3333px
+   beside 162 at the real --t-13: two body sizes, a third of a pixel apart,
+   neither of them chosen. Inheriting costs nothing — every control that wants
+   its own size still declares one, and an element selector loses to every
+   class in the cascade.
+
+   line-height is deliberately NOT inherited: the UA's `normal` is what the
+   fixed control heights in shell.css and chat.css were measured against, and
+   pushing --lh-13 into every button would move them. */
+button, input, select, textarea, optgroup {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Every number, identifier, path, log line, diff line, verdict badge and
+   provenance tag. Mono always sets one step down from the sans beside it. */
+code, kbd, samp, pre { font-family: var(--font-mono); font-size: var(--t-12); }
+
+::selection { background: var(--selection-bg); }
+
+/* Scrollbars (0.1.6 G2; owner: "too big, too mega"): 6 px, a transparent track, a quiet thumb, everywhere.
+   Chromium drops ::-webkit-scrollbar on any element that also sets scrollbar-width or scrollbar-color and draws
+   the native bar instead, so no rule in the app sets either one: the standard properties below are for engines
+   without the webkit pseudo-elements (Firefox) only. */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: var(--r-full); min-height: 24px; min-width: 24px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
+}
+
+/* The light / dark switch (0.1.6 G2; settings/themePreference.ts). While it runs no control eases its own colour: the
+   page changes in one step and is blended once, by a View Transition (or, where there is none, a short fade). */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: none !important;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 120ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+:root[data-theme-fade] body {
+  animation: theme-fade 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes theme-fade {
+  from { opacity: 0.86; }
+}
+
+/* Focus is the accent's job — send, selection, focus. Never a verdict hue. */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+#root { height: 100%; }

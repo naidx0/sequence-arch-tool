@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="en" data-skin="apple">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draft V3 · macOS Liquid Glass Harness — Sequence</title>
+
+<!--
+  ===========================================================================
+  DRAFT V3 · macOS LIQUID GLASS HARNESS
+  docs/research/ui-drafts/draft-v3-macos-harness.html
+  ===========================================================================
+
+  WHAT THIS IS
+  A from-scratch product mock of the Sequence harness chrome — built FIRST as
+  true macOS Sequoia / Sonoma liquid glass (Apple skin), then re-tokened to
+  Graphite (Decision 20 / Draft A charcoal) via a skin toggle. Graphite is a SKIN,
+  not a redesign: same layout, same glass recipe, same hierarchy by material
+  and ink — only the room ladder, type stack, and accent hue change.
+
+  HOW TO READ IT
+  • Default skin = Apple (system blue, SF stack, heavy vibrancy blur).
+  • Toggle "Graphite" at the top → data-skin="graphite" on <html>; all vars
+    swap through [data-skin=…] selectors. Compare side-by-side with Draft A
+    Native (draft-a-native.html) — V3 starts from macOS native glass language;
+    Draft A started from Graphite and borrowed macOS restraint.
+
+  FUNCTIONALITY
+  Mock only. Session rows highlight on click; workspace pills switch selected
+  tab; mode chips toggle Ask/Agent. No network, no real chat. Google Fonts load
+  Instrument Sans for Graphite skin (offline fallback to system sans).
+
+  OWNER INTENT (2026-09-14)
+  Show the FULL harness — rail, transcript, tool cards, composer — not a token
+  strip. One accent spent on: chosen tab, loaded session, chosen mode, Send.
+  No purple section slabs. No blue-steel room in Graphite. Neutral ground wash
+  only so blur has something to bend.
+  ===========================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ======================================================================= *
+ * SHARED STRUCTURE — layout + motion only; colour lives in skin blocks      *
+ * ======================================================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 40px;
+  overflow-x: hidden;
+}
+
+/* --- sticky skin toggle bar (outside the window) --------------------- */
+.skin-bar {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.skin-bar label { opacity: 0.65; }
+.skin-toggle {
+  display: inline-flex;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 2px;
+  gap: 2px;
+}
+.skin-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+.skin-btn[aria-pressed="true"] { font-weight: 600; }
+.skin-hint {
+  font-size: 11px;
+  opacity: 0.45;
+  max-width: 420px;
+  text-align: center;
+  line-height: 1.35;
+}
+
+/* --- outer window shell ------------------------------------------------ */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: var(--orb-opacity, 0.55);
+}
+body::before {
+  width: 52vw;
+  height: 52vw;
+  top: -12vw;
+  left: -10vw;
+  background: var(--orb-a);
+}
+body::after {
+  width: 44vw;
+  height: 44vw;
+  bottom: -8vw;
+  right: -8vw;
+  background: var(--orb-b);
+}
+body > * { position: relative; z-index: 1; }
+
+.win {
+  position: relative;
+  width: min(1360px, 100%);
+  height: min(900px, calc(100vh - 120px));
+  min-height: 720px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-win);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 0.5px var(--win-rim),
+    0 24px 80px var(--shadow-win),
+    0 8px 24px rgba(0,0,0,.35);
+}
+.win::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--ground-wash);
+}
+.win > * { position: relative; z-index: 1; }
+
+/* --- title bar + traffic lights ---------------------------------------- */
+.titlebar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 16px 0 14px;
+  gap: 12px;
+  backdrop-filter: blur(var(--blur-bar)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(var(--glass-sat));
+  background: var(--bar-fill);
+  box-shadow: var(--glass-inset);
+}
+.traffic {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-right: 4px;
+}
+.tl {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0,0,0,.12);
+}
+.tl-close  { background: #FF5F57; }
+.tl-min    { background: #FEBC2E; }
+.tl-max    { background: #28C840; }
+.win-title {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  opacity: 0.85;
+  margin-right: 68px; /* optical center vs traffic lights */
+}
+
+/* --- unified toolbar pills --------------------------------------------- */
+.toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 16px 10px;
+  backdrop-filter: blur(var(--blur-bar)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(var(--glass-sat));
+  background: var(--bar-fill);
+}
+.tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.tab-pill svg { width: 14px; height: 14px; opacity: 0.7; }
+.tab-pill:hover {
+  background: var(--glass-hover);
+  color: var(--ink-2);
+}
+.tab-pill.is-selected {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.tab-pill.is-selected svg { opacity: 1; color: var(--accent); }
+
+/* --- main body: rail + center + optional meta ------------------------- */
+.body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* --- left rail --------------------------------------------------------- */
+.rail {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  background: var(--pane-fill);
+  box-shadow: var(--glass-inset), inset -1px 0 0 var(--rule-soft);
+}
+.rail-head {
+  padding: 12px 12px 8px;
+}
+.door-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 32px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--glass-hover);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, transform 120ms ease;
+  box-shadow: var(--glass-inset);
+}
+.door-new:hover { background: var(--glass-press-hover); }
+.door-new:active { transform: scale(0.97); }
+.door-new svg { width: 14px; height: 14px; opacity: 0.75; }
+
+.rail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-4) transparent;
+}
+.rail-section { margin-bottom: 4px; }
+.rail-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+}
+.rail-section-label svg { width: 12px; height: 12px; opacity: 0.6; }
+
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.session-row:hover { background: var(--glass-hover); color: var(--ink-1); }
+.session-row.is-loaded {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-weight: 500;
+}
+.session-row.is-picked {
+  background: var(--glass-press-hover);
+  color: var(--ink-0);
+}
+.session-row .pin {
+  flex-shrink: 0;
+  width: 12px;
+  opacity: 0.35;
+}
+.session-row.is-loaded .pin,
+.session-row[data-pinned="true"] .pin { opacity: 0.85; color: var(--accent); }
+.session-row .title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session-row .time {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+.session-row.is-loaded .time { color: var(--accent-ink); opacity: 0.7; }
+
+/* --- workspace panels (Chat / Architecture / Files) -------------------- */
+.panel { display: none; flex: 1; flex-direction: column; min-height: 0; min-width: 0; }
+.panel.is-active { display: flex; }
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  overflow: auto;
+}
+.stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stage-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+.stage-sub {
+  font-size: 12px;
+  color: var(--ink-4);
+}
+.canvas-glass {
+  flex: 1;
+  min-height: 360px;
+  position: relative;
+  border-radius: var(--r-lg);
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset), 0 0 0 0.5px var(--rule-soft);
+  overflow: hidden;
+}
+.canvas-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--rule-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.45;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 75%);
+}
+.node {
+  position: absolute;
+  min-width: 128px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--pane-fill);
+  backdrop-filter: blur(18px) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(18px) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset), 0 8px 24px rgba(0,0,0,.28);
+  border: 0.5px solid var(--rule-soft);
+}
+.node.is-focus {
+  box-shadow: var(--glass-sel-inset), 0 0 0 1px var(--accent-wash), 0 10px 28px rgba(0,0,0,.35);
+}
+.node-kind {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+  margin-bottom: 4px;
+}
+.node-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+.node-meta {
+  margin-top: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+}
+.edge {
+  position: absolute;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--ink-4), transparent);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  background: var(--glass-hover);
+  font-size: 11px;
+  color: var(--ink-3);
+  box-shadow: var(--glass-inset);
+}
+.legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.legend-dot.svc { background: var(--ink-1); }
+.legend-dot.ds { background: var(--ok); opacity: 0.85; }
+.legend-dot.topic { background: var(--wait); opacity: 0.85; }
+
+.files-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 12px;
+}
+.files-tree,
+.files-preview {
+  border-radius: var(--r-lg);
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset), 0 0 0 0.5px var(--rule-soft);
+  overflow: auto;
+}
+.files-tree { padding: 10px 8px; }
+.files-preview { padding: 0; display: flex; flex-direction: column; }
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  text-align: left;
+}
+.tree-row:hover { background: var(--glass-hover); color: var(--ink-1); }
+.tree-row.is-open { color: var(--ink-1); font-weight: 500; }
+.tree-row.is-selected {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+.tree-row svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
+.tree-row[data-depth="1"] { padding-left: 20px; }
+.tree-row[data-depth="2"] { padding-left: 32px; }
+.preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+}
+.preview-code {
+  flex: 1;
+  margin: 0;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  white-space: pre;
+  overflow: auto;
+}
+.preview-code .ln { color: var(--ink-4); user-select: none; margin-right: 14px; }
+.preview-code .kw { color: var(--accent-ink); }
+.preview-code .str { color: var(--ok); }
+.preview-code .cm { color: var(--ink-4); font-style: italic; }
+
+/* --- center column ----------------------------------------------------- */
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--app-bg);
+}
+
+.transcript {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-4) transparent;
+}
+
+.msg { display: flex; flex-direction: column; gap: 6px; max-width: 92%; }
+.msg.user { align-self: flex-end; align-items: flex-end; }
+.msg.assistant { align-self: flex-start; }
+
+.msg-meta {
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 500;
+  padding: 0 4px;
+}
+.msg-bubble {
+  padding: 10px 14px;
+  border-radius: var(--r-lg);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-1);
+}
+.msg.user .msg-bubble {
+  background: var(--user-bubble);
+  backdrop-filter: blur(12px) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(12px) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset);
+  border-bottom-right-radius: 4px;
+}
+.msg.assistant .msg-bubble {
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset);
+  border-bottom-left-radius: 4px;
+}
+.msg-bubble code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--ink-0);
+}
+
+/* --- tool call cards --------------------------------------------------- */
+.tools { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.tool-card {
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset);
+}
+.tool-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.tool-head svg { width: 14px; height: 14px; flex-shrink: 0; }
+.tool-head .badge {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--ink-3);
+}
+.tool-body {
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  background: var(--well);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tool-card.tool-edit .tool-head svg { color: var(--wait); }
+.tool-card.tool-bash .tool-head svg { color: var(--ok); }
+.tool-card.tool-read .tool-head svg { color: var(--ink-3); }
+
+/* --- todo strip -------------------------------------------------------- */
+.todo-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-top: 4px;
+  border-radius: var(--r-md);
+  background: var(--glass-fill-2);
+  backdrop-filter: blur(16px) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(16px) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.todo-strip .progress {
+  display: flex;
+  gap: 4px;
+}
+.todo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-4);
+}
+.todo-dot.done { background: var(--ok); }
+.todo-dot.active { background: var(--accent); }
+.todo-label { flex: 1; color: var(--ink-2); }
+.todo-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+}
+
+/* --- composer ---------------------------------------------------------- */
+.composer {
+  flex: 0 0 auto;
+  padding: 12px 20px 18px;
+  background: linear-gradient(to top, var(--app-bg) 60%, transparent);
+}
+.composer-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 10px 14px;
+  border-radius: var(--r-lg);
+  background: var(--input-fill);
+  backdrop-filter: blur(var(--blur-input)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-input)) saturate(var(--glass-sat));
+  box-shadow: var(--glass-inset), 0 0 0 0.5px var(--rule-soft);
+}
+.composer-input {
+  width: 100%;
+  min-height: 44px;
+  max-height: 120px;
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-1);
+}
+.composer-input::placeholder { color: var(--ink-4); }
+.composer-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.chip:hover { background: var(--glass-hover); color: var(--ink-2); }
+.chip.is-selected {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.chip.model {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-left: 2px;
+}
+.chip.model svg { width: 10px; height: 10px; opacity: 0.5; }
+.composer-spacer { flex: 1; }
+.btn-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--accent-solid);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 120ms ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.btn-send:hover { opacity: 0.92; }
+.btn-send:active { transform: scale(0.97); }
+.btn-send svg { width: 14px; height: 14px; }
+
+/* --- thin right meta strip --------------------------------------------- */
+.meta {
+  flex: 0 0 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 6px;
+  backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--blur-pane)) saturate(var(--glass-sat));
+  background: var(--pane-fill);
+  box-shadow: var(--glass-inset), inset 1px 0 0 var(--rule-soft);
+}
+.meta-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.meta-btn:hover { background: var(--glass-hover); color: var(--ink-2); }
+.meta-btn svg { width: 16px; height: 16px; }
+.meta-divider {
+  width: 20px;
+  height: 1px;
+  background: var(--rule-soft);
+  margin: 4px 0;
+}
+
+/* ======================================================================= *
+ * SKIN: APPLE — macOS Sequoia / Sonoma liquid glass (default)             *
+ * ======================================================================= */
+html[data-skin="apple"] {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  /* room */
+  --ground-hi: #2c2c2e;
+  --ground-mid: #242426;
+  --ground-lo: #1c1c1e;
+  --app-bg: rgba(28,28,30,.72);
+  --well: rgba(0,0,0,.35);
+
+  /* glass material — heavy vibrancy */
+  --pane-fill: rgba(255,255,255,.11);
+  --bar-fill: rgba(255,255,255,.09);
+  --input-fill: rgba(255,255,255,.13);
+  --glass-fill-2: rgba(255,255,255,.07);
+  --glass-hover: rgba(255,255,255,.14);
+  --glass-press-hover: rgba(255,255,255,.18);
+  --blur-pane: 40px;
+  --blur-bar: 28px;
+  --blur-input: 28px;
+  --glass-sat: 195%;
+
+  --glass-inset:
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -1px 0 rgba(0,0,0,.18);
+  --glass-sel-inset:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -1px 0 rgba(0,0,0,.12);
+
+  /* ink */
+  --ink-0: #ffffff;
+  --ink-1: rgba(255,255,255,.92);
+  --ink-2: rgba(255,255,255,.72);
+  --ink-3: rgba(255,255,255,.52);
+  --ink-4: rgba(255,255,255,.36);
+
+  /* accent — system blue, four spend sites only */
+  --accent: #0A84FF;
+  --accent-ink: #64B5FF;
+  --accent-solid: #0A84FF;
+  --accent-wash: rgba(10,132,255,.22);
+  --user-bubble: rgba(10,132,255,.28);
+
+  /* tone (tool-own state only) */
+  --ok: #30D158;
+  --wait: #FFD60A;
+
+  /* chrome */
+  --rule-soft: rgba(255,255,255,.08);
+  --win-rim: rgba(255,255,255,.12);
+  --shadow-win: rgba(0,0,0,.55);
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-win: 12px;
+
+  --ground-wash:
+    radial-gradient(ellipse 80% 60% at 15% 0%, rgba(255,255,255,.08) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 100%, rgba(10,132,255,.10) 0%, transparent 50%),
+    linear-gradient(165deg, var(--ground-hi) 0%, var(--ground-mid) 42%, var(--ground-lo) 100%);
+
+  --orb-a: rgba(10,132,255,.35);
+  --orb-b: rgba(255,255,255,.12);
+  --orb-opacity: 0.7;
+
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  background: #050506;
+}
+
+html[data-skin="apple"] .skin-bar {
+  background: rgba(44,44,46,.85);
+  color: var(--ink-1);
+  box-shadow: 0 0 0 0.5px rgba(255,255,255,.1);
+}
+html[data-skin="apple"] .skin-toggle { background: rgba(0,0,0,.25); }
+html[data-skin="apple"] .skin-btn { color: var(--ink-3); }
+html[data-skin="apple"] .skin-btn:hover { background: rgba(255,255,255,.08); color: var(--ink-1); }
+html[data-skin="apple"] .skin-btn[aria-pressed="true"] {
+  background: rgba(255,255,255,.14);
+  color: var(--ink-0);
+}
+
+/* ======================================================================= *
+ * SKIN: GRAPHITE — Decision 20 / Draft A charcoal (re-token only)         *
+ * ======================================================================= */
+html[data-skin="graphite"] {
+  --font-ui: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* room — near-black / gray ladder */
+  --ground-hi: #1F2127;
+  --ground-mid: #191B20;
+  --ground-lo: #131418;
+  --app-bg: #1A1C21;
+  --well: #131418;
+
+  /* glass — neutral white-alpha, Decision 20 */
+  --pane-fill: rgba(255,255,255,.055);
+  --bar-fill: rgba(255,255,255,.045);
+  --input-fill: rgba(255,255,255,.055);
+  --glass-fill-2: rgba(255,255,255,.040);
+  --glass-hover: rgba(255,255,255,.075);
+  --glass-press-hover: rgba(255,255,255,.095);
+  --blur-pane: 24px;
+  --blur-bar: 20px;
+  --blur-input: 18px;
+  --glass-sat: 180%;
+
+  --glass-inset:
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(0,0,0,.34);
+  --glass-sel-inset:
+    inset 0 1px 0 rgba(255,255,255,.20),
+    inset 0 -1px 0 rgba(0,0,0,.28);
+
+  /* ink ramp */
+  --ink-0: #F4F5F8;
+  --ink-1: #E2E3E9;
+  --ink-2: #B5B7C1;
+  --ink-3: #93959F;
+  --ink-4: #74767E;
+
+  /* accent — Graphite indigo */
+  --accent: #9D8CFF;
+  --accent-ink: #B8AEFF;
+  --accent-solid: #5A4BE6;
+  --accent-wash: rgba(124,108,245,.16);
+  --user-bubble: rgba(90,75,230,.18);
+
+  --ok: #74D6A4;
+  --wait: #E6C46B;
+
+  --rule-soft: rgba(255,255,255,.055);
+  --win-rim: rgba(255,255,255,.085);
+  --shadow-win: rgba(0,0,0,.60);
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+  --r-win: 12px;
+
+  --ground-wash:
+    radial-gradient(ellipse 75% 55% at 12% 2%, rgba(255,255,255,.05) 0%, transparent 52%),
+    radial-gradient(ellipse 65% 45% at 88% 98%, rgba(255,255,255,.035) 0%, transparent 48%),
+    linear-gradient(168deg, var(--ground-hi) 0%, var(--ground-mid) 40%, var(--ground-lo) 100%);
+
+  /* Neutral room orbs only — Decision 20: no decorative indigo lights in the room */
+  --orb-a: rgba(255,255,255,.08);
+  --orb-b: rgba(255,255,255,.05);
+  --orb-opacity: 0.55;
+
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  background: #0d0e10;
+}
+
+html[data-skin="graphite"] .skin-bar {
+  background: rgba(33,35,40,.92);
+  color: var(--ink-1);
+  box-shadow: var(--glass-inset), 0 0 0 0.5px var(--win-rim);
+}
+html[data-skin="graphite"] .skin-toggle { background: rgba(0,0,0,.28); }
+html[data-skin="graphite"] .skin-btn { color: var(--ink-3); }
+html[data-skin="graphite"] .skin-btn:hover { background: var(--glass-hover); color: var(--ink-1); }
+html[data-skin="graphite"] .skin-btn[aria-pressed="true"] {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* surface ladder helpers for Graphite section labels */
+html[data-skin="graphite"] .rail-section-label { color: var(--ink-4); }
+
+/* ======================================================================= *
+ * RESPONSIVE — keep harness readable on narrow viewports                 *
+ * ======================================================================= */
+@media (max-width: 900px) {
+  .win { height: auto; min-height: 720px; }
+  .meta { display: none; }
+  .rail { flex-basis: 220px; }
+}
+@media (max-width: 640px) {
+  .rail { display: none; }
+  .toolbar { justify-content: flex-start; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- sticky skin toggle -->
+<div class="skin-bar" role="region" aria-label="Skin toggle">
+  <label>Skin</label>
+  <div class="skin-toggle" role="group" aria-label="Choose skin">
+    <button type="button" class="skin-btn" data-skin="apple" aria-pressed="true">Apple</button>
+    <button type="button" class="skin-btn" data-skin="graphite" aria-pressed="false">Graphite</button>
+  </div>
+  <span class="skin-hint">V3 = macOS liquid glass first · Graphite is a re-skin · mock harness only</span>
+</div>
+
+<!-- product window -->
+<div class="win" role="application" aria-label="Sequence harness mock">
+
+  <!-- title bar -->
+  <header class="titlebar">
+    <div class="traffic" aria-hidden="true">
+      <span class="tl tl-close"></span>
+      <span class="tl tl-min"></span>
+      <span class="tl tl-max"></span>
+    </div>
+    <div class="win-title">Sequence</div>
+  </header>
+
+  <!-- unified toolbar -->
+  <nav class="toolbar" aria-label="Workspace">
+    <button type="button" class="tab-pill is-selected" data-tab="chat">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M2.5 3.5h11a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1H5.5L2.5 13.5V4.5a1 1 0 0 1 1-1z"/>
+      </svg>
+      Chat
+    </button>
+    <button type="button" class="tab-pill" data-tab="architecture">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
+        <rect x="2" y="9" width="5" height="5" rx="1"/><path d="M9 11.5h5M11.5 9v5"/>
+      </svg>
+      Architecture
+    </button>
+    <button type="button" class="tab-pill" data-tab="files">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M3 4.5h4l1.5 1.5H13v6.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/>
+      </svg>
+      Files
+    </button>
+  </nav>
+
+  <div class="body">
+    <!-- left rail -->
+    <aside class="rail" aria-label="Sessions">
+      <div class="rail-head">
+        <button type="button" class="door-new">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M8 3.5v9M3.5 8h9"/>
+          </svg>
+          New Chat
+        </button>
+      </div>
+      <div class="rail-scroll">
+        <div class="rail-section">
+          <div class="rail-section-label">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="8" cy="8" r="5.5"/>
+            </svg>
+            General
+          </div>
+          <button type="button" class="session-row" data-pinned="false" data-session="g1">
+            <svg class="pin" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1.5l1.2 2.4 2.7.4-2 1.9.5 2.7L6 7.8 3.6 8.9l.5-2.7-2-1.9 2.7-.4L6 1.5z" opacity=".4"/></svg>
+            <span class="title">Onboarding walkthrough</span>
+            <span class="time">2d</span>
+          </button>
+          <button type="button" class="session-row is-loaded" data-pinned="true" data-session="g2">
+            <svg class="pin" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1l1.5 3 3.3.5-2.4 2.3.6 3.2L6 8.5 3 10l.6-3.2L1.2 4.5 4.5 4 6 1z"/></svg>
+            <span class="title">Refactor auth middleware</span>
+            <span class="time">now</span>
+          </button>
+        </div>
+
+        <div class="rail-section">
+          <div class="rail-section-label">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M3 4.5h4l1.5 1.5H13v6.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/>
+            </svg>
+            sequence
+          </div>
+          <button type="button" class="session-row" data-pinned="true" data-session="s1">
+            <svg class="pin" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1l1.5 3 3.3.5-2.4 2.3.6 3.2L6 8.5 3 10l.6-3.2L1.2 4.5 4.5 4 6 1z"/></svg>
+            <span class="title">Sessions rail soft-load</span>
+            <span class="time">4h</span>
+          </button>
+          <button type="button" class="session-row" data-pinned="false" data-session="s2">
+            <svg class="pin" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1.5l1.2 2.4 2.7.4-2 1.9.5 2.7L6 7.8 3.6 8.9l.5-2.7-2-1.9 2.7-.4L6 1.5z" opacity=".4"/></svg>
+            <span class="title">Graphite token audit</span>
+            <span class="time">1d</span>
+          </button>
+          <button type="button" class="session-row" data-pinned="false" data-session="s3">
+            <svg class="pin" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1.5l1.2 2.4 2.7.4-2 1.9.5 2.7L6 7.8 3.6 8.9l.5-2.7-2-1.9 2.7-.4L6 1.5z" opacity=".4"/></svg>
+            <span class="title">Impact analysis cycles</span>
+            <span class="time">3d</span>
+          </button>
+        </div>
+
+        <div class="rail-section">
+          <div class="rail-section-label">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M3 4.5h4l1.5 1.5H13v6.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/>
+            </svg>
+            shopfront
+          </div>
+          <button type="button" class="session-row" data-pinned="false" data-session="sh1">
+            <svg class="pin" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1.5l1.2 2.4 2.7.4-2 1.9.5 2.7L6 7.8 3.6 8.9l.5-2.7-2-1.9 2.7-.4L6 1.5z" opacity=".4"/></svg>
+            <span class="title">K8s manifest scan</span>
+            <span class="time">5d</span>
+          </button>
+          <button type="button" class="session-row" data-pinned="false" data-session="sh2">
+            <svg class="pin" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1.5l1.2 2.4 2.7.4-2 1.9.5 2.7L6 7.8 3.6 8.9l.5-2.7-2-1.9 2.7-.4L6 1.5z" opacity=".4"/></svg>
+            <span class="title">Service dependency map</span>
+            <span class="time">1w</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- center -->
+    <main class="center">
+      <!-- PANEL: Chat -->
+      <section class="panel is-active" data-panel="chat" aria-label="Chat">
+      <div class="transcript" aria-label="Chat transcript">
+
+        <div class="msg user">
+          <div class="msg-meta">You · 2:14 PM</div>
+          <div class="msg-bubble">
+            Refactor the auth middleware so session tokens validate against the analyzer's
+            <code>repoServer.ts</code> attach path — keep it local-first with no key required.
+          </div>
+        </div>
+
+        <div class="msg assistant">
+          <div class="msg-meta">Sequence · 2:14 PM</div>
+          <div class="msg-bubble">
+            I'll trace the attach flow through the analyzer server, then propose a minimal diff
+            that keeps browse-root jail intact. Reading the current handler and its tests first.
+          </div>
+
+          <div class="tools">
+            <div class="tool-card tool-read">
+              <div class="tool-head">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M3 8s2.5-4 5-4 5 4 5 4-2.5 4-5 4-5-4-5-4z"/><circle cx="8" cy="8" r="1.5"/>
+                </svg>
+                Read file
+                <span class="badge">read</span>
+              </div>
+              <div class="tool-body">packages/analyzer/src/server/repoServer.ts
+  → handleAttach(), browseRoot jail, session index routes</div>
+            </div>
+
+            <div class="tool-card tool-edit">
+              <div class="tool-head">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M11.5 2.5l2 2L5.5 12.5 2 13l.5-3.5L9.5 2.5z"/>
+                </svg>
+                Edit file
+                <span class="badge">edit</span>
+              </div>
+              <div class="tool-body">packages/analyzer/src/server/repoServer.ts +12 −4
+  + validateSessionToken(req) — loopback-only attach
+  − inline token check duplicated in attach handler</div>
+            </div>
+
+            <div class="tool-card tool-bash">
+              <div class="tool-head">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M4 5.5l2.5 2L4 9.5M7 9.5h5"/><rect x="2" y="3" width="12" height="10" rx="1.5"/>
+                </svg>
+                Run command
+                <span class="badge">bash</span>
+              </div>
+              <div class="tool-body">$ node --test packages/analyzer/src/test/sessions-api.test.ts
+  ✓ attach rejects path outside browse root
+  ✓ session soft-load returns transcript without reload
+  2 pass, 0 fail</div>
+            </div>
+          </div>
+
+          <div class="todo-strip" aria-label="Agent progress">
+            <div class="progress" aria-hidden="true">
+              <span class="todo-dot done"></span>
+              <span class="todo-dot done"></span>
+              <span class="todo-dot active"></span>
+              <span class="todo-dot"></span>
+            </div>
+            <span class="todo-label">Validate attach path · run locking tests</span>
+            <span class="todo-count">2/4</span>
+          </div>
+        </div>
+
+        <div class="msg assistant">
+          <div class="msg-meta">Sequence · 2:16 PM</div>
+          <div class="msg-bubble">
+            Attach handler now delegates to <code>validateSessionToken</code>. Browse-root jail
+            unchanged. Tests green — ready for your review before I touch the web2 sessions client.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- composer -->
+      <footer class="composer">
+        <div class="composer-shell">
+          <textarea class="composer-input" rows="2" placeholder="Ask about the architecture, request a change, or run an agent task…" aria-label="Message input"></textarea>
+          <div class="composer-foot">
+            <button type="button" class="chip is-selected" data-mode="ask">Ask</button>
+            <button type="button" class="chip" data-mode="agent">Agent</button>
+            <button type="button" class="chip model" aria-label="Model">
+              claude-sonnet-4
+              <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 4l2.5 2 2.5-2"/></svg>
+            </button>
+            <span class="composer-spacer"></span>
+            <button type="button" class="btn-send">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M3 8.5l9-4.5-4.5 9-.5-3.5L3 8.5z"/>
+              </svg>
+              Send
+            </button>
+          </div>
+        </div>
+      </footer>
+      </section>
+
+      <!-- PANEL: Architecture -->
+      <section class="panel" data-panel="architecture" aria-label="Architecture">
+        <div class="stage">
+          <div class="stage-head">
+            <div>
+              <div class="stage-title">Architecture graph</div>
+              <div class="stage-sub">Grounded from scan · shopfront fixture · 8 services</div>
+            </div>
+            <div class="legend">
+              <span class="legend-chip"><span class="legend-dot svc"></span>Service</span>
+              <span class="legend-chip"><span class="legend-dot ds"></span>Datastore</span>
+              <span class="legend-chip"><span class="legend-dot topic"></span>Topic</span>
+            </div>
+          </div>
+          <div class="canvas-glass" aria-hidden="true">
+            <div class="canvas-grid"></div>
+            <div class="edge" style="left:18%; top:28%; width:22%; transform:rotate(12deg);"></div>
+            <div class="edge" style="left:42%; top:42%; width:20%; transform:rotate(-8deg);"></div>
+            <div class="edge" style="left:28%; top:58%; width:26%; transform:rotate(4deg);"></div>
+            <div class="node" style="left:8%; top:14%;">
+              <div class="node-kind">Gateway</div>
+              <div class="node-name">edge-proxy</div>
+              <div class="node-meta">ingress · :8080</div>
+            </div>
+            <div class="node is-focus" style="left:36%; top:22%;">
+              <div class="node-kind">Service</div>
+              <div class="node-name">auth-api</div>
+              <div class="node-meta">focus · 12 fns</div>
+            </div>
+            <div class="node" style="left:64%; top:18%;">
+              <div class="node-kind">Service</div>
+              <div class="node-name">orders-api</div>
+              <div class="node-meta">http · :8091</div>
+            </div>
+            <div class="node" style="left:22%; top:52%;">
+              <div class="node-kind">Datastore</div>
+              <div class="node-name">users-db</div>
+              <div class="node-meta">postgres</div>
+            </div>
+            <div class="node" style="left:52%; top:56%;">
+              <div class="node-kind">Topic</div>
+              <div class="node-name">order.events</div>
+              <div class="node-meta">kafka</div>
+            </div>
+            <div class="node" style="left:74%; top:48%;">
+              <div class="node-kind">Service</div>
+              <div class="node-name">billing</div>
+              <div class="node-meta">worker</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL: Files -->
+      <section class="panel" data-panel="files" aria-label="Files">
+        <div class="stage">
+          <div class="stage-head">
+            <div>
+              <div class="stage-title">Repository</div>
+              <div class="stage-sub">packages/analyzer · functions-first rail</div>
+            </div>
+          </div>
+          <div class="files-layout">
+            <div class="files-tree" aria-label="File tree">
+              <button type="button" class="tree-row is-open" data-depth="0">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5h4l1.5 1.5H13v6.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/></svg>
+                packages
+              </button>
+              <button type="button" class="tree-row is-open" data-depth="1">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5h4l1.5 1.5H13v6.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/></svg>
+                analyzer
+              </button>
+              <button type="button" class="tree-row is-selected" data-depth="2">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2.5h5.5L13 6v7.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z"/><path d="M9.5 2.5V6H13"/></svg>
+                repoServer.ts
+              </button>
+              <button type="button" class="tree-row" data-depth="2">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2.5h5.5L13 6v7.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z"/><path d="M9.5 2.5V6H13"/></svg>
+                sessions.ts
+              </button>
+              <button type="button" class="tree-row" data-depth="1">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5h4l1.5 1.5H13v6.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/></svg>
+                web2
+              </button>
+            </div>
+            <div class="files-preview" aria-label="File preview">
+              <div class="preview-bar">packages/analyzer/src/server/repoServer.ts</div>
+              <pre class="preview-code"><span class="ln"> 84</span><span class="kw">export async function</span> handleAttach(req, res) {
+<span class="ln"> 85</span>  <span class="kw">const</span> path = requireBrowsePath(req.body?.path);
+<span class="ln"> 86</span>  <span class="cm">// local-first: no API key required on loopback</span>
+<span class="ln"> 87</span>  <span class="kw">await</span> validateSessionToken(req);
+<span class="ln"> 88</span>  <span class="kw">const</span> graph = <span class="kw">await</span> scanRepo(path);
+<span class="ln"> 89</span>  res.json({ ok: <span class="kw">true</span>, graph });
+<span class="ln"> 90</span>}</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- thin right meta strip -->
+    <aside class="meta" aria-label="Meta actions">
+      <button type="button" class="meta-btn" title="Graph" aria-label="Architecture graph">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/>
+          <path d="M6 5l2 5M10 5l-2 5"/>
+        </svg>
+      </button>
+      <button type="button" class="meta-btn" title="Risks" aria-label="Risks">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M8 2.5l6 10.5H2L8 2.5z"/><path d="M8 7v3M8 11.5v.5"/>
+        </svg>
+      </button>
+      <div class="meta-divider" aria-hidden="true"></div>
+      <button type="button" class="meta-btn" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <circle cx="8" cy="8" r="2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M3.3 12.7l1.4-1.4M11.3 4.7l1.4-1.4"/>
+        </svg>
+      </button>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const html = document.documentElement;
+
+  /* --- skin toggle --------------------------------------------------- */
+  const skinBtns = document.querySelectorAll('.skin-btn[data-skin]');
+  function setSkin(name) {
+    html.setAttribute('data-skin', name);
+    skinBtns.forEach(function (btn) {
+      btn.setAttribute('aria-pressed', btn.dataset.skin === name ? 'true' : 'false');
+    });
+  }
+  skinBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () { setSkin(btn.dataset.skin); });
+  });
+
+  /* --- workspace tabs ------------------------------------------------ */
+  const tabPills = document.querySelectorAll('.tab-pill[data-tab]');
+  const panels = document.querySelectorAll('.panel[data-panel]');
+  function showPanel(name) {
+    tabPills.forEach(function (p) {
+      p.classList.toggle('is-selected', p.dataset.tab === name);
+    });
+    panels.forEach(function (panel) {
+      panel.classList.toggle('is-active', panel.dataset.panel === name);
+    });
+  }
+  tabPills.forEach(function (pill) {
+    pill.addEventListener('click', function () { showPanel(pill.dataset.tab); });
+  });
+
+  /* --- file tree pick ------------------------------------------------ */
+  document.querySelectorAll('.tree-row').forEach(function (row) {
+    row.addEventListener('click', function () {
+      document.querySelectorAll('.tree-row').forEach(function (r) {
+        r.classList.remove('is-selected');
+      });
+      row.classList.add('is-selected');
+    });
+  });
+
+  /* --- session rows: pick + single loaded ------------------------------ */
+  const sessionRows = document.querySelectorAll('.session-row[data-session]');
+  sessionRows.forEach(function (row) {
+    row.addEventListener('click', function () {
+      sessionRows.forEach(function (r) {
+        r.classList.remove('is-picked');
+        if (r !== row) r.classList.remove('is-loaded');
+      });
+      row.classList.add('is-picked');
+      row.classList.add('is-loaded');
+    });
+  });
+
+  /* --- mode chips: Ask / Agent --------------------------------------- */
+  const modeChips = document.querySelectorAll('.chip[data-mode]');
+  modeChips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      modeChips.forEach(function (c) { c.classList.remove('is-selected'); });
+      chip.classList.add('is-selected');
+    });
+  });
+
+  /* --- new chat door press feedback (already CSS; noop hook) ---------- */
+  document.querySelector('.door-new').addEventListener('click', function () {
+    /* mock — no navigation */
+  });
+})();
+</script>
+</body>
+</html>

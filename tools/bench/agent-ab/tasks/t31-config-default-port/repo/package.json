@@ -1,0 +1,6 @@
+{
+  "name": "t31-config-default-port",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

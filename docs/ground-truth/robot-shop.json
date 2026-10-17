@@ -1,0 +1,36 @@
+{
+  "description": "Ground truth for instana/robot-shop, restricted to v1-in-scope source languages (JS/TS/Python/Go as of v2, +Java as of v3 P2 — see docs/SPIKE_RESULTS.md), plus nginx proxy_pass config (v2 P3: web is nginx, not a parsed source language, but its default.conf.template's proxy_pass directives are now a deterministic detector input in their own right), plus Dockerfile ENV as a first-class, language-independent manifest source (v3 P1: a build-context Dockerfile's ENV defaults are merged into a service's env map exactly like compose env, regardless of the service's own source language). shipping (Java/Spring, no web framework — plain javax.servlet-free Spring Boot with a hand-rolled Apache HttpClient call) is now source-parsed (v3 P2) alongside ratings (PHP, still genuinely out of scope — no PHP support). Parsing shipping's Java did NOT recover shipping -> cart: see the outOfScopeEdges note below for why this is a real architectural limit, not a missed detector case.",
+  "edges": [
+    { "src": "cart", "dst": "catalogue", "kind": "http" },
+    { "src": "cart", "dst": "redis", "kind": "db_access" },
+    { "src": "user", "dst": "mongodb", "kind": "db_access" },
+    { "src": "user", "dst": "redis", "kind": "db_access" },
+    { "src": "catalogue", "dst": "mongodb", "kind": "db_access" },
+    { "src": "payment", "dst": "user", "kind": "http" },
+    { "src": "payment", "dst": "cart", "kind": "http" },
+    { "src": "payment", "dst": "rabbitmq", "kind": "queue_publish" },
+    { "src": "dispatch", "dst": "topic:orders", "kind": "queue_consume" },
+    { "src": "web", "dst": "catalogue", "kind": "http" },
+    { "src": "web", "dst": "user", "kind": "http" },
+    { "src": "web", "dst": "cart", "kind": "http" },
+    { "src": "web", "dst": "shipping", "kind": "http" },
+    { "src": "web", "dst": "payment", "kind": "http" },
+    { "src": "web", "dst": "ratings", "kind": "http" },
+    { "src": "shipping", "dst": "mysql", "kind": "db_access", "note": "Java service, now source-parsed (v3 P2), but the JDBC URL is still not code-resolvable: JpaConfig.getDataSource() builds it via `String.format(\"jdbc:mysql://%s/cities...\", System.getenv(\"DB_HOST\") == null ? \"mysql\" : System.getenv(\"DB_HOST\"))` — a Java ternary (`?:`), which evalJava does not evaluate (only `+` concatenation and `||`-style Python/JS fallbacks are; Java has no null-coalescing operator, just the ternary, and adding general conditional-expression evaluation was judged out of scope for this pass — see docs/SPIKE_RESULTS.md v3 P2). The edge is still found, same confidence and mechanism as before Java support landed: visible via shipping/Dockerfile's `ENV DB_HOST=mysql` (v3 P1) — no compose override for shipping's environment" }
+  ],
+  "outOfScopeEdges": [
+    { "src": "shipping", "dst": "cart", "kind": "http", "why": "GENUINE ARCHITECTURAL LIMIT, not a missed detector case (see docs/SPIKE_RESULTS.md v3 P2 for the full trace) — shipping's Controller.java does NOT use @Value or a direct System.getenv(\"CART_ENDPOINT\") call (the v3 plan's assumption); it builds `CART_URL` via `String.format(\"http://%s/shipping/\", getenv(\"CART_ENDPOINT\", \"cart\"))` (a private getenv(key,default) wrapper, which evalJava DOES resolve to an env-with-fallback part), but CART_URL is then passed to `new CartHelper(CART_URL)` — a constructor call — and CartHelper.java (a DIFFERENT file) stores it as a field via a constructor-parameter assignment (`this.baseUrl = baseUrl`, not a field initializer) and only uses it two methods later, in `new HttpPost(baseUrl + id)` (raw Apache HttpComponents, not a recognized client library). Recovering this would require interprocedural constant propagation across a constructor call spanning two files — every language's facts model in this codebase (Python/JS/Go/Java) is deliberately single-file/flat-assignment-map (see facts.ts), so this is consistent with the existing 'shared-library connections' limitation (v2 note #9), not a gap specific to Java. Separately (and independently a dead end even if the above weren't true): shipping/Dockerfile's `ENV CART_ENDPOINT=cart:8080` is a bare host:port with no scheme, so it resolves as an addr-kind wire to an app-role target, and addr-kind manifest wires only mint edges when the target is a datastore/broker (HTTP-shaped wiring must not mint manifest-only edges)" },
+    { "src": "ratings", "dst": "mysql", "kind": "db_access", "why": "PHP code unparsed; ratings/Dockerfile declares no DB_HOST-style ENV and compose sets no DB env either (only APP_ENV: prod), so this connection has no manifest evidence at all yet — genuinely requires PHP support" },
+    { "src": "ratings", "dst": "catalogue", "kind": "http", "why": "PHP code unparsed; no manifest wiring reveals this call" }
+  ],
+  "traps": [
+    "payment calls PAYMENT_GATEWAY (paypal.com) — external, no internal edge",
+    "load-gen and fluentd are infra/test services",
+    "mongodb + mysql are BUILT images (Dockerfile FROM mongo/mysql) — must classify as datastores, not apps",
+    "dispatch (Go, streadway/amqp) consumes queue \"orders\" via rabbitChan.Consume(\"orders\", ...) — the queue name is a literal, so this is a topic-level edge (topic:orders), not a broker-level one; payment's publish side uses self.EXCHANGE/self.ROUTING_KEY class attributes (dynamic, unresolvable), so no matching publisher is detected for topic:orders — that's expected, not a bug",
+    "web/default.conf.template proxies six locations (/api/catalogue/, /api/user/, /api/cart/, /api/shipping/, /api/payment/, /api/ratings/) to `http://${X_HOST}:PORT/`, where X_HOST is an envsubst-style var; web/Dockerfile sets the defaults (CATALOGUE_HOST=catalogue, USER_HOST=user, CART_HOST=cart, SHIPPING_HOST=shipping, PAYMENT_HOST=payment, RATINGS_HOST=ratings) and compose's web service never overrides them, so these six become env-wire edges once Dockerfile ENV defaults are merged into the service's env map (lowest precedence, compose wins) — not env-fallback, since there's a real wire once merged",
+    "web's /images/ (try_files, no proxy_pass) and /nginx_status (stub_status) locations correctly produce no edges; ditto any `return`-only location in the shopfront fixture's synthetic edge/ service",
+    "shipping's City.java (@Entity + @Table(name=\"cities\")) and CityRepository.java (a Spring Data JPA repository interface with a @Query-annotated `match` method referencing `City`/`city`) are real JPA facts the v3 P2 detectors correctly extract as TableAccessFacts — but since shipping's only mysql wiring is the addr-kind Dockerfile ENV wire (not a db-kind wire or a code-level ConnectionFact), the joiner's per-table datastoreFor() lookup finds no wiring for them and correctly emits a warning rather than a table-level edge; the service-level shipping -> mysql edge still exists via the separate manifest-fallback path documented above. Not a bug: table-level attribution genuinely has less evidence here than the service-level edge does.",
+    "CityRepository is a Java `interface`, not a `class` — its @Query annotation is still captured (AnnotationFact.className is optional and unused by the @Query detector path), demonstrating the annotation extraction doesn't depend on the enclosing declaration being a class"
+  ]
+}

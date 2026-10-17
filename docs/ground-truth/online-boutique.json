@@ -1,0 +1,33 @@
+{
+  "description": "Ground truth for GoogleCloudPlatform/microservices-demo (Online Boutique), scanned from kubernetes-manifests/ (v1 is scoped to compose repos; this is the first Kubernetes-manifest-sourced gate). Hand-verified against each service's client/server code (Go: frontend, checkoutservice, productcatalogservice, shippingservice; Python: recommendationservice, emailservice, loadgenerator; JS/Node: currencyservice, paymentservice) and against the two out-of-scope-language services (cartservice=C#, adservice=Java). Every edge here is a real gRPC call verified by reading the client call site and (where applicable) the server registration; addresses come from literal K8s manifest env values (PRODUCT_CATALOG_SERVICE_ADDR=\"productcatalogservice:3550\" etc.), not compose.",
+  "edges": [
+    { "src": "frontend", "dst": "productcatalogservice", "kind": "grpc" },
+    { "src": "frontend", "dst": "currencyservice", "kind": "grpc" },
+    { "src": "frontend", "dst": "cartservice", "kind": "grpc" },
+    { "src": "frontend", "dst": "recommendationservice", "kind": "grpc" },
+    { "src": "frontend", "dst": "checkoutservice", "kind": "grpc" },
+    { "src": "frontend", "dst": "shippingservice", "kind": "grpc" },
+    { "src": "frontend", "dst": "adservice", "kind": "grpc" },
+    { "src": "checkoutservice", "dst": "productcatalogservice", "kind": "grpc" },
+    { "src": "checkoutservice", "dst": "cartservice", "kind": "grpc" },
+    { "src": "checkoutservice", "dst": "currencyservice", "kind": "grpc" },
+    { "src": "checkoutservice", "dst": "shippingservice", "kind": "grpc" },
+    { "src": "checkoutservice", "dst": "paymentservice", "kind": "grpc" },
+    { "src": "checkoutservice", "dst": "emailservice", "kind": "grpc" },
+    { "src": "recommendationservice", "dst": "productcatalogservice", "kind": "grpc" },
+    { "src": "cartservice", "dst": "redis-cart", "kind": "db_access" }
+  ],
+  "outOfScopeEdges": [],
+  "knownMisses": [
+    { "src": "loadgenerator", "dst": "frontend", "kind": "http", "why": "loadgenerator's target host is set entirely by the container ENTRYPOINT shell command (`locust --host=\"http://${FRONTEND_ADDR}\"` in src/loadgenerator/Dockerfile), not by any Python code path in locustfile.py — there is no code site for the analyzer to find, static or otherwise. Genuinely out of reach without parsing Dockerfile ENTRYPOINT/CMD strings, which v1 does not do." }
+  ],
+  "traps": [
+    "cartservice (C#) and adservice (Java) are the two out-of-scope-language services in this repo, but — unlike robot-shop's web/shipping/ratings — neither contributes any FALSE NEGATIVE here: cartservice's only outbound dependency is redis-cart, caught by the addr-wire manifest fallback straight off the K8s env value (REDIS_ADDR=\"redis-cart:6379\") with zero C# parsing; adservice has no outbound dependencies at all (self-contained, hardcoded ad list). So outOfScopeEdges is empty for this repo — a real difference from robot-shop, not an oversight.",
+    "currencyservice and paymentservice are JS/Node, i.e. in-scope, and their gRPC servers use the @grpc/grpc-js `server.addService(shopProto.XService.service, {...})` pattern (paymentservice's is the two-step form: the proto package is dereferenced into a local binding one line before addService is called). v3 P3 added a deterministic detector for exactly this idiom (grpc.ts + a narrowly-scoped evalJs member-expression carve-out in facts.ts), so frontend/checkout's edges to currencyservice/paymentservice now resolve via real server-implementation matching (0.85, citing the actual `server.js` addService call site) instead of the 0.75 name-convention fallback. The `grpc.health.v1.Health` service both files also register via the same addService call is deliberately filtered out (SERVER_NAME_SKIP) — it isn't a proto service any client here dials by that name.",
+    "frontend's Go gRPC client call sites (rpc.go, handlers.go) live in different files than the grpc.NewClient(...) dial call and the PRODUCT_CATALOG_SERVICE_ADDR etc. mustMapEnv() calls (both in main.go) — so per-call-site addr resolution mostly comes up empty (struct-field selector expressions are holes to the constant evaluator) and edges fall back to server-impl matching (Go/Python/JS) or the name-convention fallback (C#/Java targets, and any other unmatched name). This is exactly the 'addr resolution will often be holes' scenario the spec called out in advance; the existing per-file grpc-import gate in grpc.ts had to be widened to be service-wide so that rpc.go/handlers.go (which only import the generated pb package, not google.golang.org/grpc itself) still qualify as gRPC call sites.",
+    "checkoutservice's Go client call sites ARE in the same file (main.go) as its grpc.NewClient dial calls, but the dialed address is still a function-parameter selector expression (a hole), so its addr-based upgrade to 0.95 confidence doesn't fire either — it lands on the same 0.85 server-impl-match path as frontend (both now server-matched as of v3 P3, previously 0.75 name-convention for currencyservice/paymentservice specifically).",
+    "recommendationservice (Python) is the one client in this repo where addr resolution actually succeeds end-to-end: `catalog_addr = os.environ.get('PRODUCT_CATALOG_SERVICE_ADDR', '')` assigns a module-scope name that grpc.insecure_channel(catalog_addr) reads back in the same file, so the joiner resolves the env wire to productcatalogservice and upgrades confidence to 0.95.",
+    "loadgenerator, frontend both reference a 'frontend-external' LoadBalancer Service alongside 'frontend' (ClusterIP) — both point at the same Deployment via selector, but only 'frontend' is ever used in an env value; frontend-external is inert for wiring purposes and correctly never appears as a wire target.",
+    "shoppingassistantservice exists in src/ and is wired into frontend's SHOPPING_ASSISTANT_SERVICE_ADDR env var, but frontend calls it over plain HTTP with a dynamically-built URL (`\"http://\" + fe.shoppingAssistantSvcAddr`, a struct-field selector = hole) and it has no manifest file under kubernetes-manifests/ in this checkout (only under helm-chart/ and src/) — no edge is expected or produced for it, by design (feature-flagged, ENABLE_ASSISTANT)."
+  ]
+}

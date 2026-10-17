@@ -1,0 +1,328 @@
+/* THE NATIVE LAYER: how the site feels under a finger or a cursor.
+   Colours, type and layout live in globals.css, lt.css and cx.css; this file
+   only adds the interaction layer, and is imported after them so it wins on
+   equal specificity. Motion values are the tokens in globals.css (--dur-*,
+   --ease-*, --press-scale), the app's own.
+
+   The recipe (the same as the Bastion site's .btn-tactile and .lift, on the
+   app's curves): on a device that hovers, a control rises 1px; pressing it
+   releases the lift and scales it to --press-scale, with a darker wash so the
+   pressed state is visible. On touch there is no hover, so a press is the
+   only feedback, and the browser's grey tap flash is switched off. */
+
+/* No rubber-band at the page edge, no grey tap flash, no double-tap zoom wait. */
+html,
+body {
+  overscroll-behavior: none;
+}
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+a,
+button,
+summary,
+[role='button'],
+[role='tab'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Every pressable thing. A card is a bigger surface, so it gets the gentler
+   press below. */
+.pill-cta,
+.pill-ghost,
+.lt-btn,
+.lt-round,
+.lt-tour-btn,
+.lt-mini-btn,
+.lt-navlink,
+.lt-os-btn,
+.lt-play,
+.lt-tabs button,
+.cx-btn,
+.cx-navlink,
+.cx-play,
+.walk-tab {
+  transition:
+    transform var(--dur-2) var(--ease-enter),
+    filter var(--dur-2) var(--ease-enter),
+    background-color 0.18s var(--ease),
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    color 0.15s var(--ease);
+  will-change: auto;
+}
+.store-card,
+.lt-adv-card {
+  transition:
+    transform var(--dur-3) var(--ease-enter),
+    filter var(--dur-2) var(--ease-enter),
+    background-color 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    box-shadow var(--dur-3) var(--ease-enter);
+}
+
+@media (hover: hover) {
+  .pill-cta:hover,
+  .pill-ghost:hover,
+  .lt-btn:hover,
+  .lt-tour-btn:hover,
+  .lt-mini-btn:hover,
+  .lt-os-btn:hover,
+  .cx-btn:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.pill-cta:active,
+.pill-ghost:active,
+.lt-btn:active,
+.lt-round:active,
+.lt-tour-btn:active,
+.lt-mini-btn:active,
+.lt-navlink:active,
+.lt-os-btn:active,
+.lt-play:active,
+.lt-tabs button:active,
+.cx-btn:active,
+.cx-navlink:active,
+.cx-play:active,
+.walk-tab:active {
+  transform: scale(var(--press-scale));
+  filter: brightness(0.92);
+  transition-duration: var(--dur-1);
+}
+/* A card or tile: a smaller press, and it lets go of its hover lift. */
+.store-card:active,
+.lt-adv-card:active {
+  transform: scale(0.985);
+  filter: brightness(0.97);
+  transition-duration: var(--dur-1);
+}
+
+@media (hover: hover) {
+  .store-card:hover,
+  .lt-adv-card:hover {
+    transform: translateY(-2px);
+  }
+  .store-card:active:hover,
+  .lt-adv-card:active:hover {
+    transform: scale(0.985);
+  }
+}
+
+/* The tour button and the mini-map boxes position or place themselves with
+   transforms of their own; the press must not displace them. */
+.lt-mini-box:active {
+  filter: brightness(1.12);
+}
+
+/* A pressed control that is dark on a light page reads as darker; on the dark
+   stages it would vanish, so those lighten. */
+.atmosphere-graphite .pill-ghost:active,
+.lt-app .lt-mini-btn:active {
+  filter: brightness(1.12);
+}
+
+/* TOUCH: every standalone control is at least 44px tall and wide. In the
+   utilities layer so it also beats the nav button's Tailwind !min-h-[34px],
+   which is important inside that layer. */
+@layer utilities {
+  @media (pointer: coarse) {
+    .lt-btn[class*='min-h'],
+    .pill-cta,
+    .pill-ghost,
+    .cx-btn,
+    .lt-tour-btn,
+    .lt-mini-btn,
+    .lt-navlink,
+    .lt-tabs button,
+    .cx-navlink,
+    .walk-tab,
+    .lt-nav a[aria-label],
+    .lt-footer a[aria-label] {
+      min-height: 44px !important;
+    }
+    .lt-btn,
+    .lt-navlink,
+    .cx-navlink,
+    .lt-tour-btn,
+    .lt-mini-btn,
+    .lt-tabs button,
+    .lt-nav a[aria-label],
+    .lt-footer a[aria-label] {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lt-round {
+      width: 44px;
+      height: 44px;
+    }
+    .lt-navlink {
+      min-width: 44px;
+    }
+    /* Footer link lists: each row is a 44px target, so the gap between rows goes. */
+    .lt-footlist {
+      gap: 0;
+    }
+    .lt-footlist a {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+    }
+    /* A link inside a sentence keeps its look and gains a 44px hit area around it. */
+    .lt-link,
+    .cx-link {
+      position: relative;
+    }
+    .lt-link::before,
+    .cx-link::before {
+      content: '';
+      position: absolute;
+      inset: -14px -6px;
+    }
+  }
+}
+
+/* SHELVES: swipe like an iOS carousel. The row owns sideways motion and lets
+   the page have the vertical, momentum carries it to the next snap point, and
+   a hard fling does not drag the page sideways behind it. */
+.shelf,
+.lt-gallery {
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+}
+.shelf > *,
+.lt-gallery > li {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+/* THE TOUR DIALOG. Enter (lt-pop, in lt.css), exit (here), and swipe down to
+   close on touch. The surface is touch-action: none so a vertical drag arrives
+   as pointer events instead of being taken as a page scroll. */
+.lt-lightbox {
+  touch-action: none;
+  overscroll-behavior: contain;
+  will-change: transform;
+}
+.lt-lightbox::backdrop {
+  opacity: var(--lt-dim, 1);
+  animation: lt-dim-in var(--dur-3) var(--ease-enter);
+}
+.lt-lightbox[open] {
+  animation: lt-pop var(--dur-3) var(--ease-enter);
+}
+.lt-lightbox.is-closing {
+  animation: lt-pop-out var(--dur-3) var(--ease-exit) forwards;
+  pointer-events: none;
+}
+.lt-lightbox.is-closing::backdrop {
+  animation: lt-dim-out var(--dur-3) var(--ease-exit) forwards;
+}
+/* While a finger is on it the dialog follows the finger with no easing. */
+.lt-lightbox.is-dragging {
+  animation: none;
+  transition: none;
+}
+.lt-lightbox.is-dragging::backdrop {
+  animation: none;
+}
+/* Let go short of the line: it springs back. Past it: it leaves downward. */
+.lt-lightbox.is-springing {
+  transition: transform 420ms var(--ease-enter);
+}
+.lt-lightbox.is-springing::backdrop {
+  transition: opacity 420ms var(--ease-enter);
+}
+.lt-lightbox.is-flinging {
+  animation: none;
+  transition: transform var(--dur-3) var(--ease-exit);
+}
+@keyframes lt-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+@keyframes lt-dim-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes lt-dim-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* EVERYTHING INSTANT when asked: no press scale, no lift, no exit. The script
+   also closes the dialog at once, so nothing waits on an animation that will
+   not run. */
+@media (prefers-reduced-motion: reduce) {
+  .pill-cta,
+  .pill-ghost,
+  .lt-btn,
+  .lt-round,
+  .lt-tour-btn,
+  .lt-mini-btn,
+  .lt-navlink,
+  .lt-os-btn,
+  .lt-play,
+  .lt-tabs button,
+  .cx-btn,
+  .cx-navlink,
+  .cx-play,
+  .walk-tab,
+  .store-card,
+  .lt-adv-card {
+    transition: none !important;
+  }
+  .pill-cta:hover,
+  .pill-ghost:hover,
+  .lt-btn:hover,
+  .lt-tour-btn:hover,
+  .lt-mini-btn:hover,
+  .lt-os-btn:hover,
+  .cx-btn:hover,
+  .store-card:hover,
+  .lt-adv-card:hover {
+    transform: none !important;
+  }
+  /* The pressed state stays, as a colour change only. */
+  .pill-cta:active,
+  .pill-ghost:active,
+  .lt-btn:active,
+  .lt-round:active,
+  .lt-tour-btn:active,
+  .lt-mini-btn:active,
+  .lt-navlink:active,
+  .lt-os-btn:active,
+  .lt-play:active,
+  .lt-tabs button:active,
+  .cx-btn:active,
+  .cx-navlink:active,
+  .cx-play:active,
+  .walk-tab:active,
+  .store-card:active,
+  .lt-adv-card:active {
+    transform: none !important;
+  }
+  .lt-lightbox,
+  .lt-lightbox[open],
+  .lt-lightbox.is-closing,
+  .lt-lightbox::backdrop,
+  .lt-lightbox.is-closing::backdrop,
+  .lt-lightbox.is-springing,
+  .lt-lightbox.is-flinging {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "description": "Hand-built ground truth for spring-petclinic/spring-petclinic-microservices (Java/Spring, v3 P2's first real-world Java gate — see docs/SPIKE_RESULTS.md). Every app service is image-only in docker-compose.yml (no build: context — the compose file references prebuilt springcommunity/spring-petclinic-* Docker Hub images); source is located via the v3 P2 inferSourceDir deterministic-suffix rule matching each spring-petclinic-<name> top-level directory. Derived by reading each service's application.yml/Java source directly (not by copying the scanner's own output) — see 'notes' for judgment calls the code forced.",
+  "edges": [
+    { "src": "api-gateway", "dst": "vets-service", "kind": "http" },
+    { "src": "api-gateway", "dst": "visits-service", "kind": "http" },
+    { "src": "api-gateway", "dst": "customers-service", "kind": "http" },
+    { "src": "api-gateway", "dst": "genai-service", "kind": "http" },
+    { "src": "api-gateway", "dst": "config-server", "kind": "http" },
+    { "src": "admin-server", "dst": "config-server", "kind": "http" },
+    { "src": "customers-service", "dst": "config-server", "kind": "http" },
+    { "src": "discovery-server", "dst": "config-server", "kind": "http" },
+    { "src": "genai-service", "dst": "config-server", "kind": "http" },
+    { "src": "vets-service", "dst": "config-server", "kind": "http" },
+    { "src": "visits-service", "dst": "config-server", "kind": "http" },
+    { "src": "genai-service", "dst": "vets-service", "kind": "http" }
+  ],
+  "traps": [
+    "tracing-server (openzipkin/zipkin), grafana-server and prometheus-server are observability infra, not application services — they classify as app-role (unknown image) but have no matching spring-petclinic-<name> source directory, so they get no `dir` and are correctly parsed/edge-free",
+    "every app service `depends_on: {config-server, discovery-server}` with a healthcheck condition in compose — depends_on must not create edges (same rule as every other repo gated so far)",
+    "customers-service/vets-service/visits-service each define real JPA @Entity/@Table classes (Owner/Pet/PetType tables, Visit table, Vet/Specialty tables) with no explicit spring.datasource.* anywhere in application.yml — they run on Spring Boot's default embedded HSQLDB with zero static datasource evidence in this repo, so the JPA facts are correctly extracted but correctly produce 'no database wiring found' warnings rather than db_access edges; no db_access edges are in this ground truth",
+    "config-server's own application.yml points spring.cloud.config.server.git.uri at github.com/spring-petclinic/spring-petclinic-microservices-config (external, out of scope — not this repo, not this scan)",
+    "genai-service also calls the OpenAI/Azure OpenAI APIs directly (external, no internal edge) and reads a bundled vectorstore.json classpath resource as its normal path — the vets-service call only fires on first boot when that file is absent; still real, evidenced code (VectorStoreController.java), included as an edge"
+  ],
+  "notes": [
+    "JUDGMENT CALL: no service -> discovery-server edge is included. The plan's original assumption was 'every Spring service -> config-server and -> discovery-server via property URLs', but this repo sets no eureka.client.serviceUrl.defaultZone anywhere (grep across every application.yml/properties, including test resources, is empty) — Eureka registration relies entirely on the Netflix Eureka client library's own hardcoded localhost:8761 default (or an override that would live in the separate, uncloned spring-petclinic-microservices-config git repo). There is no static text evidence for a discovery-server edge anywhere in this repo, so including one would not be 'architecturally real AND legitimately evidenced' — it was dropped rather than assumed.",
+    "GRAMMAR/CONFIG SURPRISE: Spring Cloud Gateway's route key path in this repo's api-gateway is spring.cloud.gateway.server.webflux.routes[n].uri (a newer, more deeply-nested layout), not the classic spring.cloud.gateway.routes[n].uri the plan assumed. The detector's key match was widened to spring.cloud.gateway(\\.[\\w-]+)*.routes[n].uri to cover both without assuming either is canonical.",
+    "CONFIG SURPRISE: every service's config-server import is not a bare property value — it's `configserver:http://config-server:8888` (a `configserver:` URI-scheme-like prefix in front of the real http URL), and the base document's version additionally wraps that in `optional:` and a `${CONFIG_SERVER_URL:http://localhost:8888/}` placeholder. All 7 services' effective (docker-profile) value is only reachable by parsing the file as Spring Boot's multi-document YAML (`---`-separated documents, later ones overriding earlier keys when a profile is active) — a single-document YAML parse silently sees only the placeholder-based base document and never the concrete docker-profile override. The detector now splits on `---` and applies later-chunk-wins per key, with each chunk's own line offset preserved for evidence.",
+    "CODE SURPRISE: api-gateway's WebClient client code (CustomersServiceClient.java, VisitsServiceClient.java) chains several calls before `.uri(...)` (`webClientBuilder.build().get().uri(...)`), so the callee's 'receiver' text is not a bare identifier — the original `\\w+\\.uri$`/`\\w+\\.(getForObject|...)$` patterns never match a real WebClient fluent chain. Both were widened to `.*\\.uri$` / `.*\\.(...)$`.",
+    "genai-service -> vets-service was not anticipated by the plan at all — found by reading genai-service's VectorStoreController.java, which is a legitimate direct WebClient call (`http://vets-service/vets`) independent of the gateway routing.",
+    "Confidence note (not a precision/recall factor, since scoring is service-level and kind-family only): config-server edges resolve to 0.7 (literal-host-only, no matching route found in config-server's own facts since config-server exposes no @RestController — it's a Spring Cloud Config server, whose HTTP surface is framework-provided, not user-code-annotated) rather than the 0.9+ code-plus-route-match confidence seen on api-gateway's WebClient-covered edges."
+  ]
+}

@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thinking + loading ledger — pick 1 of 5</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Research ledger — five live-animation specimens + spinner gallery. Graphite dark tokens. */
+:root[data-theme="dark"]{
+  --bg-base:#0c0c0e;--surface-1:#121214;--surface-2:#18181b;--surface-3:#222226;
+  --edge:#2a2a30;--edge-faint:#222226;--ink-1:#ececef;--ink-2:#a8a8b3;--ink-3:#6b6b76;--ink-4:#52525b;
+  --accent-solid:#6366f1;--accent-wash:rgba(99,102,241,.12);--accent-edge:rgba(99,102,241,.35);
+  --info-wash:rgba(113,113,122,.14);
+  --w-hair:1px;--w-rule:2px;--r-4:4px;--r-8:8px;--r-14:14px;
+  --sp-2:2px;--sp-4:4px;--sp-6:6px;--sp-8:8px;--sp-10:10px;--sp-12:12px;--sp-16:16px;--sp-20:20px;
+  --t-10:10px;--t-11:11px;--t-12:12px;--t-14:14px;--lh-12:16px;--lh-14:18px;
+  --font-sans:"Instrument Sans",system-ui,sans-serif;--font-mono:"JetBrains Mono",monospace;
+  --fw-label:550;--row-h-tool:26px;--ease:cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-base);color:var(--ink-1);font:var(--t-12)/var(--lh-12) var(--font-sans)}
+.ledger{max-width:1680px;margin:0 auto;padding:var(--sp-20)}
+.ledger h1{font-size:18px;font-weight:600;margin:0 0 var(--sp-8)}
+.ledger h3{font-size:var(--t-12);font-weight:var(--fw-label);margin:0 0 var(--sp-8);color:var(--ink-1)}
+.ledger .lede{color:var(--ink-2);max-width:90ch;margin:0 0 var(--sp-12);line-height:1.55}
+.dim{margin:var(--sp-20) 0 var(--sp-8);font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.subdim{margin:var(--sp-12) 0 var(--sp-6);font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3)}
+.pick-row{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-10);margin-bottom:var(--sp-16)}
+.pick-col{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden;background:var(--surface-1);display:flex;flex-direction:column;min-width:0}
+.pick-col.baseline{border-color:color-mix(in srgb,var(--accent-edge) 55%,var(--edge))}
+.pick-head{padding:var(--sp-10) var(--sp-12);border-bottom:var(--w-hair) solid var(--edge);display:flex;flex-direction:column;gap:var(--sp-4)}
+.pick-head-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-6)}
+.pick-head h2{margin:0;font-size:var(--t-12);font-weight:var(--fw-label);line-height:1.3}
+.pick-tag{font-family:var(--font-mono);font-size:9px;color:var(--ink-3);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);padding:2px var(--sp-4);white-space:nowrap;flex-shrink:0}
+.pick-tag.warn{color:#fbbf24;border-color:color-mix(in srgb,#fbbf24 40%,var(--edge))}
+.pick-head .mix{font-size:var(--t-10);color:var(--ink-3);line-height:1.35}
+.pick-note{padding:var(--sp-8) var(--sp-12);color:var(--ink-2);border-top:var(--w-hair) solid var(--edge);font-size:var(--t-10);line-height:1.45;margin-top:auto}
+.pick-body{padding:var(--sp-10) var(--sp-12);flex:1;display:flex;flex-direction:column;gap:var(--sp-8)}
+.do{color:#86efac;font-size:var(--t-10);margin:0 0 var(--sp-4)}
+.dont{color:#f87171;font-size:var(--t-10);margin:0 0 var(--sp-4)}
+.warn{color:#fbbf24;font-size:var(--t-10);margin:0 0 var(--sp-4)}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.i-14{width:14px;height:14px}
+.mono{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-2)}
+
+.mock-chat{background:var(--bg-base);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-10) var(--sp-10) var(--sp-12)}
+.userbubble{margin-left:auto;max-width:88%;background:var(--surface-2);border-radius:var(--r-14);padding:var(--sp-8) var(--sp-10);font-size:var(--t-12);line-height:var(--lh-14);margin-bottom:var(--sp-10);color:var(--ink-1)}
+.state-lbl{font-family:var(--font-mono);font-size:9px;color:var(--ink-3);margin:0 0 var(--sp-4);text-transform:uppercase;letter-spacing:.04em}
+
+.toolstack{display:flex;flex-direction:column;gap:var(--sp-2)}
+.toolstack.inline{margin-left:var(--sp-12);padding-left:var(--sp-10);border-left:var(--w-rule) solid var(--edge)}
+.toolrow{display:flex;align-items:center;gap:var(--sp-6);height:var(--row-h-tool);padding:0 var(--sp-2);color:var(--ink-3);font-size:var(--t-12);min-width:0}
+.toolrow .name{color:var(--ink-2);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toolstack.inline .toolrow .name{color:var(--ink-3)}
+.toolrow .file{font-family:var(--font-mono);font-size:var(--t-11);color:var(--ink-1);flex-shrink:0}
+
+/* shared motion */
+@keyframes chatpulse{0%,100%{opacity:1}50%{opacity:.78}}
+@keyframes chatshimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@keyframes chatpot{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@keyframes agentseg{0%,100%{background:var(--surface-3)}40%{background:var(--ink-3)}}
+
+.spin{font-family:var(--font-mono);font-size:var(--t-11);width:14px;height:14px;line-height:14px;text-align:center;flex:0 0 14px;color:var(--ink-1)}
+.spin.density::after{content:"░";animation:spin-density 840ms steps(1,end) infinite}
+.spin.braille::after{content:"⠋";animation:spin-braille 900ms steps(1,end) infinite}
+.spin.orbit::after{content:"◐";animation:spin-orbit 720ms steps(1,end) infinite}
+.spin.slash::after{content:"|";animation:spin-slash 480ms steps(1,end) infinite}
+.spin.block::after{content:"▮";animation:spin-block 600ms steps(1,end) infinite}
+
+@keyframes spin-density{0%{content:"░"}16%{content:"▒"}33%{content:"▓"}50%{content:"█"}66%{content:"▓"}83%{content:"▒"}}
+@keyframes spin-braille{0%{content:"⠋"}10%{content:"⠙"}20%{content:"⠹"}30%{content:"⠸"}40%{content:"⠼"}50%{content:"⠴"}60%{content:"⠦"}70%{content:"⠧"}80%{content:"⠇"}90%{content:"⠏"}}
+@keyframes spin-orbit{0%{content:"◐"}25%{content:"◓"}50%{content:"◑"}75%{content:"◒"}}
+@keyframes spin-slash{0%{content:"|"}25%{content:"/"}50%{content:"−"}75%{content:"\\"}}
+@keyframes spin-block{0%,49%{content:"▮"}50%,100%{content:"▯"}}
+
+.row-shimmer .toolrow.live .name{
+  background-image:linear-gradient(90deg,var(--ink-2),var(--ink-1),var(--ink-1),var(--ink-2));
+  background-size:220% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:chatshimmer 2.4s linear infinite;
+}
+.row-pulse-icon .toolrow.live .i{animation:chatpulse 1.8s var(--ease) infinite;color:var(--ink-2)}
+
+.row-wash .toolrow.live{position:relative;isolation:isolate;border-radius:var(--r-8)}
+.row-wash .toolrow.live::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:linear-gradient(90deg,transparent 0%,var(--accent-wash) 45%,color-mix(in srgb,var(--accent-wash) 80%,var(--accent-edge) 20%) 50%,var(--accent-wash) 55%,transparent 100%);
+  background-size:220% 100%;animation:chatpot 2.6s linear infinite;
+}
+.row-wash .toolrow.live>*{position:relative;z-index:1}
+
+/* E · shipped */
+.spec-e .toolrow.live{position:relative;isolation:isolate;border-radius:var(--r-8)}
+.spec-e .toolrow.live::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:linear-gradient(90deg,transparent 0%,var(--accent-wash) 45%,color-mix(in srgb,var(--accent-wash) 80%,var(--accent-edge) 20%) 50%,var(--accent-wash) 55%,transparent 100%);
+  background-size:220% 100%;animation:chatpot 2.6s linear infinite;
+}
+.spec-e .toolrow.live>*{position:relative;z-index:1}
+.spec-e .toolrow.live .i{animation:chatpulse 1.8s var(--ease) infinite}
+.spec-e .toolrow.live .name{
+  background-image:linear-gradient(90deg,var(--ink-2),var(--ink-1),var(--ink-2));
+  background-size:200% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:chatshimmer 2.8s linear infinite;
+}
+
+.agentrun{display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-4)}
+.agentrun-trigger{
+  display:flex;flex-direction:column;gap:var(--sp-4);width:100%;padding:var(--sp-6) var(--sp-8);
+  border:var(--w-hair) solid var(--edge-faint);border-radius:var(--r-8);background:var(--surface-2);text-align:left;
+}
+.agentrun-head{display:flex;align-items:center;gap:var(--sp-6);min-width:0}
+.agentrun-grip{display:grid;grid-template-columns:repeat(2,3px);grid-template-rows:repeat(3,3px);gap:2px;opacity:.55;flex-shrink:0}
+.agentrun-grip span{display:block;width:3px;height:3px;border-radius:1px;background:var(--ink-3)}
+.agentrun-title{font-weight:var(--fw-label);color:var(--ink-1);font-size:var(--t-10);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:5rem}
+.agentrun-bar{flex:1;display:flex;gap:2px;height:8px;min-width:0}
+.agentrun-seg{flex:1;height:100%;border-radius:1px;background:var(--surface-3);animation:agentseg 1.4s var(--ease) infinite}
+.agentrun-seg:nth-child(2){animation-delay:80ms}.agentrun-seg:nth-child(3){animation-delay:160ms}
+.agentrun-seg:nth-child(4){animation-delay:240ms}.agentrun-seg:nth-child(5){animation-delay:320ms}
+.agentrun-seg:nth-child(6){animation-delay:400ms}.agentrun-seg:nth-child(7){animation-delay:480ms}
+.agentrun-seg:nth-child(8){animation-delay:560ms}.agentrun-seg:nth-child(9){animation-delay:640ms}
+.agentrun-seg:nth-child(10){animation-delay:720ms}.agentrun-seg:nth-child(11){animation-delay:800ms}
+.agentrun-seg:nth-child(12){animation-delay:880ms}
+.agentrun-status{font-size:9px;color:var(--ink-3);padding-left:18px}
+
+/* spinner gallery */
+.gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-10);margin-bottom:var(--sp-16)}
+.gcard{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-12);background:var(--surface-1);text-align:center}
+.gcard .spin{font-size:18px;width:24px;height:24px;line-height:24px;margin:0 auto var(--sp-8);display:block}
+.gcard .spin::after{font-size:18px}
+.gcard h4{margin:0 0 var(--sp-4);font-size:var(--t-11);font-weight:var(--fw-label)}
+.gcard p{margin:0;font-size:var(--t-10);color:var(--ink-3);line-height:1.4}
+.gcard code{font-family:var(--font-mono);font-size:9px;color:var(--ink-2)}
+
+.compare-note{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-12) var(--sp-16);color:var(--ink-2);font-size:var(--t-11);margin-top:var(--sp-8);overflow-x:auto}
+.compare-note table{width:100%;border-collapse:collapse;font-size:var(--t-10);min-width:720px}
+.compare-note th,.compare-note td{padding:var(--sp-6) var(--sp-4);text-align:left;border-bottom:var(--w-hair) solid var(--edge-faint);vertical-align:top}
+.compare-note th{color:var(--ink-3);font-weight:500}
+.compare-note ul{margin:var(--sp-10) 0 0;padding-left:1.2em;line-height:1.55}
+.compare-note li{margin-bottom:var(--sp-6)}
+.deep{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-12);margin-top:var(--sp-12)}
+.deep-panel{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);padding:var(--sp-12) var(--sp-16);background:var(--surface-1)}
+.deep-panel p{margin:0 0 var(--sp-8);color:var(--ink-2);font-size:var(--t-11);line-height:1.55}
+.deep-panel p:last-child{margin-bottom:0}
+
+@media(max-width:1400px){.pick-row{grid-template-columns:repeat(3,1fr)}.gallery{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.pick-row,.gallery,.deep{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){
+  .spin::after,.row-shimmer .toolrow.live .name,.row-wash .toolrow.live::before,
+  .row-pulse-icon .toolrow.live .i,.spec-e .toolrow.live::before,.spec-e .toolrow.live .name,
+  .spec-e .toolrow.live .i,.agentrun-seg{animation:none!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 8v4.2l2.8 1.6"/></symbol>
+<symbol id="ic-file" viewBox="0 0 24 24"><path d="M8.2 4h5.2l4.6 4.6V18a2.2 2.2 0 0 1-2.2 2.2H8.2A2.2 2.2 0 0 1 6 18V6.2A2.2 2.2 0 0 1 8.2 4z"/><path d="M13.4 4v4.8H18"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="5.8"/><path d="m15.8 15.8 4.4 4.4"/></symbol>
+</defs></svg>
+
+<div class="ledger">
+  <h1>Thinking + loading ledger · round 2</h1>
+  <p class="lede">Five live specimens for the same turn: user asked about auth, model is mid-flight — one <b>reasoning</b> step and one <b>file read</b> before prose lands. Nothing here is “pulse only”; every candidate has visible motion. <b>E is what ships today</b> — keep it in the set for comparison. Pick a letter (A–D) or say “E but drop the agent bar” etc.</p>
+
+  <p class="dim">1 · Pick one · live transcript (all five)</p>
+  <div class="pick-row">
+    <!-- A -->
+    <div class="pick-col spec-a row-shimmer row-pulse-icon">
+      <div class="pick-head">
+        <div class="pick-head-top"><h2>A · Shimmer row</h2><span class="pick-tag">balanced</span></div>
+        <span class="mix">Text shimmer + glyph pulse · 1 row · no ASCII</span>
+      </div>
+      <div class="pick-body">
+        <div class="mock-chat">
+          <div class="userbubble">What breaks if I change auth?</div>
+          <p class="state-lbl">Live</p>
+          <div class="toolstack inline">
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-clock"/></svg>
+              <span class="name">Thinking…</span>
+            </div>
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span class="name">Reading session.ts…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="pick-note"><span class="do">✓ Decision 7 core</span> Cursor-style named status with gradient sweep on the label. Icon breathes. No extra card, no wash, no spinner — readable, not dead.</p>
+    </div>
+
+    <!-- B -->
+    <div class="pick-col spec-b row-shimmer row-pulse-icon row-wash">
+      <div class="pick-head">
+        <div class="pick-head-top"><h2>B · Shimmer + wash</h2><span class="pick-tag">more motion</span></div>
+        <span class="mix">A + accent pot sweep · still 1 row</span>
+      </div>
+      <div class="pick-body">
+        <div class="mock-chat">
+          <div class="userbubble">What breaks if I change auth?</div>
+          <p class="state-lbl">Live</p>
+          <div class="toolstack inline">
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-clock"/></svg>
+              <span class="name">Thinking…</span>
+            </div>
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span class="name">Reading session.ts…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="pick-note"><span class="do">✓ Visible without chrome</span> Same rows as A but a soft indigo wash travels behind the live line. Feels “alive” without adding a second widget.</p>
+    </div>
+
+    <!-- C -->
+    <div class="pick-col spec-c row-shimmer row-pulse-icon">
+      <div class="pick-head">
+        <div class="pick-head-top"><h2>C · Braille spinner</h2><span class="pick-tag">ascii · orbit</span></div>
+        <span class="mix">⠋⠙⠹… in icon slot + shimmer · icon hidden on reason row</span>
+      </div>
+      <div class="pick-body">
+        <div class="mock-chat">
+          <div class="userbubble">What breaks if I change auth?</div>
+          <p class="state-lbl">Live</p>
+          <div class="toolstack inline">
+            <div class="toolrow live">
+              <span class="spin braille" aria-hidden="true"></span>
+              <span class="name">Thinking…</span>
+            </div>
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span class="name">Reading session.ts…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="pick-note"><span class="do">✓ Terminal-native</span> Braille wheel replaces clock on reasoning row only; file row keeps pulsing glyph. Mono spinner reads at 14px without looking like a game loader.</p>
+    </div>
+
+    <!-- D -->
+    <div class="pick-col spec-d row-shimmer row-pulse-icon">
+      <div class="pick-head">
+        <div class="pick-head-top"><h2>D · Density spinner</h2><span class="pick-tag">ascii · ramp</span></div>
+        <span class="mix">░▒▓█ beside pulsing icon + shimmer</span>
+      </div>
+      <div class="pick-body">
+        <div class="mock-chat">
+          <div class="userbubble">What breaks if I change auth?</div>
+          <p class="state-lbl">Live</p>
+          <div class="toolstack inline">
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-clock"/></svg>
+              <span class="spin density" aria-hidden="true"></span>
+              <span class="name">Thinking…</span>
+            </div>
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-search"/></svg>
+              <span class="spin density" aria-hidden="true"></span>
+              <span class="name">Exploring *auth*…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="pick-note"><span class="do">✓ Shipped spinner, tamed</span> Density ramp (current product frames) sits <b>beside</b> the kind glyph — not instead of it. Shimmer on label. No agent card.</p>
+    </div>
+
+    <!-- E -->
+    <div class="pick-col spec-e baseline">
+      <div class="pick-head">
+        <div class="pick-head-top"><h2>E · Shipped now</h2><span class="pick-tag warn">baseline</span></div>
+        <span class="mix">Agent bar + wash + shimmer + density + duplicate rows</span>
+      </div>
+      <div class="pick-body">
+        <p class="warn">⚠ Compare against this</p>
+        <div class="mock-chat">
+          <div class="userbubble">What breaks if I change auth?</div>
+          <p class="state-lbl">Live</p>
+          <div class="agentrun">
+            <div class="agentrun-trigger">
+              <span class="agentrun-head">
+                <span class="agentrun-grip" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></span>
+                <span class="agentrun-title">deepseek</span>
+                <span class="agentrun-bar" aria-hidden="true">
+                  <span class="agentrun-seg"></span><span class="agentrun-seg"></span><span class="agentrun-seg"></span><span class="agentrun-seg"></span>
+                  <span class="agentrun-seg"></span><span class="agentrun-seg"></span><span class="agentrun-seg"></span><span class="agentrun-seg"></span>
+                  <span class="agentrun-seg"></span><span class="agentrun-seg"></span><span class="agentrun-seg"></span><span class="agentrun-seg"></span>
+                </span>
+              </span>
+              <span class="agentrun-status">Thinking with deepseek-chat</span>
+            </div>
+          </div>
+          <div class="toolstack inline">
+            <div class="toolrow live">
+              <span class="spin density" aria-hidden="true"></span>
+              <span class="name">Thinking with deepseek-chat…</span>
+            </div>
+            <div class="toolrow live">
+              <svg class="i i-14"><use href="#ic-search"/></svg>
+              <span class="spin density" aria-hidden="true"></span>
+              <span class="name">Exploring *auth*…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="pick-note"><span class="dont">✕ Too much</span> Five motion layers + extra card. Reasoning duplicated (bar says thinking, row says thinking). Good reference for what to peel off.</p>
+    </div>
+  </div>
+
+  <p class="dim">2 · ASCII spinner gallery · pick a frame set for C/D variants</p>
+  <p class="subdim">All at 14px in JetBrains Mono — same slot the product uses beside tool glyphs.</p>
+  <div class="gallery">
+    <div class="gcard">
+      <span class="spin density" aria-hidden="true"></span>
+      <h4>Density ramp</h4>
+      <p>Shipped today.<br><code>░ ▒ ▓ █ ▓ ▒</code></p>
+    </div>
+    <div class="gcard">
+      <span class="spin braille" aria-hidden="true"></span>
+      <h4>Braille orbit</h4>
+      <p>10-step wheel.<br><code>⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏</code></p>
+    </div>
+    <div class="gcard">
+      <span class="spin orbit" aria-hidden="true"></span>
+      <h4>Quarter orbit</h4>
+      <p>Soft dial.<br><code>◐ ◓ ◑ ◒</code></p>
+    </div>
+    <div class="gcard">
+      <span class="spin slash" aria-hidden="true"></span>
+      <h4>Slash tick</h4>
+      <p>Classic CLI.<br><code>| / − \\</code></p>
+    </div>
+    <div class="gcard">
+      <span class="spin block" aria-hidden="true"></span>
+      <h4>Block toggle</h4>
+      <p>Cursor mobile.<br><code>▮ ▯</code></p>
+    </div>
+  </div>
+
+  <p class="dim">3 · Motion matrix</p>
+  <div class="compare-note">
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E (shipped)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Label text shimmer</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Kind glyph pulse</td><td>✓</td><td>✓</td><td>file/search only</td><td>✓</td><td>partial</td></tr>
+        <tr><td>Accent wash behind row</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr><td>ASCII spinner</td><td>—</td><td>—</td><td>braille</td><td>density</td><td>density</td></tr>
+        <tr><td>Agent card + segment bar</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr><td>Live row count (same turn)</td><td>2</td><td>2</td><td>2</td><td>2</td><td>card + 2</td></tr>
+        <tr><td>Approx. motion layers</td><td>2</td><td>3</td><td>3</td><td>4</td><td>6+</td></tr>
+        <tr><td>Energy (subjective)</td><td>medium</td><td>medium-high</td><td>medium-high</td><td>high</td><td>overload</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="dim">4 · Dive deeper · rules that survive any pick</p>
+  <div class="deep">
+    <div class="deep-panel">
+      <h3>What must not change</h3>
+      <p><b>One line per call.</b> Live row uses present progressive (<span class="mono">Reading session.ts…</span>). On land it is <b>replaced</b> by past tense (<span class="mono">Read session.ts</span>) — never appended. Sheet 12.3 + Decision 7.</p>
+      <p><b>Named from the real event.</b> Labels come from the ask stream verb, not generic “Working…”. <span class="mono">workRowModel.ts</span> owns the mapping.</p>
+      <p><b>Inline in the answer.</b> Rows sit under the left rule inside prose flow — not a detached trail block above the answer.</p>
+      <p><b>No hue while running.</b> Motion uses <span class="mono">--ink-2/3</span> and optional accent wash; verdict colours wait until land.</p>
+    </div>
+    <div class="deep-panel">
+      <h3>How to combine (if you want a custom mix)</h3>
+      <p><b>A + braille from C</b> → shimmer row with braille only on reasoning, glyph pulse on reads. Keeps rows at 26px, adds ASCII without density beside every icon.</p>
+      <p><b>B without wash on landed rows</b> → wash is live-only; the ::before pot disappears on replace — no ghost animation on history.</p>
+      <p><b>D but orbit spinner</b> → swap density for ◐◓◑◒ if density feels too “matrix”. Same layout, softer motion.</p>
+      <p><b>E minus agent bar</b> → if you like the density+shimmer+wash stack, drop <span class="mono">AgentRunBar</span> first — that single card causes most of the duplication.</p>
+      <p><b>Reduced motion</b> → all specimens fall back to static label + static glyph at <span class="mono">prefers-reduced-motion</span> (already wired in product CSS).</p>
+    </div>
+  </div>
+
+  <div class="compare-note" style="margin-top:var(--sp-12)">
+    <h3 style="margin:0 0 var(--sp-8);font-size:var(--t-12);color:var(--ink-1)">Landed state (same for every pick)</h3>
+    <div class="toolstack inline" style="max-width:360px;margin-top:var(--sp-8)">
+      <div class="toolrow"><svg class="i i-14"><use href="#ic-clock"/></svg><span class="name">Thought for 4s</span></div>
+      <div class="toolrow"><svg class="i i-14"><use href="#ic-file"/></svg><span class="name">Read</span><span class="file">session.ts</span></div>
+      <div class="toolrow"><svg class="i i-14"><use href="#ic-search"/></svg><span class="name">Explored 3 files</span></div>
+    </div>
+    <p style="margin:var(--sp-10) 0 0;color:var(--ink-3);font-size:var(--t-10)">Canon: <span class="mono">docs/brand/graphite/pages/12-the-agentic-surfaces.html</span> §12.2–12.5 · Decision 7 · shipped CSS in <span class="mono">packages/web2/src/chat/chat.css</span></p>
+  </div>
+</div>
+</body>
+</html>

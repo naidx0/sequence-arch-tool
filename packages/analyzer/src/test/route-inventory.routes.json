@@ -1,0 +1,1747 @@
+{
+  "generatedFrom": "f9b623cee",
+  "catchAllMarker": "unknown endpoint:",
+  "routes": [
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/acp\\/agents\\/([^/]+)$/",
+      "examples": [
+        "/api/acp/agents/dummy-id"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/fanout(?:\\/([^/]+)(?:\\/(choose|discard-others))?)?$/",
+      "examples": [
+        "/api/fanout",
+        "/api/fanout/dummy-id/choose"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/sessions\\/([^/]+)\\/goal-run(\\/stop)?$/",
+      "examples": [
+        "/api/sessions/dummy-id/goal-run",
+        "/api/sessions/dummy-id/goal-run/stop"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/sessions\\/([^/]+)\\/pr(?:\\/(preview))?$/",
+      "examples": [
+        "/api/sessions/dummy-id/pr",
+        "/api/sessions/dummy-id/pr/preview"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/sessions\\/([^/]+)\\/rewind(\\/undo)?$/",
+      "examples": [
+        "/api/sessions/dummy-id/rewind",
+        "/api/sessions/dummy-id/rewind/undo"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/sessions\\/([^/]+)\\/worktree(?:\\/(changes|diff|dry-run|merge))?$/",
+      "examples": [
+        "/api/sessions/dummy-id/worktree",
+        "/api/sessions/dummy-id/worktree/changes"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/skills\\/([^/]+)$/",
+      "examples": [
+        "/api/skills/dummy-id"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "regex",
+      "pattern": "/^\\/api\\/skills\\/([^/]+)\\/reveal$/",
+      "examples": [
+        "/api/skills/dummy-id/reveal"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api",
+      "examples": [
+        "/api"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/",
+      "examples": [
+        "/api/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/agents",
+      "examples": [
+        "/api/acp/agents"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/agents/connect",
+      "examples": [
+        "/api/acp/agents/connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/attach",
+      "examples": [
+        "/api/acp/attach"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/auto-resume",
+      "examples": [
+        "/api/acp/auto-resume"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/available",
+      "examples": [
+        "/api/acp/available"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/capabilities",
+      "examples": [
+        "/api/acp/capabilities"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/full-access",
+      "examples": [
+        "/api/acp/full-access"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/live",
+      "examples": [
+        "/api/acp/live"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/permission",
+      "examples": [
+        "/api/acp/permission"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/question",
+      "examples": [
+        "/api/acp/question"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/run-node",
+      "examples": [
+        "/api/acp/run-node"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/runs",
+      "examples": [
+        "/api/acp/runs"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/steer",
+      "examples": [
+        "/api/acp/steer"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/stop",
+      "examples": [
+        "/api/acp/stop"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/acp/turn-log",
+      "examples": [
+        "/api/acp/turn-log"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/agent-event",
+      "examples": [
+        "/api/agent-event"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/agent-events",
+      "examples": [
+        "/api/agent-events"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/agent-hooks/claude",
+      "examples": [
+        "/api/agent-hooks/claude"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/agent-settings",
+      "examples": [
+        "/api/agent-settings"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/ai-config",
+      "examples": [
+        "/api/ai-config"
+      ],
+      "methods": [
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/ai-models",
+      "examples": [
+        "/api/ai-models"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/allowed-folders",
+      "examples": [
+        "/api/allowed-folders"
+      ],
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/annotate",
+      "examples": [
+        "/api/annotate"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/app/",
+      "examples": [
+        "/api/app/version",
+        "/api/app/update",
+        "/api/app/releases"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/ask",
+      "examples": [
+        "/api/ask"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/ask/events",
+      "examples": [
+        "/api/ask/events"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/ask/stream",
+      "examples": [
+        "/api/ask/stream"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/attach",
+      "examples": [
+        "/api/attach"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/attachment",
+      "examples": [
+        "/api/attachment"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/attachment/image",
+      "examples": [
+        "/api/attachment/image"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/attachments",
+      "examples": [
+        "/api/attachments"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/auto-approve",
+      "examples": [
+        "/api/auto-approve"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/board",
+      "examples": [
+        "/api/board"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/boards",
+      "examples": [
+        "/api/boards"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/boards/",
+      "examples": [
+        "/api/boards/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/browse",
+      "examples": [
+        "/api/browse"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/build",
+      "examples": [
+        "/api/build"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/canvas-doc",
+      "examples": [
+        "/api/canvas-doc"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/chat-memory",
+      "examples": [
+        "/api/chat-memory"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/checkpoint",
+      "examples": [
+        "/api/checkpoint"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/checkpoint/plan",
+      "examples": [
+        "/api/checkpoint/plan"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/checkpoint/restore",
+      "examples": [
+        "/api/checkpoint/restore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/checkpoints",
+      "examples": [
+        "/api/checkpoints"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/components",
+      "examples": [
+        "/api/components"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/components/",
+      "examples": [
+        "/api/components/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/ddl",
+      "examples": [
+        "/api/ddl"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/design-suggest",
+      "examples": [
+        "/api/design-suggest"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/detach",
+      "examples": [
+        "/api/detach"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/drawings",
+      "examples": [
+        "/api/drawings"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/drawings/",
+      "examples": [
+        "/api/drawings/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/explain",
+      "examples": [
+        "/api/explain"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/export",
+      "examples": [
+        "/api/export"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/file",
+      "examples": [
+        "/api/file"
+      ],
+      "methods": [
+        "GET",
+        "HEAD",
+        "PUT"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/file-op",
+      "examples": [
+        "/api/file-op"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/file/op",
+      "examples": [
+        "/api/file/op"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/functions",
+      "examples": [
+        "/api/functions"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/generate",
+      "examples": [
+        "/api/generate"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/branch",
+      "examples": [
+        "/api/git/branch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/branch-changes",
+      "examples": [
+        "/api/git/branch-changes"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/branch-files",
+      "examples": [
+        "/api/git/branch-files"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/branches",
+      "examples": [
+        "/api/git/branches"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/churn",
+      "examples": [
+        "/api/git/churn"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/commit",
+      "examples": [
+        "/api/git/commit"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/diff",
+      "examples": [
+        "/api/git/diff"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/discard",
+      "examples": [
+        "/api/git/discard"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/events",
+      "examples": [
+        "/api/git/events"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/revisions",
+      "examples": [
+        "/api/git/revisions"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/status",
+      "examples": [
+        "/api/git/status"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/switch",
+      "examples": [
+        "/api/git/switch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/worktree",
+      "examples": [
+        "/api/git/worktree"
+      ],
+      "methods": [
+        "DELETE",
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/git/worktrees",
+      "examples": [
+        "/api/git/worktrees"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/github",
+      "examples": [
+        "/api/github"
+      ],
+      "methods": [
+        "DELETE",
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/github/clone",
+      "examples": [
+        "/api/github/clone"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/github/repos",
+      "examples": [
+        "/api/github/repos"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/goal-tick",
+      "examples": [
+        "/api/goal-tick"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/harness/distill-skills",
+      "examples": [
+        "/api/harness/distill-skills"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/harness/refine",
+      "examples": [
+        "/api/harness/refine"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/harness/refine/",
+      "examples": [
+        "/api/harness/refine/dummy-id/keep",
+        "/api/harness/refine/dummy-id/accept",
+        "/api/harness/refine/dummy-id/deny",
+        "/api/harness/refine/dummy-id/rollback"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/harness/refine/cards",
+      "examples": [
+        "/api/harness/refine/cards"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/harness/refine/plan",
+      "examples": [
+        "/api/harness/refine/plan"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/hooks",
+      "examples": [
+        "/api/hooks"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/import/",
+      "examples": [
+        "/api/import/sessions",
+        "/api/import/session"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/import/session",
+      "examples": [
+        "/api/import/session"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/import/sessions",
+      "examples": [
+        "/api/import/sessions"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/last-place",
+      "examples": [
+        "/api/last-place"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/local/pull",
+      "examples": [
+        "/api/local/pull"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/local/setup",
+      "examples": [
+        "/api/local/setup"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/mcp",
+      "examples": [
+        "/api/mcp"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/mcp/call",
+      "examples": [
+        "/api/mcp/call"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/mcp/tools",
+      "examples": [
+        "/api/mcp/tools"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/me",
+      "examples": [
+        "/api/me"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/media",
+      "examples": [
+        "/api/media"
+      ],
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/memory/summary",
+      "examples": [
+        "/api/memory/summary"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/net-fetch",
+      "examples": [
+        "/api/net-fetch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/onboarding/",
+      "examples": [
+        "/api/onboarding/providers",
+        "/api/onboarding/setup"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/onboarding/skills/",
+      "examples": [
+        "/api/onboarding/skills/find",
+        "/api/onboarding/skills/import",
+        "/api/onboarding/skills/remove"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/permissions",
+      "examples": [
+        "/api/permissions"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/plugins",
+      "examples": [
+        "/api/plugins"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/policies",
+      "examples": [
+        "/api/policies"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/program/run",
+      "examples": [
+        "/api/program/run"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/program/run-log",
+      "examples": [
+        "/api/program/run-log"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/program/runs",
+      "examples": [
+        "/api/program/runs"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/program/runs/",
+      "examples": [
+        "/api/program/runs/x"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/program/strategy",
+      "examples": [
+        "/api/program/strategy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/prompt-file",
+      "examples": [
+        "/api/prompt-file"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/recent",
+      "examples": [
+        "/api/recent"
+      ],
+      "methods": [
+        "DELETE",
+        "GET",
+        "PUT"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/repo-trust",
+      "examples": [
+        "/api/repo-trust"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/research",
+      "examples": [
+        "/api/research"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/scan",
+      "examples": [
+        "/api/scan"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/search",
+      "examples": [
+        "/api/search"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/services",
+      "examples": [
+        "/api/services"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/services/",
+      "examples": [
+        "/api/services/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/sessions",
+      "examples": [
+        "/api/sessions"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/sessions/",
+      "examples": [
+        "/api/sessions/x"
+      ],
+      "methods": [
+        "DELETE",
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/sessions/active",
+      "examples": [
+        "/api/sessions/active"
+      ],
+      "methods": [
+        "PUT"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/sessions/move",
+      "examples": [
+        "/api/sessions/move"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/sessions/search",
+      "examples": [
+        "/api/sessions/search"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/skills",
+      "examples": [
+        "/api/skills"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots",
+      "examples": [
+        "/api/snapshots"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/snapshots/",
+      "examples": [
+        "/api/snapshots/x"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/diff",
+      "examples": [
+        "/api/snapshots/diff"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/files",
+      "examples": [
+        "/api/snapshots/files"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/revert",
+      "examples": [
+        "/api/snapshots/revert"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/revert-hunk",
+      "examples": [
+        "/api/snapshots/revert-hunk"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/sessions",
+      "examples": [
+        "/api/snapshots/sessions"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/track",
+      "examples": [
+        "/api/snapshots/track"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/turn",
+      "examples": [
+        "/api/snapshots/turn"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/turn-diff",
+      "examples": [
+        "/api/snapshots/turn-diff"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/snapshots/undo",
+      "examples": [
+        "/api/snapshots/undo"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/status",
+      "examples": [
+        "/api/status"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/stream-body",
+      "examples": [
+        "/api/stream-body"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/trajectory",
+      "examples": [
+        "/api/trajectory"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/trajectory/",
+      "examples": [
+        "/api/trajectory/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/tree",
+      "examples": [
+        "/api/tree"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/ui-prefs",
+      "examples": [
+        "/api/ui-prefs"
+      ],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/usage",
+      "examples": [
+        "/api/usage"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/workflows",
+      "examples": [
+        "/api/workflows"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/api/workflows/",
+      "examples": [
+        "/api/workflows/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/workspace",
+      "examples": [
+        "/api/workspace"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/api/worktree-settings",
+      "examples": [
+        "/api/worktree-settings"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "exact",
+      "pattern": "/archgraph.json",
+      "examples": [
+        "/archgraph.json"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": false
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/auth/callback/",
+      "examples": [
+        "/auth/callback/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "prefix",
+      "pattern": "/auth/login/",
+      "examples": [
+        "/auth/login/x"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "precise": true
+    },
+    {
+      "kind": "exact",
+      "pattern": "/auth/logout",
+      "examples": [
+        "/auth/logout"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "precise": true
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 63f8083..5e0d185 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -65,7 +65,7 @@ import {
+ } from '../explain/askSurface.js';
+ import { checkAnswerClaims, checkQuestionPremise } from '../moat/claimCheck.js';
+ import { CANVAS_STORY_TOOL, isCanvasToolName } from './canvasTools.js';
+-import { attemptNextPictureCheckIn, buildConceptChart, deriveCheckIn, deriveNextPictureCheckIn } from './conceptChart.js';
++import { attemptNextPictureCheckIn, buildConceptChart, deriveCheckIn, deriveNextPictureCheckIn, withPicturePointer } from './conceptChart.js';
+ import { drawVisual, type VisualSpec } from './visuals.js';
+ import { EMPTY_CARRY, excerptsReachable, extendCarry, pathsNamedIn, renderCarry } from './turnCarry.js';
+ 
+@@ -4387,6 +4387,21 @@ Last turn you were asked which would break. It is **${openArrow.expect}**, and t
+ ${derivedCheck}`;
+         }
+       }
++      /*
++       * THE PICTURE POINTER — one line, from the chart on screen, when the
++       * lesson never mentions its own picture (withPicturePointer). Behind a
++       * flag for the same reason as the check-in form: a teach contract changed
++       * before its measurement is a contract nobody can score. Unset leaves
++       * every turn byte for byte as before.
++       */
++      if (
++        process.env.SEQUENCE_TEACH_PICTURE_POINTER === '1' &&
++        input.teach === true &&
++        lastChartThisTurn !== undefined &&
++        !atCap
++      ) {
++        text = withPicturePointer(text, lastChartThisTurn);
++      }
+       /*
+        * THE VERIFY CONTRACT — an edit the tests never saw is a guess with a diff.
+        *
+diff --git a/packages/analyzer/src/server/conceptChart.ts b/packages/analyzer/src/server/conceptChart.ts
+index 1127390..18798d9 100644
+--- a/packages/analyzer/src/server/conceptChart.ts
++++ b/packages/analyzer/src/server/conceptChart.ts
+@@ -421,3 +421,63 @@ export function deriveNextPictureCheckIn(
+ ): NextPicturePrediction | undefined {
+   return attemptNextPictureCheckIn(graph, next).prediction;
+ }
++
++/**
++ * THE LESSON NAMES ITS OWN PICTURE, OR THE PICTURE IS WALLPAPER.
++ *
++ * Scored across the 11 minicpm5 answers quoted in the owner's chat (09-22/23):
++ * both answers that taught AND had a chart on the canvas never once said
++ * "canvas", "picture" or "arrow". The learner gets a paragraph on the left and
++ * a diagram on the right, and nothing tells them the two are the same story.
++ * The derived check-in ("Looking at the picture: …") does this when it fires,
++ * but it only fires when the model wrote no check-in of its own — and the best
++ * answer on record wrote its own.
++ *
++ * So, like the visual and the check-in before it, this is done in code: one
++ * line, built only from the chart that is on screen, never from the prose.
++ */
++export function pointsAtPicture(text: string): boolean {
++  return /\b(?:canvas|chart|diagram|picture|drawing|the board|arrows?|highlighted|lit up)\b/i.test(text);
++}
++
++export function derivePicturePointer(chart: SeqChart | undefined): string | undefined {
++  if (chart === undefined || chart.items.length === 0) return undefined;
++  const labelOf = (id: string): string | undefined => chart.items.find((i) => i.id === id)?.label;
++  const links = (chart.links ?? []).filter((l) => labelOf(l.from) !== undefined && labelOf(l.to) !== undefined);
++  const focus = chart.focusItemId !== undefined ? labelOf(chart.focusItemId) : undefined;
++  if (focus !== undefined) {
++    return `On the canvas, **${focus}** is the highlighted box: arrows coming into it are what uses it, and arrows going out are what it relies on.`;
++  }
++  if (links.length === 0) return undefined;
++  /* Start where nothing points in, so the walk has a beginning; follow the first
++     arrow out of each box, never revisiting one, so a loop cannot run forever. */
++  const hasIncoming = new Set(links.map((l) => l.to));
++  const start = chart.items.find((i) => !hasIncoming.has(i.id) && links.some((l) => l.from === i.id))?.id ?? links[0]!.from;
++  const walk = [start];
++  while (walk.length < 4) {
++    const next = links.find((l) => l.from === walk[walk.length - 1] && !walk.includes(l.to));
++    if (next === undefined) break;
++    walk.push(next.to);
++  }
++  const names = walk.map((id) => `**${labelOf(id)!}**`);
++  if (names.length === 1) return undefined;
++  if (names.length === 2) return `On the canvas, start at ${names[0]} and follow the arrow to ${names[1]}.`;
++  return `On the canvas, start at ${names[0]} and follow the arrows through ${names.slice(1, -1).join(' and ')} to ${names[names.length - 1]}.`;
++}
++
++/**
++ * Put the pointer where it reads: before a closing question, so the check-in
++ * stays the last thing the learner sees, otherwise at the end.
++ */
++export function withPicturePointer(text: string, chart: SeqChart | undefined): string {
++  if (pointsAtPicture(text)) return text;
++  const line = derivePicturePointer(chart);
++  if (line === undefined) return text;
++  const body = text.trim();
++  const paras = body.split(/\n{2,}/);
++  const last = paras[paras.length - 1] ?? '';
++  if (paras.length > 1 && /\?\**\s*$/.test(last)) {
++    return [...paras.slice(0, -1), line, last].join('\n\n');
++  }
++  return `${body}\n\n${line}`;
++}
+diff --git a/packages/analyzer/src/test/picture-pointer.test.ts b/packages/analyzer/src/test/picture-pointer.test.ts
+new file mode 100644
+index 0000000..3bcf2e5
+--- /dev/null
++++ b/packages/analyzer/src/test/picture-pointer.test.ts
+@@ -0,0 +1,82 @@
++import assert from 'node:assert/strict';
++import test from 'node:test';
++
++import { derivePicturePointer, pointsAtPicture, withPicturePointer } from '../server/conceptChart.js';
++
++/* The re-measure r5 chart and r4 answer from the owner's ML Harness run (09-23),
++   trimmed: the answer taught and the chart landed, and neither mentioned the other. */
++const R5 = {
++  version: 1,
++  kind: 'system-architecture',
++  title: 'ML Harness Architecture Overview',
++  items: [
++    { id: 'frontend', label: 'frontend' },
++    { id: 'engine-client', label: 'engine client' },
++    { id: 'main-router', label: 'main.py' },
++    { id: 'ml-harness', label: 'ml-harness' },
++    { id: 'database', label: 'database' },
++    { id: 'hwdetect', label: 'hwdetect' },
++  ],
++  links: [
++    { from: 'frontend', to: 'engine-client', label: 'HTTP client calls' },
++    { from: 'engine-client', to: 'main-router', label: 'GET /health' },
++    { from: 'main-router', to: 'ml-harness', label: 'Forwarded API traffic' },
++    { from: 'ml-harness', to: 'database', label: 'Read/write session state' },
++  ],
++} as never;
++
++const R4 =
++  'The app is a FastAPI service (`app/main.py`) that sits behind a React UI (`frontend`). The service persists state in a SQLite database.\n\n' +
++  '**Check-in:** which part do you think ml-harness hands off to next?';
++
++test('a chart with a start walks the learner along the arrows from it', () => {
++  assert.equal(
++    derivePicturePointer(R5),
++    'On the canvas, start at **frontend** and follow the arrows through **engine client** and **main.py** to **ml-harness**.',
++  );
++});
++
++test('the pointer goes before the closing check-in, so the question stays last', () => {
++  const out = withPicturePointer(R4, R5);
++  const paras = out.split('\n\n');
++  assert.equal(paras.length, 3);
++  assert.match(paras[1]!, /^On the canvas, start at \*\*frontend\*\*/);
++  assert.match(paras[2]!, /^\*\*Check-in:\*\*/);
++});
++
++test('a lesson that already points at its picture is left byte for byte', () => {
++  const text = 'Follow the arrows on the canvas from the frontend to the database.';
++  assert.equal(withPicturePointer(text, R5), text);
++  assert.ok(pointsAtPicture('the highlighted box'));
++  assert.ok(!pointsAtPicture('The service persists state in a SQLite database.'));
++});
++
++test('a focused chart names the highlighted box instead of walking', () => {
++  const focused = { ...(R5 as object), focusItemId: 'main-router' } as never;
++  assert.match(derivePicturePointer(focused)!, /\*\*main\.py\*\* is the highlighted box/);
++});
++
++test('a loop cannot run forever and a lone box gets no pointer', () => {
++  const loop = {
++    version: 1,
++    kind: 'data-flow',
++    title: 'loop',
++    items: [
++      { id: 'a', label: 'ml-harness' },
++      { id: 'b', label: 'ml-harness-app' },
++    ],
++    links: [
++      { from: 'a', to: 'b' },
++      { from: 'b', to: 'a' },
++    ],
++  } as never;
++  assert.equal(derivePicturePointer(loop), 'On the canvas, start at **ml-harness** and follow the arrow to **ml-harness-app**.');
++  const lone = { version: 1, kind: 'data-flow', title: 'x', items: [{ id: 'a', label: 'a' }] } as never;
++  assert.equal(derivePicturePointer(lone), undefined);
++  assert.equal(withPicturePointer('Some lesson text here.', lone), 'Some lesson text here.');
++});
++
++test('with no closing question the pointer is appended at the end', () => {
++  const out = withPicturePointer('The frontend calls the service.', R5);
++  assert.match(out, /service\.\n\nOn the canvas/);
++});

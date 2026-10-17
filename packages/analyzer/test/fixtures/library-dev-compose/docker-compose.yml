@@ -1,0 +1,13 @@
+# The reported shape (sqlfluff, whole repo): a library whose only compose service builds a dev image from
+# docker/development (one Dockerfile, no code), next to a sibling sub-project with a manifest of its own.
+services:
+  development:
+    build:
+      context: .
+      dockerfile: ./docker/development/Dockerfile
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:14-bullseye
+    environment:
+      - POSTGRES_PASSWORD=password

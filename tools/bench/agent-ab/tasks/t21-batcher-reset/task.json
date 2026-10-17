@@ -1,0 +1,23 @@
+{
+  "id": "t21-batcher-reset",
+  "prompt": "makeBatcher(flush) collects items with add(x) and calls flush(items) with the collected items when done() is called, then starts empty again; it currently never resets. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "batcher"
+    ]
+  }
+}

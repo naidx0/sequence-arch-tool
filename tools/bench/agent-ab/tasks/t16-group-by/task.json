@@ -1,0 +1,23 @@
+{
+  "id": "t16-group-by",
+  "prompt": "groupBy(arr, fn) should return an object mapping fn(x) to the array of items with that key, in input order. It keeps only the last item. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "groupBy"
+    ]
+  }
+}

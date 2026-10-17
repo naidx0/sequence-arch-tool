@@ -1,0 +1,238 @@
+# electron-builder configuration for @sequence/desktop.
+#
+# VERIFIED ON WINDOWS x64, and no longer on the docs alone. `--win nsis` was
+# run on a real machine and produced `release/Sequence Setup 0.1.0.exe`; the
+# unpacked app was then launched and reached the app UI, which is what proves
+# the `extraResources` assumption below rather than merely asserting it —
+# `serverPaths()` resolved `<resources>/server/packages/...` and the child
+# server started under Electron's own Node. Gate:
+#   node tools/desktop-smoke.mjs --packaged
+#
+# STILL UNVERIFIED: the mac and linux targets. dmg/zip/AppImage/deb are
+# authored from the electron-builder docs and have never been run.
+#
+# Bundling model:
+#   - `files`         → the Electron app itself (this package's compiled dist +
+#                       package.json), packed into the asar archive.
+#   - `extraResources`→ the SELF-CONTAINED server bundle produced by
+#                       `scripts/prepare-server.mjs` (analyzer dist + its real,
+#                       de-symlinked node_modules + the web dist). Copied to
+#                       `<resources>/server` OUTSIDE the asar, because the app
+#                       spawns it as a child Node process and Node must execute
+#                       real on-disk files and resolve node_modules normally.
+#     Runtime paths (see src/main.ts → serverPaths):
+#       <resources>/server/packages/analyzer/dist/cli.js
+#       <resources>/server/packages/web2/dist
+#
+# Prerequisite: run `node scripts/prepare-server.mjs` before packing (the `dist`
+# npm script does this; if you invoke electron-builder directly, run it first).
+
+appId: dev.sequence.desktop
+productName: Sequence
+copyright: Copyright © 2026 Sequence
+
+# electron-builder 26 TOOLSETS. `toolsets.appimage` (app-builder-lib configuration.d.ts, "toolsets")
+# selects the AppImage tooling: "0.0.0" is the legacy toolset (dynamic runtime, needs libfuse2, and its
+# AppRun .desktop Exec gets `--no-sandbox`, AppImageTarget.js:27); "1.0.2"/"1.0.3" are the static
+# type-2 runtime (no libfuse2) and no default `--no-sandbox`. 1.0.3 is the newest ("Resolves GH issue
+# #9598"). Its AppRun adds `--no-sandbox` ITSELF, at launch, only when `unshare -Ur true` fails (no
+# user namespaces; appImageUtil.js) - the documented fallback; everywhere else the sandbox is on.
+toolsets:
+  appimage: "1.0.3"
+
+# ARTIFACT NAMES CARRY THE BUILD NUMBER (0.1.8.2). package.json stays three-part (a four-part version
+# is not semver) and a four-part tag exports BUILD_NUMBER (release.yml), which electron-builder 26
+# turns into `buildVersion` (app-builder-lib appInfo.js: `<version>.<BUILD_NUMBER>`; with no
+# BUILD_NUMBER it is just `<version>`). `${buildVersion}` below is therefore "0.1.8.2" on a v0.1.8.2
+# tag and "0.1.8" on a v0.1.8 tag. Each pattern keeps its target's old default shape, with
+# `${version}` swapped for `${buildVersion}`: Windows `Sequence Setup X.exe` / `Sequence-X-win.zip`,
+# mac `Sequence-X-<arch>-mac.zip` / `Sequence-X-<arch>.dmg`, `Sequence-X.AppImage`, deb below.
+# The updater picks assets by suffix (appUpdate.ts pickAsset/pickMacUpdate), not by version.
+# tools/ci/four-part-build.test.mjs expands these with electron-builder's own macro expander.
+
+directories:
+  output: release
+  buildResources: build
+
+# Only the compiled Electron app goes into the asar. The server tree is shipped
+# via extraResources (below), not here, so it stays executable outside the asar.
+files:
+  - dist/**/*
+  - package.json
+
+extraResources:
+  - from: server-bundle
+    to: server
+    filter:
+      - "**/*"
+
+asar: true
+
+# ENGLISH ONLY, AND BOTH SPELLINGS ARE NEEDED. The app's UI is English, so the
+# other 54 Chromium locale packs (about 40 MB unpacked) are weight nobody reads.
+# app-builder-lib matches these names EXACTLY against the locale file names:
+# Windows and Linux ship `locales/en-US.pak`, macOS ships `en.lproj`. A list of
+# just "en" would delete every .pak on Windows, en-US included.
+electronLanguages:
+  - en
+  - en-US
+
+# AD-HOC SIGNING ON macOS, AND WHY THERE IS A HOOK HERE AT ALL.
+#
+# `mac.identity: null` below skips signing ENTIRELY - app-builder-lib returns
+# before it reaches any ad-hoc path (out/macPackager.js:182-189). On Apple
+# silicon an unsigned .app cannot launch: macOS reports it as "damaged", which
+# is what a person reports as a corrupted download. `scripts/adhoc-sign.mjs`
+# signs the bundle with "-" after packing, is a no-op on every other platform,
+# and stands down if a real certificate is configured.
+afterPack: scripts/adhoc-sign.mjs
+
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.png
+  # UNSIGNED, BY OWNER RULING (Max, 2026-09-10): "just create a DMG for macOS
+  # ... I don't know if we need to have an Apple developer account and pay for
+  # that". `null` is electron-builder's explicit "do not sign" — distinct from
+  # omitting the key, which makes it hunt the keychain and fail confusingly on
+  # a machine that has no certificate. Gatekeeper therefore warns on first
+  # open. NOT the right-click trick: macOS 15 removed that override, so the
+  # reader goes to System Settings -> Privacy & Security -> Open Anyway. The
+  # README has the full story under "The macOS gate".
+  identity: null
+  artifactName: "${productName}-${buildVersion}-${arch}-${os}.${ext}"
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+
+dmg:
+  artifactName: "${productName}-${buildVersion}-${arch}.${ext}"
+
+win:
+
+  # THE .ICO, NOT THE PNG. Given a png, app-builder converts it with its own
+  # resizer and build/icon.ico is never read - every taskbar frame was a
+  # downscale of the 1024 master (owner walk 2026-09-17). make-ico.py packs
+  # frames rendered at their own size; this line is what ships them.
+  icon: build/icon.ico
+  artifactName: "${productName}-${buildVersion}-${os}.${ext}"
+  # TWO WINDOWS ARTIFACTS, AND THE SECOND ONE IS THE POINT.
+  #
+  # Owner, 2026-09-19: a friend's download of 0.1.0 "was corrupted... make sure
+  # people can just fresh download with nothing else, no worries of anything
+  # else, and just literally run the product from wherever."
+  #
+  # The hosted .exe was fetched and tested on 2026-09-19 and is INTACT: MZ
+  # header, 187,852,868 bytes exactly as published, and `7za t` reports
+  # "Everything is Ok" across 17,001 files. What it is not is SIGNED - and an
+  # unsigned 180 MB NSIS installer is the shape SmartScreen blocks, that some
+  # antivirus products quarantine mid-write, and that NSIS itself then refuses
+  # with "the installer you are trying to use is corrupted or incomplete" once
+  # a single byte has been touched. Every one of those reaches the person as
+  # "it's corrupted".
+  #
+  # The zip has none of that surface. There is no installer to corrupt, no
+  # NSIS CRC to fail, nothing written outside the folder it is unpacked into,
+  # and Windows extracts it with no third-party tool. It is also the only
+  # artifact that answers "run it from wherever" literally: a USB stick, a
+  # locked-down work laptop, a machine where the person may not install
+  # anything.
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+
+# THE EXE'S OWN LABEL, WHICH IS WHAT TASK MANAGER SHOWS.
+#
+# `app-builder-lib/out/winPackager.js:129` writes the version resource's
+# FileDescription as `appInfo.description || appInfo.productName`, and
+# `appInfo.description` is this package's `package.json` description — a
+# paragraph written for someone reading the repo. So Task Manager listed the
+# running app as "Electron desktop shell for Seq…", which is the truth about
+# the package and the wrong answer to "what is this process".
+#
+# `extraMetadata` overrides the field in the PACKAGED metadata only; the
+# package.json in the tree keeps its prose, because the two are different jobs:
+# one documents the package, one labels a process in a list of processes.
+extraMetadata:
+  description: Sequence
+
+nsis:
+  artifactName: "${productName} Setup ${buildVersion}.${ext}"
+  oneClick: false
+  perMachine: false
+  # PER-USER, AND NOT MERELY BY DEFAULT.
+  #
+  # `perMachine: false` is only the default SELECTION. The assisted installer
+  # will still elevate and write to Program Files if it is asked to, or if it
+  # is run from an already-elevated shell — which is exactly what happened on
+  # 2026-09-14: a `/S` install landed in `C:\Program Files\Sequence`,
+  # registered itself under HKLM with `/allusers`, and left the per-user
+  # directory behind EMPTY, so anything checking the old path found a hollow
+  # folder and read it as a broken install.
+  #
+  # `allowElevation: false` removes the elevation path altogether, so the
+  # installer CANNOT reach Program Files whatever it is run from. The location
+  # stops being a thing that depends on how the installer happened to be
+  # launched.
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+
+linux:
+  category: Development
+  # The binary inside /opt/Sequence (deb) is named here, not left to a default derived from the scoped package name:
+  # tools/ci/linux-launch-smoke.mjs launches /opt/Sequence/sequence and the deb update check keys off /opt/Sequence.
+  executableName: sequence
+  # A deb needs a Maintainer with an email; without one electron-builder stops.
+  maintainer: Sequence <sequence@users.noreply.github.com>
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+
+# The deb is named after the package by default, and the package is scoped
+# (@sequence/desktop): fpm then writes into a release/@sequence/ folder that
+# does not exist and stops. Name it, and the Debian package, plainly.
+appImage:
+  artifactName: "${productName}-${buildVersion}.${ext}"
+
+deb:
+  packageName: sequence
+  artifactName: Sequence-${buildVersion}-${arch}.${ext}
+  # SETUID chrome-sandbox (0.1.8.2, item 22): our own after-install script, a copy of electron-builder
+  # 26's default (app-builder-lib templates/linux/after-install.tpl) whose only change is that
+  # chrome-sandbox is ALWAYS chmod 4755 instead of only when user namespaces are unusable.
+  # Resolved against the package folder, not directories.buildResources (CI, v0.1.8.2: ENOENT on the bare name).
+  afterInstall: build/linux-after-install.tpl
+  # 0.1.8.1 D6 (audit L3): THE DEPENDENCIES, PINNED HERE rather than left to
+  # app-builder's default, so what `apt install` needs is in the repository.
+  # libsecret-1-0 STAYS: since B3 the app seals API keys with Electron
+  # safeStorage, which uses libsecret (the desktop keyring) on Linux. Without
+  # a keyring the app falls back to the 0o600 key file (aiKeyVault.ts).
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+  # The deb runs WITH the Chromium sandbox (audit L4): afterInstall above makes chrome-sandbox setuid, so
+  # the deb's .desktop Exec carries no --no-sandbox. Do not add executableArgs here or under `linux:`
+  # (that would reach the AppImage too, and an explicit executableArgs also replaces the AppImage's own
+  # sandbox fallback described under `toolsets`).
+  #
+  # The AppImage uses the static runtime (`toolsets.appimage`): no libfuse2.

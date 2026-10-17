@@ -1,0 +1,869 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   FIRST RUN — packages/web2/src/onboarding/onboarding.css
+
+   Graphite tokens only. Hue is spent on three things: the focus ring, the row
+   being opened, and the live status pill (Ready / Sign in / Needs attention).
+
+   THE BASTION RHYTHM (S4 review item 8, Decision 47): a display heading at
+   350 with -0.03em tracking, 24px from the heading to the agents row, 40px to
+   the list, a ~600px column and 13px rows. Onboarding only: the board and the
+   rails stay dense.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.fr-root {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+  background: var(--bg-ground);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  /* A little above the vertical centre: the column centres itself (auto
+     margins on .fr-col) in a box whose bottom padding is larger than its top. */
+  padding: var(--sp-24) var(--sp-16) max(var(--sp-24), 12vh);
+  box-sizing: border-box;
+}
+
+/* Icon sizes, scoped here: the chat sheet sizes `.i` only under `.chat-scope`. */
+.fr-root .i {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+.fr-root .i-12 {
+  width: 12px;
+  height: 12px;
+}
+
+.fr-col {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-block: auto;
+}
+/* The column's rhythm is spoken step by step, not one gap for everything:
+   20 between parts, 24 from the heading to the agents, 40 to the list. */
+.fr-col > * + * { margin-top: var(--sp-20); }
+.fr-col > .fr-head + * { margin-top: var(--sp-24); }
+.fr-col > .fr-section + .fr-section { margin-top: var(--sp-40); }
+
+.fr-brand {
+  display: flex;
+  color: var(--ink-1);
+  margin-bottom: calc(-1 * var(--sp-8));
+}
+
+.fr-mark {
+  display: block;
+}
+
+/* THE LAST-OPENED REPO: its own row above the list, Open as the one solid
+   button on the screen. */
+
+
+
+
+
+.fr-btn.fr-primary {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border-color: transparent;
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font-weight: var(--fw-head);
+}
+
+.fr-btn.fr-primary:hover:not(:disabled) {
+  background: var(--accent-solid);
+  opacity: 0.92;
+}
+
+.fr-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-8);
+}
+
+.fr-title {
+  margin: 0;
+  font-size: var(--t-26);
+  line-height: var(--lh-26);
+  font-weight: var(--fw-display);
+  letter-spacing: -0.03em;
+}
+
+.fr-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-height: 0;
+}
+
+.fr-h {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  font-weight: var(--fw-label);
+  color: var(--ink-3);
+}
+
+.fr-count {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-4);
+}
+
+.fr-agents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fr-agents {
+  display: grid;
+  /* 320: a signed-out agent's row (mark, name, version, state, Sign in) fits
+     in Inter without spilling its button past the card (final shots, r6). */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--sp-8);
+}
+
+.fr-agent {
+  display: grid;
+  grid-template-columns: 14px auto auto 1fr auto;
+  align-items: center;
+  column-gap: var(--sp-8);
+  row-gap: var(--sp-8);
+  min-height: 40px;
+  padding: var(--sp-6) var(--sp-8) var(--sp-6) var(--sp-12);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: var(--t-13);
+  box-sizing: border-box;
+}
+
+.fr-agent-skel {
+  grid-template-columns: 1fr;
+}
+
+.fr-agent-name {
+  color: var(--ink-1);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+}
+
+.fr-agent-ver {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-4);
+}
+
+.fr-pill {
+  justify-self: start;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-full);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  white-space: nowrap;
+  color: var(--ink-3);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge);
+}
+
+.fr-pill[data-tone='done'] {
+  color: var(--st-done);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--fits-edge);
+  background: var(--fits-wash);
+}
+
+.fr-pill[data-tone='attention'] {
+  color: var(--st-attention);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--accent-edge);
+  background: var(--accent-wash);
+}
+
+.fr-pill[data-tone='failed'] {
+  color: var(--st-failed);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--wont-edge);
+  background: var(--wont-wash);
+}
+
+.fr-agent-act {
+  display: inline-flex;
+  gap: var(--sp-4);
+}
+
+.fr-install {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6) var(--sp-8);
+}
+
+.fr-code {
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: var(--sp-4) var(--sp-8);
+  border-radius: var(--r-4);
+  background: var(--bg-base);
+  border: var(--w-hair) solid var(--edge-faint);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-1);
+}
+
+.fr-btn,
+.fr-ghost {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-full);
+  font: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fr-btn {
+  border: var(--w-hair) solid var(--edge-strong);
+  background: var(--surface-2);
+  color: var(--ink-1);
+}
+
+.fr-btn:hover {
+  background: var(--surface-3);
+}
+
+.fr-ghost {
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+}
+
+.fr-ghost:hover {
+  color: var(--ink-1);
+  background: var(--state-hover);
+}
+
+.fr-btn:focus-visible,
+.fr-ghost:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+
+
+
+
+
+
+
+
+
+
+.fr-note {
+  margin: 0;
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+.fr-row-error {
+  padding: var(--sp-2) var(--sp-8) var(--sp-6) 30px;
+  color: var(--st-failed);
+}
+
+.fr-sub {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+
+.fr-auto {
+  margin: var(--sp-8) 0 0;
+}
+
+.fr-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+}
+
+.fr-pad {
+  padding: var(--sp-6) var(--sp-8);
+}
+
+.fr-foot {
+  display: flex;
+  justify-content: flex-start;
+}
+
+
+
+
+
+
+
+
+/* ── the embedded sign-in terminal ─────────────────────────────────────── */
+
+.fr-term {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding: var(--sp-8);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  animation: fr-open var(--dur-2) var(--ease);
+}
+
+.fr-term-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.fr-term-head .fr-code {
+  flex: 1 1 auto;
+}
+
+.fr-term-body {
+  height: 220px;
+  min-height: 0;
+  display: flex;
+}
+
+.fr-term-body .terminal-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@keyframes fr-open {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-term {
+    animation: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .fr-root {
+    padding-top: var(--sp-24);
+  }
+}
+
+/* ── Install bridge (round 7, A4) ──────────────────────────────────────── */
+.fr-agent-say {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-left: 22px;
+  font-size: var(--t-12);
+  color: var(--ink-3);
+}
+.bridge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.bridge-line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin: 0;
+  font-size: var(--t-12);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.bridge-log {
+  margin: 0;
+  max-height: 7em;
+  overflow: auto;
+  padding: var(--sp-6) var(--sp-8);
+  border-radius: var(--r-8);
+  background: var(--surface-2, rgba(127, 127, 127, 0.08));
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  white-space: pre-wrap;
+}
+.fr-agent .bridge {
+  grid-column: 1 / -1;
+  padding-left: 22px;
+}
+.fr-pill[data-tone='limit'] {
+  color: var(--spills);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--spills-edge);
+  background: var(--spills-wash);
+}
+/* The bridge's button is B's pill, sized to its label, under the sentence. */
+.bridge {
+  align-items: flex-start;
+}
+/* B's primary pill: accent fill, full radius, as wide as its label. */
+.bridge-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--accent-solid);
+  color: var(--accent-on-solid);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.bridge-btn:hover:not(:disabled) {
+  opacity: 0.92;
+}
+.bridge-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Round 12: the same Claude and Codex marks Settings > Agents draws. */
+.fr-agent-ic {
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-16);
+  height: var(--sp-16);
+  color: var(--ink-1);
+}
+.fr-agent-ic .s2-brand,
+.fr-agent-ic .s2-brand > svg { display: block; width: 100%; height: 100%; }
+.fr-root:focus { outline: none; }
+
+/* ══ Round 13: Welcome to Sequence (four options, then the swipe setup) ══ */
+.fr-lede { margin: 0; font-size: var(--t-13); line-height: var(--lh-13); }
+
+.fr-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-12);
+}
+.fr-opt-li { display: flex; }
+.fr-option {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'ic name' 'sub sub' 'pill pill';
+  align-items: center;
+  align-content: start;
+  column-gap: var(--sp-12);
+  row-gap: var(--sp-4);
+  min-height: 112px;
+  padding: var(--sp-16);
+  border-radius: var(--r-14);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.fr-option:hover { background: var(--surface-2); border-color: var(--edge-strong); }
+.fr-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fr-option[data-recommended='true'] { border-color: var(--accent); }
+.fr-option-ic {
+  grid-area: ic;
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-24);
+  height: var(--sp-24);
+  color: var(--ink-1);
+}
+.fr-option-ic .s2-brand,
+.fr-option-ic .s2-brand > svg { display: block; width: 100%; height: 100%; }
+.fr-option-ic .s2-i { width: 20px; height: 20px; }
+.fr-option-name { grid-area: name; color: var(--ink-1); font-size: var(--t-15); line-height: var(--lh-15); font-weight: var(--fw-label); }
+.fr-option-sub { grid-area: sub; font-size: var(--t-12); line-height: var(--lh-12); color: var(--ink-3); }
+.fr-option .fr-pill { grid-area: pill; margin-top: var(--sp-4); }
+
+.fr-route { gap: var(--sp-12); }
+.fr-route-head { display: flex; align-items: center; gap: var(--sp-8); }
+.fr-route-name { margin: 0; font-size: var(--t-15); line-height: var(--lh-15); font-weight: var(--fw-label); color: var(--ink-1); }
+.fr-agent-body { display: flex; flex-direction: column; gap: var(--sp-8); }
+.fr-agent-body .fr-agent-say { padding-left: 0; }
+.fr-route-acts, .fr-key-acts { display: flex; gap: var(--sp-8); align-items: center; }
+.fr-route .fr-agent-say { margin: 0; font-size: var(--t-12); color: var(--ink-3); }
+
+/* Local model: one line per daemon. */
+.fr-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-8); }
+.fr-line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: 40px;
+  padding: var(--sp-6) var(--sp-12);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  box-sizing: border-box;
+}
+.fr-line-foot { border-style: dashed; justify-content: space-between; }
+.fr-line-name { color: var(--ink-1); font-weight: var(--fw-label); }
+.fr-line-sub { flex: 1 1 auto; min-width: 0; font-size: var(--t-12); color: var(--ink-3); }
+.fr-line-model { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
+.fr-select, .fr-input {
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge-strong);
+  background: var(--bg-base);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  box-sizing: border-box;
+  min-width: 0;
+}
+.fr-select { max-width: 40%; }
+.fr-select:focus-visible, .fr-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* API key. */
+.fr-key { display: flex; flex-direction: column; gap: var(--sp-8); }
+.fr-segs { display: flex; flex-wrap: wrap; gap: var(--sp-4); }
+.fr-seg {
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border-radius: var(--r-full);
+  border: var(--w-hair) solid var(--edge);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+.fr-seg:hover { background: var(--state-hover); }
+.fr-seg[aria-pressed='true'] { border-color: var(--accent); color: var(--ink-1); background: var(--accent-wash); }
+.fr-seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.fr-field { display: flex; flex-direction: column; gap: var(--sp-4); }
+.fr-field-l { font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-3); }
+.fr-field .fr-input { width: 100%; }
+
+/* The swipe setup. */
+.fr-setup { display: flex; flex-direction: column; gap: var(--sp-12); }
+.fr-viewport { overflow: hidden; border-radius: var(--r-14); border: var(--w-hair) solid var(--edge); background: var(--surface-1); touch-action: pan-y; }
+.fr-track { display: flex; transition: transform var(--dur-3) var(--ease-enter); }
+.fr-track[data-dragging='true'] { transition: none; }
+.fr-card { flex: 0 0 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--sp-8); padding: var(--sp-20) var(--sp-24); min-height: 168px; }
+.fr-card-t { margin: 0; font-size: var(--t-17); line-height: var(--lh-17); font-weight: var(--fw-head); color: var(--ink-1); }
+.fr-card-sub { margin: 0; font-size: var(--t-13); line-height: var(--lh-13); color: var(--ink-3); }
+.fr-card-acts { display: flex; flex-wrap: wrap; gap: var(--sp-8); align-items: center; margin-top: auto; padding-top: var(--sp-8); }
+.fr-dots { display: flex; align-items: center; gap: var(--sp-6); }
+.fr-dot { width: var(--sp-6); height: var(--sp-6); border-radius: var(--r-full); background: var(--edge-strong); }
+.fr-dot[data-on='true'] { background: var(--accent-solid); }
+.fr-dots .fr-ghost { margin-left: auto; }
+.fr-foot { gap: var(--sp-8); }
+
+@media (max-width: 560px) {
+  .fr-options { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fr-track { transition: none; }
+}
+
+/* ══ Round 13 (N1, N2): the app behind the dialog, centred content, buttons with a clear outline and a soft lift ══ */
+/* N1: the normal ground, only a little dimmed, so the shell they are loading into shows through very faintly. */
+.fr-root {
+  background: color-mix(in srgb, var(--bg-ground) 82%, transparent);
+}
+.fr-col {
+  align-items: center;
+  text-align: center;
+}
+.fr-head { align-items: center; }
+.fr-brand { justify-content: center; }
+.fr-col > .fr-section,
+.fr-col > .fr-setup { align-self: stretch; }
+.fr-section { align-items: center; }
+.fr-section > .fr-options,
+.fr-section > .fr-lines,
+.fr-section > .fr-key,
+.fr-section > .fr-agent-body { align-self: stretch; }
+.fr-route-head { justify-content: center; }
+.fr-agent-body { align-items: center; }
+.fr-route-acts, .fr-key-acts, .fr-card-acts, .fr-foot { justify-content: center; }
+.fr-card { align-items: center; text-align: center; }
+.fr-card-acts { width: 100%; }
+.fr-dots { justify-content: center; }
+.fr-dots .fr-ghost { margin-left: 0; }
+.fr-key { text-align: left; }
+.fr-lines { text-align: left; }
+.fr-option { text-align: left; }
+.fr-install, .fr-term { text-align: left; align-self: stretch; }
+
+/* N2: buttons. Secondary: a clear outline and a soft lift. Primary: the accent fill with a deeper lift. */
+.fr-btn {
+  height: var(--control-h);
+  padding: 0 var(--sp-16);
+  justify-content: center;
+  border: var(--w-hair) solid var(--edge-strong);
+  background: var(--surface-2);
+  box-shadow: var(--e1);
+}
+.fr-btn:hover:not(:disabled) { box-shadow: var(--e2); }
+.fr-btn.fr-primary {
+  border: var(--w-hair) solid var(--accent-edge);
+  box-shadow: var(--e2);
+}
+.fr-btn.fr-primary:hover:not(:disabled) { box-shadow: var(--e3); }
+.fr-option { box-shadow: var(--e1); }
+.fr-option:hover { box-shadow: var(--e2); }
+.fr-viewport { box-shadow: var(--e1); }
+
+/* Round 13 (merge): a failed bridge install stacks its reason, the last log lines and Try again. */
+.bridge-fail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-6);
+}
+
+/* Skills step: rows read left to right, the field and Look share a line. */
+.fr-skills .fr-route-acts { align-self: stretch; align-items: flex-end; }
+.fr-skills .fr-lines { align-self: stretch; max-height: 252px; overflow-y: auto; gap: var(--sp-12); }
+.fr-skills .fr-line { min-height: 40px; }
+.fr-skills .fr-field { text-align: left; }
+.fr-skills .fr-line-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* A disabled button must read as disabled in either theme: a flat outline, ink-3 text, no lift, no accent fill. */
+.fr-root .fr-btn:disabled, .fr-root .fr-btn.fr-primary:disabled {
+  background: transparent;
+  color: var(--ink-3);
+  border-color: var(--edge);
+  box-shadow: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* One line after a deferred skills import ran. */
+.fr-notice {
+  position: fixed;
+  left: 50%;
+  bottom: var(--sp-24);
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: var(--sp-8) var(--sp-16);
+  border-radius: var(--r-8);
+  border: var(--w-hair) solid var(--edge-strong);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  box-shadow: var(--e2);
+}
+
+/* The skills step opened from Settings: above the Settings overlay it was opened from. */
+.fr-root.fr-finder {
+  z-index: 400;
+  align-items: center;
+  padding-bottom: var(--sp-24);
+}
+/* In Settings the card stands alone: its own surface, centred, one column wide. */
+.fr-finder .fr-skills {
+  flex: 0 1 540px;
+  max-width: 540px;
+  padding: var(--sp-24) var(--sp-32);
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--edge-strong);
+  border-radius: var(--r-8);
+  box-shadow: var(--e3);
+}
+
+/* Skills step: the agent row. Greyed (still readable, the copy button stays live) when no agent is connected. */
+.fr-skills .fr-agent-row { display: flex; align-items: center; justify-content: center; gap: var(--sp-8); flex-wrap: wrap; }
+.fr-skills .fr-agent-row[data-live='false'] .fr-agent-l { color: var(--ink-3); font-size: var(--t-12); }
+.fr-skills .fr-agent-row[data-live='false'] { opacity: 0.7; }
+.fr-skills .fr-agent-text { align-self: stretch; resize: none; font-family: var(--font-mono); font-size: var(--t-11); }
+
+/* The setup prompt shown to copy when nothing in the app can answer it (setupFallback.tsx). */
+.setup-prompt-box {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--t-12);
+}
+
+/* The map step's On / Off example: the context panel's meter, outside the status bar. */
+.fr-mapex { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-12); align-self: stretch; text-align: left; }
+.fr-mapex-col { display: flex; flex-direction: column; gap: var(--sp-6); padding: var(--sp-12); border: var(--w-hair) solid var(--edge); border-radius: var(--r-10); background: var(--surface-2, var(--surface-1)); }
+.fr-mapex-h { font-size: var(--t-12); font-weight: var(--fw-head); color: var(--ink-1); }
+.fr-mapex-n { font-size: var(--t-11); color: var(--ink-3); }
+.fr-mapex-s { margin: 0; font-size: var(--t-12); line-height: var(--lh-12); color: var(--ink-2); }
+.fr-mapex .ctxring-meter { display: flex; height: var(--sp-6); border-radius: var(--r-full); background: var(--edge); overflow: hidden; }
+.fr-mapex .ctxring-seg { display: block; flex: none; height: 100%; background: var(--ink-2); min-width: 2px; }
+@media (max-width: 560px) { .fr-mapex { grid-template-columns: minmax(0, 1fr); } }
+
+/* P0-4: the same connect flow inline, inside the chat's "Connect a model to run this" card (chat/ConnectToRun.tsx). */
+.fr-root.fr-inline {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  display: block;
+  overflow: visible;
+  padding: 0;
+  background: none;
+}
+.fr-inline .fr-col { max-width: none; margin-block: 0; }
+.fr-inline .fr-col > * + * { margin-top: var(--sp-12); }
+.fr-inline .fr-options { grid-template-columns: minmax(0, 1fr); gap: var(--sp-8); }
+.fr-inline .fr-option { min-height: 0; padding: var(--sp-8) var(--sp-12); }
+/* The card itself is the chat's notice (.s2-notice); open, it gives the flow room and a quiet top rule. */
+.ctr-card { align-items: flex-start; }
+.ctr-card[data-open='true'] { padding-bottom: var(--sp-12); }
+.ctr-card[data-open='true'] .ctr-flow { border-top: var(--w-hair) solid var(--edge); padding-top: var(--sp-12); }
+.ctr-flow {
+  flex: 1 1 100%;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  padding-left: 34px;
+}
+
+/* P0-2: sign-in in the browser: one waiting line, Cancel, and the command's output only behind Show details. */
+.fr-browser-signin { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); padding: var(--sp-12); }
+.fr-signin-state { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); }
+.fr-signin-state .fr-input { min-width: 220px; }
+.fr-signin-log {
+  align-self: stretch;
+  max-height: 160px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--sp-8);
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-3);
+}
+
+/* More agents (settings/AgentCatalogSection, compact): every other ACP agent that can start now, one row each,
+   under the four big options. Same type scale as the options, a denser row. */
+.fr-more-toggle { align-self: flex-start; }
+.fr-more { display: flex; flex-direction: column; gap: var(--sp-8); }
+.fr-more-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+.fr-more-row {
+  display: grid;
+  grid-template-columns: var(--sp-24) minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--sp-12);
+  padding: var(--sp-8) var(--sp-12);
+  border-radius: var(--r-10);
+  border: var(--w-hair) solid var(--edge);
+  background: var(--surface-1);
+  color: var(--ink-2);
+}
+.fr-more-ic {
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-24);
+  height: var(--sp-24);
+  border-radius: var(--r-8);
+  background: color-mix(in srgb, var(--ink-1) 7%, transparent);
+  color: var(--ink-1);
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+}
+.fr-more-txt { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; text-align: left; }
+.fr-more-name { color: var(--ink-1); font-size: var(--t-13); line-height: var(--lh-13); font-weight: var(--fw-label); }
+.fr-more-sub { font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-3); overflow-wrap: anywhere; }
+.fr-more-acts { display: flex; gap: var(--sp-6); align-items: center; flex-wrap: wrap; }
+.fr-more-end { justify-content: flex-end; }
+/* One primary on the welcome ("Set up everything", else the first ready row): every other action here is the kit's outlined pill, Sign in included. */
+.fr-more-row .fr-btn,
+.fr-more-row .fr-ghost { height: var(--control-h); padding: 0 var(--sp-12); }
+.fr-more-end .fr-ghost,
+.fr-more-row > a.fr-ghost { border: var(--w-hair) solid var(--edge-strong); background: var(--surface-2); color: var(--ink-1); box-shadow: var(--e1); justify-content: center; text-decoration: none; }
+.fr-more-end .fr-ghost:hover,
+.fr-more-row > a.fr-ghost:hover { background: var(--surface-3); }
+/* As wide as the option cards above it. */
+.fr-section > .fr-more { align-self: stretch; }
+.fr-more-ic { grid-area: ic; }
+.fr-more-txt { grid-area: txt; }
+.fr-more-row > .fr-pill { grid-area: badge; }
+.fr-more-row > .fr-more-end,
+.fr-more-row > a.fr-ghost { grid-area: acts; }
+.fr-more-row { grid-template-areas: 'ic txt badge acts'; }
+/* Narrow, as the option cards: mark and words on line 1, the badge and the buttons on line 2. */
+@media (max-width: 560px) {
+  .fr-more-row { grid-template-columns: var(--sp-24) minmax(0, 1fr) auto; grid-template-areas: 'ic txt txt' '. badge acts'; row-gap: var(--sp-8); }
+}
+
+/* Ready in one click (ReadyInOneClick): what is already on this machine, and one button for all of it. */
+.fr-ready { align-self: stretch; display: flex; flex-direction: column; gap: var(--sp-8); padding: var(--sp-12); border-radius: var(--r-14); border: var(--w-hair) solid var(--accent-edge); background: var(--surface-1); }
+.fr-ready-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+.fr-ready-row { display: grid; grid-template-columns: var(--sp-24) minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-12); }
+.fr-ready-txt { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; text-align: left; }
+.fr-ready-name { color: var(--ink-1); font-size: var(--t-13); line-height: var(--lh-13); font-weight: var(--fw-label); }
+.fr-ready-detail { color: var(--ink-3); font-size: var(--t-11); line-height: var(--lh-11); overflow-wrap: anywhere; }
+.fr-ready .fr-btn { align-self: flex-start; }
+.fr-ready .fr-h { justify-content: flex-start; }
+.fr-ready-ic { display: inline-grid; place-items: center; width: var(--sp-24); height: var(--sp-24); color: var(--ink-1); }
+.fr-ready-ic .s2-brand,
+.fr-ready-ic .s2-brand > svg { display: block; width: 100%; height: 100%; }
+/* A packaged vendor mark (settings/logos) inside the welcome tiles, at the icon size of the 24px tile. */
+.fr-ready-ic > svg,
+.fr-more-ic > svg { display: block; width: var(--sp-16); height: var(--sp-16); }
+.fr-ready-tile { display: inline-grid; place-items: center; width: var(--sp-24); height: var(--sp-24); border-radius: var(--r-8); background: color-mix(in srgb, var(--ink-1) 7%, transparent); font-size: var(--t-12); font-weight: var(--fw-label); }
+@media (max-width: 560px) {
+  .fr-ready-row { row-gap: var(--sp-4); }
+}
+
+/* Phone: the welcome is a full-height sheet, opaque (no app chrome peeking at the top), scrolling inside itself and
+   starting at the top, so a long card never runs off the bottom. */
+@media (max-width: 560px) {
+  .fr-root:not(.fr-inline):not(.fr-finder) {
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-ground);
+    padding: var(--sp-24) var(--sp-16) var(--sp-24);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-items: flex-start;
+  }
+  /* The card's own surface goes: the sheet is the surface, and the column is as tall as its content. */
+  .fr-root:not(.fr-inline):not(.fr-finder) .fr-col {
+    margin-block: 0;
+    padding: 0 0 var(--sp-16);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}

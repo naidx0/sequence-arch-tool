@@ -1,0 +1,23 @@
+{
+  "id": "t01-clamp-bounds",
+  "prompt": "clamp(n, lo, hi) returns the wrong value when n is below lo. Fix src/mod.js so the tests pass. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "clamp"
+    ]
+  }
+}
