@@ -1,0 +1,20 @@
+{
+  "id": "workflow/openhands",
+  "group": "workflow",
+  "label": "OpenHands",
+  "summary": "OpenHands coding agent (All Hands). Link only: MIT; install it from its source repo.",
+  "triggers": [
+    "openhands",
+    "all hands agent",
+    "openhands docker",
+    "openhands coding agent"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "OpenHands/OpenHands",
+    "commit": "9057a57f4a7b5a74e93989090edaffc21e3554ff",
+    "path": null
+  },
+  "url": "https://github.com/OpenHands/OpenHands"
+}

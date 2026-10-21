@@ -1,0 +1,21 @@
+{
+  "id": "workflow/explore",
+  "group": "workflow",
+  "label": "Explore",
+  "summary": "Read-only map of a repository: one lens, file:line facts, no patches.",
+  "triggers": [
+    "explore the repository",
+    "map the codebase",
+    "scout a subsystem",
+    "read only exploration",
+    "where does this feature live"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/explore"
+  },
+  "url": null
+}

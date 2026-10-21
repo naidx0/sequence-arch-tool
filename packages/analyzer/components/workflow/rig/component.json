@@ -1,0 +1,20 @@
+{
+  "id": "workflow/rig",
+  "group": "workflow",
+  "label": "Rig",
+  "summary": "Rig, a Rust library for building LLM agents. Link only: MIT; install it from its source repo.",
+  "triggers": [
+    "rig rust",
+    "rust llm agents",
+    "0xplaygrounds rig",
+    "rig crate"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "0xPlaygrounds/rig",
+    "commit": "06a2726ce82e0293249404ca75d0a049ecc40c51",
+    "path": null
+  },
+  "url": "https://github.com/0xPlaygrounds/rig"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@sequence/desktop",
+  "version": "0.1.8",
+  "private": true,
+  "description": "Electron desktop shell for Sequence — a double-click window around the local architecture app, with a native OS folder picker for attaching a repo",
+  "license": "MIT",
+  "homepage": "https://github.com/naidx0/sequence-arch-tool",
+  "author": "Sequence <sequence@users.noreply.github.com>",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --import ../../tools/test-guard/no-real-binaries.mjs --test --test-timeout=120000 dist/test/*.test.js",
+    "dev": "electron .",
+    "prepare-server": "node scripts/prepare-server.mjs",
+    "dist": "node scripts/prepare-server.mjs && electron-builder && node scripts/checksums.mjs",
+    "clean": "rm -rf dist server-bundle release"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "^44.7.2",
+    "electron-builder": "^26.17.0",
+    "typescript": "^5.6.0"
+  }
+}

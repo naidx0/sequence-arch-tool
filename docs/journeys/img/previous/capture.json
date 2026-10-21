@@ -1,0 +1,46 @@
+{
+  "capturedAt": "2026-09-05T21:09:59.782Z",
+  "commit": "1db76446",
+  "build": {
+    "startedAt": "2026-09-05T21:08:29.615Z",
+    "builtAt": "2026-09-05T21:00:23.521Z"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 820
+  },
+  "port": 4173,
+  "session": "Teach me how brief.ts",
+  "modelCallsMade": 0,
+  "shots": [
+    {
+      "step": "1-lesson",
+      "file": "docs/journeys/img/1-lesson.png",
+      "bytes": 163708,
+      "note": "the reply, its edge count, and the closing check-in"
+    },
+    {
+      "step": "2-mode-menu",
+      "file": "docs/journeys/img/2-mode-menu.png",
+      "bytes": 169811,
+      "note": "one menu, Teach as its first row"
+    },
+    {
+      "step": "3-chart-pointer",
+      "file": "docs/journeys/img/3-chart-pointer.png",
+      "bytes": 164356,
+      "note": "the one line in the chat that names the picture"
+    },
+    {
+      "step": "4-ai-canvas",
+      "file": "docs/journeys/img/4-ai-canvas.png",
+      "bytes": 156200,
+      "note": "the derived chart on the AI Canvas"
+    }
+  ],
+  "_preserved": {
+    "why": "These are the screens the journey page and the storyboard cite. They were taken before the checkpoint migration was wired into the open path, so the app no longer shows them — but the pages that cite them still describe what they showed.",
+    "preservedAt": "2026-09-06T03:13:17.719Z",
+    "supersededBy": "docs/journeys/img/ (same filenames, current build)"
+  }
+}

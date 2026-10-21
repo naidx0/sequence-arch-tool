@@ -1,0 +1,23 @@
+{
+  "id": "t09-sort-numeric",
+  "prompt": "sortNumbers(arr) must sort numerically ascending and must not mutate its input. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "sortNumbers"
+    ]
+  }
+}

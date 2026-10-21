@@ -1,0 +1,24 @@
+{
+  "id": "workflow/claude-api",
+  "group": "workflow",
+  "label": "Claude Api",
+  "summary": "Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting,...",
+  "triggers": [
+    "claude api",
+    "anthropic sdk",
+    "claude model id",
+    "claude tool use",
+    "prompt caching"
+  ],
+  "status": "ready",
+  "license": "Apache-2.0",
+  "source": {
+    "repo": "anthropics/skills",
+    "commit": "dbd4588f9e1033efb41dad4bef2f7947c8993d44",
+    "path": "skills/claude-api"
+  },
+  "url": "https://github.com/anthropics/skills/tree/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/claude-api",
+  "externalRefs": [
+    "shared/evals/report/build-report.mjs"
+  ]
+}

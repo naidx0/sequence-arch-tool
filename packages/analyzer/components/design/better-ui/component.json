@@ -1,0 +1,22 @@
+{
+  "id": "design/better-ui",
+  "group": "design",
+  "label": "Better Ui",
+  "summary": "Polishes the surfaces, icons and motion in your project with exact values for border radius, optical alignment, shadows, icon states and...",
+  "triggers": [
+    "polish the ui",
+    "icon states",
+    "border radius and shadows",
+    "optical alignment",
+    "polish surfaces and motion"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/better-ui"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/better-ui"
+}

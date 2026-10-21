@@ -1,0 +1,315 @@
+/**
+ * THE GOALBAR'S VIEW OF THE SESSION'S GOAL, PLAN AND RUN.
+ *
+ * ── WHY IT POLLS, AND WHY THAT IS NOT A SHORTCUT ────────────────────────────
+ *
+ * A goal run is a PERSISTED ROW, not a stream of events: the whole of it is
+ * `{ running, turns, cap, lastStopReason, lastStopSentence }`, any window may
+ * read it, and it changes once per turn — which is once per provider call, i.e.
+ * seconds at best. One small GET every 1.5s says everything a stream would, and
+ * recovers from a dropped connection by simply asking again. `programRunner`
+ * streams because a program run emits an ordered log a reconnecting client must
+ * replay exactly; that is a different problem and it has a different answer.
+ *
+ * ── THE PLAN COMES BACK WITH EVERY POLL ─────────────────────────────────────
+ *
+ * Not only the run state. The plan is what the run is CHANGING — a step ticks,
+ * a step parks — and a bar that polled the run while showing a plan from page
+ * load would count down turns beside a checklist that never moved. They are
+ * fetched together so they can never be from different moments.
+ *
+ * ── A FAILED POLL DOES NOT BLANK THE BAR ────────────────────────────────────
+ *
+ * The last good state is kept and the error is shown beside it. Replacing a
+ * plan with an empty one because one request timed out would read as "the run
+ * threw your plan away", which is both alarming and false.
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { GoalRunState, PlanStep } from '@sequence/api-types';
+
+import { readStillAnswers, type RootRead } from '../app/bootRead';
+import { goalRunLive } from '../agents/goalRunLive';
+import { createSessionsClient, type SessionsClient } from '../sessions/sessionsClient';
+import { goalRunButton, type GoalRunButton, type GoalRunMode } from './goalRunVerdict';
+
+/**
+ * How often to ask while a run is working.
+ *
+ * Fast enough that a ticked step appears while the person is still looking at
+ * the bar, slow enough that a twenty-four-turn run is under a thousand requests
+ * to a server on localhost. NOTHING IS POLLED WHILE THE RUN IS IDLE — an idle
+ * row cannot change except through this window's own Start, so a background
+ * poll would be a request per 1.5s, for ever, to be told nothing.
+ */
+export const GOAL_RUN_POLL_MS = 1500;
+
+export interface GoalRunNotice {
+  kind: 'worktree' | 'warning';
+  text: string;
+}
+
+/** What a start response says about where the run works. */
+export function startNotice(body: { worktree?: { branch: string }; warning?: string }): GoalRunNotice | null {
+  if (body.warning) return { kind: 'warning', text: body.warning };
+  if (body.worktree) return { kind: 'worktree', text: `This run works in its own branch ${body.worktree.branch}, listed under Worktrees.` };
+  return null;
+}
+
+const IDLE: GoalRunState = { running: false, turns: 0, cap: 24 };
+
+export interface GoalRunView {
+  run: GoalRunState;
+  plan: PlanStep[];
+  goal: string | null;
+  /** The goal's short name (server-written); falls back to the goal itself. */
+  goalName: string | null;
+  /** The button, already decided — see `goalRunVerdict.goalRunButton`. */
+  button: GoalRunButton;
+  /** A start or stop is in flight. Distinct from `run.running`. */
+  busy: boolean;
+  /** The last thing that went wrong on the wire, or null. */
+  error: string | null;
+  /** One plain line about where the run started works (its own worktree) or that it may overlap another run; null when there is nothing to say. */
+  notice: GoalRunNotice | null;
+  /**
+   * Start the run. `mode` overrides the hook's own `input.mode` FOR THIS CALL
+   * ONLY, and exists for exactly one caller: `/goal <text>`, which switches the
+   * composer to Build and starts in the same gesture. `input.mode` is captured
+   * when the hook renders, so at the moment the slash command runs it still
+   * says Plan — the switch it just dispatched has not been rendered yet — and
+   * the run would be started under a permission the reader has already left.
+   * The override says the mode the ENABLING ACT set, not a guess.
+   */
+  start: (mode?: GoalRunMode) => Promise<void>;
+  stop: () => Promise<void>;
+  /**
+   * B4: start the run again after the engine's restart ended it, on what it was started on (the agent and
+   * Work | Code mode the run row recorded), in Build. It picks up at the first open step.
+   */
+  resume: () => Promise<void>;
+  /** Replace the plan — the Unpark control's write. */
+  savePlan: (plan: readonly PlanStep[]) => Promise<void>;
+  refresh: () => Promise<void>;
+}
+
+export function useGoalRun(input: {
+  sessionId: string | null;
+  repoPath?: string | undefined;
+  /** The composer's mode, which decides whether a run may start at all. */
+  mode: GoalRunMode;
+  jobMode?: 'work' | 'code';
+  /** The coding agent (Claude, Codex) this chat talks to: a run then works the plan through it, with no AI key. Absent: Sequence's own model. */
+  agentRef?: string | undefined;
+  /** The agent when Start is pressed (wins over `agentRef`): a chat's agent can change between the render and the press. */
+  getAgentRef?: () => string | undefined;
+  /** Injected in tests; the real client otherwise. */
+  client?: SessionsClient;
+  pollMs?: number;
+  /**
+   * A goal run's turns are saved on the server as they finish, not streamed to this window: while a run is going (and
+   * once more when it ends) every read hands the chat as saved here, so the open chat can show the turns the run takes
+   * without a reload. Not called for a session with no run going.
+   */
+  onChat?: (chat: unknown, sessionId: string) => void;
+  /** A start answered with the worktree the run works in: the Worktrees section has to learn of it. */
+  onWorktree?: (worktree: { path: string; branch: string }, sessionId: string) => void;
+  /**
+   * Whether app boot has settled (`state.net.reachable !== null`). Omitted
+   * means settled. Lets the hook skip the re-read in the render where boot
+   * brings `repoPath`: the read made before it already answered for that root
+   * (app/bootRead.ts).
+   */
+  booted?: boolean;
+}): GoalRunView {
+  const fallback = useRef<SessionsClient | null>(null);
+  if (input.client === undefined && fallback.current === null) {
+    fallback.current = createSessionsClient();
+  }
+  const client = input.client ?? fallback.current!;
+  const { sessionId, repoPath } = input;
+  const pollMs = input.pollMs ?? GOAL_RUN_POLL_MS;
+
+  const [run, setRun] = useState<GoalRunState>(IDLE);
+  const [plan, setPlan] = useState<PlanStep[]>([]);
+  const [goal, setGoal] = useState<string | null>(null);
+  const [goalName, setGoalName] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<GoalRunNotice | null>(null);
+
+  /*
+   * THE LATEST SESSION ID THIS HOOK IS SERVING.
+   *
+   * Every async answer is checked against it before it lands. Switching threads
+   * mid-poll is ordinary — the rail is one click away — and an in-flight
+   * response that arrives after the switch would paint the OLD thread's plan
+   * onto the new one's bar, which is a lie that looks like data.
+   */
+  const servingRef = useRef<string | null>(sessionId);
+  servingRef.current = sessionId;
+  /* The callbacks change every render; the effects below must not. */
+  const onChatRef = useRef(input.onChat);
+  onChatRef.current = input.onChat;
+  const onWorktreeRef = useRef(input.onWorktree);
+  onWorktreeRef.current = input.onWorktree;
+  /** Whether the last read saw a run going: the read after it is the one that carries the run's final turns. */
+  const sawRunning = useRef(false);
+
+  const refresh = useCallback(async () => {
+    const id = sessionId;
+    if (!id) {
+      setRun(IDLE);
+      setPlan([]);
+      setGoal(null);
+      return;
+    }
+    const [runRes, sessionRes] = await Promise.all([
+      client.readGoalRun(id, undefined, repoPath),
+      client.readSession(id, undefined, repoPath),
+    ]);
+    if (servingRef.current !== id) return;
+    if (runRes.outcome === 'ok') setRun(runRes.body);
+    if (sessionRes.outcome === 'ok') {
+      const going = runRes.outcome === 'ok' && runRes.body.running;
+      if (going || sawRunning.current) onChatRef.current?.(sessionRes.body.chat, id);
+      if (runRes.outcome === 'ok') sawRunning.current = going;
+      setPlan(sessionRes.body.plan ?? []);
+      setGoal(sessionRes.body.goal ?? null);
+      setGoalName(sessionRes.body.goalName ?? null);
+    }
+    /* KEEP THE LAST GOOD STATE. A failed poll reports itself and changes
+       nothing else — see the header. */
+    const failed = runRes.outcome === 'error' ? runRes : sessionRes.outcome === 'error' ? sessionRes : null;
+    setError(failed ? failed.message : null);
+  }, [client, repoPath, sessionId]);
+
+  /* Read once when the thread changes, so the bar is never a stale thread's. */
+  const booted = input.booted ?? true;
+  const lastRead = useRef<RootRead | null>(null);
+  useEffect(() => {
+    const next: RootRead = { booted, root: repoPath ?? null, deps: [client, sessionId] };
+    const prev = lastRead.current;
+    lastRead.current = next;
+    if (readStillAnswers(prev, next)) return;
+    setRun(IDLE);
+    setPlan([]);
+    setGoal(null);
+    setGoalName(null);
+    setError(null);
+    setNotice(null);
+    sawRunning.current = false;
+    void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- client, sessionId and repoPath arrive through `refresh`
+  }, [refresh, booted]);
+
+  /* The status bar and the rail learn of the run from here: this hook is the one that reads its row. */
+  useEffect(() => {
+    if (!sessionId) return undefined;
+    goalRunLive.set(sessionId, run.running ? { turns: run.turns, ...(run.agentRef ? { agentRef: run.agentRef } : {}) } : null);
+    return () => goalRunLive.set(sessionId, null);
+  }, [run.agentRef, run.running, run.turns, sessionId]);
+
+  /* And keep asking, but ONLY while something can change. */
+  useEffect(() => {
+    if (!run.running || !sessionId) return undefined;
+    const timer = setInterval(() => {
+      void refresh();
+    }, pollMs);
+    return () => clearInterval(timer);
+  }, [pollMs, refresh, run.running, sessionId]);
+
+  const start = useCallback(async (modeOverride?: GoalRunMode) => {
+    const id = sessionId;
+    if (!id) return;
+    const effectiveMode = modeOverride ?? input.mode;
+    setBusy(true);
+    setError(null);
+    const res = await client.startGoalRun(
+      id,
+      {
+        /* The mode the person is actually in. The server refuses anything but
+           Build with a reason; sending our guess instead of their setting would
+           be this surface asserting a consent nobody gave. */
+        permission: effectiveMode === 'build' ? 'build' : 'plan',
+        ...(input.jobMode === undefined ? {} : { jobMode: input.jobMode }),
+        ...((input.getAgentRef ? input.getAgentRef() : input.agentRef) ? { agentRef: (input.getAgentRef ? input.getAgentRef() : input.agentRef)! } : {}),
+      },
+      repoPath,
+    );
+    if (servingRef.current !== id) return;
+    if (res.outcome === 'ok') {
+      setRun(res.body.state);
+      setNotice(startNotice(res.body));
+      if (res.body.worktree) onWorktreeRef.current?.(res.body.worktree, id);
+    } else setError(res.message);
+    setBusy(false);
+    /*
+     * ONE READ IMMEDIATELY AFTER, so the first turn's tick does not wait a full
+     * poll interval to appear. The button has just been pressed and the person
+     * is looking straight at it; 1.5s of nothing happening is the moment they
+     * decide it did not work.
+     */
+    await refresh();
+  }, [client, input.agentRef, input.getAgentRef, input.jobMode, input.mode, refresh, repoPath, sessionId]);
+
+  const resume = useCallback(async () => {
+    const id = sessionId;
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    const res = await client.startGoalRun(
+      id,
+      {
+        permission: 'build',
+        ...(run.jobMode ? { jobMode: run.jobMode } : input.jobMode === undefined ? {} : { jobMode: input.jobMode }),
+        ...(run.agentRef ? { agentRef: run.agentRef } : {}),
+      },
+      repoPath,
+    );
+    if (servingRef.current !== id) return;
+    if (res.outcome === 'ok') {
+      setRun(res.body.state);
+      setNotice(startNotice(res.body));
+      if (res.body.worktree) onWorktreeRef.current?.(res.body.worktree, id);
+    } else setError(res.message);
+    setBusy(false);
+    await refresh();
+  }, [client, input.jobMode, refresh, repoPath, run.agentRef, run.jobMode, sessionId]);
+
+  const stop = useCallback(async () => {
+    const id = sessionId;
+    if (!id) return;
+    setBusy(true);
+    const res = await client.stopGoalRun(id, repoPath);
+    if (servingRef.current !== id) return;
+    if (res.outcome === 'ok') setRun(res.body.state);
+    else setError(res.message);
+    setBusy(false);
+  }, [client, repoPath, sessionId]);
+
+  const savePlan = useCallback(
+    async (next: readonly PlanStep[]) => {
+      const id = sessionId;
+      if (!id) return;
+      /* Optimistic, and safe to be: the write is a full REPLACE of a small
+         array the person just edited by hand, so there is no merge to lose. A
+         refusal puts the server's answer back on the next refresh. */
+      setPlan([...next]);
+      const res = await client.update(id, { plan: [...next] }, repoPath);
+      if (servingRef.current !== id) return;
+      if (res.outcome === 'error') {
+        setError(res.message);
+        await refresh();
+      }
+    },
+    [client, refresh, repoPath, sessionId],
+  );
+
+  const button = useMemo(
+    () => goalRunButton({ mode: input.mode, plan, run }),
+    [input.mode, plan, run],
+  );
+
+  return { run, plan, goal, goalName, button, busy, error, notice, start, stop, resume, savePlan, refresh };
+}

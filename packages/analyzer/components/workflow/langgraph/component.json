@@ -1,0 +1,20 @@
+{
+  "id": "workflow/langgraph",
+  "group": "workflow",
+  "label": "LangGraph",
+  "summary": "LangGraph, a graph runtime for LLM agents. Link only: MIT; install it from its source repo.",
+  "triggers": [
+    "langgraph",
+    "langchain graph",
+    "langgraph agent",
+    "stateful agent graph"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "langchain-ai/langgraph",
+    "commit": "a24fc97778fca67cfac4cd3fc63e508ee1d29f59",
+    "path": null
+  },
+  "url": "https://github.com/langchain-ai/langgraph"
+}

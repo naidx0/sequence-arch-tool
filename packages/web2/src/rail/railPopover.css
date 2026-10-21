@@ -1,0 +1,88 @@
+/* The rail's top-layer popover (rail/railPopover.tsx): the app's menu surface (.s2-menu: the same glass, edge and lift as
+   every popover), fixed to the window and placed from JS. The root layer (.s2-fly-layer) draws nothing itself. */
+.s2-menu.rail-pop {
+  position: fixed;
+  z-index: 70;
+  box-sizing: border-box;
+  width: var(--rail-pop-w, 340px);
+  max-width: calc(100vw - var(--sp-16));
+  padding: 0;
+  gap: 0;
+  pointer-events: auto;
+  /* The body scrolls, not the surface: the surface keeps its hover bridge (below) outside its own overflow. */
+  overflow: visible;
+  /* A light edge and a soft lift: still above the panes, nothing heavy (owner, 0.1.8.4). */
+  border-color: var(--edge);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+/* THE OLD GREY AND WHITE BUTTONS, FOR EVERY HOVER CARD (owner, 0.1.8.4: "i like the old grey and white buttons not the blue
+   heavy shadows"). The look the .ac-btn Open and Launch had: the surface fill, the quiet edge, ink-2 text, no shadow, and no
+   accent fill even where a card asks for .s2-blue. It lives here, on the shared popover, so any new hover gets it. */
+.rail-pop .s2-btn,
+.rail-pop .s2-btn.s2-blue {
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background: var(--surface-1);
+  box-shadow: none;
+  color: var(--ink-2);
+}
+.rail-pop .s2-btn:hover,
+.rail-pop .s2-btn.s2-blue:hover {
+  border-color: var(--edge-strong);
+  background: var(--surface-1);
+  box-shadow: none;
+  color: var(--ink-1);
+}
+.s2-menu.rail-pop[data-kind='card'] {
+  --rail-pop-w: 288px;
+}
+.rail-pop:focus {
+  outline: none;
+}
+.rail-pop-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: inherit;
+}
+.rail-pop[data-kind='flyout'] .rail-pop-body {
+  padding: var(--sp-6);
+}
+/* The gap between the anchor and the popover belongs to the popover, so a pointer can cross it without leaving. */
+.rail-pop::before {
+  content: '';
+  position: absolute;
+}
+.rail-pop[data-side='right']::before {
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: var(--sp-8);
+}
+.rail-pop[data-side='left']::before {
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: var(--sp-8);
+}
+.rail-pop[data-side='below']::before {
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--sp-8);
+}
+.rail-pop[data-side='above']::before {
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: var(--sp-8);
+}
+/* A component's body is taller here than in the composer's menu: the flyout has the window's height to use. */
+.rail-pop[data-kind='flyout'] .s2-comp-detail-body {
+  max-height: min(320px, 50vh);
+}
+@media (prefers-reduced-motion: reduce) {
+  .s2-menu.rail-pop {
+    animation: none;
+  }
+}

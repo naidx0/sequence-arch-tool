@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Workflow Mega Plan — Visual Breakdown</title>
+  <style>
+    :root {
+      --bg: #0f1114;
+      --surface-1: #161a1f;
+      --surface-2: #1c2128;
+      --edge: #2a2f36;
+      --ink-1: #e8eaed;
+      --ink-2: #9aa0a6;
+      --ink-3: #6b7280;
+      --accent: #8ab4f8;
+      --landed: #81c995;
+      --owner: #f9ab00;
+      --bad: #f28b82;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+      --sans: "Instrument Sans", system-ui, sans-serif;
+      --r: 6px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink-1); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.02em; }
+    h2 { font-size: 18px; font-weight: 600; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--edge); }
+    h3 { font-size: 13px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; margin: 24px 0 12px; }
+    .sub { color: var(--ink-2); margin-bottom: 24px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r); border: 1px solid var(--edge); background: var(--surface-1); font-size: 12px; color: var(--ink-2); }
+    .pill strong { color: var(--ink-1); font-weight: 500; }
+    .pill.landed { border-color: #3d5a45; color: var(--landed); }
+    .pill.owner { border-color: #5a4a20; color: var(--owner); }
+    .pill.next { border-color: #3d4a5a; color: var(--accent); }
+    .grid { display: grid; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card { background: var(--surface-1); border: 1px solid var(--edge); border-radius: var(--r); padding: 16px; }
+    .phase-bar { display: flex; height: 32px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--edge); margin: 12px 0; font-size: 10px; font-weight: 600; }
+    .phase-bar span { display: flex; align-items: center; justify-content: center; padding: 0 4px; text-align: center; line-height: 1.1; }
+    .p0 { background: #2d4a3e; flex: 1; color: var(--landed); }
+    .p1 { background: #2a3544; flex: 1.2; color: var(--accent); }
+    .p2 { background: #3a3544; flex: 1.5; color: #c4b5fd; }
+    .p3 { background: #44352a; flex: 1.3; color: #fdba74; }
+    .p4 { background: #443a2a; flex: 1; color: var(--owner); }
+    .p5 { background: #44352a; flex: 1.2; color: #f9a8d4; }
+    .p6 { background: #2a2a2a; flex: 0.8; color: var(--ink-3); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--edge); }
+    th { color: var(--ink-3); font-weight: 500; }
+    .mono { font-family: var(--mono); font-size: 11px; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; }
+    .flow-box { background: var(--surface-2); border: 1px solid var(--edge); border-radius: var(--r); padding: 10px 14px; font-size: 12px; min-width: 100px; text-align: center; }
+    .flow-arrow { color: var(--ink-3); font-size: 18px; }
+    .dual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .dual { grid-template-columns: 1fr; } }
+    .surface-arch { border-left: 3px solid var(--accent); }
+    .surface-canvas { border-left: 3px solid var(--landed); }
+    .mock-shell { background: var(--surface-2); border: 1px solid var(--edge); border-radius: var(--r); padding: 12px; min-height: 140px; font-size: 11px; }
+    .mock-node { display: inline-block; padding: 6px 10px; margin: 4px; border-radius: 4px; border: 1px solid var(--edge); background: var(--surface-1); }
+    .mock-node.run { border-color: var(--landed); box-shadow: 0 0 8px rgba(129,201,149,0.3); }
+    .mock-node.wait { border-color: var(--owner); }
+    .tier { font-size: 11px; color: var(--ink-3); margin-top: 8px; }
+    .reject { opacity: 0.5; text-decoration: line-through; }
+    .rec { border: 1px solid var(--landed); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Agent Workflow Mega Plan</h1>
+    <p class="sub">Architecture board → approve → long-running agent graph · Option E · Phases 0–6</p>
+    <div class="hero-meta">
+      <span class="pill"><strong>Doc</strong> agent-workflow-mega-plan.md</span>
+      <span class="pill landed"><strong>Phase 0</strong> layout classifier (PR #145)</span>
+      <span class="pill next"><strong>Next</strong> Phase 1 schema + persistence</span>
+      <span class="pill owner"><strong>Owner</strong> HITL default §8.1</span>
+    </div>
+
+    <h2>Owner journey</h2>
+    <div class="flow">
+      <div class="flow-box">Design on<br>Architecture board</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">Build this</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">Preview agent<br>loop graph</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">Approve &amp;<br>launch</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">Long run on<br>two surfaces</div>
+    </div>
+
+    <h2>Phase timeline</h2>
+    <div class="phase-bar">
+      <span class="p0">0 Layout ✓</span>
+      <span class="p1">1 Schema</span>
+      <span class="p2">2 Compile+Launch</span>
+      <span class="p3">3 Dual projection</span>
+      <span class="p4">4 Inspector</span>
+      <span class="p5">5 Durability</span>
+      <span class="p6">6+</span>
+    </div>
+
+    <h2>Option E — recommended spine</h2>
+    <div class="card mono" style="white-space: pre-wrap; font-size: 11px; line-height: 1.6;">
+.seqd (design)  ──approve──▶  compileSeqDiagramToProgram()
+                                    │
+                                    ▼
+                         validateProgram → frozen snapshot
+                                    │
+                                    ▼
+                         runProgram (server) → events.jsonl
+                           ┌────────┴────────┐
+                           ▼                 ▼
+                  Architecture          AI Canvas
+                  (node status)         (canvas.write_*)
+    </div>
+
+    <h3>Architecture options</h3>
+    <table>
+      <thead><tr><th>Option</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>A — compile to Program</td><td>Core</td></tr>
+        <tr><td>B — LangGraph interop</td><td>Defer Phase 6+ export</td></tr>
+        <tr><td>C — .seqd + log only</td><td class="reject">Reject</td></tr>
+        <tr><td>D — bi-directional sync</td><td class="reject">Reject v1</td></tr>
+        <tr><td class="rec">E — event bus + dual projection</td><td><strong>Recommended</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Two surfaces (not merged)</h2>
+    <div class="dual">
+      <div class="card surface-arch">
+        <h3 style="margin-top:0">Architecture board</h3>
+        <div class="mock-shell">
+          <span class="mock-node run">Orchestrator</span>
+          <span class="mock-node run">Builder</span>
+          <span class="mock-node wait">Verifier</span>
+          <span class="mock-node">Planner</span>
+          <p style="color:var(--ink-3);margin:12px 0 0">Grounded .seqd · live node status · click → prompt pack</p>
+        </div>
+      </div>
+      <div class="card surface-canvas">
+        <h3 style="margin-top:0">AI Canvas</h3>
+        <div class="mock-shell">
+          <p><strong>Plan.md</strong> — scout notes…</p>
+          <p style="color:var(--ink-3)">mermaid sub-flow · phase cards · five writers only</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Harness tiers</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <strong>Tier 1 Minimal</strong>
+        <p>Planner → Builder → Verifier loop</p>
+        <p class="tier">Reuse: <span class="mono">review-loop</span></p>
+      </div>
+      <div class="card" style="border-color: var(--accent);">
+        <strong>Tier 2 Standard ★</strong>
+        <p>Scout → plan → human gate → build loop → review</p>
+        <p class="tier">Extend: <span class="mono">dogfood-loop</span></p>
+      </div>
+      <div class="card">
+        <strong>Tier 3 Full</strong>
+        <p>Parallel council → route → scaffold → build</p>
+        <p class="tier">Compose: council + route + Tier 2</p>
+      </div>
+    </div>
+
+    <h2>Competitor borrow map</h2>
+    <table>
+      <thead><tr><th>From</th><th>Mechanism</th><th>Phase</th></tr></thead>
+      <tbody>
+        <tr><td>LangGraph</td><td>Checkpoints, explicit graph</td><td>2, 5</td></tr>
+        <tr><td>LangSmith</td><td>Id-numbered event log</td><td>2–3</td></tr>
+        <tr><td>Claude Code</td><td>ACP subagent isolation</td><td>4</td></tr>
+        <tr><td>Cursor / Codex</td><td>Activity + env cards</td><td>3</td></tr>
+        <tr><td>Archify</td><td>Validate-before-show</td><td>2</td></tr>
+        <tr><td>ml-harness</td><td>Tool registry, forced answer</td><td>2–3</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Known blockers today</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <strong>fromBoardSeqd kind lock</strong>
+        <p class="mono">boardMemory.ts — only service-flow</p>
+        <p>Fix: Phase 1</p>
+      </div>
+      <div class="card">
+        <strong>No compile + launch bar</strong>
+        <p>Activity runs exist; board doesn't start them</p>
+        <p>Fix: Phase 2</p>
+      </div>
+    </div>
+
+    <h2>Owner decisions (open)</h2>
+    <table>
+      <thead><tr><th>Decision</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        <tr><td>HITL default</td><td>Hybrid — pause at plan + pre-merge only</td></tr>
+        <tr><td>Durability</td><td>Local .sequence/runs/ for v1</td></tr>
+        <tr><td>Subagents</td><td>ACP for builders; gateway for scout/plan</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:48px;color:var(--ink-3);font-size:12px">
+      Full spec: <span class="mono">docs/research/agent-workflow-mega-plan.md</span> · Do not build until owner ack
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "id": "t03-capitalize-empty",
+  "prompt": "capitalize(s) throws on the empty string. Make it return \"\" and keep the other behaviour. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "capitalize"
+    ]
+  }
+}

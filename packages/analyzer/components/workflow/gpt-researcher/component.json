@@ -1,0 +1,20 @@
+{
+  "id": "workflow/gpt-researcher",
+  "group": "workflow",
+  "label": "GPT Researcher",
+  "summary": "GPT Researcher, an autonomous research agent. Link only: Apache-2.0; install it from its source repo.",
+  "triggers": [
+    "gpt researcher",
+    "gpt-researcher",
+    "autonomous research agent",
+    "research with citations"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "assafelovic/gpt-researcher",
+    "commit": "3582a6841fe7dc801e2a34e34ee408641aea9bce",
+    "path": null
+  },
+  "url": "https://github.com/assafelovic/gpt-researcher"
+}

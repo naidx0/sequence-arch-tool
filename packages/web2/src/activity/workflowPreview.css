@@ -1,0 +1,45 @@
+.wfp-host { position: relative; min-width: 0; }
+/* The card is drawn by rail/railPopover (.s2-menu.rail-pop: the app's glass, edge and lift, placed in the window); this is what is in it. */
+.wfp-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-10) var(--sp-12) var(--sp-12);
+  color: var(--b-ink1);
+  font-size: var(--t-12-5);
+}
+.wfp-head { display: flex; align-items: baseline; gap: var(--sp-8); }
+.wfp-name { flex: 1; min-width: 0; margin: 0; font-size: var(--t-13); font-weight: var(--fw-label); color: var(--b-ink1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfp-count { flex: none; font-size: var(--t-11-5); color: var(--b-ink3); font-variant-numeric: tabular-nums; }
+.wfp-purpose { margin: calc(-1 * var(--sp-4)) 0 0; font-size: var(--t-12); line-height: var(--lh-12); color: var(--b-ink2); }
+/* The steps, one per line on a thin rail: the glyph is the kind, the line is the order. */
+.wfp-flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: calc(var(--row-h) * 7); overflow-y: auto; }
+.wfp-step { position: relative; display: flex; align-items: center; gap: var(--sp-8); min-height: var(--sp-24); color: var(--b-ink2); }
+.wfp-ico { position: relative; z-index: 1; flex: none; display: inline-flex; align-items: center; justify-content: center; width: var(--sp-16); height: var(--sp-16); color: var(--b-ink3); }
+.wfp-step + .wfp-step::before { content: ''; position: absolute; left: calc(var(--sp-16) / 2); top: calc(-1 * var(--sp-4)); height: var(--sp-8); width: 0; border-left: var(--w-hair) solid var(--b-edge); }
+.wfp-step-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfp-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+/* The way back: accent, and its line to the step above is dashed, so it reads as a return and not as one more step. */
+.wfp-step[data-kind='loop'] { color: var(--b-acc); }
+.wfp-step[data-kind='loop'] .wfp-ico { color: var(--b-acc); }
+.wfp-step[data-kind='loop']::before { border-left: var(--w-hair) dashed var(--b-acc); }
+.wfp-step[data-kind='finish'] { color: var(--b-ink1); }
+.wfp-foot { display: flex; justify-content: flex-end; gap: var(--sp-6); padding-top: var(--sp-4); }
+.wfs { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-8); }
+.wfs-cap { color: var(--ink-2); font-size: var(--t-12-5); }
+.wfs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-6); }
+.wfs-list > li { min-width: 0; }
+.wfs-row { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfl { display: flex; flex-direction: column; gap: var(--sp-6); padding: var(--sp-8); margin-bottom: var(--sp-8); border: var(--w-hair) solid var(--edge); border-radius: var(--r-8); background: var(--surface-1); color: var(--ink-1); font-size: var(--t-12-5); }
+.wfl-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); color: var(--ink-2); }
+.wfl-blocks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
+.wfl-block { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); min-height: var(--sp-24); padding: 0 var(--sp-8); border: var(--w-hair) solid var(--edge); border-radius: var(--r-8); color: var(--ink-2); transition: background-color 160ms, color 160ms; }
+.wfl-block-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.wfl-block-s { flex: none; }
+.wfl-block[data-state='running'] { color: var(--ink-1); background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: var(--accent); }
+.wfl-block[data-state='done'] { color: var(--ink-1); }
+.wfl-block[data-state='failed'] { color: var(--ink-1); border-style: dashed; }
+.wfl-note { margin: 0; color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .wfl-block { transition: none; } }
+.wfl-status { text-transform: capitalize; }
+.wfl-iter { font-variant-numeric: tabular-nums; }

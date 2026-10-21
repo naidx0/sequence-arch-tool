@@ -1,0 +1,23 @@
+{
+  "id": "t31-config-default-port",
+  "prompt": "describe() in src/server.js hard-codes port 3000. Make it use DEFAULT_PORT exported by src/config.js (which is 8080). Edit src/server.js only. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "describe uses the configured port"
+    ]
+  }
+}

@@ -1,0 +1,168 @@
+[
+  {
+    "shot": "overview-dark-1440-live.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nlocal-model\nWindow\nNot measured\nFiles\n4 files\nArtifacts\n2 cards\nGateway flow\nUI\nRequest path\nVisual"
+  },
+  {
+    "shot": "overview-dark-1440.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nlocal-model\nWindow\nNot measured\nFiles\n4 files\nArtifacts\n2 cards\nGateway flow\nUI\nRequest path\nVisual"
+  },
+  {
+    "shot": "overview-dark-1440.png",
+    "box": {
+      "x": 1160,
+      "y": 66,
+      "width": 272,
+      "height": 438
+    }
+  },
+  {
+    "window": "Not measured",
+    "project": "shopfront / master",
+    "model": "local-model"
+  },
+  {
+    "rows": [],
+    "todos": [
+      {
+        "status": "done",
+        "text": "✓\nRead the compose file\ndone"
+      },
+      {
+        "status": "active",
+        "text": "◆\nRead the gateway entrypoint\nactive"
+      },
+      {
+        "status": "pending",
+        "text": "○\nDraw the card for the reader\npending"
+      }
+    ]
+  },
+  {
+    "shot": "panel-dark-1440-files.png",
+    "rows": [
+      {
+        "path": "read docker-compose.yml",
+        "title": "read docker-compose.yml",
+        "state": "read",
+        "text": "read docker-compose.yml\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "read gateway/src/index.ts",
+        "title": "read gateway/src/index.ts",
+        "state": "read",
+        "text": "index.ts\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "docker-compose.yml",
+        "title": "docker-compose.yml",
+        "state": "read",
+        "text": "docker-compose.yml\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "gateway/src/index.ts",
+        "title": "gateway/src/index.ts",
+        "state": "read",
+        "text": "index.ts\nRead",
+        "tag": "BUTTON"
+      }
+    ]
+  },
+  {
+    "shot": "overview-dark-1440-pill.png",
+    "pill": "Overview\n6"
+  },
+  {
+    "shot": "overview-dark-420.png",
+    "panel": 0
+  },
+  {
+    "errors": []
+  },
+  {
+    "shot": "overview-light-1440-live.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nlocal-model\nWindow\nNot measured\nFiles\n4 files\nArtifacts\n4 cards"
+  },
+  {
+    "shot": "overview-light-1440.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nlocal-model\nWindow\nNot measured\nFiles\n4 files\nArtifacts\n4 cards"
+  },
+  {
+    "shot": "overview-light-1440.png",
+    "box": {
+      "x": 1160,
+      "y": 66,
+      "width": 272,
+      "height": 364
+    }
+  },
+  {
+    "window": "Not measured",
+    "project": "shopfront / master",
+    "model": "local-model"
+  },
+  {
+    "rows": [],
+    "todos": [
+      {
+        "status": "done",
+        "text": "✓\nRead the compose file\ndone"
+      },
+      {
+        "status": "active",
+        "text": "◆\nRead the gateway entrypoint\nactive"
+      },
+      {
+        "status": "pending",
+        "text": "○\nDraw the card for the reader\npending"
+      }
+    ]
+  },
+  {
+    "shot": "panel-light-1440-files.png",
+    "rows": [
+      {
+        "path": "read docker-compose.yml",
+        "title": "read docker-compose.yml",
+        "state": "read",
+        "text": "read docker-compose.yml\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "read gateway/src/index.ts",
+        "title": "read gateway/src/index.ts",
+        "state": "read",
+        "text": "index.ts\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "docker-compose.yml",
+        "title": "docker-compose.yml",
+        "state": "read",
+        "text": "docker-compose.yml\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "gateway/src/index.ts",
+        "title": "gateway/src/index.ts",
+        "state": "read",
+        "text": "index.ts\nRead",
+        "tag": "BUTTON"
+      }
+    ]
+  },
+  {
+    "shot": "overview-light-1440-pill.png",
+    "pill": "Overview\n8"
+  },
+  {
+    "shot": "overview-light-420.png",
+    "panel": 0
+  },
+  {
+    "errors": []
+  }
+]

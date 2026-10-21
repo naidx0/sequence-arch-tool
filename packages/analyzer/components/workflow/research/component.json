@@ -1,0 +1,21 @@
+{
+  "id": "workflow/research",
+  "group": "workflow",
+  "label": "Research",
+  "summary": "Grounded research: write the questions, gather from workspace and web, cite only opened sources, label observed vs inferred vs unknown.",
+  "triggers": [
+    "deep research",
+    "research report with citations",
+    "long running research",
+    "grounded literature review",
+    "gpt researcher loop"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/research"
+  },
+  "url": null
+}

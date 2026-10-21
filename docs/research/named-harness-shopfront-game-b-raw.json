@@ -1,0 +1,269 @@
+{
+  "measured_at": "2026-08-13T17:34:18.561Z",
+  "harness_version": "1.0.0",
+  "git_sha": "5471933",
+  "method": "Named CLI live-path on a shopfront copy plus haystack fill; agent usage.input from CLI JSON, not approxTokens cap. Pie-agent dump not used.",
+  "usd_spent": 0,
+  "probes": [
+    {
+      "id": "claude-code",
+      "label": "Claude Code CLI (claude)",
+      "binary": "npx @anthropic-ai/claude-code",
+      "version": "2.1.231 (Claude Code)",
+      "launchable": true,
+      "logged_in": false,
+      "model": null,
+      "claude_usage": {
+        "model": null,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0,
+        "result": "Not logged in · Please run /login",
+        "is_error": true,
+        "terminal_reason": "api_error"
+      },
+      "note": null
+    },
+    {
+      "id": "cursor-agent",
+      "label": "Cursor agent CLI",
+      "binary": null,
+      "version": null,
+      "launchable": false,
+      "logged_in": false,
+      "model": null,
+      "claude_usage": null,
+      "note": "CURSOR_API_KEY unset; this cloud session is not cursor-agent -p"
+    },
+    {
+      "id": "opencode",
+      "label": "OpenCode",
+      "binary": "npx opencode-ai",
+      "version": "1.18.18",
+      "launchable": true,
+      "logged_in": true,
+      "model": "opencode/big-pickle",
+      "claude_usage": null,
+      "note": null
+    }
+  ],
+  "buckets": [
+    {
+      "bucket": 50000,
+      "status": "ok",
+      "duration_ms": 12560,
+      "haystack": {
+        "bucket": 50000,
+        "haystack_tokens": 50333,
+        "filled": true,
+        "needle_depths": {
+          "START": 0
+        }
+      },
+      "input_tokens": 19129,
+      "output_tokens": 561,
+      "cost_usd": 0,
+      "model": "opencode/big-pickle",
+      "cells": {
+        "orders_payments": "grounded",
+        "orders_postgres": "grounded",
+        "gateway_redis": "grounded"
+      },
+      "json": {
+        "orders_payments": {
+          "present": true,
+          "kind": "http",
+          "evidence": "orders/app/payments_client.py:10 httpx POST {PAYMENTS_URL}/charge"
+        },
+        "orders_postgres": {
+          "present": true,
+          "kind": "db",
+          "evidence": "orders/app/db.py:5 sqlalchemy create_engine(DATABASE_URL)"
+        },
+        "gateway_redis": {
+          "present": false,
+          "kind": null,
+          "evidence": "gateway/src has no redis usage; compose depends_on redis is a trap"
+        }
+      },
+      "result_excerpt": "```json\n{\n  \"orders_payments\": {\"present\": true, \"kind\": \"http\", \"evidence\": \"orders/app/payments_client.py:10 httpx POST {PAYMENTS_URL}/charge\"},\n  \"orders_postgres\": {\"present\": true, \"kind\": \"db\", \"evidence\": \"orders/app/db.py:5 sqlalchemy create_engine(DATABASE_URL)\"},\n  \"gateway_redis\": {\"present\": false, \"kind\": null, \"evidence\": \"gateway/src has no redis usage; compose depends_on redis is a trap\"}\n}\n```",
+      "exit_code": 0,
+      "stderr_excerpt": ""
+    },
+    {
+      "bucket": 100000,
+      "status": "ok",
+      "duration_ms": 14444,
+      "haystack": {
+        "bucket": 100000,
+        "haystack_tokens": 104221,
+        "filled": true,
+        "needle_depths": {
+          "START": 0,
+          "MIDDLE": 99570
+        }
+      },
+      "input_tokens": 15784,
+      "output_tokens": 722,
+      "cost_usd": 0,
+      "model": "opencode/big-pickle",
+      "cells": {
+        "orders_payments": "grounded",
+        "orders_postgres": "grounded",
+        "gateway_redis": "grounded"
+      },
+      "json": {
+        "orders_payments": {
+          "present": true,
+          "kind": "http",
+          "evidence": "orders/app/payments_client.py:10 POST /charge via httpx"
+        },
+        "orders_postgres": {
+          "present": true,
+          "kind": "db",
+          "evidence": "orders/app/db.py:5 sqlalchemy engine from DATABASE_URL"
+        },
+        "gateway_redis": {
+          "present": false,
+          "kind": null,
+          "evidence": "gateway/src/index.ts has no redis usage; compose depends_on redis is a trap"
+        }
+      },
+      "result_excerpt": "{\n  \"orders_payments\": {\"present\": true, \"kind\": \"http\", \"evidence\": \"orders/app/payments_client.py:10 POST /charge via httpx\"},\n  \"orders_postgres\": {\"present\": true, \"kind\": \"db\", \"evidence\": \"orders/app/db.py:5 sqlalchemy engine from DATABASE_URL\"},\n  \"gateway_redis\": {\"present\": false, \"kind\": null, \"evidence\": \"gateway/src/index.ts has no redis usage; compose depends_on redis is a trap\"}\n}",
+      "exit_code": 0,
+      "stderr_excerpt": ""
+    },
+    {
+      "bucket": 150000,
+      "status": "ok",
+      "duration_ms": 13953,
+      "haystack": {
+        "bucket": 150000,
+        "haystack_tokens": 152340,
+        "filled": true,
+        "needle_depths": {
+          "START": 0,
+          "MIDDLE": 99570,
+          "LAST50K": 146097
+        }
+      },
+      "input_tokens": 24144,
+      "output_tokens": 902,
+      "cost_usd": 0,
+      "model": "opencode/big-pickle",
+      "cells": {
+        "orders_payments": "grounded",
+        "orders_postgres": "grounded",
+        "gateway_redis": "grounded"
+      },
+      "json": {
+        "orders_payments": {
+          "present": true,
+          "kind": "http",
+          "evidence": "orders/app/payments_client.py:10 httpx post to PAYMENTS_URL/charge"
+        },
+        "orders_postgres": {
+          "present": true,
+          "kind": "db",
+          "evidence": "orders/app/db.py:5 sqlalchemy create_engine(DATABASE_URL=postgres://...@postgres)"
+        },
+        "gateway_redis": {
+          "present": false,
+          "kind": null,
+          "evidence": "gateway source has no redis usage; only compose depends_on trap"
+        }
+      },
+      "result_excerpt": "```json\n{\n  \"orders_payments\": {\"present\": true, \"kind\": \"http\", \"evidence\": \"orders/app/payments_client.py:10 httpx post to PAYMENTS_URL/charge\"},\n  \"orders_postgres\": {\"present\": true, \"kind\": \"db\", \"evidence\": \"orders/app/db.py:5 sqlalchemy create_engine(DATABASE_URL=postgres://...@postgres)\"},\n  \"gateway_redis\": {\"present\": false, \"kind\": null, \"evidence\": \"gateway source has no redis usage; only compose depends_on trap\"}\n}\n```",
+      "exit_code": 0,
+      "stderr_excerpt": ""
+    },
+    {
+      "bucket": 200000,
+      "status": "ok",
+      "duration_ms": 12457,
+      "haystack": {
+        "bucket": 200000,
+        "haystack_tokens": 200369,
+        "filled": true,
+        "needle_depths": {
+          "START": 0,
+          "MIDDLE": 99570,
+          "LAST50K": 146097
+        }
+      },
+      "input_tokens": 18400,
+      "output_tokens": 603,
+      "cost_usd": 0,
+      "model": "opencode/big-pickle",
+      "cells": {
+        "orders_payments": "grounded",
+        "orders_postgres": "grounded",
+        "gateway_redis": "grounded"
+      },
+      "json": {
+        "orders_payments": {
+          "present": true,
+          "kind": "http",
+          "evidence": "orders/app/payments_client.py:10 httpx POST to PAYMENTS_URL/charge"
+        },
+        "orders_postgres": {
+          "present": true,
+          "kind": "db",
+          "evidence": "orders/app/db.py:5 sqlalchemy create_engine(DATABASE_URL)"
+        },
+        "gateway_redis": {
+          "present": false,
+          "kind": null,
+          "evidence": "no redis in gateway/src; compose depends_on is a trap"
+        }
+      },
+      "result_excerpt": "```json\n{\n  \"orders_payments\": {\"present\": true, \"kind\": \"http\", \"evidence\": \"orders/app/payments_client.py:10 httpx POST to PAYMENTS_URL/charge\"},\n  \"orders_postgres\": {\"present\": true, \"kind\": \"db\", \"evidence\": \"orders/app/db.py:5 sqlalchemy create_engine(DATABASE_URL)\"},\n  \"gateway_redis\": {\"present\": false, \"kind\": null, \"evidence\": \"no redis in gateway/src; compose depends_on is a trap\"}\n}\n```",
+      "exit_code": 0,
+      "stderr_excerpt": ""
+    }
+  ],
+  "tmp_root": "/tmp/named-harness-game-b-VwCzcD",
+  "cursor_cloud_session": {
+    "measured_at": "2026-08-13T17:57:00.000Z",
+    "harness": "this Cursor cloud agent (not cursor-agent CLI)",
+    "bcId": "bc-fb6c45ad-1731-4a86-adef-10d4f934a5b6",
+    "model": "cursor-grok-4.6-high",
+    "method": "live-path list/grep/read on shopfront source only; no haystack stuff; no ground-truth.json",
+    "usd_spent": 0,
+    "extra_api_key": false,
+    "input_tokens_kind": "approxTokens of files opened (not Cursor billing usage.input)",
+    "input_tokens": 1281,
+    "files_opened": [
+      { "path": "docker-compose.yml", "approx_tokens": 394 },
+      { "path": "orders/app/payments_client.py", "approx_tokens": 82 },
+      { "path": "orders/app/db.py", "approx_tokens": 170 },
+      { "path": "orders/app/events.py", "approx_tokens": 46 },
+      { "path": "orders/app/routes.py", "approx_tokens": 165 },
+      { "path": "gateway/src/index.ts", "approx_tokens": 145 },
+      { "path": "gateway/src/lib/http.ts", "approx_tokens": 163 },
+      { "path": "gateway/src/routes/orders.ts", "approx_tokens": 116 }
+    ],
+    "cells": {
+      "orders_payments": "grounded",
+      "orders_postgres": "grounded",
+      "gateway_redis": "grounded"
+    },
+    "json": {
+      "orders_payments": {
+        "present": true,
+        "kind": "http",
+        "evidence": "orders/app/payments_client.py httpx POST {PAYMENTS_URL}/charge; routes.py awaits charge_order"
+      },
+      "orders_postgres": {
+        "present": true,
+        "kind": "db",
+        "evidence": "orders/app/db.py sqlalchemy create_engine(DATABASE_URL)"
+      },
+      "gateway_redis": {
+        "present": false,
+        "kind": null,
+        "evidence": "grep gateway/ for redis: no matches; compose depends_on redis is a trap; orders/app/events.py uses redis (orders, not gateway)"
+      }
+    }
+  }
+}

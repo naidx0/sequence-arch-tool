@@ -1,0 +1,249 @@
+<section class="page" data-page-num="13" data-page-title="The proposal gate on the canvas">
+
+  <div class="pagehead">
+    <span class="num">Sheet 13 &middot; The proposal gate</span>
+    <h1>Drawing a thing that is not true yet</h1>
+    <p class="lede">Every other sheet in this book rests on one promise: what is drawn was traced
+    to evidence in the repository. This sheet is the exception that keeps that promise honest. When
+    the assistant proposes a change to the topology &mdash; a service that does not exist, an edge
+    nobody has written &mdash; the board has to show it <b>before</b> it is true, and the reader has
+    to be unable to mistake it for something that is.</p>
+    <p class="lede">So the register is not a colour. A proposed node is drawn in the
+    <b>ghost silhouette</b>: the real card's geometry, dashed at
+    <span class="inline-code">--w-rule</span>, filled with nothing, its name in
+    <span class="inline-code">--ink-3</span>. It reads as an outline of a decision, which is what it
+    is. Sheet 12's gate ends a <i>run</i>; this gate ends a <i>proposal</i>, and the difference is
+    that the subject is on the canvas rather than in the transcript.</p>
+    <p class="lede"><b>A ghost is never counted.</b> No coverage chip, no node count, no "8
+    services" total includes a proposal. The moment a number would have to explain itself, the
+    number is wrong.</p>
+  </div>
+
+  <!-- 13.1 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">13.1</span>
+      <h2>The ghost silhouette</h2>
+      <span class="tail">same box &middot; dashed --w-rule &middot; no fill</span>
+    </div>
+
+    <p class="note">
+      The ghost borrows the real card's width, padding and type ramp exactly, and changes three
+      things: the border becomes dashed, the fill goes to nothing, and the name drops one ink step.
+      Borrowing the geometry is deliberate &mdash; a proposal that is a different <i>size</i> from
+      the thing it proposes cannot be read as a preview of it, and the reader ends up comparing
+      shapes instead of reading a decision. Sheet 03's rule still holds underneath: the kind is
+      still carried by silhouette, not by hue, so a proposed store and a proposed service remain
+      distinguishable from each other while both remain distinguishable from anything real.
+    </p>
+
+    <div class="stage">
+      <div class="boardfield" style="display:flex;gap:var(--sp-24);align-items:flex-start;flex-wrap:wrap;padding:var(--sp-20)">
+
+        <div style="display:flex;flex-direction:column;gap:var(--sp-8)">
+          <span class="lbl">Traced &mdash; exists in source</span>
+          <div class="node n-service">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-t">payments</span></div>
+            <div class="nd-s">express &middot; <span class="ph">&#8249;n&#8250;</span> files</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--sp-8)">
+          <span class="lbl">Proposed &mdash; does not exist</span>
+          <div class="node n-service" style="--arch-tone:transparent;--arch-line:var(--ink-4);--arch-style:dashed;--arch-weight:var(--w-rule);box-shadow:none">
+            <div class="nd-hd"><svg class="i i-14" style="opacity:.55"><use href="#ic-service"/></svg><span class="nd-t" style="color:var(--ink-3)">intake</span></div>
+            <div class="nd-s" style="color:var(--ink-4)">proposed &middot; no source yet</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--sp-8)">
+          <span class="lbl">Proposed store &mdash; kind still reads</span>
+          <div class="node n-store" style="--arch-tone:transparent;--arch-line:var(--ink-4);--arch-style:dashed;--arch-weight:var(--w-rule);box-shadow:none">
+            <div class="nd-hd"><svg class="i i-14" style="opacity:.55"><use href="#ic-database"/></svg><span class="nd-t" style="color:var(--ink-3)">claims</span></div>
+            <div class="nd-s" style="color:var(--ink-4)">proposed &middot; no source yet</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="specimens">
+      <div class="specimen">
+        <span class="lbl">Border</span>
+        <p><span class="inline-code">--w-rule</span> dashed, <span class="inline-code">--ink-4</span>.
+        Not <span class="inline-code">--accent</span>: the accent means <i>active</i> everywhere else
+        in the book, and a proposal is the opposite of active.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Fill</span>
+        <p><span class="inline-code">transparent</span>, and <span class="inline-code">box-shadow:none</span>.
+        The board grid reads straight through it. Elevation is what makes a card feel placed.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Name</span>
+        <p><span class="inline-code">--ink-3</span>, one step down from a real card's
+        <span class="inline-code">--ink-1</span>. Subline sits at <span class="inline-code">--ink-4</span>.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Geometry</span>
+        <p>Unchanged from sheet 02 &mdash; same width, same padding, same ramp. Only the treatment
+        moves.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13.2 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">13.2</span>
+      <h2>A proposed edge, and why it is not the declared dash</h2>
+      <span class="tail">--flow-dash-declared is taken</span>
+    </div>
+
+    <p class="note">
+      Sheet 04 already spends a dash: <span class="inline-code">--flow-dash-declared</span> marks an
+      edge asserted in config that no call site confirms. That dash says <i>claimed but unproved</i>,
+      which is a statement about the repository. A proposal says <i>not yet real</i>, which is a
+      statement about a decision the reader has not made. Reusing one dash for both would make the
+      board answer "is this in my code?" and "am I about to add this?" with the same mark.
+      <b>The proposed edge is the declared dash plus the ghost's ink drop, and it carries no
+      arrowhead until it is accepted</b> &mdash; direction is a property of a real call.
+    </p>
+
+    <div class="stage">
+      <div class="boardfield" style="padding:var(--sp-20)">
+        <div class="edgespec">
+          <div class="edgeline"><span class="edgetag">traced</span>
+            <svg width="200" height="20" aria-hidden="true"><line x1="4" y1="10" x2="180" y2="10" stroke="var(--edge-strong)" stroke-width="var(--w-rule)"/><path d="M180 6 L190 10 L180 14 z" fill="var(--edge-strong)"/></svg>
+            <span class="mono" style="color:var(--ink-3);font-size:var(--t-10)">a call site was read</span>
+          </div>
+          <div class="edgeline"><span class="edgetag">declared</span>
+            <svg width="200" height="20" aria-hidden="true"><line x1="4" y1="10" x2="180" y2="10" stroke="var(--edge-strong)" stroke-width="var(--w-rule)" stroke-dasharray="5 4"/><path d="M180 6 L190 10 L180 14 z" fill="var(--edge-strong)"/></svg>
+            <span class="mono" style="color:var(--ink-3);font-size:var(--t-10)">config claims it, source does not confirm</span>
+          </div>
+          <div class="edgeline"><span class="edgetag">proposed</span>
+            <svg width="200" height="20" aria-hidden="true"><line x1="4" y1="10" x2="190" y2="10" stroke="var(--ink-4)" stroke-width="var(--w-rule)" stroke-dasharray="5 4"/></svg>
+            <span class="mono" style="color:var(--ink-3);font-size:var(--t-10)">not real yet &mdash; no arrowhead until accepted</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13.3 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">13.3</span>
+      <h2>The gate sits with the ghost, not with the chat</h2>
+      <span class="tail">--sp-12 below the lowest ghost</span>
+    </div>
+
+    <p class="note">
+      Sheet 12's run gate lives at the end of the transcript, because a run is a thing the assistant
+      did. A topology proposal is a thing about to happen <i>to the canvas</i>, so its gate belongs
+      to the canvas: anchored under the proposal's bounding box, offset
+      <span class="inline-code">--sp-12</span>, moving with the board when it pans. A gate in the
+      left column asking about objects on the right makes the reader hold two places at once to
+      answer one question.
+    </p>
+
+    <p class="note">
+      <b>Deny is not destructive and is not styled as though it were.</b> Denying removes the ghosts
+      and changes nothing else &mdash; no file is written, nothing real is touched, so there is no
+      red, no confirm-again, and no warning register. Accept carries
+      <span class="inline-code">--accent-solid</span> because it is the one action on the surface
+      that changes state. One primary, per sheet 10's control ladder.
+    </p>
+
+    <div class="stage">
+      <div class="boardfield" style="padding:var(--sp-20);display:flex;flex-direction:column;gap:var(--sp-12);align-items:flex-start">
+
+        <div style="display:flex;gap:var(--sp-20);align-items:center">
+          <div class="node n-service" style="--arch-tone:transparent;--arch-line:var(--ink-4);--arch-style:dashed;--arch-weight:var(--w-rule);box-shadow:none">
+            <div class="nd-hd"><svg class="i i-14" style="opacity:.55"><use href="#ic-service"/></svg><span class="nd-t" style="color:var(--ink-3)">intake</span></div>
+            <div class="nd-s" style="color:var(--ink-4)">proposed</div>
+          </div>
+          <svg width="60" height="16" aria-hidden="true"><line x1="0" y1="8" x2="60" y2="8" stroke="var(--ink-4)" stroke-width="var(--w-rule)" stroke-dasharray="5 4"/></svg>
+          <div class="node n-store">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-t">postgres</span></div>
+            <div class="nd-s">traced</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:var(--sp-10);padding:var(--sp-8) var(--sp-12);background:var(--bg-base);border:var(--w-hair) solid var(--edge);border-radius:var(--r-10)">
+          <svg class="i i-14"><use href="#ic-info"/></svg>
+          <span style="font-size:var(--t-12);color:var(--ink-2)">Adds <b style="color:var(--ink-1)">1 service</b> and <b style="color:var(--ink-1)">1 edge</b>. Nothing is written until you accept.</span>
+          <span style="flex:1"></span>
+          <button class="btn" type="button">Deny</button>
+          <button class="btn solid" type="button">Accept</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="specimens">
+      <div class="specimen">
+        <span class="lbl">Anchor</span>
+        <p>Under the proposal's bounding box, <span class="inline-code">--sp-12</span> below the
+        lowest ghost. Pans with the board.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Count line</span>
+        <p>States what accepting adds, in the same nouns the board uses. It is the only place a
+        ghost is ever counted.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Deny</span>
+        <p>Secondary. Removes the ghosts, writes nothing, needs no confirmation.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Accept</span>
+        <p><span class="inline-code">--accent-solid</span>. The only saturated object on the canvas
+        while the gate is open.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13.4 ─────────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">13.4</span>
+      <h2>What must never happen</h2>
+      <span class="tail">the failure modes this sheet exists to forbid</span>
+    </div>
+
+    <div class="specimens">
+      <div class="specimen">
+        <span class="lbl">Never &mdash; a ghost in a count</span>
+        <p>The coverage chip, the node count and the legend read the traced graph only. A total that
+        silently includes proposals makes every number on the board a question.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Never &mdash; accent on the ghost</span>
+        <p>Accent means active. Painting the proposal with it makes the not-yet-real the loudest
+        object on the canvas.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Never &mdash; a red deny</span>
+        <p>Denying writes nothing. A destructive register for a non-destructive action teaches the
+        reader to distrust the register.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Never &mdash; ghosts that outlive the gate</span>
+        <p>Close the gate and the ghosts go with it. A proposal with no gate is an edge on the board
+        that nothing accounts for.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Never &mdash; the declared dash reused</span>
+        <p><span class="inline-code">--flow-dash-declared</span> answers "is this in my code?".
+        Reusing it to answer "am I adding this?" collapses two different questions into one mark.</p>
+      </div>
+      <div class="specimen">
+        <span class="lbl">Never &mdash; a moving board</span>
+        <p>No auto-pan, no auto-zoom to the proposal. Sheet 05's rule holds: the camera is the
+        reader's.</p>
+      </div>
+    </div>
+  </div>
+
+</section>

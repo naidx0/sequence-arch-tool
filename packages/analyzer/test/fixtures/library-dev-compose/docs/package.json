@@ -1,0 +1,1 @@
+{ "name": "linter-docs", "version": "1.0.0", "scripts": { "dev": "node build.mjs" } }

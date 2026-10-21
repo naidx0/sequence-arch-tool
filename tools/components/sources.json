@@ -1,0 +1,1016 @@
+{
+  "$comment": "Pinned upstream sources for packages/analyzer/components. A source with no license must be kind link-only. Refresh a pin with: gh api repos/<repo>/commits/main --jq .sha, then re-run node tools/components/vendor.mjs.",
+  "sources": [
+    {
+      "id": "jakubkrehel-skills",
+      "kind": "github",
+      "repo": "jakubkrehel/skills",
+      "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+      "license": "MIT",
+      "group": "design",
+      "parent": "design/interface",
+      "dirs": [
+        {
+          "path": "skills/state-machine",
+          "triggers": [
+            "state machine",
+            "every state of a component",
+            "loading and error states",
+            "mock states for a component",
+            "ui state transitions"
+          ]
+        },
+        {
+          "path": "skills/break",
+          "triggers": [
+            "break a component",
+            "stress test a component",
+            "every scenario for a component",
+            "edge cases for a component",
+            "temporary test page"
+          ]
+        },
+        {
+          "path": "skills/variant",
+          "triggers": [
+            "make variants",
+            "try component variants",
+            "iterate on a component",
+            "compare design options",
+            "pick a variant"
+          ]
+        },
+        {
+          "path": "skills/interface-review",
+          "triggers": [
+            "review this branch ui",
+            "review the pull request interface",
+            "interface regressions",
+            "review ui changes",
+            "check a ui diff"
+          ],
+          "externalRefs": [
+            "src/Dialog.tsx",
+            "src/Toolbar.tsx"
+          ]
+        },
+        {
+          "path": "skills/explain-interface",
+          "triggers": [
+            "explain how this was built",
+            "how was this animation made",
+            "explain a website build",
+            "explain this visual effect",
+            "how is this ui built"
+          ]
+        },
+        {
+          "path": "skills/build-design",
+          "triggers": [
+            "build from figma",
+            "implement a design image",
+            "match this design",
+            "build ui from a mockup",
+            "use the design tokens"
+          ]
+        },
+        {
+          "path": "skills/better-interface",
+          "triggers": [
+            "review the whole interface",
+            "better interface",
+            "combined ui review",
+            "polish the interface",
+            "ui review across all areas"
+          ]
+        },
+        {
+          "path": "skills/better-ui",
+          "triggers": [
+            "polish the ui",
+            "icon states",
+            "border radius and shadows",
+            "optical alignment",
+            "polish surfaces and motion"
+          ]
+        },
+        {
+          "path": "skills/better-typography",
+          "triggers": [
+            "fix typography",
+            "type scale",
+            "text wrapping and truncation",
+            "font features",
+            "improve text rendering"
+          ]
+        },
+        {
+          "path": "skills/better-colors",
+          "triggers": [
+            "color system",
+            "build a color palette",
+            "check color contrast",
+            "design tokens for color",
+            "color naming"
+          ]
+        },
+        {
+          "path": "skills/better-accessibility",
+          "triggers": [
+            "accessibility review",
+            "keyboard and focus",
+            "aria labels",
+            "screen reader announcements",
+            "accessible forms"
+          ]
+        },
+        {
+          "path": "skills/better-layout",
+          "triggers": [
+            "fix the layout",
+            "alignment and grouping",
+            "responsive structure",
+            "spacing rhythm",
+            "layout that holds for translated text"
+          ]
+        },
+        {
+          "path": "skills/better-writing",
+          "triggers": [
+            "ui copy",
+            "error messages",
+            "empty state copy",
+            "button labels",
+            "microcopy review"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jakubkrehel-make-interfaces-feel-better",
+      "kind": "github",
+      "repo": "jakubkrehel/make-interfaces-feel-better",
+      "commit": "35545ea1512ad59fa463e6b1f95ca9c052981fe6",
+      "license": "MIT",
+      "group": "design",
+      "parent": "design/interface",
+      "dirs": [
+        {
+          "path": "skills/make-interfaces-feel-better",
+          "triggers": [
+            "make it feel better",
+            "polish an interface",
+            "design engineering details",
+            "interface feels polished",
+            "subtle ui polish"
+          ],
+          "externalRefs": [
+            "src/Card.tsx",
+            "src/card.css",
+            "src/Counter.tsx",
+            "src/timer.css",
+            "src/Button.tsx",
+            "src/button.css"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jakubkrehel-oklch-skill",
+      "kind": "github",
+      "repo": "jakubkrehel/oklch-skill",
+      "commit": "0e81f040e16d48fcc61d3e1b7ea548542371321f",
+      "license": "MIT",
+      "group": "design",
+      "parent": "design/interface",
+      "dirs": [
+        {
+          "path": "skills/oklch-skill",
+          "triggers": [
+            "oklch color",
+            "oklch palette",
+            "perceptual color",
+            "color conversion",
+            "gamut and tailwind colors"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leonxlnx-taste-skill",
+      "kind": "github",
+      "repo": "Leonxlnx/taste-skill",
+      "commit": "d237dd399d57524945c0c81327da5da19f7a468d",
+      "license": "MIT",
+      "group": "design",
+      "parent": "design/interface",
+      "dirs": [
+        {
+          "path": "skills/taste-skill",
+          "leaf": "design-taste-frontend",
+          "triggers": [
+            "landing page design",
+            "frontend design taste",
+            "redesign a page",
+            "portfolio site",
+            "anti-slop frontend"
+          ],
+          "externalRefs": [
+            "feature/bento-grid--material.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pbakaus-impeccable",
+      "kind": "github",
+      "repo": "pbakaus/impeccable",
+      "commit": "919dbeba520df760a157fe635be62faae88d58da",
+      "license": "Apache-2.0",
+      "extraLicenseFiles": [
+        "NOTICE.md"
+      ],
+      "group": "design",
+      "parent": "design/interface",
+      "dirs": [
+        {
+          "path": "plugin/skills/impeccable",
+          "triggers": [
+            "critique the design",
+            "audit the ui",
+            "polish the ui",
+            "harden the interface",
+            "animate the interface",
+            "redesign this page"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flornkm-skills",
+      "kind": "github",
+      "repo": "flornkm/skills",
+      "commit": "cf1c0094e1826230623ecdb6e7b3c44bdfc593c3",
+      "license": "MIT",
+      "group": "design",
+      "dirs": [
+        {
+          "path": "skills/webgl-components",
+          "triggers": [
+            "webgl component",
+            "shader visual",
+            "animated gradient background",
+            "glass or iridescent surface",
+            "webgl avatar"
+          ]
+        },
+        {
+          "path": "skills/prefer-container-queries",
+          "triggers": [
+            "container queries",
+            "responsive component",
+            "replace breakpoints",
+            "tailwind container query",
+            "component responsive layout"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wheresryan22-anatomy",
+      "kind": "github",
+      "repo": "wheresryan22/anatomy",
+      "commit": "689dcf966e63d92be10a5d593c6e19e10acd4422",
+      "license": "MIT",
+      "group": "visual",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "anatomy",
+          "include": [
+            "SKILL.md",
+            "references/",
+            "kit/",
+            "scripts/",
+            "examples/"
+          ],
+          "triggers": [
+            "isometric illustration",
+            "technical diagram",
+            "explain with an svg figure",
+            "interactive explainer",
+            "isometric svg"
+          ],
+          "excludeSuffix": [
+            ".html"
+          ],
+          "externalRefs": [
+            "shots/lines.png"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mattpocock-skills",
+      "kind": "github",
+      "repo": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "license": "MIT",
+      "group": "workflow",
+      "dirs": [
+        {
+          "path": "skills/productivity/grilling",
+          "triggers": [
+            "grill me",
+            "stress test a plan",
+            "challenge my decision",
+            "question my design",
+            "pressure test an idea"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "anthropics-skills",
+      "kind": "github",
+      "repo": "anthropics/skills",
+      "commit": "dbd4588f9e1033efb41dad4bef2f7947c8993d44",
+      "license": "Apache-2.0",
+      "group": "workflow",
+      "dirs": [
+        {
+          "path": "skills/claude-api",
+          "include": [
+            "SKILL.md",
+            "shared/",
+            "typescript/",
+            "python/",
+            "curl/",
+            "csharp/"
+          ],
+          "licenseFrom": "skills/claude-api/LICENSE.txt",
+          "triggers": [
+            "claude api",
+            "anthropic sdk",
+            "claude model id",
+            "claude tool use",
+            "prompt caching"
+          ],
+          "externalRefs": [
+            "shared/evals/report/build-report.mjs"
+          ]
+        }
+      ],
+      "licenseFile": null
+    },
+    {
+      "id": "whitecircle-halo",
+      "kind": "github",
+      "repo": "whitecircle/halo",
+      "commit": "41da0838499a2459b236252ba1200a31957d3606",
+      "license": "Apache-2.0 + Halo supplemental terms",
+      "extraLicenseFiles": [
+        "APACHE-2.0.txt"
+      ],
+      "group": "ml",
+      "dirs": [
+        {
+          "path": "skills/add-model",
+          "triggers": [
+            "add a model family",
+            "new model support",
+            "expert parallel wrapper",
+            "liger kernel spec",
+            "halo model port"
+          ],
+          "externalRefs": [
+            "agent-docs/models/adding-a-model.md",
+            "layers/roster.py",
+            "src/kernels/liger/families.py",
+            "src/kernels/liger/builder.py",
+            "src/models/loading/model_preparation.py",
+            "src/models/patches/remote_code_compat.py"
+          ]
+        },
+        {
+          "path": "skills/checkpoints",
+          "triggers": [
+            "training checkpoint",
+            "resume training",
+            "export a model artifact",
+            "finished training run",
+            "checkpoint artifact"
+          ],
+          "externalRefs": [
+            "agent-docs/parallelism/pipeline-parallelism.md",
+            "agent-docs/reference/checkpoints.md",
+            "src/training/environment.py",
+            "src/checkpoint/tool_io.py",
+            "src/distributed/checkpoint/ep_save.py",
+            "src/distributed/expert_parallel/expert_weights.py",
+            "src/distributed/checkpoint/tp_save.py"
+          ]
+        },
+        {
+          "path": "skills/data",
+          "triggers": [
+            "training dataset",
+            "tokenize data",
+            "pack and shard data",
+            "prepare a dataset",
+            "dataset format"
+          ],
+          "externalRefs": [
+            "agent-docs/data/dataset-formats.md",
+            "agent-docs/data/dataset-preparation.md",
+            "agent-docs/data/collators.md",
+            "agent-docs/data/s3-utilities.md",
+            "agent-docs/data/filesystem-handling.md",
+            "agent-docs/training-methods/embedding.md",
+            "scripts/before_training/prepare_dataset.py",
+            "src/data/sources/loading.py",
+            "src/data/collators/factory.py",
+            "src/data/pipeline/processing.py",
+            "src/data/sources/sharded_dataset.py"
+          ]
+        },
+        {
+          "path": "skills/debug",
+          "triggers": [
+            "training hang",
+            "cuda out of memory",
+            "loss is nan",
+            "nccl timeout",
+            "distributed training failure"
+          ],
+          "externalRefs": [
+            "src/diagnostics/debugging.py",
+            "src/diagnostics/profiling.py",
+            "src/env.py",
+            "src/models/patches/attention.py",
+            "agent-docs/reference/debugging.md",
+            "scripts/profiling/py_spy_diag.py",
+            "scripts/profiling/nvlink_health.py",
+            "scripts/profiling/trace_report.py"
+          ]
+        },
+        {
+          "path": "skills/docs",
+          "triggers": [
+            "write docs",
+            "update a doc page",
+            "agent docs page",
+            "documentation ownership",
+            "docs style"
+          ],
+          "externalRefs": [
+            "./scripts/docs/check_links.sh",
+            "src/trainers/mixins/base.py"
+          ]
+        },
+        {
+          "path": "skills/launch",
+          "triggers": [
+            "launch training job",
+            "run halo job",
+            "docker training image",
+            "start a training run",
+            "test job"
+          ],
+          "externalRefs": [
+            "examples/sft/qwen3/qwen3-4b-ultrachat.yaml",
+            "examples/sft/gptoss/gptoss-20b-multinode-ep.yaml",
+            "agent-docs/reference/debugging.md",
+            "launcher-configs/accelerate/fsdp2_gradop_config.yaml",
+            "tests/gpu/test_suite.py",
+            "agent-docs/infrastructure/docker.md"
+          ]
+        },
+        {
+          "path": "skills/optimize",
+          "triggers": [
+            "training throughput",
+            "reduce gpu memory",
+            "tokens per second",
+            "memory levers",
+            "speed up training"
+          ],
+          "externalRefs": [
+            "scripts/profiling/trace_report.py"
+          ]
+        },
+        {
+          "path": "skills/parallelism",
+          "triggers": [
+            "parallelism config",
+            "expert parallel",
+            "tensor parallel setup",
+            "pipeline parallel combos",
+            "valid parallel config"
+          ],
+          "externalRefs": [
+            "src/distributed/parallelism_config.py",
+            "src/training/parallelism_args.py",
+            "agent-docs/parallelism/pipeline-parallelism.md",
+            "src/args/distributed_args.py",
+            "src/trainers/mixins/validation.py",
+            "src/trainers/mixins/ep_introspection.py"
+          ]
+        },
+        {
+          "path": "skills/rl-setup",
+          "triggers": [
+            "grpo training",
+            "reinforcement learning rollouts",
+            "rlvr setup",
+            "multi-turn tool use training",
+            "rollout container"
+          ],
+          "externalRefs": [
+            "agent-docs/infrastructure/rollout-servers.md",
+            "docker/nccl_pin.py",
+            "src/trainers/grpo/rollout/weight_sync.py",
+            "agent-docs/training-methods/grpo/rewards/README.md",
+            "grpo/rewards/README.md",
+            "async-grpo/setup.md",
+            "src/trainers/grpo/environmental.py"
+          ]
+        },
+        {
+          "path": "skills/write-tests",
+          "triggers": [
+            "write training tests",
+            "gpu correctness tests",
+            "benchmark test",
+            "test harness",
+            "test manifest"
+          ],
+          "externalRefs": [
+            "tests/conftest.py",
+            "tests/cpu/conventions/test_test_conventions.py",
+            "agent-docs/contributing/README.md",
+            "tests/gpu/manifest.py",
+            "tests/common/ports.py",
+            "tests/common/tolerances.py",
+            "tests/common/reporting.py",
+            "tests/cpu/parallelism/test_matrix_correctness_coverage.py",
+            "tests/common/harness.py"
+          ]
+        }
+      ],
+      "preambleFrom": "tools/components/originals/halo-preamble.md"
+    },
+    {
+      "id": "gen-verse-rsi-anything",
+      "kind": "wrapped",
+      "repo": "Gen-Verse/RSI-Anything",
+      "commit": "99dbf000a424b9033651b1096c5da2b6d5fa3865",
+      "license": "Apache-2.0",
+      "group": "ml",
+      "dirs": [
+        {
+          "path": "tools/components/originals/rsi-anything",
+          "leaf": "rsi-anything",
+          "triggers": [
+            "rsi-anything",
+            "recursive self improvement",
+            "world model loop",
+            "run an rsi workflow",
+            "code repair workflow"
+          ],
+          "externalRefs": [
+            "docs/reproduction.en.md",
+            "tasks/gui/README.md",
+            "configs/gui/smoke.json",
+            "docs/workflow.md"
+          ]
+        }
+      ],
+      "preambleFrom": "tools/components/originals/rsi-preamble.md"
+    },
+    {
+      "id": "morluto-rea",
+      "kind": "github",
+      "repo": "morluto/rea",
+      "commit": "8cbd57cafaf1cfacbe832bae593589cf211442ef",
+      "license": "MIT",
+      "group": "security",
+      "status": "review",
+      "dirs": [
+        {
+          "path": ".agents/skills/reverse-engineer-anything",
+          "setup": "npx rea-agents@6.4.0 setup (user runs it; never automatic)",
+          "triggers": [
+            "reverse engineer",
+            "decompile",
+            "disassemble",
+            "how does this binary",
+            "inspect the app bundle",
+            "how an application works",
+            "how this app works",
+            "learn how the app works"
+          ],
+          "patches": "tools/components/patches/rea.json",
+          "preambleFrom": "tools/components/originals/rea-preamble.md"
+        }
+      ]
+    },
+    {
+      "id": "manish-uxai-design-review",
+      "kind": "link-only",
+      "repo": "manish-uxai/design-review",
+      "commit": "3ce7ff253e7dd3ad7009171dab56188c6565c7d0",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "design-review",
+          "group": "design",
+          "summary": "Design review skill by manish-uxai. Link only: no license is published, so install it from its source repo.",
+          "triggers": [
+            "design review",
+            "review this screen",
+            "ux critique",
+            "review the interface"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "remotion-dev-skills",
+      "kind": "link-only",
+      "repo": "remotion-dev/skills",
+      "commit": "7ba4dcf8ebe1626b00baa41e1f2478113719b60b",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "remotion-skills",
+          "group": "visual",
+          "summary": "Agent skills for Remotion, the React video framework. Link only: no license is published, so install it from its source repo.",
+          "triggers": [
+            "remotion",
+            "react video",
+            "remotion composition",
+            "render a video in react"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sequence-original",
+      "kind": "local",
+      "repo": "sequence",
+      "commit": null,
+      "license": "MIT",
+      "licenseFile": "LICENSE",
+      "group": "visual",
+      "dirs": [
+        {
+          "path": "tools/components/originals/remotion-video",
+          "leaf": "remotion-video",
+          "triggers": [
+            "make a video",
+            "remotion video",
+            "animated explainer",
+            "render an mp4",
+            "motion graphics clip"
+          ]
+        },
+        {
+          "path": "tools/components/originals/research",
+          "leaf": "research",
+          "group": "workflow",
+          "label": "Research",
+          "triggers": [
+            "deep research",
+            "research report with citations",
+            "long running research",
+            "grounded literature review",
+            "gpt researcher loop"
+          ]
+        },
+        {
+          "path": "tools/components/originals/explore",
+          "leaf": "explore",
+          "group": "workflow",
+          "label": "Explore",
+          "triggers": [
+            "explore the repository",
+            "map the codebase",
+            "scout a subsystem",
+            "read only exploration",
+            "where does this feature live"
+          ]
+        },
+        {
+          "path": "tools/components/originals/science",
+          "leaf": "science",
+          "group": "ml",
+          "label": "Science",
+          "triggers": [
+            "scientific research loop",
+            "hypothesis and evidence",
+            "paper qa style",
+            "experiment log",
+            "what remains unknown"
+          ]
+        },
+        {
+          "path": "tools/components/originals/train",
+          "leaf": "train",
+          "group": "ml",
+          "label": "Train",
+          "triggers": [
+            "ml training loop",
+            "evaluate before training",
+            "unsloth or halo workflow",
+            "dataset and metric check",
+            "do not invent ml metrics"
+          ]
+        },
+        {
+          "path": "tools/components/originals/perf",
+          "leaf": "perf",
+          "group": "workflow",
+          "label": "Perf",
+          "triggers": [
+            "app speed and latency",
+            "measure before repair",
+            "startup and delete latency",
+            "web vitals",
+            "performance ratchet"
+          ]
+        },
+        {
+          "path": "tools/components/originals/rust",
+          "leaf": "rust",
+          "group": "workflow",
+          "label": "Rust",
+          "triggers": [
+            "rust agent crate",
+            "cargo clippy rustfmt",
+            "build with rig",
+            "rust library for agents",
+            "cargo test locking"
+          ]
+        },
+        {
+          "path": "tools/components/originals/swe",
+          "leaf": "swe",
+          "group": "workflow",
+          "label": "SWE",
+          "triggers": [
+            "long running coding agent",
+            "swe agent loop",
+            "reproduce then patch",
+            "locking test first",
+            "openhands style coding"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "openhands-openhands",
+      "kind": "link-only",
+      "repo": "OpenHands/OpenHands",
+      "commit": "9057a57f4a7b5a74e93989090edaffc21e3554ff",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "openhands",
+          "group": "workflow",
+          "label": "OpenHands",
+          "summary": "OpenHands coding agent (All Hands). Link only: MIT; install it from its source repo.",
+          "triggers": [
+            "openhands",
+            "all hands agent",
+            "openhands docker",
+            "openhands coding agent"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "swe-agent-swe-agent",
+      "kind": "link-only",
+      "repo": "SWE-agent/SWE-agent",
+      "commit": "3ea751c087f32b16e039a2233dd6eefecef325d5",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "swe-agent",
+          "group": "workflow",
+          "label": "SWE-agent",
+          "summary": "SWE-agent from Princeton NLP. Link only: MIT; install it from its source repo.",
+          "triggers": [
+            "swe-agent",
+            "princeton swe agent",
+            "swe-bench agent",
+            "software engineering agent"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "huggingface-smolagents",
+      "kind": "link-only",
+      "repo": "huggingface/smolagents",
+      "commit": "96f33faaf028479119ec8d34507b47694cf14e34",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "smolagents",
+          "group": "workflow",
+          "label": "smolagents",
+          "summary": "Hugging Face smolagents, a small agent library. Link only: Apache-2.0; install it from its source repo.",
+          "triggers": [
+            "smolagents",
+            "huggingface smolagents",
+            "small agents library",
+            "hf agents"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assafelovic-gpt-researcher",
+      "kind": "link-only",
+      "repo": "assafelovic/gpt-researcher",
+      "commit": "3582a6841fe7dc801e2a34e34ee408641aea9bce",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "gpt-researcher",
+          "group": "workflow",
+          "label": "GPT Researcher",
+          "summary": "GPT Researcher, an autonomous research agent. Link only: Apache-2.0; install it from its source repo.",
+          "triggers": [
+            "gpt researcher",
+            "gpt-researcher",
+            "autonomous research agent",
+            "research with citations"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "langchain-ai-langgraph",
+      "kind": "link-only",
+      "repo": "langchain-ai/langgraph",
+      "commit": "a24fc97778fca67cfac4cd3fc63e508ee1d29f59",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "langgraph",
+          "group": "workflow",
+          "label": "LangGraph",
+          "summary": "LangGraph, a graph runtime for LLM agents. Link only: MIT; install it from its source repo.",
+          "triggers": [
+            "langgraph",
+            "langchain graph",
+            "langgraph agent",
+            "stateful agent graph"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crewaiinc-crewai",
+      "kind": "link-only",
+      "repo": "crewAIInc/crewAI",
+      "commit": "a8877f0cdfbca4fc4b95e3ce54aaa69aafca7688",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "crewai",
+          "group": "workflow",
+          "label": "CrewAI",
+          "summary": "CrewAI multi-agent orchestration. Link only: MIT; install it from its source repo.",
+          "triggers": [
+            "crewai",
+            "crew ai agents",
+            "multi agent crew",
+            "crewai orchestration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aider-ai-aider",
+      "kind": "link-only",
+      "repo": "Aider-AI/aider",
+      "commit": "5dc9490bb35f9729ef2c95d00a19ccd30c26339c",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "aider",
+          "group": "workflow",
+          "label": "Aider",
+          "summary": "Aider, an AI pair programming tool in the terminal. Link only: Apache-2.0; install it from its source repo.",
+          "triggers": [
+            "aider",
+            "aider pair programming",
+            "aider git agent",
+            "terminal coding agent"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "0xplaygrounds-rig",
+      "kind": "link-only",
+      "repo": "0xPlaygrounds/rig",
+      "commit": "06a2726ce82e0293249404ca75d0a049ecc40c51",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "rig",
+          "group": "workflow",
+          "label": "Rig",
+          "summary": "Rig, a Rust library for building LLM agents. Link only: MIT; install it from its source repo.",
+          "triggers": [
+            "rig rust",
+            "rust llm agents",
+            "0xplaygrounds rig",
+            "rig crate"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stanford-oval-storm",
+      "kind": "link-only",
+      "repo": "stanford-oval/storm",
+      "commit": "fb951af7744dab086e34962e9bc6fe878e145f83",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "storm",
+          "group": "ml",
+          "label": "STORM",
+          "summary": "STORM, Stanford knowledge-curation and article writing. Link only: MIT; install it from its source repo.",
+          "triggers": [
+            "stanford storm",
+            "storm article writing",
+            "storm research",
+            "knowledge curation storm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "future-house-paper-qa",
+      "kind": "link-only",
+      "repo": "Future-House/paper-qa",
+      "commit": "57e89f7223b0960d5ee5ea048c69e3c47e088572",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "paper-qa",
+          "group": "ml",
+          "label": "paper-qa",
+          "summary": "paper-qa, retrieval QA over papers. Link only: Apache-2.0; install it from its source repo.",
+          "triggers": [
+            "paper-qa",
+            "paper qa",
+            "future house paperqa",
+            "papers with citations qa"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unslothai-unsloth",
+      "kind": "link-only",
+      "repo": "unslothai/unsloth",
+      "commit": "b93e4dcd574fb1c644fbe86a4c9d8013feec90f3",
+      "license": "none",
+      "dirs": [
+        {
+          "path": "",
+          "leaf": "unsloth",
+          "group": "ml",
+          "label": "Unsloth",
+          "summary": "Unsloth, fast LLM fine-tuning. Link only: Apache-2.0; install it from its source repo.",
+          "triggers": [
+            "unsloth",
+            "unsloth fine tune",
+            "unsloth lora",
+            "fast llm training"
+          ]
+        }
+      ]
+    }
+  ]
+}

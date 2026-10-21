@@ -1,0 +1,33 @@
+{
+  "id": "ml/write-tests",
+  "group": "ml",
+  "label": "Write Tests",
+  "summary": "Write CPU or GPU correctness/benchmark tests for Halo using the shared harness + manifest.",
+  "triggers": [
+    "write training tests",
+    "gpu correctness tests",
+    "benchmark test",
+    "test harness",
+    "test manifest"
+  ],
+  "status": "ready",
+  "license": "Apache-2.0 + Halo supplemental terms",
+  "source": {
+    "repo": "whitecircle/halo",
+    "commit": "41da0838499a2459b236252ba1200a31957d3606",
+    "path": "skills/write-tests"
+  },
+  "url": "https://github.com/whitecircle/halo/tree/41da0838499a2459b236252ba1200a31957d3606/skills/write-tests",
+  "externalRefs": [
+    "tests/conftest.py",
+    "tests/cpu/conventions/test_test_conventions.py",
+    "agent-docs/contributing/README.md",
+    "tests/gpu/manifest.py",
+    "tests/common/ports.py",
+    "tests/common/tolerances.py",
+    "tests/common/reporting.py",
+    "tests/cpu/parallelism/test_matrix_correctness_coverage.py",
+    "tests/common/harness.py"
+  ],
+  "preamble": "SEQUENCE.md"
+}

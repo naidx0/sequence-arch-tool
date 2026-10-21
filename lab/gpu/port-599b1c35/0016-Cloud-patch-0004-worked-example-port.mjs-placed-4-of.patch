@@ -1,0 +1,251 @@
+From 6ce3f6b7d302cc9ac4aba38a57a4e06dd71667e8 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 15:09:22 -0400
+Subject: [PATCH 16/37] Cloud patch 0004-worked-example: port.mjs placed 4 of 5
+ hunks; the import hand-added (flagged SEQUENCE_TEACH_WORKED_EXAMPLE=1)
+
+---
+ packages/analyzer/src/server/askPipeline.ts   | 12 +++
+ packages/analyzer/src/server/conceptChart.ts  | 90 ++++++++++++++++++-
+ .../analyzer/src/test/worked-example.test.ts  | 87 ++++++++++++++++++
+ 3 files changed, 188 insertions(+), 1 deletion(-)
+ create mode 100644 packages/analyzer/src/test/worked-example.test.ts
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index c584908a..049ac7bd 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -74,6 +74,7 @@ import {
+   deriveCheckIn,
+   deriveNextPictureCheckIn,
+   withPicturePointer,
++  withWorkedExample,
+   type AnswerFlowTrace,
+ } from './conceptChart.js';
+ import { gatherTeachEvidence } from './teachEvidence.js';
+@@ -5813,6 +5814,17 @@ ${derivedCheck}`;
+        * before its measurement is a contract nobody can score. Unset leaves
+        * every turn byte for byte as before.
+        */
++      /* THE WORKED EXAMPLE — one real file:line off the scanned edge the
++         picture stands on (withWorkedExample). Same flag rule as the pointer
++         below, and it runs first so the example reads before the pointer. */
++      if (
++        process.env.SEQUENCE_TEACH_WORKED_EXAMPLE === '1' &&
++        input.teach === true &&
++        lastChartThisTurn !== undefined &&
++        !atCap
++      ) {
++        text = withWorkedExample(text, input.graph ?? undefined, lastChartThisTurn);
++      }
+       if (
+         process.env.SEQUENCE_TEACH_PICTURE_POINTER === '1' &&
+         input.teach === true &&
+diff --git a/packages/analyzer/src/server/conceptChart.ts b/packages/analyzer/src/server/conceptChart.ts
+index 9651172d..21255fea 100644
+--- a/packages/analyzer/src/server/conceptChart.ts
++++ b/packages/analyzer/src/server/conceptChart.ts
+@@ -30,7 +30,7 @@
+  * shipping one to satisfy a metric is exactly the fabrication this file is
+  * supposed to prevent.
+  */
+-import type { ArchGraph } from '@sequence/schema';
++import type { ArchEdge, ArchGraph } from '@sequence/schema';
+ import { validateChart, type SeqChart } from '@sequence/schema';
+ 
+ import type { Concept } from './lessonState.js';
+@@ -930,6 +930,10 @@ export function withPicturePointer(text: string, chart: SeqChart | undefined): s
+   if (pointsAtPicture(text)) return text;
+   const line = derivePicturePointer(chart);
+   if (line === undefined) return text;
++  return insertBeforeClosingQuestion(text, line);
++}
++
++function insertBeforeClosingQuestion(text: string, line: string): string {
+   const body = text.trim();
+   const paras = body.split(/\n{2,}/);
+   const last = paras[paras.length - 1] ?? '';
+@@ -938,3 +942,87 @@ export function withPicturePointer(text: string, chart: SeqChart | undefined): s
+   }
+   return `${body}\n\n${line}`;
+ }
++
++/**
++ * ONE REAL EXAMPLE, READ OFF THE SCAN — NOT AN ANALOGY THE MODEL INVENTS.
++ *
++ * None of the 11 minicpm5 answers in the owner's chat carried an example or an
++ * analogy, and asking a 2B model for one in the belt is more belt. But every
++ * scanned edge already carries the concrete case: the file, the line, the
++ * route or table. So when the lesson names no example, the harness adds the
++ * one the picture's own arrows stand on: "`gateway/src/routes/orders.ts:9`
++ * sends `GET /orders/*` over HTTP, and it lands in `orders/app/routes.py`."
++ *
++ * Only a scanned edge between two boxes on the chart counts (a box that is a
++ * service matches the edges of the files inside it), a call beats a data
++ * access beats an import, and nothing is said when no such edge exists.
++ */
++const EXAMPLE_ALREADY = /\b(?:for example|for instance|e\.g\.|imagine|think of|say you|suppose|picture this|like a|like an)\b/i;
++const KIND_RANK: Record<string, number> = { http: 0, grpc: 0, queue_publish: 1, queue_consume: 1, db_read: 2, db_write: 2, db_access: 2, import: 3 };
++
++export function deriveWorkedExample(
++  graph: Pick<ArchGraph, 'nodes' | 'edges'> | undefined,
++  chart: SeqChart | undefined,
++): string | undefined {
++  if (graph === undefined || chart === undefined) return undefined;
++  const byId = new Map((graph.nodes ?? []).map((n) => [n.id, n]));
++  /* Every id a node counts as: itself and each ancestor, so a file inside a
++     service matches a chart box that stands for the service. */
++  const within = (id: string, target: string): boolean => {
++    for (let cur: string | undefined = id, hops = 0; cur !== undefined && hops < 8; hops += 1) {
++      if (cur === target) return true;
++      cur = byId.get(cur)?.parentId;
++    }
++    return false;
++  };
++  const nodeIdOf = new Map(chart.items.filter((i) => i.nodeId).map((i) => [i.id, i.nodeId!]));
++  let best: { edge: ArchEdge; rank: number; order: number } | undefined;
++  (chart.links ?? []).forEach((link, order) => {
++    const from = nodeIdOf.get(link.from);
++    const to = nodeIdOf.get(link.to);
++    if (from === undefined || to === undefined) return;
++    for (const edge of graph.edges ?? []) {
++      if (edge.evidence.length === 0 || !within(edge.srcId, from) || !within(edge.dstId, to)) continue;
++      const rank = KIND_RANK[edge.kind] ?? 9;
++      if (best === undefined || rank < best.rank || (rank === best.rank && order < best.order)) best = { edge, rank, order };
++    }
++  });
++  if (best === undefined) return undefined;
++  const { edge } = best;
++  const ev = edge.evidence[0]!;
++  const at = `\x60${ev.file}:${ev.line}\x60`;
++  const dst = byId.get(edge.dstId);
++  const dstName = `\x60${(dst?.path ?? dst?.label ?? edge.dstId).replace(/^(?:file|svc|ds|mod):/, '')}\x60`;
++  const d = edge.detail ?? {};
++  const route = d.method && d.pathPattern ? `\x60${d.method} ${d.pathPattern}\x60 ` : '';
++  switch (edge.kind) {
++    case 'http':
++    case 'grpc':
++      return `A real example from this code: ${at} sends ${route}over ${edge.kind === 'http' ? 'HTTP' : 'gRPC'}, and it lands in ${dstName}.`;
++    case 'db_read':
++    case 'db_write':
++    case 'db_access': {
++      const verb = edge.kind === 'db_read' ? 'reads' : edge.kind === 'db_write' ? 'writes to' : 'uses';
++      const table = d.table ? `the \x60${String(d.table)}\x60 table in ` : '';
++      return `A real example from this code: ${at} ${verb} ${table}${dstName}.`;
++    }
++    case 'queue_publish':
++    case 'queue_consume': {
++      const topic = d.topic ? ` \x60${String(d.topic)}\x60` : '';
++      return `A real example from this code: ${at} ${edge.kind === 'queue_publish' ? 'publishes to' : 'reads from'} the queue${topic}.`;
++    }
++    default:
++      return `A real example from this code: ${at} imports ${dstName}.`;
++  }
++}
++
++export function withWorkedExample(
++  text: string,
++  graph: Pick<ArchGraph, 'nodes' | 'edges'> | undefined,
++  chart: SeqChart | undefined,
++): string {
++  if (EXAMPLE_ALREADY.test(text)) return text;
++  const line = deriveWorkedExample(graph, chart);
++  if (line === undefined) return text;
++  return insertBeforeClosingQuestion(text, line);
++}
+diff --git a/packages/analyzer/src/test/worked-example.test.ts b/packages/analyzer/src/test/worked-example.test.ts
+new file mode 100644
+index 00000000..736d884d
+--- /dev/null
++++ b/packages/analyzer/src/test/worked-example.test.ts
+@@ -0,0 +1,87 @@
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import test from 'node:test';
++import { fileURLToPath } from 'node:url';
++
++import { scanRepo } from '../scan.js';
++import { buildConceptChart, deriveWorkedExample, withWorkedExample } from '../server/conceptChart.js';
++
++const ANALYZER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
++const SHOPFRONT = path.join(ANALYZER_ROOT, 'test', 'fixtures', 'shopfront');
++
++async function shopfrontGraph() {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sequence-worked-example-'));
++  const repo = path.join(dir, 'repo');
++  fs.cpSync(SHOPFRONT, repo, { recursive: true });
++  return scanRepo(repo);
++}
++
++/* Service-level boxes, the way a model's own system-architecture chart draws them. */
++const SERVICES = {
++  version: 1,
++  kind: 'system-architecture',
++  title: 'shopfront',
++  items: [
++    { id: 'g', label: 'gateway', nodeId: 'svc:gateway' },
++    { id: 'o', label: 'orders', nodeId: 'svc:orders' },
++    { id: 'db', label: 'postgres', nodeId: 'ds:postgres' },
++  ],
++  links: [
++    { from: 'o', to: 'db', label: 'stores orders' },
++    { from: 'g', to: 'o', label: 'HTTP' },
++  ],
++} as never;
++
++test('the example is a real call off the scan: file, line, route, and where it lands', async () => {
++  const graph = await shopfrontGraph();
++  const line = deriveWorkedExample(graph, SERVICES);
++  /* A call beats a data access even though the data arrow comes first on the chart. */
++  assert.match(line!, /^A real example from this code: `gateway\/src\/routes\/[a-z]+\.ts:\d+` sends `(GET|POST) \/orders[^`]*` over HTTP, and it lands in `orders\/app\/routes\.py`\.$/);
++  /* And the file:line it names is really that call. */
++  const [, file, lineNo] = /`([^`:]+):(\d+)`/.exec(line!)!;
++  const src = fs.readFileSync(path.join(SHOPFRONT, file!), 'utf8').split('\n')[Number(lineNo) - 1]!;
++  assert.match(src, /ORDERS_URL/);
++});
++
++test('a data arrow alone gives the table it touches', async () => {
++  const graph = await shopfrontGraph();
++  const onlyDb = { ...(SERVICES as object), links: [{ from: 'o', to: 'db' }] } as never;
++  assert.match(deriveWorkedExample(graph, onlyDb)!, /`orders\/app\/db\.py:\d+` (reads|writes to|uses) the `orders` table in `postgres`\./);
++});
++
++test('the product-drawn concept chart gets an example too', async () => {
++  const graph = await shopfrontGraph();
++  const chart = buildConceptChart(graph, { title: 'orders routes', nodeId: 'file:orders/app/routes.py' } as never);
++  assert.ok(chart, 'the fixture yields a concept chart');
++  assert.match(deriveWorkedExample(graph, chart)!, /^A real example from this code: `[^`]+:\d+` /);
++});
++
++test('nothing is said without a scanned edge between two boxes on the chart', async () => {
++  const graph = await shopfrontGraph();
++  const unrelated = {
++    version: 1,
++    kind: 'data-flow',
++    title: 'x',
++    items: [
++      { id: 'a', label: 'inventory', nodeId: 'svc:inventory' },
++      { id: 'b', label: 'invoices', nodeId: 'svc:invoices' },
++      { id: 'c', label: 'idea', },
++    ],
++    links: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }],
++  } as never;
++  assert.equal(deriveWorkedExample(graph, unrelated), undefined);
++  assert.equal(deriveWorkedExample(undefined, SERVICES), undefined);
++});
++
++test('a lesson with its own example is left byte for byte; otherwise the line goes before the check-in', async () => {
++  const graph = await shopfrontGraph();
++  const own = 'For example, the gateway asks orders for one order and waits.\n\nWhat do you think happens if orders is down?';
++  assert.equal(withWorkedExample(own, graph, SERVICES), own);
++  const plain = 'The gateway forwards each order request to the orders service.\n\nWhat do you think happens if orders is down?';
++  const out = withWorkedExample(plain, graph, SERVICES).split('\n\n');
++  assert.equal(out.length, 3);
++  assert.match(out[1]!, /^A real example from this code:/);
++  assert.match(out[2]!, /\?$/);
++});
+-- 
+2.51.1.windows.1
+

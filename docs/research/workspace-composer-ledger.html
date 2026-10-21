@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workspace + Composer ledger — pick A or B</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Research ledger — layout helpers only. Colours from Graphite dark tokens. */
+:root[data-theme="dark"]{
+  --bg-base:#0c0c0e;--surface-1:#121214;--surface-2:#18181b;--surface-3:#222226;
+  --edge:#2a2a30;--edge-strong:#36363e;--ink-1:#ececef;--ink-2:#a8a8b3;--ink-3:#6b6b76;
+  --accent:#6366f1;--accent-solid:#6366f1;--state-selected:rgba(99,102,241,.14);
+  --w-hair:1px;--r-8:8px;--r-10:10px;--r-14:14px;--r-full:999px;
+  --sp-4:4px;--sp-6:6px;--sp-8:8px;--sp-10:10px;--sp-12:12px;--sp-16:16px;--sp-20:20px;
+  --t-10:10px;--t-11:11px;--t-12:12px;--t-14:14px;--lh-12:16px;--lh-14:18px;
+  --font-sans:"Instrument Sans",system-ui,sans-serif;--font-mono:"JetBrains Mono",monospace;
+  --fw-label:550;--topbar-h:44px;--control-h:28px;--icon-btn:26px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-base);color:var(--ink-1);font:var(--t-12)/var(--lh-12) var(--font-sans)}
+.ledger{max-width:1440px;margin:0 auto;padding:var(--sp-20)}
+.ledger h1{font-size:18px;font-weight:600;margin:0 0 var(--sp-8)}
+.ledger .lede{color:var(--ink-2);max-width:72ch;margin:0 0 var(--sp-20)}
+.pick-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-16);margin-bottom:var(--sp-20)}
+.pick-col{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden;background:var(--surface-1)}
+.pick-head{padding:var(--sp-12) var(--sp-16);border-bottom:var(--w-hair) solid var(--edge);display:flex;justify-content:space-between;align-items:center}
+.pick-head h2{margin:0;font-size:var(--t-14);font-weight:var(--fw-label)}
+.pick-tag{font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);padding:2px var(--sp-6)}
+.pick-note{padding:var(--sp-10) var(--sp-16);color:var(--ink-2);border-top:var(--w-hair) solid var(--edge);font-size:var(--t-11)}
+.dim{margin:var(--sp-16) 0 var(--sp-8);font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i-14{width:14px;height:14px}
+.i-12{width:12px;height:12px}
+/* mock shell */
+.mock{height:520px;display:flex;flex-direction:column;background:var(--bg-base)}
+.mock-bar{height:var(--topbar-h);display:flex;align-items:center;gap:var(--sp-8);padding:0 var(--sp-12);border-bottom:var(--w-hair) solid var(--edge);background:var(--surface-1);flex-shrink:0}
+.mock-logo{font-weight:600;font-size:var(--t-12)}
+.mock-tabs{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow:hidden}
+.mock-tab{display:inline-flex;align-items:center;gap:var(--sp-6);height:28px;padding:0 var(--sp-10);border:0;border-radius:var(--r-8);background:transparent;color:var(--ink-3);font:inherit;cursor:default}
+.mock-tab.on{background:var(--state-selected);color:var(--ink-1)}
+.mock-body{flex:1;min-height:0;display:flex}
+.mock-sessions{width:220px;border-right:var(--w-hair) solid var(--edge);background:var(--surface-1);padding:var(--sp-8);flex-shrink:0}
+.mock-chat{flex:0 0 42%;min-width:0;border-right:var(--w-hair) solid var(--edge);background:var(--surface-1);display:flex;flex-direction:column}
+.mock-board{flex:1;min-width:0;background:var(--surface-1);display:flex;flex-direction:column}
+.mock-pane-hd{height:32px;display:flex;align-items:center;padding:0 var(--sp-10);border-bottom:var(--w-hair) solid var(--edge);color:var(--ink-3);font-size:var(--t-10);flex-shrink:0}
+.mock-transcript{flex:1;overflow:auto;padding:var(--sp-16) var(--sp-16) var(--sp-8)}
+.userbubble{margin-left:auto;max-width:82%;background:var(--surface-2);border-radius:var(--r-14);padding:var(--sp-10) var(--sp-12);font-size:var(--t-14);line-height:var(--lh-14);margin-bottom:var(--sp-12)}
+.prose{font-size:var(--t-12);color:var(--ink-1);line-height:1.5;margin-bottom:var(--sp-12)}
+.toolrow{display:flex;align-items:center;gap:var(--sp-8);height:26px;color:var(--ink-3);font-size:var(--t-12)}
+.mock-board-canvas{flex:1;margin:var(--sp-12);border:var(--w-hair) dashed var(--edge);border-radius:var(--r-10);display:grid;place-items:center;color:var(--ink-3);font-size:var(--t-11)}
+.mock-node{width:88px;height:52px;border:var(--w-hair) solid var(--edge-strong);border-radius:var(--r-8);background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:var(--t-10)}
+.mock-composer-wrap{padding:0 var(--sp-16) var(--sp-12);flex-shrink:0}
+.mock-composer{border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);background:var(--surface-2);padding:var(--sp-8)}
+.mock-field{min-height:44px;color:var(--ink-3);font-size:var(--t-12);padding:var(--sp-4) var(--sp-6)}
+.mock-ctrls{display:flex;align-items:center;gap:var(--sp-6);padding:0 var(--sp-6) var(--sp-6)}
+.sendbtn{width:28px;height:28px;border-radius:var(--r-full);border:0;background:var(--accent-solid);color:#fff;display:grid;place-items:center;margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:var(--sp-4);height:22px;padding:0 var(--sp-8);border:var(--w-hair) solid var(--edge);border-radius:var(--r-8);font-size:var(--t-10);color:var(--ink-2)}
+.chiprow{display:flex;flex-wrap:wrap;gap:var(--sp-4);padding:0 var(--sp-6) var(--sp-6);border-bottom:var(--w-hair) solid var(--edge);margin-bottom:var(--sp-6)}
+.understrip{display:flex;align-items:center;gap:var(--sp-8);padding:var(--sp-6) var(--sp-4) 0;font-family:var(--font-mono);font-size:var(--t-10);color:var(--ink-3)}
+.understrip .dot{opacity:.5}
+.session-row{height:28px;display:flex;align-items:center;gap:var(--sp-8);padding:0 var(--sp-8);border-radius:var(--r-8);color:var(--ink-2);font-size:var(--t-11)}
+.session-row.sel{background:var(--state-selected);color:var(--ink-1)}
+.overlay-bad .mock-chat{position:absolute;left:280px;top:var(--topbar-h);width:360px;height:calc(100% - var(--topbar-h));border-radius:var(--r-14);box-shadow:0 8px 32px rgba(0,0,0,.45);border:var(--w-hair) solid var(--edge-strong);z-index:2}
+.overlay-bad .mock-body{position:relative}
+.icon-row{display:flex;gap:var(--sp-16);padding:var(--sp-16);align-items:center;justify-content:center}
+.icon-pick{text-align:center}
+.icon-pick .lbl{display:block;margin-top:var(--sp-6);font-size:var(--t-10);color:var(--ink-3)}
+.dont{color:#f87171;font-size:var(--t-10);margin-bottom:var(--sp-8)}
+.do{color:#86efac;font-size:var(--t-10);margin-bottom:var(--sp-8)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ic-topic" viewBox="0 0 24 24"><path d="M3.6 8.4h6.2M3.6 12h9.6M3.6 15.6h6.2"/><path d="m16.4 8.4 3.6 3.6-3.6 3.6"/></symbol>
+<symbol id="ic-panelleft" viewBox="0 0 24 24"><rect x="3.2" y="5" width="17.6" height="14" rx="2.6"/><path d="M9.4 5v14"/></symbol>
+<symbol id="ic-thread" viewBox="0 0 24 24"><path d="M4 6.2A2.2 2.2 0 0 1 6.2 4h11.6A2.2 2.2 0 0 1 20 6.2v8.1a2.2 2.2 0 0 1-2.2 2.2H9.3L4.9 20V16.5H4V6.2"/></symbol>
+<symbol id="ic-newthread" viewBox="0 0 24 24"><path d="M12.5 4.5H6.6A2.6 2.6 0 0 0 4 7.1v10.3A2.6 2.6 0 0 0 6.6 20h10.3a2.6 2.6 0 0 0 2.6-2.6v-5.9"/><path d="M17.9 3.6a2 2 0 0 1 2.8 2.8l-7.4 7.4-3.5.7.7-3.5z"/></symbol>
+<symbol id="ic-board" viewBox="0 0 24 24"><rect x="3.2" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="13.8" y="4.2" width="7" height="5.4" rx="1.6"/><rect x="8.5" y="14.4" width="7" height="5.4" rx="1.6"/><path d="M6.7 9.6v2.6h10.6V9.6M12 12.2v2.2"/></symbol>
+<symbol id="ic-folder" viewBox="0 0 24 24"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h2.9l2.1 2.4h6.2A2.4 2.4 0 0 1 20 9.8v6.8A2.4 2.4 0 0 1 17.6 19H6.4A2.4 2.4 0 0 1 4 16.6z"/></symbol>
+<symbol id="ic-branch" viewBox="0 0 24 24"><circle cx="6.4" cy="5.6" r="2.2"/><circle cx="6.4" cy="18.4" r="2.2"/><circle cx="17.2" cy="7.8" r="2.2"/><path d="M6.4 7.8v8.4"/><path d="M17.2 10v1a4 4 0 0 1-4 4H6.4"/></symbol>
+<symbol id="ic-model" viewBox="0 0 24 24"><path d="m12 3.4 8.4 4.2-8.4 4.2-8.4-4.2z"/><path d="m3.6 12.4 8.4 4.2 8.4-4.2"/><path d="m3.6 16.6 8.4 4.2 8.4-4.2"/></symbol>
+<symbol id="ic-send" viewBox="0 0 24 24"><path d="M12 19V5.6"/><path d="m5.8 11.8 6.2-6.2 6.2 6.2"/></symbol>
+<symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5.2v13.6M5.2 12h13.6"/></symbol>
+</defs></svg>
+
+<div class="ledger">
+  <h1>Workspace + Composer ledger</h1>
+  <p class="lede">Two specimens side by side for each decision. Open this file in a browser, pick A or B per row, then we implement. Graphite tokens only — no floating chat bubble on the board, no stacked chip buttons above the composer chrome.</p>
+
+  <p class="dim">1 · Chat tab icon (retire speech bubble)</p>
+  <div class="pick-row">
+    <div class="pick-col">
+      <div class="pick-head"><h2>A · ic-topic</h2><span class="pick-tag">lines + chevron</span></div>
+      <div class="icon-row">
+        <div class="icon-pick"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="lbl">Chat tab · 14px</span></div>
+        <div class="icon-pick"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="lbl">Dock · 14px</span></div>
+      </div>
+      <p class="pick-note">Reads as “conversation lane” — distinct from ic-newthread (new page) and ic-thread (legacy bubble). <b>Shipped on main now</b> as interim fix.</p>
+    </div>
+    <div class="pick-col">
+      <div class="pick-head"><h2>B · ic-panelleft</h2><span class="pick-tag">column split</span></div>
+      <div class="icon-row">
+        <div class="icon-pick"><svg class="i i-14"><use href="#ic-panelleft"/></svg><span class="lbl">Chat tab · 14px</span></div>
+        <div class="icon-pick"><svg class="i i-14"><use href="#ic-panelleft"/></svg><span class="lbl">Dock · 14px</span></div>
+      </div>
+      <p class="pick-note">Metaphor: chat is the left column of the workspace. Must not collide with index rail (ic-panel) in the same strip.</p>
+    </div>
+  </div>
+  <p class="pick-note" style="margin-top:-12px;border:var(--w-hair) solid var(--edge);border-radius:var(--r-10);padding:var(--sp-10) var(--sp-12)"><span class="dont">✕ Retired</span> ic-thread speech bubble — floats visually, clips at 14px, reads as generic “chat app”.</p>
+
+  <p class="dim">2 · Workspace layout — sections never stack</p>
+  <div class="pick-row">
+    <div class="pick-col">
+      <div class="pick-head"><h2>A · Column split</h2><span class="pick-tag">3 regions · hairlines</span></div>
+      <div class="mock">
+        <div class="mock-bar"><span class="mock-logo">Sequence</span></div>
+        <div class="mock-body">
+          <aside class="mock-sessions">
+            <div class="session-row sel"><svg class="i i-12"><use href="#ic-newthread"/></svg> Checkout blast radius</div>
+            <div class="session-row">Auth middleware pass</div>
+          </aside>
+          <section class="mock-chat">
+            <div class="mock-pane-hd">Chat</div>
+            <div class="mock-transcript">
+              <div class="userbubble">What breaks if I change auth?</div>
+              <div class="prose">Two callers — the graph shows the path.</div>
+              <div class="toolrow"><svg class="i i-14"><use href="#ic-board"/></svg><span>Selected 3 nodes on the board</span></div>
+            </div>
+            <div class="mock-composer-wrap">
+              <div class="mock-composer"><div class="mock-field">Ask about this repo…</div><div class="mock-ctrls"><button class="sendbtn" aria-label="Send"><svg class="i i-12"><use href="#ic-send"/></svg></button></div></div>
+            </div>
+          </section>
+          <section class="mock-board">
+            <div class="mock-pane-hd">Architecture</div>
+            <div class="mock-board-canvas"><div class="mock-node">gateway</div></div>
+          </section>
+        </div>
+      </div>
+      <p class="pick-note">Sessions · Chat · Board are equal columns. No shadow, no radius, no z-index. Resizers move hairlines only.</p>
+    </div>
+    <div class="pick-col">
+      <div class="pick-head"><h2>B · Tab workspace + split</h2><span class="pick-tag">tabs · one active body</span></div>
+      <div class="mock">
+        <div class="mock-bar">
+          <span class="mock-logo">Sequence</span>
+          <span class="mock-tabs">
+            <button class="mock-tab"><svg class="i i-14"><use href="#ic-newthread"/></svg> Sessions</button>
+            <button class="mock-tab on"><svg class="i i-14"><use href="#ic-topic"/></svg> Chat</button>
+            <button class="mock-tab"><svg class="i i-14"><use href="#ic-board"/></svg> Architecture</button>
+            <button class="mock-tab" style="width:28px;padding:0;justify-content:center"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+          </span>
+        </div>
+        <div class="mock-body">
+          <section class="mock-chat" style="flex:0 0 48%;border-right:var(--w-hair) solid var(--edge)">
+            <div class="mock-transcript">
+              <div class="userbubble">What breaks if I change auth?</div>
+              <div class="prose">Two callers — open Architecture to see the path.</div>
+            </div>
+            <div class="mock-composer-wrap">
+              <div class="mock-composer"><div class="mock-field">Ask about this repo…</div><div class="mock-ctrls"><button class="sendbtn"><svg class="i i-12"><use href="#ic-send"/></svg></button></div></div>
+            </div>
+          </section>
+          <section class="mock-board">
+            <div class="mock-pane-hd">Architecture · split view</div>
+            <div class="mock-board-canvas"><div class="mock-node">gateway</div></div>
+          </section>
+        </div>
+      </div>
+      <p class="pick-note">Chrome tabs for focus; when Chat + Architecture are both open, split the workspace 50/50 — still no overlay card on the canvas.</p>
+    </div>
+  </div>
+  <p class="pick-note" style="margin-top:-12px"><span class="dont">✕ Don't</span> floating chat pane with box-shadow on top of the board (current overlay mode at medium widths).</p>
+
+  <p class="dim">3 · Repo · branch · model context</p>
+  <div class="pick-row">
+    <div class="pick-col">
+      <div class="pick-head"><h2>A · Inside composer</h2><span class="pick-tag">chiprow · shared border</span></div>
+      <div class="mock" style="height:200px">
+        <div class="mock-composer-wrap" style="margin-top:auto">
+          <div class="mock-composer">
+            <div class="chiprow">
+              <span class="chip"><svg class="i i-12"><use href="#ic-folder"/></svg> sequence</span>
+              <span class="chip"><svg class="i i-12"><use href="#ic-branch"/></svg> main</span>
+              <span class="chip"><svg class="i i-12"><use href="#ic-model"/></svg> claude-sonnet</span>
+            </div>
+            <div class="mock-field">Ask about this repo…</div>
+            <div class="mock-ctrls"><button class="sendbtn"><svg class="i i-12"><use href="#ic-send"/></svg></button></div>
+          </div>
+        </div>
+      </div>
+      <p class="pick-note">Context lives inside the same bordered object as the field — one composer, not three buttons stacked above it. Empty thread only.</p>
+    </div>
+    <div class="pick-col">
+      <div class="pick-head"><h2>B · Under-composer strip</h2><span class="pick-tag">mono · no chip borders</span></div>
+      <div class="mock" style="height:200px">
+        <div class="mock-composer-wrap" style="margin-top:auto">
+          <div class="mock-composer">
+            <div class="mock-field">Ask about this repo…</div>
+            <div class="mock-ctrls"><button class="sendbtn"><svg class="i i-12"><use href="#ic-send"/></svg></button></div>
+          </div>
+          <div class="understrip">
+            <span><svg class="i i-12"><use href="#ic-folder"/></svg> sequence</span>
+            <span class="dot">·</span>
+            <span><svg class="i i-12"><use href="#ic-branch"/></svg> main</span>
+            <span class="dot">·</span>
+            <span><svg class="i i-12"><use href="#ic-model"/></svg> claude-sonnet</span>
+          </div>
+        </div>
+      </div>
+      <p class="pick-note">Sheet 12.4 pattern: session facts outside the send box, mono, quiet — same strip family as permissions / grounding.</p>
+    </div>
+  </div>
+
+  <p class="dim">4 · What you’re looking at today (anti-specimen)</p>
+  <div class="pick-col overlay-bad" style="margin-bottom:var(--sp-20)">
+    <div class="pick-head"><h2>Current pain · overlay chat on board</h2><span class="pick-tag">reject</span></div>
+    <div class="mock" style="height:360px">
+      <div class="mock-bar"><span class="mock-logo">Sequence</span></div>
+      <div class="mock-body">
+        <section class="mock-board" style="flex:1">
+          <div class="mock-pane-hd">Architecture</div>
+          <div class="mock-board-canvas"><div class="mock-node">gateway</div><div class="mock-node" style="margin-left:80px">billing</div></div>
+        </section>
+        <section class="mock-chat">
+          <div class="mock-pane-hd">Chat · floating</div>
+          <div class="mock-transcript"><div class="userbubble">…</div></div>
+        </section>
+      </div>
+    </div>
+    <p class="pick-note">Chat sits on top of the canvas with shadow and radius — reads as a bubble, not a workspace section. Both A and B above eliminate this.</p>
+  </div>
+
+  <p class="dim">Lock-in checklist</p>
+  <p class="pick-note" style="border-radius:var(--r-10)">
+    Reply with four letters, e.g. <code>A · B · A · —</code><br>
+    1 Chat icon · 2 Layout · 3 Context strip · 4 (anything else from thread: imports visible, draw tab, agent bar)
+  </p>
+</div>
+</body>
+</html>

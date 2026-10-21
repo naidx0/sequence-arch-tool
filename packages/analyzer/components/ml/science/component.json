@@ -1,0 +1,21 @@
+{
+  "id": "ml/science",
+  "group": "ml",
+  "label": "Science",
+  "summary": "Scientific loop: state the claim, name the evidence you will accept, run or read only that, report pass or fail, list unknowns.",
+  "triggers": [
+    "scientific research loop",
+    "hypothesis and evidence",
+    "paper qa style",
+    "experiment log",
+    "what remains unknown"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/science"
+  },
+  "url": null
+}

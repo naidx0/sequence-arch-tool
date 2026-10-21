@@ -1,0 +1,34 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE ENGINE IS READING THE PROJECT (0.1.8.1 B1)
+   packages/web2/src/boot/BootScanning.tsx
+
+   The server answers before it has read its startup `--repo`. A tab opened in
+   that window used to land on the no-project home and offer to open the very
+   project being read. It now says what is happening, with the count the
+   server reports, until the read is done (useBoot polls). The card sits
+   over the corner, not the frame — covering the composer was the
+   20-minute launch window. The loader is the app's own (shell2/ActivityLoader).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+import { ActivityLoader } from '../shell2/ActivityLoader';
+import { scanningLine, type BootScanning as Scanning } from './bootSequence';
+import './boot.css';
+
+/** The last folder of a path, either separator. */
+const folderName = (p: string): string => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
+
+export function BootScanning({ scanning }: { scanning: Scanning }) {
+  const pct = scanning.total > 0 ? Math.min(1, scanning.done / scanning.total) : null;
+  return (
+    <div className="switch-progress" role="status" aria-live="polite" data-testid="boot-scanning">
+      <ActivityLoader variant="cell" />
+      <div className="switch-progress-body">
+        <p className="switch-progress-t">{scanning.path ? `Opening ${folderName(scanning.path)}` : 'Opening the project'}</p>
+        <p className="switch-progress-n" data-testid="boot-scanning-line">
+          {scanningLine(scanning)}
+        </p>
+        {pct !== null ? <progress className="switch-progress-bar" max={1} value={pct} aria-label="Files read" /> : null}
+      </div>
+    </div>
+  );
+}

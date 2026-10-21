@@ -1,0 +1,21 @@
+{
+  "id": "workflow/swe",
+  "group": "workflow",
+  "label": "SWE",
+  "summary": "Long-running coding loop: reproduce the failure, write a locking test that fails for the right reason, smallest patch, re-run.",
+  "triggers": [
+    "long running coding agent",
+    "swe agent loop",
+    "reproduce then patch",
+    "locking test first",
+    "openhands style coding"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/swe"
+  },
+  "url": null
+}

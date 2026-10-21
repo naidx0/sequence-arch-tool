@@ -1,0 +1,21 @@
+{
+  "id": "ml/train",
+  "group": "ml",
+  "label": "Train",
+  "summary": "ML training loop: name the data, split, metric, and compute you have; measure a baseline before training; never invent metrics.",
+  "triggers": [
+    "ml training loop",
+    "evaluate before training",
+    "unsloth or halo workflow",
+    "dataset and metric check",
+    "do not invent ml metrics"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/train"
+  },
+  "url": null
+}

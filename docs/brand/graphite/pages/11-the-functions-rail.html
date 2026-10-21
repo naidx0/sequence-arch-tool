@@ -1,0 +1,636 @@
+<section class="page" data-page-num="11" data-page-title="The functions rail">
+
+  <div class="pagehead">
+    <span class="num">Sheet 11 &middot; The functions rail</span>
+    <h1>The functions rail</h1>
+    <p class="lede">The right-hand rail is Sequence's index: files and, inside them, functions. It
+    is functions-first because a function is the smallest thing on the board that can be
+    <em>played</em> &mdash; click one and the canvas re-sorts and runs its service-to-service flow.
+    Everything else in the rail exists to get you to that row.</p>
+    <p class="lede">Nothing on this sheet is new. The rail is Graphite's own thread rail with its
+    meanings changed: a section head becomes a board card, a folder row becomes a file, a thread
+    row becomes a function. Same three rungs, same indent, same states, same ladder held on
+    sheet 10.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.1</span>
+      <h2>The rail, whole</h2>
+      <span class="tail">--rail-w &middot; --surface-1 &middot; one border, on the left</span>
+    </div>
+
+    <p class="note">This column has a name: <b>the index rail</b>. It is the shell's third column,
+    it holds one thing &mdash; the index of the open repository, board card above file above function
+    &mdash; and it is the only surface on the right-hand side of the window. One rail, one scroller,
+    one row pitch per rung. It uses the <span class="inline-code">.pane</span> chassis &mdash; a
+    <span class="inline-code">--surface-1</span> column with a single
+    <span class="inline-code">--edge</span> hairline on its left, a
+    <span class="inline-code">.pane-hd</span> at <span class="inline-code">--topbar-h</span> so its
+    header lands on the same 44px line as the chat header and the app bar, and a
+    <span class="inline-code">.pane-scroll</span> that is the only thing in the column that
+    scrolls.</p>
+
+    <p class="note">The header carries the word, not a glyph.
+    <span class="inline-code">ic-panel</span> is the app bar's control for showing and hiding this
+    rail, and sheet 09 holds it to that one host. A mark that both <em>opens</em> a surface and
+    <em>labels</em> it is one glyph doing two jobs, which is the defect 11.3 forbids for the row
+    kinds; the rail's own header is titled in words, and the only glyphs in it are the actions on
+    the right.</p>
+
+    <div class="grid g2">
+      <div class="stage" style="align-items:flex-start">
+        <div class="pane" style="width:var(--rail-w);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden">
+
+          <div class="pane-hd">
+            <span class="t">Index</span>
+            <span class="right">
+              <button class="iconbtn" aria-label="Filter"><svg class="i i-14"><use href="#ic-filter"/></svg></button>
+              <button class="iconbtn" aria-label="Close the index"><svg class="i i-14"><use href="#ic-x"/></svg></button>
+            </span>
+          </div>
+
+          <div style="padding:var(--sp-8) var(--sp-8) 0">
+            <span class="inputwrap" style="width:100%">
+              <svg class="i i-14"><use href="#ic-search"/></svg>
+              <input class="input sm" placeholder="Find a file or a function" aria-label="Find a file or a function" style="width:100%;padding-left:var(--sp-32)">
+            </span>
+          </div>
+
+          <div class="pane-scroll">
+
+            <div class="railhead" style="margin-top:var(--sp-4)">
+              <svg class="i i-12"><use href="#ic-service"/></svg>
+              <span style="margin-left:var(--sp-6)">Analyzer</span>
+              <span class="mono" style="margin-left:auto;letter-spacing:0;color:var(--ink-4);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg>5</span>
+            </div>
+
+            <div class="folder">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">workspace/sideRailModel.ts</span>
+              <span class="mono" style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg>3</span>
+              <svg class="i i-12 cv"><use href="#ic-chevdown"/></svg>
+            </div>
+
+            <div class="threads">
+              <div class="thread">
+                <svg class="i i-14"><use href="#ic-fn"/></svg>
+                <span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span>
+                <span class="ts"><span class="ph">&#8249;line&#8250;</span></span>
+              </div>
+              <div class="thread sel" style="box-shadow:inset var(--w-rule) 0 0 var(--accent)">
+                <svg class="i i-14"><use href="#ic-fn"/></svg>
+                <span class="tt mono" style="font-size:var(--t-11)">filterRailRows</span>
+                <span class="ts"><span class="ph">&#8249;line&#8250;</span></span>
+              </div>
+              <div class="thread">
+                <svg class="i i-14"><use href="#ic-fn"/></svg>
+                <span class="tt mono" style="font-size:var(--t-11)">activateRailRow</span>
+                <span class="ts"></span>
+              </div>
+            </div>
+
+            <div class="folder">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">graph/functionUnit.ts</span>
+              <span class="mono" style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg>2</span>
+              <svg class="i i-12 cv"><use href="#ic-chevright"/></svg>
+            </div>
+
+            <div class="railhead">
+              <svg class="i i-12"><use href="#ic-database"/></svg>
+              <span style="margin-left:var(--sp-6)">Graph store</span>
+              <span class="mono" style="margin-left:auto;letter-spacing:0;color:var(--ink-4);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg>0</span>
+            </div>
+            <div class="emptyfolder">Nothing the scan could name.</div>
+
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <dl class="specs">
+          <dt>Width, default</dt><dd>--rail-w &middot; 280px</dd>
+          <dt>Width, dragged</dt><dd>--rail-w-min 216px &hellip; --rail-w-max 400px</dd>
+          <dt>Surface</dt><dd>--surface-1</dd>
+          <dt>Border</dt><dd>1px --edge, left only</dd>
+          <dt>Header</dt><dd>.pane-hd &middot; --topbar-h &middot; 0 --sp-10</dd>
+          <dt>Scroller padding</dt><dd>.pane-scroll &middot; --sp-8</dd>
+          <dt>Card head</dt><dd>.railhead &middot; 24px</dd>
+          <dt>File row</dt><dd>.folder &middot; --row-h &middot; 30px</dd>
+          <dt>Function row</dt><dd>.thread &middot; --row-h-thread &middot; 28px</dd>
+          <dt>Indent, one level</dt><dd>.threads &middot; --sp-16</dd>
+          <dt>Icon slot</dt><dd>.i-14 &middot; gap --sp-8</dd>
+          <dt>Row radius</dt><dd>--r-10</dd>
+        </dl>
+        <p class="caption">The width is the user's. It is dragged within the clamps and remembered,
+        because re-sizing a panel on every launch is the definition of not customisable. The clamps
+        are the design; the value inside them is not.</p>
+      </div>
+    </div>
+
+    <div class="dev">
+      <b>This departs from the substrate.</b> The substrate lays its shell out as
+      <span class="inline-code">.win</span> &mdash; three columns,
+      <span class="inline-code">var(--rail-w) minmax(0,1fr) var(--pane-w)</span> &mdash; and sizes
+      the third at <span class="inline-code">--pane-w</span> (392px), the width Graphite gives its
+      file detail column. Sequence's third column is <em>this</em> rail: an index that drives the
+      canvas, not a properties column beside one, and the whole right-hand side of the window is
+      it. So the rail is drawn at <span class="inline-code">--rail-w</span> (280px) inside
+      <span class="inline-code">--rail-w-min</span> 216 and
+      <span class="inline-code">--rail-w-max</span> 400, and
+      <span class="inline-code">--pane-w</span> keeps exactly one host and it is the substrate's:
+      <span class="inline-code">.win</span>'s third grid column, inherited from Graphite and left
+      alone so a shell specimen in this book and a shell specimen in Graphite stay the same object.
+      No Sequence <em>surface</em> asks for it &mdash; not this rail, not a menu, not a specimen
+      width &mdash; and <b>the gap between the chassis and the rail is the handback</b>: the shell
+      should size its third column at <span class="inline-code">--rail-w</span>, and until it does,
+      every shell drawn in this book is 112px wider on the right than the product it describes.
+      <span class="inline-code">--pane-w-min</span> is not borrowed here either. It is a resize
+      clamp; the 320px a menu or a path field wants is
+      <span class="inline-code">--menu-w</span>, which the substrate declares for that job so
+      sheet 01's prohibition can be obeyed rather than argued with.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.2</span>
+      <h2>Three rungs, and no fourth</h2>
+      <span class="tail">24 &middot; 30 &middot; 28 &middot; indent --sp-16</span>
+    </div>
+
+    <p class="note">Row height is semantic, not decorative. A board card is a <em>label</em>, so it
+    is the 24px eyebrow rung. A file is <em>structure that opens and closes</em>, so it is the 30px
+    rung. A function is the <em>object you act on</em>, so it is the 28px rung &mdash; the same rung a
+    thread gets in the chat rail, because clicking it does the same size of thing.</p>
+
+    <p class="note">The function row is deliberately <b>not</b> the smallest rung on the sheet. 26px
+    is the footnote height &mdash; a tool call, a key/value line. In a functions-first rail the
+    function is the point of the rail, and demoting it to a footnote would say the opposite of what
+    the product means. Density is solved by the filter and by the card grouping, never by a
+    shorter row.</p>
+
+    <div class="panel">
+      <div class="specimens column" style="width:100%;max-width:var(--rail-w-max)">
+        <div class="specimen" style="width:100%">
+          <div class="railhead" style="width:100%;margin-top:0">
+            <svg class="i i-12"><use href="#ic-service"/></svg>
+            <span style="margin-left:var(--sp-6)">Analyzer</span>
+            <span class="mono" style="margin-left:auto;letter-spacing:0;color:var(--ink-4);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg>5</span>
+          </div>
+          <span class="lbl">.railhead &middot; 24px &middot; mono --t-10 uppercase .08em</span>
+        </div>
+
+        <div class="specimen" style="width:100%">
+          <div class="folder" style="width:100%">
+            <svg class="i i-14"><use href="#ic-file"/></svg>
+            <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">workspace/sideRailModel.ts</span>
+            <span class="mono" style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg>3</span>
+            <svg class="i i-12 cv"><use href="#ic-chevdown"/></svg>
+          </div>
+          <span class="lbl">.folder &middot; --row-h 30px &middot; sans --t-12 / 500</span>
+        </div>
+
+        <div class="specimen" style="width:100%">
+          <div class="threads" style="width:100%">
+            <div class="thread">
+              <svg class="i i-14"><use href="#ic-fn"/></svg>
+              <span class="tt mono" style="font-size:var(--t-11)">filterRailRows</span>
+              <span class="ts"><span class="ph">&#8249;line&#8250;</span></span>
+            </div>
+          </div>
+          <span class="lbl">.threads &gt; .thread &middot; --row-h-thread 28px &middot; mono --t-11</span>
+        </div>
+      </div>
+
+      <hr>
+
+      <p class="caption">One indent step, <span class="inline-code">--sp-16</span>, applied once by
+      <span class="inline-code">.threads</span>. The rail is three levels deep by construction &mdash;
+      card, file, function &mdash; so the indent never compounds and never eats the name column. Where
+      the Files projection nests deeper, the step stays <span class="inline-code">--sp-16</span> and
+      the <em>name</em> gives way, not the indent: a path truncates at the front, because the identity
+      of <span class="inline-code">&hellip;/board/boardFocusModel.ts</span> is its tail, and a
+      function name truncates at the end, because the identity of a name is its head.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.3</span>
+      <h2>A file row is not a function row</h2>
+      <span class="tail">four channels, none of them hue</span>
+    </div>
+
+    <p class="note">The rail obeys the same law as the board: a <em>kind</em> is a category and a
+    category never earns a hue. A file and a function are told apart by height, by indent, by icon
+    and by type family &mdash; four channels, all of which survive a greyscale render and a
+    colour-blind reader.</p>
+
+    <div class="scrollx">
+      <table class="tk">
+        <thead><tr><th>Channel</th><th>Board card</th><th>File</th><th>Function</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Height</td><td class="v">24px</td><td class="v">--row-h</td><td class="v">--row-h-thread</td></tr>
+          <tr><td class="k">Indent</td><td class="v">0</td><td class="v">0</td><td class="v">--sp-16</td></tr>
+          <tr><td class="k">Icon</td><td class="v">the node kind</td><td class="v">ic-file</td><td class="v">ic-fn</td></tr>
+          <tr><td class="k">Type</td><td class="v">mono --t-10 caps</td><td class="v">sans --t-12 / 500</td><td class="v">mono --t-11</td></tr>
+          <tr><td class="k">Trailing column</td><td class="v">ic-fn + count, --ink-4</td><td class="v">ic-fn + count, --ink-3</td><td class="v">line, .ts</td></tr>
+          <tr><td class="k">Hue</td><td class="v">none</td><td class="v">none</td><td class="v">none</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Mono sets one step below the sans beside it, everywhere. A file path is a
+    name a human wrote and reads as prose; a function name is an identifier and reads as a value.
+    The trailing count is prefixed by <span class="inline-code">ic-fn</span> from the sprite. It
+    used to be a typed <span class="inline-code">&amp;#402;</span> beside the number, which sheet 09
+    forbids outright: a typed character carries no stroke weight, no grid and no colour
+    inheritance, so it cannot be part of a vocabulary. The rail already draws
+    <span class="inline-code">ic-fn</span> on every function row; the count now says the same word
+    with the same mark.</p>
+
+    <p class="note" style="margin-top:var(--sp-16)">The card head's icon is not decoration. It is
+    the <em>same glyph</em> the node carries on the board, from the same one-icon-per-kind
+    vocabulary &mdash; so the rail and the canvas name a service the same way, and a reader who
+    learns the mark once has learned it in both places. This is the rail's half of the
+    architecture's no-hue differentiation: the board proves the icons at a distance, the rail
+    proves them at 12px.</p>
+
+    <div class="panel tight">
+      <div class="kindlegend">
+        <span class="grp">Kinds</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-service"/></svg>service</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-module"/></svg>module</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-database"/></svg>datastore</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-topic"/></svg>topic</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-agent"/></svg>agent</span>
+        <span class="grpsep"></span>
+        <span class="grp">Position</span>
+        <span class="k"><svg class="i i-12"><use href="#ic-entry"/></svg>entry</span>
+      </div>
+      <p class="caption">The six card heads a rail can show, in the six glyphs the board uses,
+      grouped the way every legend in the book groups them: five kinds, then entry, which is a
+      position. No seventh, and no glyph doing two jobs.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-12)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg> DO</span>
+        <div class="threads" style="width:100%">
+          <div class="thread"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">resolveArchNodeForFile</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+          <div class="thread"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">pathsMatch</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+        </div>
+        <p class="why">Same glyph, same rung, same colour. The rows differ only in what they say.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg> DON'T</span>
+        <div class="threads" style="width:100%">
+          <div class="thread"><svg class="i i-14" style="color:var(--fits)"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11);color:var(--fits)">resolveArchNodeForFile</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+          <div class="thread"><svg class="i i-14" style="color:var(--spills)"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11);color:var(--spills)">pathsMatch</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+        </div>
+        <p class="why">Green and amber are verdicts. Spent on a row's <em>category</em>, they say
+        "passed" and "warning" about code that was merely listed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.4</span>
+      <h2>Rest, hover, selected, playing, focus</h2>
+      <span class="tail">one accent mark, for one fact</span>
+    </div>
+
+    <p class="note">Four hundred rows can be at rest, one can be hovered, one can be selected and
+    exactly one can be <em>playing</em>. Selection and playing are different claims and they are
+    drawn differently: selection is where the keyboard is, and is neutral; playing is what the
+    canvas is currently showing, and is the one place in this rail the accent appears.</p>
+
+    <div class="panel">
+      <div class="specimens column" style="width:100%;max-width:var(--rail-w-max)">
+        <div class="specimen" style="width:100%">
+          <div class="threads" style="width:100%"><div class="thread">
+            <svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div></div>
+          <span class="lbl">rest &middot; --ink-2 &middot; no fill</span>
+        </div>
+        <div class="specimen" style="width:100%">
+          <div class="threads" style="width:100%"><div class="thread" style="background:var(--state-hover);color:var(--ink-1)">
+            <svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div></div>
+          <span class="lbl">hover &middot; --state-hover &middot; --dur-1</span>
+        </div>
+        <div class="specimen" style="width:100%">
+          <div class="threads" style="width:100%"><div class="thread sel">
+            <svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div></div>
+          <span class="lbl">selected &middot; --state-selected &middot; neutral</span>
+        </div>
+        <div class="specimen" style="width:100%">
+          <div class="threads" style="width:100%"><div class="thread sel" style="box-shadow:inset var(--w-rule) 0 0 var(--accent)">
+            <svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div></div>
+          <span class="lbl">playing &middot; + inset --w-rule --accent</span>
+        </div>
+        <div class="specimen" style="width:100%">
+          <div class="threads" style="width:100%"><div class="thread forcefocus">
+            <svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div></div>
+          <span class="lbl">focus &middot; the double ring, never removed</span>
+        </div>
+      </div>
+
+      <p class="caption">Hover may never out-weigh playing. The playing mark is the one thing a
+      reader hunts for in this rail, and a hover that paints heavier than it turns the pointer into
+      a liar.</p>
+    </div>
+
+    <div class="dev">
+      <b>The substrate needs one addition.</b> <span class="inline-code">.thread.sel</span> paints
+      <span class="inline-code">--state-selected</span> and nothing else. The playing state adds an
+      inset <span class="inline-code">--w-rule</span> bar in
+      <span class="inline-code">--accent</span>, drawn here inline. It should become part of the
+      class, so that "playing" is one decision made once rather than a shadow retyped at every
+      call site. Raised as a handback, not invented locally.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.5</span>
+      <h2>The search field</h2>
+      <span class="tail">.inputwrap &middot; .input.sm &middot; 24px &middot; --r-8</span>
+    </div>
+
+    <p class="note">One field, always visible, directly under the header and above the scroller so
+    it never scrolls away. It is <span class="inline-code">.input.sm</span> &mdash; 24px, the compact
+    control rung &mdash; inside <span class="inline-code">.inputwrap</span>, which reserves the same
+    14px icon slot the rows use, so the search glyph sits on the rail's one vertical alignment.</p>
+
+    <p class="note">Typing switches the rail into filter mode. A row matches on its name
+    <em>or</em> its repo-relative path; every match is shown with its ancestors revealed, so a hit is
+    never hidden behind a collapsed parent; and order still follows the repo, so the result reads
+    as the project rather than as a search dump.</p>
+
+    <div class="grid g2">
+      <div class="stage" style="align-items:flex-start">
+        <div class="pane" style="width:var(--rail-w);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden">
+          <div class="pane-hd">
+            <span class="t">Index</span>
+            <span class="right"><button class="iconbtn" aria-label="Clear the filter"><svg class="i i-14"><use href="#ic-x"/></svg></button></span>
+          </div>
+          <div style="padding:var(--sp-8) var(--sp-8) 0">
+            <span class="inputwrap" style="width:100%">
+              <svg class="i i-14"><use href="#ic-search"/></svg>
+              <input class="input sm forcefocus" value="rail" aria-label="Find a file or a function" style="width:100%;padding-left:var(--sp-32)">
+            </span>
+          </div>
+          <div class="pane-scroll">
+            <div class="railhead" style="margin-top:var(--sp-4)">
+              <span>3 matches</span>
+              <span class="mono" style="margin-left:auto;letter-spacing:0;color:var(--ink-4)">rail</span>
+            </div>
+            <div class="folder">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">workspace/sideRailModel.ts</span>
+              <svg class="i i-12 cv"><use href="#ic-chevdown"/></svg>
+            </div>
+            <div class="threads">
+              <div class="thread"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+              <div class="thread"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">filterRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+              <div class="thread"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">activateRailRow</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <dl class="specs">
+          <dt>Field</dt><dd>.input.sm &middot; 24px &middot; --t-11 &middot; --r-8</dd>
+          <dt>Wrapper</dt><dd>.inputwrap &middot; icon at --sp-8, text at --sp-32</dd>
+          <dt>Surface</dt><dd>--surface-2 on --surface-1</dd>
+          <dt>Focus</dt><dd>double ring &middot; --bg-base then --accent</dd>
+          <dt>Placeholder</dt><dd>--ink-3</dd>
+          <dt>Result head</dt><dd>.railhead &middot; 24px</dd>
+          <dt>Clear</dt><dd>.iconbtn ic-x in .pane-hd .right</dd>
+        </dl>
+        <p class="caption">Three function rows are drawn, so the head may say <b>3</b>. That is the
+        only kind of number this book writes as a literal.</p>
+      </div>
+    </div>
+
+    <div class="dev">
+      <b>The count counts hits, not scaffolding.</b> A directory revealed only to expose a match
+      below it is not itself a match. Counting the rendered rows instead of the matched ones
+      reported "6 matches" for two files, and a count a reader can disprove by looking is worse
+      than no count at all.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.6</span>
+      <h2>What a click does</h2>
+      <span class="tail">the rail drives the canvas</span>
+    </div>
+
+    <p class="note">Clicking a function row is the rail's whole purpose. The canvas re-sorts around
+    that function's own service and then <em>plays</em> the flow: each hop lights in turn, the
+    edges on the path take <span class="inline-code">--flow-onflow</span> at
+    <span class="inline-code">--w-flow</span>, and everything not on the path drops to
+    <span class="inline-code">--board-dim-opacity</span> rather than disappearing &mdash; a node you
+    cannot see is a node you cannot rule out.</p>
+
+    <p class="note">The accent on the row and the accent on the played edge are the
+    <em>same claim</em> in two places: this is the thing you asked for. That is why the trace card
+    below the row is never accent-tinted &mdash; two accent marks for one fact read as two facts.</p>
+
+    <div class="grid g2">
+      <div class="stage" style="align-items:flex-start">
+        <div class="pane" style="width:var(--rail-w);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden">
+          <div class="pane-scroll">
+            <div class="folder">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">graph/functionFlowHighlight.ts</span>
+              <span class="mono" style="margin-left:auto;font-size:var(--t-11);color:var(--ink-3);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg>1</span>
+              <svg class="i i-12 cv"><use href="#ic-chevdown"/></svg>
+            </div>
+            <div class="threads">
+              <div class="thread sel" style="box-shadow:inset var(--w-rule) 0 0 var(--accent)">
+                <svg class="i i-14"><use href="#ic-fn"/></svg>
+                <span class="tt mono" style="font-size:var(--t-11)">resolveArchNodeForFile</span>
+                <span class="ts"><span class="ph">&#8249;line&#8250;</span></span>
+              </div>
+
+              <div class="card" style="margin:var(--sp-6) 0 var(--sp-8)">
+                <div class="hd">
+                  <svg class="i i-12"><use href="#ic-flow"/></svg>
+                  <span class="t">Plays on board</span>
+                </div>
+                <div class="bd" style="padding:var(--sp-8)">
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-4)">
+                    <span class="chip"><svg class="i i-12"><use href="#ic-entry"/></svg>Web</span>
+                    <svg class="i i-12" style="color:var(--ink-4)"><use href="#ic-arrowright"/></svg>
+                    <span class="chip"><svg class="i i-12"><use href="#ic-service"/></svg>Analyzer</span>
+                    <svg class="i i-12" style="color:var(--ink-4)"><use href="#ic-arrowright"/></svg>
+                    <span class="chip"><svg class="i i-12"><use href="#ic-database"/></svg>Graph</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <dl class="specs">
+          <dt>Re-sort the board</dt><dd>--seq-dur-cam &middot; 240ms &middot; --ease</dd>
+          <dt>Each hop</dt><dd>--seq-dur-hop &middot; 400ms</dd>
+          <dt>Row paints</dt><dd>--dur-1 &middot; 110ms</dd>
+          <dt>Edges on the flow</dt><dd>--flow-onflow at --w-flow</dd>
+          <dt>Edges off it</dt><dd>--flow-traced at --w-edge</dd>
+          <dt>Nodes off it</dt><dd>--board-dim-opacity</dd>
+          <dt>Trace card</dt><dd>.card &middot; --surface-2 + --e1</dd>
+          <dt>Trace head</dt><dd>.card .hd .t &middot; mono --t-10 caps .08em</dd>
+          <dt>Steps</dt><dd>.chip &middot; 24px &middot; neutral</dd>
+        </dl>
+        <p class="caption">The camera moves and the hops move. Nothing else does: a state change
+        &mdash; selection, dimming, the flow arriving &mdash; is a repaint, not an animation, which is
+        the only reason a two-hundred node board does not vibrate.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">A function row that the scan could not resolve
+    to a node on the board does not play. It selects its card instead, and says so &mdash; it never
+    plays a flow assembled from a guess. A claim the source could not confirm is
+    <span class="inline-code">--unknown</span>, and on this rail it is a word, not a dead row.</p>
+
+    <div class="panel tight" style="max-width:var(--rail-w-max)">
+      <div class="threads">
+        <div class="thread">
+          <svg class="i i-14"><use href="#ic-fn"/></svg>
+          <span class="tt mono" style="font-size:var(--t-11)">middleTruncate</span>
+          <span class="ts"><span class="verdict v-unknown">Not traced</span></span>
+        </div>
+      </div>
+      <p class="caption">The only badge this rail is allowed to draw, and it is grey.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.7</span>
+      <h2>Empty, scanning, stale</h2>
+      <span class="tail">--edge-strong dashed &middot; --st-active &middot; --st-stalled</span>
+    </div>
+
+    <p class="note">Three ways for the rail to have nothing to show, and they are not the same
+    thing. Nothing read yet is an invitation. Nothing matched is a filter you can clear. Nothing
+    found <em>here</em> is a fact about the repository. Each gets its own sentence, because
+    "No results" for all three is the rail refusing to answer.</p>
+
+    <div class="grid g3">
+      <div class="empty">
+        <svg class="i i-20" style="color:var(--ink-3)"><use href="#ic-board"/></svg>
+        <div style="font-size:var(--t-13);color:var(--ink-1);font-weight:550">Nothing read yet</div>
+        <div style="font-size:var(--t-11);color:var(--ink-3)">Open a repository and the index fills as the board draws.</div>
+      </div>
+      <div class="empty">
+        <svg class="i i-20" style="color:var(--ink-3)"><use href="#ic-search"/></svg>
+        <div style="font-size:var(--t-13);color:var(--ink-1);font-weight:550">No match</div>
+        <div style="font-size:var(--t-11);color:var(--ink-3)">Nothing in this repository is named <span class="ph">&#8249;query&#8250;</span>.</div>
+        <button class="btn ghost sm" style="margin-top:var(--sp-8)">Clear the filter</button>
+      </div>
+      <div class="empty">
+        <svg class="i i-20" style="color:var(--ink-3)"><use href="#ic-fn"/></svg>
+        <div style="font-size:var(--t-13);color:var(--ink-1);font-weight:550">No functions here</div>
+        <div style="font-size:var(--t-11);color:var(--ink-3)">The scan read this file and could not name a function in it.</div>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-24)">While a scan is running the rail does not draw
+    a skeleton. A grey bar where a row will be is a shape the engine has not measured, and this
+    book does not draw numbers or rows it does not have. Real rows arrive as they are found, the
+    header carries a pulsing <span class="inline-code">--st-active</span> dot and the word, and the
+    running count is a marked placeholder until the scan ends.</p>
+
+    <div class="grid g2">
+      <div class="stage" style="align-items:flex-start">
+        <div class="pane" style="width:var(--rail-w);border:var(--w-hair) solid var(--edge);border-radius:var(--r-14);overflow:hidden">
+          <div class="pane-hd">
+            <span class="dot pulse" style="color:var(--st-active)"></span>
+            <span class="t">Reading <span class="ph">&#8249;repository&#8250;</span></span>
+            <span class="right"><button class="iconbtn" aria-label="Stop the scan"><svg class="i i-14"><use href="#ic-stop"/></svg></button></span>
+          </div>
+          <div class="pane-scroll">
+            <div class="railhead" style="margin-top:var(--sp-4)">
+              <svg class="i i-12"><use href="#ic-service"/></svg>
+              <span style="margin-left:var(--sp-6)">Analyzer</span>
+              <span class="mono" style="margin-left:auto;letter-spacing:0;color:var(--ink-4);display:inline-flex;align-items:center;gap:var(--sp-4)"><svg class="i i-12"><use href="#ic-fn"/></svg><span class="ph">&#8249;n&#8250;</span></span>
+            </div>
+            <div class="folder">
+              <svg class="i i-14"><use href="#ic-file"/></svg>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">workspace/sideRailModel.ts</span>
+              <svg class="i i-12 cv"><use href="#ic-chevdown"/></svg>
+            </div>
+            <div class="threads">
+              <div class="thread"><svg class="i i-14"><use href="#ic-fn"/></svg><span class="tt mono" style="font-size:var(--t-11)">buildRailRows</span><span class="ts"><span class="ph">&#8249;line&#8250;</span></span></div>
+            </div>
+            <div class="emptyfolder">Still reading&hellip;</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="note">A refresh that fails <em>after</em> a tree has loaded is the state that used
+        to go silently wrong: the rows stay on screen and stop tracking the repository, and nothing
+        says so. The rail keeps the rows &mdash; they were true once &mdash; and puts a strip above them
+        that says they are no longer being tracked, with the retry beside the claim.</p>
+
+        <div class="toolrow bordered" style="max-width:var(--rail-w-max)">
+          <svg class="i i-14" style="color:var(--st-stalled)"><use href="#ic-alert"/></svg>
+          <span class="name">Not tracking</span>
+          <span class="file">last read <span class="ph">&#8249;when&#8250;</span></span>
+          <span class="right"><button class="btn ghost sm"><svg class="i i-12"><use href="#ic-refresh"/></svg>Retry</button></span>
+        </div>
+
+        <dl class="specs" style="margin-top:var(--sp-12)">
+          <dt>Empty frame</dt><dd>.empty &middot; 1px dashed --edge-strong &middot; --r-14</dd>
+          <dt>Scanning mark</dt><dd>.dot.pulse at --st-active</dd>
+          <dt>Stale mark</dt><dd>ic-alert at --st-stalled</dd>
+          <dt>Stale strip</dt><dd>.toolrow.bordered &middot; 26px</dd>
+          <dt>Counts while scanning</dt><dd>.ph, always</dd>
+        </dl>
+        <p class="caption">Every coloured state on this sheet also carries a word: <b>Reading</b>,
+        <b>Not tracking</b>, <b>Not traced</b>. A reader who cannot see the hue still gets the fact.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">11.8</span>
+      <h2>The rail's four rules</h2>
+    </div>
+    <div class="panel">
+      <p class="note" style="margin-bottom:var(--sp-10)"><b>1. Three rungs, and no fourth.</b>
+      24px card head, <span class="inline-code">--row-h</span> file,
+      <span class="inline-code">--row-h-thread</span> function. A new kind of row is a new rung,
+      and a new rung needs an owner's name on it.</p>
+      <p class="note" style="margin-bottom:var(--sp-10)"><b>2. No hue for a category.</b> Height,
+      indent, icon and type family tell the rows apart. The only colours this rail may draw are the
+      accent on the playing row and a verdict word on a claim the scan could not confirm.</p>
+      <p class="note" style="margin-bottom:var(--sp-10)"><b>3. One accent mark for one fact.</b>
+      The playing row and the played edge are the same claim. Nothing between them &mdash; the trace
+      card, the chips, the arrows &mdash; is tinted.</p>
+      <p class="note" style="margin-bottom:0"><b>4. Every number is derivable or marked.</b> A count
+      may be a literal only when the rows it counts are on screen. A line number, a repository name,
+      an elapsed time and a running total are placeholders, in the rail exactly as everywhere else.</p>
+    </div>
+  </div>
+
+</section>

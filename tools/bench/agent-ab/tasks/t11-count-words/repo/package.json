@@ -1,0 +1,6 @@
+{
+  "name": "t11-count-words",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

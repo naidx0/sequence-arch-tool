@@ -1,0 +1,1033 @@
+{
+  "generated_at": "2026-08-05T13:40:19Z",
+  "generated_from_commit": "bb6deb96d50ddee65fcaf4e77d2077853a80fded",
+  "scope": {
+    "repo": "Sequence",
+    "description": "pnpm monorepo primary modules (packages/*) and evidenced cross-package relationships",
+    "primary_node_limit": 18,
+    "excluded": [
+      "node_modules",
+      "dist",
+      "build",
+      "cache",
+      ".git",
+      "tmp-shots",
+      "coverage",
+      ".sequence",
+      "release",
+      "server-bundle"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "schema-domain",
+      "label": "Shared Domain Model",
+      "path": "packages/schema",
+      "role": "domain",
+      "entrypoints": [
+        {
+          "path": "packages/schema/src/index.ts",
+          "symbol": "validateGraph"
+        },
+        {
+          "path": "packages/schema/src/seqdiagram.ts",
+          "symbol": "validateSeqDiagram"
+        },
+        {
+          "path": "packages/schema/src/index.ts",
+          "symbol": "ArchGraph"
+        }
+      ],
+      "tests": [
+        "packages/schema/dist/*.test.js"
+      ],
+      "constraints": [
+        "Browser-safe types consumed by web and export; no Node-only imports in schema package"
+      ],
+      "evidence": [
+        {
+          "path": "packages/schema/package.json",
+          "symbol": "name",
+          "note": "@sequence/schema"
+        }
+      ],
+      "summary": "Shared types and validators for architecture graphs and sequence diagrams used across the monorepo."
+    },
+    {
+      "id": "export-projections",
+      "label": "Graph Export & Rendering",
+      "path": "packages/export",
+      "role": "export",
+      "entrypoints": [
+        {
+          "path": "packages/export/src/index.ts",
+          "symbol": "archGraphToSeqDiagram"
+        },
+        {
+          "path": "packages/export/src/index.ts",
+          "symbol": "renderSeqDiagramSvg"
+        },
+        {
+          "path": "packages/export/src/index.ts",
+          "symbol": "mermaidFlow"
+        }
+      ],
+      "tests": [
+        "packages/export/dist/*.test.js"
+      ],
+      "constraints": [
+        "Depends only on @sequence/schema; zero Node imports (browser-safe)"
+      ],
+      "evidence": [
+        {
+          "path": "packages/export/src/index.ts",
+          "symbol": "archGraphToSeqDiagram"
+        }
+      ],
+      "summary": "Converts ArchGraph to SeqDiagram, Mermaid, SVG, and other export formats in the browser."
+    },
+    {
+      "id": "analyzer-scan",
+      "label": "Manifest & Code Scanner",
+      "path": "packages/analyzer/src/scan.ts",
+      "role": "server",
+      "entrypoints": [
+        {
+          "path": "packages/analyzer/src/scan.ts",
+          "symbol": "scanRepo"
+        }
+      ],
+      "tests": [
+        "packages/analyzer/dist/test/*.test.js"
+      ],
+      "constraints": [
+        "Grouped under analyzer package; discovers Compose/K8s/Helm manifests and emits ArchGraph"
+      ],
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/scan.ts",
+          "symbol": "scanRepo"
+        }
+      ],
+      "summary": "Scans repos for Compose, Kubernetes, and Helm manifests to build an ArchGraph."
+    },
+    {
+      "id": "analyzer-server",
+      "label": "Local Repo API Server",
+      "path": "packages/analyzer/src/server/repoServer.ts",
+      "role": "server",
+      "entrypoints": [
+        {
+          "path": "packages/analyzer/src/server/repoServer.ts",
+          "symbol": "createRepoServer"
+        },
+        {
+          "path": "packages/analyzer/src/serve.ts",
+          "symbol": "serveApp"
+        }
+      ],
+      "tests": [
+        "packages/analyzer/dist/test/ask.test.js",
+        "packages/analyzer/dist/test/browse-root.test.js",
+        "packages/analyzer/dist/test/board-api.test.js"
+      ],
+      "constraints": [
+        "Serves built web bundle and /api/* JSON from one origin; browse-root jailed to $HOME unless --repo"
+      ],
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/server/repoServer.ts",
+          "symbol": "/api/attach"
+        },
+        {
+          "path": "packages/analyzer/src/server/repoServer.ts",
+          "symbol": "/api/ask"
+        },
+        {
+          "path": "packages/analyzer/src/server/repoServer.ts",
+          "symbol": "/api/scan"
+        }
+      ],
+      "summary": "Local HTTP server exposing /api attach, scan, and ask endpoints alongside the web UI."
+    },
+    {
+      "id": "analyzer-cli",
+      "label": "Sequence CLI",
+      "path": "packages/analyzer/src/cli.ts",
+      "role": "cli",
+      "entrypoints": [
+        {
+          "path": "packages/analyzer/src/cli.ts",
+          "symbol": "usage"
+        },
+        {
+          "path": "packages/analyzer/package.json",
+          "symbol": "\"sequence\": \"dist/cli.js\""
+        }
+      ],
+      "tests": [
+        "packages/analyzer/dist/test/doctor.test.js",
+        "packages/analyzer/dist/test/diagram-cli.test.js"
+      ],
+      "constraints": [
+        "Entry binary `sequence`; subcommands scan, serve, app, export, diagram, doctor"
+      ],
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/cli.ts",
+          "symbol": "scanRepo"
+        },
+        {
+          "path": "packages/analyzer/src/cli.ts",
+          "symbol": "serveApp"
+        }
+      ],
+      "summary": "Command-line entry point with scan, serve, app, export, and doctor subcommands."
+    },
+    {
+      "id": "acp-protocol",
+      "label": "Agent Client Protocol",
+      "path": "packages/acp",
+      "role": "protocol",
+      "entrypoints": [
+        {
+          "path": "packages/acp/src/index.ts",
+          "symbol": "AcpClient"
+        }
+      ],
+      "tests": [
+        "packages/acp/dist/test/*.test.js"
+      ],
+      "constraints": [
+        "Wraps @agentclientprotocol/sdk for program/agent runs inside analyzer server"
+      ],
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/server/repoServer.ts",
+          "symbol": "AcpClient"
+        }
+      ],
+      "summary": "Agent Client Protocol wrapper for running agent programs inside the analyzer server."
+    },
+    {
+      "id": "product-app",
+      "label": "Product Application Root",
+      "path": "packages/web/src/product/ProductApp.tsx",
+      "role": "ui",
+      "entrypoints": [
+        {
+          "path": "packages/web/src/product/ProductApp.tsx",
+          "symbol": "ProductApp"
+        }
+      ],
+      "tests": [
+        "packages/web/src/product/productShell.test.ts",
+        "packages/web/src/product/productLegacy.test.ts"
+      ],
+      "constraints": [
+        "Default shell when legacy flag off; probes platform via fetchStatus on mount"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductApp.tsx",
+          "symbol": "fetchStatus"
+        },
+        {
+          "path": "packages/web/src/product/ProductApp.tsx",
+          "symbol": "ProductShell"
+        }
+      ],
+      "summary": "Top-level React shell that probes the platform and wires chat plus the architecture board."
+    },
+    {
+      "id": "product-shell",
+      "label": "Product Layout Shell",
+      "path": "packages/web/src/product/ProductShell.tsx",
+      "role": "ui",
+      "entrypoints": [
+        {
+          "path": "packages/web/src/product/ProductShell.tsx",
+          "symbol": "ProductShell"
+        }
+      ],
+      "tests": [
+        "packages/web/src/product/productShell.test.ts"
+      ],
+      "constraints": [
+        "Chat left, architecture board right, topbar attach controls"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductShell.tsx",
+          "symbol": "ProductChat"
+        },
+        {
+          "path": "packages/web/src/product/ProductShell.tsx",
+          "symbol": "ProductBoard"
+        }
+      ],
+      "summary": "Main layout with chat on the left, board on the right, and attach controls in the top bar."
+    },
+    {
+      "id": "product-chat",
+      "label": "Chat & Ask Pipeline",
+      "path": "packages/web/src/product",
+      "role": "ui",
+      "entrypoints": [
+        {
+          "path": "packages/web/src/product/ProductChat.tsx",
+          "symbol": "ProductChat"
+        },
+        {
+          "path": "packages/web/src/product/sendAsk.ts",
+          "symbol": "sendAsk"
+        }
+      ],
+      "tests": [
+        "packages/web/src/product/sendAsk.test.ts",
+        "packages/web/src/product/chatThreadModel.test.ts"
+      ],
+      "constraints": [
+        "Fenced seqd in assistant replies commits to board; honest no-key path"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductChat.tsx",
+          "symbol": "sendAsk"
+        },
+        {
+          "path": "packages/web/src/product/sendAsk.ts",
+          "symbol": "validateSeqDiagram"
+        }
+      ],
+      "summary": "Chat UI and ask pipeline; commits fenced seqd blocks from AI replies to the board."
+    },
+    {
+      "id": "product-board",
+      "label": "Architecture Board Surface",
+      "path": "packages/web/src/product/board",
+      "role": "ui",
+      "entrypoints": [
+        {
+          "path": "packages/web/src/product/ProductBoard.tsx",
+          "symbol": "ProductBoard"
+        },
+        {
+          "path": "packages/web/src/product/board/SeqDiagramBoard.tsx",
+          "symbol": "SeqDiagramBoard"
+        },
+        {
+          "path": "packages/web/src/product/board/draw/DrawLayer.tsx",
+          "symbol": "DrawLayer"
+        },
+        {
+          "path": "packages/web/src/product/board/draw/drawSync.ts",
+          "symbol": "recognizeDrawStroke"
+        }
+      ],
+      "tests": [
+        "packages/web/src/product/productBoard.test.ts",
+        "packages/web/src/product/board/boardViewModel.test.ts",
+        "packages/web/src/product/board/seqdDoc.test.ts"
+      ],
+      "constraints": [
+        "Renders validated SeqDiagramV1 via SVG export; draw mode overlays ink strokes with accept/discard proposals"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/board/SeqDiagramBoard.tsx",
+          "symbol": "renderSeqDiagramSvg"
+        },
+        {
+          "path": "packages/web/src/product/board/SeqDiagramBoard.tsx",
+          "symbol": "DrawLayer"
+        }
+      ],
+      "summary": "Architecture board surface rendering SeqDiagram SVG with draw-mode ink overlays."
+    },
+    {
+      "id": "product-store",
+      "label": "Product State Store",
+      "path": "packages/web/src/product/state/productStore.ts",
+      "role": "state",
+      "entrypoints": [
+        {
+          "path": "packages/web/src/product/state/productStore.ts",
+          "symbol": "useProductStore"
+        }
+      ],
+      "tests": [
+        "packages/web/src/product/attachFlow.test.ts"
+      ],
+      "constraints": [
+        "Zustand store owns seqdDoc, attach state, board source metadata"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/state/productStore.ts",
+          "symbol": "commitChatDiagram"
+        },
+        {
+          "path": "packages/web/src/product/state/productStore.ts",
+          "symbol": "attachPath"
+        }
+      ],
+      "summary": "Zustand store holding attach state, board document, and draw proposals."
+    },
+    {
+      "id": "attach-flow",
+      "label": "Repo Attach Pipeline",
+      "path": "packages/web/src/product/attachFlow.ts",
+      "role": "ui",
+      "entrypoints": [
+        {
+          "path": "packages/web/src/product/attachFlow.ts",
+          "symbol": "runAttachFlow"
+        }
+      ],
+      "tests": [
+        "packages/web/src/product/attachFlow.test.ts"
+      ],
+      "constraints": [
+        "Maps server errors to calm copy; converts ArchGraph to SeqDiagram for board"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/attachFlow.ts",
+          "symbol": "attachRepo"
+        },
+        {
+          "path": "packages/web/src/product/attachFlow.ts",
+          "symbol": "seqdFromGraph"
+        }
+      ],
+      "summary": "Attaches a local repo, fetches the scanned graph, and converts it for the board."
+    },
+    {
+      "id": "seqd-pipeline",
+      "label": "SeqDiagram Transform Layer",
+      "path": "packages/web/src/product/board",
+      "role": "ui",
+      "entrypoints": [
+        {
+          "path": "packages/web/src/product/board/seqdFromGraph.ts",
+          "symbol": "seqdFromGraph"
+        },
+        {
+          "path": "packages/web/src/product/board/seqdDoc.ts",
+          "symbol": "openSeqDiagramFromRepo"
+        },
+        {
+          "path": "packages/web/src/product/board/boardViewModel.ts",
+          "symbol": "hitTestNode"
+        }
+      ],
+      "tests": [
+        "packages/web/src/product/board/seqdFromGraph.test.ts",
+        "packages/web/src/product/board/seqdFromPlan.test.ts"
+      ],
+      "constraints": [
+        "Grouped board helpers: graph→seqd, file I/O, viewport/hit-test view model"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/board/seqdFromGraph.ts",
+          "symbol": "archGraphToSeqDiagram"
+        }
+      ],
+      "summary": "Transforms ArchGraph to SeqDiagram and handles board viewport, hit-testing, and file I/O."
+    },
+    {
+      "id": "ink-recognition",
+      "label": "Freehand Stroke Recognition",
+      "path": "packages/ink",
+      "role": "library",
+      "entrypoints": [
+        {
+          "path": "packages/ink/src/index.ts",
+          "symbol": "recognizeStroke"
+        }
+      ],
+      "tests": [
+        "packages/ink/dist/*.test.js"
+      ],
+      "constraints": [
+        "Stroke recognition library; wired into product board draw layer (DrawLayer, drawSync)",
+        "Legacy canvas InkOverlay still uses the same package"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/src/product/board/draw/drawSync.ts",
+          "symbol": "recognizeStroke"
+        },
+        {
+          "path": "packages/web/src/product/board/draw/DrawLayer.tsx",
+          "symbol": "strokePath"
+        },
+        {
+          "path": "packages/web/src/canvas/InkOverlay.tsx",
+          "symbol": "recognizeStroke"
+        }
+      ],
+      "summary": "Recognizes freehand strokes into boxes and arrows for product board draw mode."
+    },
+    {
+      "id": "gateway-service",
+      "label": "Optional Model Gateway",
+      "path": "packages/gateway",
+      "role": "external-service",
+      "entrypoints": [
+        {
+          "path": "packages/gateway/package.json",
+          "symbol": "\"sequence-gateway\": \"dist/server.js\""
+        }
+      ],
+      "tests": [
+        "packages/gateway/dist-test/test/*.test.js"
+      ],
+      "constraints": [
+        "Standalone OpenRouter-backed gateway for free tier; optional, not required for local-first core"
+      ],
+      "evidence": [
+        {
+          "path": "packages/gateway/package.json",
+          "symbol": "description"
+        }
+      ],
+      "summary": "Optional standalone OpenRouter gateway for free-tier model access."
+    },
+    {
+      "id": "mcp-server",
+      "label": "MCP Tool Server",
+      "path": "packages/mcp",
+      "role": "server",
+      "entrypoints": [
+        {
+          "path": "packages/mcp/package.json",
+          "symbol": "\"sequence-mcp\": \"dist/server.js\""
+        }
+      ],
+      "tests": [
+        "packages/mcp/dist/test/*.test.js"
+      ],
+      "constraints": [
+        "Exposes scan/export/diagram tools to external MCP clients"
+      ],
+      "evidence": [
+        {
+          "path": "packages/mcp/src/diagramTools.ts",
+          "symbol": "scanRepo"
+        },
+        {
+          "path": "packages/mcp/src/diagramTools.ts",
+          "symbol": "archGraphToSeqDiagram"
+        }
+      ],
+      "summary": "MCP server exposing scan, export, and diagram tools to external AI clients."
+    },
+    {
+      "id": "desktop-shell",
+      "label": "Electron Desktop Wrapper",
+      "path": "packages/desktop",
+      "role": "cli",
+      "entrypoints": [
+        {
+          "path": "packages/desktop/package.json",
+          "symbol": "main"
+        }
+      ],
+      "tests": [
+        "packages/desktop/dist/test/*.test.js"
+      ],
+      "constraints": [
+        "Optional Electron window around local app; requires Electron binary to build"
+      ],
+      "evidence": [
+        {
+          "path": "packages/desktop/package.json",
+          "symbol": "description"
+        }
+      ],
+      "summary": "Optional Electron wrapper bundling the local analyzer app in a desktop window."
+    },
+    {
+      "id": "react-ui-stack",
+      "label": "React UI Runtime Stack",
+      "path": "packages/web/package.json",
+      "role": "external",
+      "entrypoints": [],
+      "tests": [],
+      "constraints": [
+        "External deps: react, react-dom, zustand, @xyflow/react, mermaid, elkjs"
+      ],
+      "evidence": [
+        {
+          "path": "packages/web/package.json",
+          "symbol": "\"react\": \"^18.3.1\""
+        },
+        {
+          "path": "packages/web/package.json",
+          "symbol": "\"zustand\": \"^5.0.0\""
+        }
+      ],
+      "summary": "External React, Zustand, XYFlow, Mermaid, and ELK dependencies for the web UI."
+    }
+  ],
+  "edges": [
+    {
+      "from": "export-projections",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/export/package.json",
+          "symbol": "\"@sequence/schema\": \"workspace:*\""
+        },
+        {
+          "path": "packages/export/src/seqdiagram.ts",
+          "symbol": "SeqDiagramV1"
+        }
+      ]
+    },
+    {
+      "from": "analyzer-scan",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/scan.ts",
+          "symbol": "validateGraph"
+        },
+        {
+          "path": "packages/analyzer/src/scan.ts",
+          "symbol": "ArchGraph"
+        }
+      ]
+    },
+    {
+      "from": "analyzer-server",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/server/repoServer.ts",
+          "symbol": "validateGraph"
+        }
+      ]
+    },
+    {
+      "from": "analyzer-server",
+      "to": "acp-protocol",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/server/repoServer.ts",
+          "symbol": "AcpClient"
+        }
+      ]
+    },
+    {
+      "from": "analyzer-cli",
+      "to": "analyzer-scan",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/cli.ts",
+          "symbol": "scanRepo"
+        }
+      ]
+    },
+    {
+      "from": "analyzer-cli",
+      "to": "export-projections",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/cli.ts",
+          "symbol": "mermaidSequence"
+        },
+        {
+          "path": "packages/analyzer/src/cli.ts",
+          "symbol": "dependencyMatrix"
+        }
+      ]
+    },
+    {
+      "from": "analyzer-cli",
+      "to": "analyzer-server",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/analyzer/src/cli.ts",
+          "symbol": "serveApp"
+        }
+      ]
+    },
+    {
+      "from": "product-app",
+      "to": "product-shell",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductApp.tsx",
+          "symbol": "ProductShell"
+        }
+      ]
+    },
+    {
+      "from": "product-app",
+      "to": "product-store",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductApp.tsx",
+          "symbol": "hydrateFromAttachedRepo"
+        }
+      ]
+    },
+    {
+      "from": "product-app",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductApp.tsx",
+          "symbol": "ArchGraph"
+        }
+      ]
+    },
+    {
+      "from": "product-shell",
+      "to": "product-chat",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductShell.tsx",
+          "symbol": "ProductChat"
+        }
+      ]
+    },
+    {
+      "from": "product-shell",
+      "to": "product-board",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductShell.tsx",
+          "symbol": "ProductBoard"
+        }
+      ]
+    },
+    {
+      "from": "product-chat",
+      "to": "product-store",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/sendAsk.ts",
+          "symbol": "commitChatDiagram"
+        }
+      ]
+    },
+    {
+      "from": "product-chat",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/sendAsk.ts",
+          "symbol": "validateSeqDiagram"
+        }
+      ]
+    },
+    {
+      "from": "product-chat",
+      "to": "analyzer-server",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/web/src/ai/aiClient.ts",
+          "symbol": "fetch('/api/ask'"
+        }
+      ]
+    },
+    {
+      "from": "product-board",
+      "to": "product-store",
+      "type": "reads",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductBoard.tsx",
+          "symbol": "useProductStore"
+        }
+      ]
+    },
+    {
+      "from": "product-board",
+      "to": "seqd-pipeline",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductBoard.tsx",
+          "symbol": "SeqDiagramBoard"
+        }
+      ]
+    },
+    {
+      "from": "seqd-pipeline",
+      "to": "export-projections",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/board/seqdFromGraph.ts",
+          "symbol": "archGraphToSeqDiagram"
+        },
+        {
+          "path": "packages/web/src/product/board/SeqDiagramBoard.tsx",
+          "symbol": "renderSeqDiagramSvg"
+        }
+      ]
+    },
+    {
+      "from": "seqd-pipeline",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/board/seqdDoc.ts",
+          "symbol": "validateSeqDiagram"
+        }
+      ]
+    },
+    {
+      "from": "product-store",
+      "to": "attach-flow",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/state/productStore.ts",
+          "symbol": "runAttachFlow"
+        }
+      ]
+    },
+    {
+      "from": "product-store",
+      "to": "seqd-pipeline",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/state/productStore.ts",
+          "symbol": "seqdFromGraph"
+        }
+      ]
+    },
+    {
+      "from": "attach-flow",
+      "to": "analyzer-server",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/web/src/ai/aiClient.ts",
+          "symbol": "fetch('/api/attach'"
+        },
+        {
+          "path": "packages/web/src/product/attachFlow.ts",
+          "symbol": "fetchGraph"
+        }
+      ]
+    },
+    {
+      "from": "attach-flow",
+      "to": "seqd-pipeline",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/attachFlow.ts",
+          "symbol": "seqdFromGraph"
+        }
+      ]
+    },
+    {
+      "from": "attach-flow",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/attachFlow.ts",
+          "symbol": "ArchGraph"
+        }
+      ]
+    },
+    {
+      "from": "mcp-server",
+      "to": "analyzer-scan",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/mcp/src/diagramTools.ts",
+          "symbol": "scanRepo"
+        }
+      ]
+    },
+    {
+      "from": "mcp-server",
+      "to": "export-projections",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/mcp/src/diagramTools.ts",
+          "symbol": "archGraphToSeqDiagram"
+        }
+      ]
+    },
+    {
+      "from": "mcp-server",
+      "to": "schema-domain",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/mcp/src/diagramTools.ts",
+          "symbol": "validateSeqDiagram"
+        }
+      ]
+    },
+    {
+      "from": "product-app",
+      "to": "analyzer-server",
+      "type": "calls",
+      "evidence": [
+        {
+          "path": "packages/web/src/ai/aiClient.ts",
+          "symbol": "fetchStatus"
+        }
+      ]
+    },
+    {
+      "from": "product-app",
+      "to": "react-ui-stack",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/ProductApp.tsx",
+          "symbol": "useEffect"
+        }
+      ]
+    },
+    {
+      "from": "product-store",
+      "to": "react-ui-stack",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/state/productStore.ts",
+          "symbol": "create"
+        }
+      ]
+    },
+    {
+      "from": "analyzer-server",
+      "to": "export-projections",
+      "type": "unknown",
+      "note": "No direct import found in repoServer.ts; export used via diagramCli and static routes — relationship unverified",
+      "evidence": []
+    },
+    {
+      "from": "gateway-service",
+      "to": "analyzer-server",
+      "type": "unknown",
+      "note": "Gateway is optional standalone service; runtime wiring to analyzer not verified in scanned paths",
+      "evidence": []
+    },
+    {
+      "from": "desktop-shell",
+      "to": "analyzer-server",
+      "type": "unknown",
+      "note": "Desktop bundles analyzer server at build time; exact launch wiring not verified in this scan scope",
+      "evidence": []
+    },
+    {
+      "from": "ink-recognition",
+      "to": "product-board",
+      "type": "imports",
+      "evidence": [
+        {
+          "path": "packages/web/src/product/board/draw/drawSync.ts",
+          "symbol": "recognizeStroke"
+        },
+        {
+          "path": "packages/web/src/product/board/draw/DrawLayer.tsx",
+          "symbol": "@sequence/ink"
+        },
+        {
+          "path": "packages/web/src/product/board/SeqDiagramBoard.tsx",
+          "symbol": "DrawLayer"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "cold-start",
+      "label": "Cold start → platform probe → shell",
+      "trigger": "User opens ProductApp (default shell)",
+      "steps": [
+        "product-app",
+        "analyzer-server",
+        "product-store",
+        "product-shell"
+      ],
+      "outcome": "Platform detected or static archgraph.json loaded; chat + empty board render"
+    },
+    {
+      "id": "attach-scan-board",
+      "label": "Attach repo → scan → board",
+      "trigger": "User picks a folder in Attach menu",
+      "steps": [
+        "attach-flow",
+        "analyzer-server",
+        "analyzer-scan",
+        "seqd-pipeline",
+        "product-store",
+        "product-board"
+      ],
+      "outcome": "ArchGraph scanned, converted to SeqDiagramV1, rendered on board"
+    },
+    {
+      "id": "chat-diagram-commit",
+      "label": "Chat ask → fenced seqd → board commit",
+      "trigger": "User sends a chat message with AI key configured",
+      "steps": [
+        "product-chat",
+        "analyzer-server",
+        "product-store",
+        "seqd-pipeline",
+        "product-board"
+      ],
+      "outcome": "Valid seqd fence in assistant reply replaces board doc; invalid fence shows notice"
+    },
+    {
+      "id": "cli-scan-export",
+      "label": "CLI scan → export projection",
+      "trigger": "Developer runs `sequence scan` then `sequence export`",
+      "steps": [
+        "analyzer-cli",
+        "analyzer-scan",
+        "schema-domain",
+        "export-projections"
+      ],
+      "outcome": "ArchGraph written to disk and exported as mermaid/matrix/markdown/seqd"
+    },
+    {
+      "id": "mcp-diagram-tool",
+      "label": "MCP client → scan → diagram SVG",
+      "trigger": "External MCP client invokes diagram tool",
+      "steps": [
+        "mcp-server",
+        "analyzer-scan",
+        "export-projections",
+        "schema-domain"
+      ],
+      "outcome": "Repo scanned and SeqDiagram SVG returned to MCP client"
+    }
+  ]
+}

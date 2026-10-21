@@ -1,0 +1,78 @@
+{
+  "commit": "6e6cea27e9f9cb20712db820102a052659490904",
+  "node": "v24.13.0",
+  "kind": "real built app in Chromium, click to row gone, page clock; throwaway home; synthetic fixture",
+  "samples": 12,
+  "rows": [
+    {
+      "kind": "chat",
+      "domMs": [
+        13.4,
+        20.8,
+        11.8,
+        21.5,
+        12.3,
+        23.7,
+        10.6,
+        11.7,
+        27.9,
+        11.3,
+        13.9,
+        24.6
+      ],
+      "frameMs": [
+        13.8,
+        24.2,
+        12.1,
+        23.7,
+        12.6,
+        24.4,
+        11,
+        12,
+        28.2,
+        11.7,
+        14.4,
+        25
+      ],
+      "medianDomMs": 13.4,
+      "p95DomMs": 27.9,
+      "medianFrameMs": 13.8,
+      "p95FrameMs": 28.2
+    },
+    {
+      "kind": "space",
+      "domMs": [
+        17.4,
+        15,
+        15.3,
+        15.2,
+        18.2,
+        17.5,
+        14.7,
+        15,
+        14.9,
+        14.7,
+        14.8,
+        10.8
+      ],
+      "frameMs": [
+        18.3,
+        16.9,
+        16.6,
+        16.7,
+        20.2,
+        18.5,
+        16.6,
+        16.2,
+        17,
+        17,
+        16.7,
+        11.3
+      ],
+      "medianDomMs": 15,
+      "p95DomMs": 18.2,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 20.2
+    }
+  ]
+}

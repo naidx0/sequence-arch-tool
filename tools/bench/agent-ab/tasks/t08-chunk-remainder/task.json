@@ -1,0 +1,23 @@
+{
+  "id": "t08-chunk-remainder",
+  "prompt": "chunk(arr, n) drops the final partial chunk. Fix src/mod.js so it is kept. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "chunk"
+    ]
+  }
+}

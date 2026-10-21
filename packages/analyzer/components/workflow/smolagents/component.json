@@ -1,0 +1,20 @@
+{
+  "id": "workflow/smolagents",
+  "group": "workflow",
+  "label": "smolagents",
+  "summary": "Hugging Face smolagents, a small agent library. Link only: Apache-2.0; install it from its source repo.",
+  "triggers": [
+    "smolagents",
+    "huggingface smolagents",
+    "small agents library",
+    "hf agents"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "huggingface/smolagents",
+    "commit": "96f33faaf028479119ec8d34507b47694cf14e34",
+    "path": null
+  },
+  "url": "https://github.com/huggingface/smolagents"
+}

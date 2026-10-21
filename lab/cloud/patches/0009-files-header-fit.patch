@@ -1,0 +1,235 @@
+diff --git a/packages/web2/src/files/FilesPanel.tsx b/packages/web2/src/files/FilesPanel.tsx
+index 93a4262..8244906 100644
+--- a/packages/web2/src/files/FilesPanel.tsx
++++ b/packages/web2/src/files/FilesPanel.tsx
+@@ -357,7 +357,8 @@ function Header({ path, status, mode, editable, diffEnabled, onView, dirty }: He
+             title={
+               m.id === 'diff' && !diffEnabled
+                 ? 'Diff needs an attached repository'
+-                : undefined
++                : /* The word is clipped in the narrowest panes; hover still names it. */
++                  m.label
+             }
+             onClick={() => onView(m.id)}
+           >
+diff --git a/packages/web2/src/files/files.css b/packages/web2/src/files/files.css
+index b847981..ce280f7 100644
+--- a/packages/web2/src/files/files.css
++++ b/packages/web2/src/files/files.css
+@@ -352,11 +352,22 @@
+   background-color: var(--bg-base);
+ }
+ 
++/*
++ * A NARROW PANE WRAPS THE VIEW CONTROL, IT DOES NOT SIT ON THE NAME.
++ *
++ * Measured in Chromium on this stylesheet: at 180px the file name was 0px wide
++ * and Code/Diff/Edit ran 23px past the pane's edge, and up to 320px an
++ * "unsaved" badge drew underneath the buttons (the owner's walk: "the header's
++ * file name squeezed out under Code/Diff"). The identity keeps a floor of 9rem;
++ * below that the buttons take a second row.
++ */
+ .files-scope .files-hd {
+   flex: 0 0 auto;
+   display: flex;
++  flex-wrap: wrap;
+   align-items: center;
+-  gap: var(--sp-8);
++  gap: var(--sp-4) var(--sp-8);
++  container: fileshd / inline-size;
+   min-height: var(--diffx-file-hd-h);
+   padding: 0 var(--sp-8);
+   border-bottom: var(--w-hair) solid var(--edge);
+@@ -368,14 +379,16 @@
+   align-items: baseline;
+   gap: var(--sp-6);
+   min-width: 0;
+-  flex: 1 1 auto;
++  flex: 1 1 9rem;
+   color: var(--ink-3);
+ }
+ .files-scope .files-hd-id .files-i { align-self: center; }
+ 
+ /* The NAME is the identity and never truncates before the path does. */
+ .files-scope .files-hd-name {
+-  flex: 0 0 auto;
++  /* Shrinks with an ellipsis only after the path has given up all its room. */
++  flex: 0 1 auto;
++  min-width: 0;
+   color: var(--ink-1);
+   font-size: var(--t-12);
+   line-height: var(--lh-12);
+@@ -387,7 +400,8 @@
+ }
+ 
+ .files-scope .files-hd-path {
+-  flex: 1 1 auto;
++  /* Basis 0: the path takes only what is left, so it yields before the name. */
++  flex: 1 1 0;
+   min-width: 0;
+   display: block;
+   overflow: hidden;
+@@ -737,3 +751,20 @@
+   font-size: var(--t-10);
+   line-height: var(--lh-10);
+ }
++
++/* The narrowest panes keep the three buttons as icons. The words stay in the
++   accessibility tree (clipped, not display:none), so each button is still
++   named Code, Diff or Edit to a screen reader, and `title` names it on hover. */
++@container fileshd (max-width: 13rem) {
++  .files-scope .files-mode > span {
++    position: absolute;
++    width: 1px;
++    height: 1px;
++    overflow: hidden;
++    clip-path: inset(50%);
++    white-space: nowrap;
++  }
++  .files-scope .files-mode {
++    padding: 0 var(--sp-4);
++  }
++}
+diff --git a/packages/web2/src/files/filesHeaderFit.test.ts b/packages/web2/src/files/filesHeaderFit.test.ts
+new file mode 100644
+index 0000000..f2bf3ae
+--- /dev/null
++++ b/packages/web2/src/files/filesHeaderFit.test.ts
+@@ -0,0 +1,52 @@
++import { readFileSync } from 'node:fs';
++import { resolve } from 'node:path';
++
++import { describe, expect, it } from 'vitest';
++
++/**
++ * THE FILE NAME IS NOT SQUEEZED OUT UNDER CODE/DIFF.
++ *
++ * Owner's walk 2026-09-22, a 300px Files pane: "the header's file name
++ * squeezed out under Code/Diff". Measured in Chromium on this stylesheet
++ * before the fix: at 180px the name was 0px wide and the buttons ran 23px past
++ * the pane's edge; up to 320px the "unsaved" badge drew under the buttons.
++ *
++ * jsdom has no layout, so these READ THE STYLESHEET, as aiCanvasOverflow does.
++ * The measurement itself is `node tools/measure/files-header-fit.mjs`, which
++ * renders the header in Chromium and exits 1 on any overlap.
++ */
++const css = readFileSync(resolve(__dirname, 'files.css'), 'utf8');
++const rule = (selector: string): string => {
++  const at = css.indexOf(`${selector} {`);
++  expect(at, `${selector} has a rule`).toBeGreaterThanOrEqual(0);
++  return css.slice(at, css.indexOf('}', at));
++};
++
++describe('the Files header in a narrow pane', () => {
++  it('wraps the view buttons onto a second row instead of laying them over the name', () => {
++    expect(rule('.files-scope .files-hd')).toMatch(/flex-wrap:\s*wrap/);
++  });
++
++  it('gives the identity a floor, so it is the buttons that move', () => {
++    expect(rule('.files-scope .files-hd-id')).toMatch(/flex:\s*1 1 9rem/);
++  });
++
++  it('lets the path yield before the name, and the name ellipsize rather than overflow', () => {
++    expect(rule('.files-scope .files-hd-path')).toMatch(/flex:\s*1 1 0;/);
++    const name = rule('.files-scope .files-hd-name');
++    expect(name).toMatch(/flex:\s*0 1 auto/);
++    expect(name).toMatch(/min-width:\s*0/);
++    expect(name).toMatch(/text-overflow:\s*ellipsis/);
++  });
++
++  it('the narrowest panes clip the button words without removing them from the accessibility tree', () => {
++    expect(rule('.files-scope .files-hd')).toMatch(/container:\s*fileshd\s*\/\s*inline-size/);
++    const at = css.indexOf('@container fileshd');
++    expect(at).toBeGreaterThanOrEqual(0);
++    const block = css.slice(at);
++    expect(block).toMatch(/\.files-mode > span \{[^}]*clip-path:\s*inset\(50%\)/);
++    expect(block).not.toMatch(/display:\s*none/);
++    /* After the base `.files-mode` rule, or the base padding wins the cascade. */
++    expect(at).toBeGreaterThan(css.indexOf('.files-scope .files-mode {'));
++  });
++});
+diff --git a/tools/measure/files-header-fit.mjs b/tools/measure/files-header-fit.mjs
+new file mode 100644
+index 0000000..25becc5
+--- /dev/null
++++ b/tools/measure/files-header-fit.mjs
+@@ -0,0 +1,79 @@
++/**
++ * Files header fit probe: renders the Files header (real tokens + files.css) at
++ * 180, 220, 260, 320 and 480 px in Chromium and measures what the owner saw on
++ * 2026-09-22: "the header's file name squeezed out under Code/Diff".
++ *
++ *   node tools/measure/files-header-fit.mjs [--css packages/web2/src/files/files.css]
++ *
++ * Prints, per width, the file name's visible width, how many px of the name
++ * and of the "unsaved" badge sit under the Code/Diff/Edit buttons, and how far
++ * the buttons run past the pane's edge. Exits 1 when anything overlaps or runs
++ * past the edge. Needs playwright-core (a dev dependency of packages/web2) and
++ * a Chromium (PLAYWRIGHT_BROWSERS_PATH or CHROMIUM_PATH). Calls no model.
++ */
++import fs from 'node:fs';
++import path from 'node:path';
++import { createRequire } from 'node:module';
++
++const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..', '..');
++const WEB2 = path.join(ROOT, 'packages', 'web2');
++const require = createRequire(path.join(WEB2, 'package.json'));
++const arg = (k, d) => {
++  const i = process.argv.indexOf(k);
++  return i >= 0 ? process.argv[i + 1] : d;
++};
++const CSS = arg('--css', path.join(WEB2, 'src', 'files', 'files.css'));
++const WIDTHS = [180, 220, 260, 320, 480];
++
++function findChromium() {
++  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
++  const root = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
++  for (const d of fs.existsSync(root) ? fs.readdirSync(root) : []) {
++    for (const rel of ['chrome-linux/chrome', 'chrome-linux64/chrome']) {
++      const p = path.join(root, d, rel);
++      if (fs.existsSync(p)) return p;
++    }
++  }
++  return undefined;
++}
++
++const css =
++  fs.readFileSync(path.join(WEB2, 'src', 'tokens', 'graphite.css'), 'utf8') + '\n' + fs.readFileSync(CSS, 'utf8');
++const icon = (s) => `<svg class="files-i" width="${s}" height="${s}" viewBox="0 0 16 16"><rect width="16" height="16" fill="currentColor"/></svg>`;
++const header = (w) =>
++  `<div class="files-scope" style="width:${w}px;display:block"><div class="files-hd" data-w="${w}">` +
++  `<div class="files-hd-id">${icon(14)}<span class="files-hd-name">ConnectedFilesPanel.tsx</span>` +
++  `<span class="files-hd-path mono"><bdi>packages/web2/src/files/ConnectedFilesPanel.tsx</bdi></span>` +
++  `<span class="files-hd-status">unsaved</span></div>` +
++  `<div class="files-modes" role="group">` +
++  ['Code', 'Diff', 'Edit'].map((l) => `<button class="files-mode" title="${l}">${icon(12)}<span>${l}</span></button>`).join('') +
++  `</div></div></div>`;
++
++const { chromium } = require('playwright-core');
++const browser = await chromium.launch({ executablePath: findChromium() });
++const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
++await page.setContent(`<style>${css}</style>` + WIDTHS.map(header).join('<br>'));
++const rows = await page.evaluate(() =>
++  [...document.querySelectorAll('.files-hd')].map((hd) => {
++    const r = (e) => e.getBoundingClientRect();
++    const under = (a, b) =>
++      a.bottom > b.top && a.top < b.bottom ? Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) : 0;
++    const H = r(hd);
++    const M = r(hd.querySelector('.files-modes'));
++    const N = r(hd.querySelector('.files-hd-name'));
++    const S = r(hd.querySelector('.files-hd-status'));
++    return {
++      width: Number(hd.dataset.w),
++      nameVisible: Math.round(N.width),
++      nameUnderButtons: Math.round(under(N, M)),
++      badgeUnderButtons: Math.round(under(S, M)),
++      buttonsPastEdge: Math.round(Math.max(0, M.right - H.right)),
++      headerHeight: Math.round(H.height),
++    };
++  }),
++);
++await browser.close();
++console.table(rows);
++const bad = rows.filter((r) => r.nameVisible < 24 || r.nameUnderButtons || r.badgeUnderButtons || r.buttonsPastEdge);
++console.log(bad.length ? `FAIL at ${bad.map((r) => `${r.width}px`).join(', ')}` : 'ok: nothing overlaps and nothing runs past the edge');
++process.exit(bad.length ? 1 : 0);

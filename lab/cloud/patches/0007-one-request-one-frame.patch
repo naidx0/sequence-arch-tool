@@ -1,0 +1,298 @@
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index eb83fca..671f283 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -65,7 +65,7 @@ import {
+ } from '../explain/askSurface.js';
+ import { checkAnswerClaims, checkQuestionPremise } from '../moat/claimCheck.js';
+ import { CANVAS_STORY_TOOL, isCanvasToolName } from './canvasTools.js';
+-import { attemptNextPictureCheckIn, buildConceptChart, deriveBeforeAfterChart, deriveCheckIn, deriveNextPictureCheckIn, withPicturePointer, withWorkedExample } from './conceptChart.js';
++import { attemptNextPictureCheckIn, buildConceptChart, deriveBeforeAfterChart, deriveCheckIn, deriveNextPictureCheckIn, redrawOf, withPicturePointer, withWorkedExample } from './conceptChart.js';
+ import { drawVisual, type VisualSpec } from './visuals.js';
+ import { EMPTY_CARRY, excerptsReachable, extendCarry, pathsNamedIn, renderCarry } from './turnCarry.js';
+ 
+@@ -469,6 +469,15 @@ export type AskStreamEvent =
+        */
+       type: 'chart:proposal';
+       chart: SeqChart;
++      /**
++       * SET WHEN THIS CHART IS A REDRAW of one this same turn already drew: the
++       * 0-based position of that chart among this turn's charts. The client
++       * swaps it in place instead of adding a frame. One request drew three
++       * frames in the owner's run 3; a model that redraws after a bounce means
++       * to correct its picture, not to add a second one. Absent on every first
++       * drawing, so a client that ignores it appends exactly as before.
++       */
++      replacesTurnChart?: number;
+     }
+   | {
+       /**
+@@ -795,6 +804,8 @@ interface AskToolRoundSink {
+   filesProposalSucceededThisTurn: { value: boolean };
+   /** How many charts this turn drew — the teach contract's visual receipt. */
+   chartsThisTurn: { value: number };
++  /** The charts this turn put on the canvas, in order, so a redraw can replace its original. */
++  chartsDrawnThisTurn: { value: SeqChart[] };
+   /** Everything this turn DREW, in order — see {@link describeTurnArtefacts}. */
+   artefactsThisTurn: { value: TurnArtefact[] };
+   /**
+@@ -1057,8 +1068,21 @@ async function applyAskToolRoundResult(
+         ? { ...result.chart, caption: GENERAL_KNOWLEDGE_CAPTION }
+         : result.chart;
+     sink.chartsThisTurn.value += 1;
+-    sink.artefactsThisTurn.value.push({ kind: 'chart', label: chart.title });
+-    push({ type: 'chart:proposal', chart });
++    /*
++     * ONE REQUEST, ONE FRAME. A second propose_chart in the same turn that draws
++     * the same picture (same title, or mostly the same boxes) replaces the
++     * first instead of stacking beside it, and is not counted again in what the
++     * turn drew. A genuinely different chart still gets its own frame.
++     */
++    const redraw = redrawOf(sink.chartsDrawnThisTurn.value, chart);
++    if (redraw === undefined) {
++      sink.chartsDrawnThisTurn.value.push(chart);
++      sink.artefactsThisTurn.value.push({ kind: 'chart', label: chart.title });
++      push({ type: 'chart:proposal', chart });
++    } else {
++      sink.chartsDrawnThisTurn.value[redraw] = chart;
++      push({ type: 'chart:proposal', chart, replacesTurnChart: redraw });
++    }
+     /*
+      * A TEACH TURN'S STEP RIDES ITS CHART. The teach contract already demands
+      * one concept and one visual per turn, so the chart IS the step: its
+@@ -3718,6 +3742,8 @@ export async function runAskPipeline(
+   let lastChanceDiffSpent = false;
+   let teachBounces = 0;
+   let chartsThisTurn = 0;
++  /** See `AskToolRoundSink.chartsDrawnThisTurn`. The array itself is shared with every round. */
++  const chartsDrawnThisTurn: SeqChart[] = [];
+   /** What this turn DREW, in order — the rows the ends-in-words line is built from. */
+   const artefactsThisTurn: TurnArtefact[] = [];
+   /** See `AskToolRoundSink.referentsThisTurn`. */
+@@ -4584,6 +4610,7 @@ ${lastToolSectionText}`);
+       canvasWriteSucceededThisTurn: canvasFlag,
+       filesProposalSucceededThisTurn: filesFlag,
+       chartsThisTurn: chartFlag,
++      chartsDrawnThisTurn: { value: chartsDrawnThisTurn },
+       artefactsThisTurn: artefactsHolder,
+       referentsThisTurn: referentsHolder,
+       fileWriteCallsThisTurn: writeCalls,
+diff --git a/packages/analyzer/src/server/conceptChart.ts b/packages/analyzer/src/server/conceptChart.ts
+index 1c9a70e..f3a33b6 100644
+--- a/packages/analyzer/src/server/conceptChart.ts
++++ b/packages/analyzer/src/server/conceptChart.ts
+@@ -680,3 +680,32 @@ export function deriveBeforeAfterChart(
+   const checked = validateChart(chart, new Set(nodes.map((n) => n.id)));
+   return checked.ok ? checked.chart : undefined;
+ }
++
++/**
++ * IS THIS CHART A REDRAW OF ONE ALREADY DRAWN THIS TURN?
++ *
++ * The owner's run 3 put three frames on the canvas for one request. A small
++ * model that is bounced, or that simply calls propose_chart again, redraws the
++ * same picture with a box renamed or a link added. Same title (ignoring case
++ * and punctuation), or at least 60% of the box labels shared, counts as the
++ * same picture. Returns the index of the latest such chart, or undefined for a
++ * genuinely new one.
++ */
++const REDRAW_OVERLAP = 0.6;
++
++export function redrawOf(drawn: readonly SeqChart[], next: SeqChart): number | undefined {
++  const norm = (s: string | undefined) => (s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
++  const labels = (c: SeqChart) => new Set(c.items.map((i) => norm(i.label)).filter(Boolean));
++  const title = norm(next.title);
++  const mine = labels(next);
++  for (let i = drawn.length - 1; i >= 0; i -= 1) {
++    const prev = drawn[i]!;
++    if (title !== '' && norm(prev.title) === title) return i;
++    const theirs = labels(prev);
++    if (mine.size === 0 || theirs.size === 0) continue;
++    let shared = 0;
++    for (const l of mine) if (theirs.has(l)) shared += 1;
++    if (shared / (mine.size + theirs.size - shared) >= REDRAW_OVERLAP) return i;
++  }
++  return undefined;
++}
+diff --git a/packages/analyzer/src/test/ask-tool-loop.test.ts b/packages/analyzer/src/test/ask-tool-loop.test.ts
+index 16b806d..26126e3 100644
+--- a/packages/analyzer/src/test/ask-tool-loop.test.ts
++++ b/packages/analyzer/src/test/ask-tool-loop.test.ts
+@@ -4779,3 +4779,37 @@ test('askPipeline plan before/after stays off without the flag, and never fires
+     assert.ok(!kinds.includes('before-and-after'), `${permission} with flag ${flag ?? 'unset'} drew a before/after`);
+   }
+ });
++
++/* ============================================ one request, one frame ===== */
++
++test('askPipeline: a same-turn redraw of a chart is marked to replace it; a different chart is not', async () => {
++  const repo = shopfrontRepo();
++  const chart = (id: string, title: string, labels: string[]) => ({
++    id,
++    name: 'propose_chart',
++    args: { kind: 'data-flow', title, items: labels.map((l, i) => ({ id: `i${i}`, label: l })) },
++  });
++  const { callProvider } = makeProviderScript([
++    { text: 'Drawing.', toolRequests: [chart('c1', 'How an order moves', ['Gateway', 'Orders', 'Postgres'])] },
++    {
++      text: 'Fixing the picture, and adding the storage.',
++      toolRequests: [
++        chart('c2', 'How an order moves', ['Gateway', 'Orders', 'Postgres', 'Events']),
++        chart('c3', 'Where order data lives', ['Tables', 'Migrations']),
++      ],
++    },
++    { text: 'An order enters at the gateway and is stored by orders.' },
++  ]);
++  const base = await makeAttachedInput(repo, callProvider);
++  const events: AskStreamEvent[] = [];
++  await runAskPipeline({ ...base, question: 'Draw how an order moves through the system' }, (e) => events.push(e));
++  const charts = events.filter((e) => e.type === 'chart:proposal') as Array<{ chart: { title: string; items: unknown[] }; replacesTurnChart?: number }>;
++  assert.deepStrictEqual(
++    charts.map((c) => [c.chart.title, c.chart.items.length, c.replacesTurnChart]),
++    [
++      ['How an order moves', 3, undefined],
++      ['How an order moves', 4, 0],
++      ['Where order data lives', 2, undefined],
++    ],
++  );
++});
+diff --git a/packages/analyzer/src/test/redraw.test.ts b/packages/analyzer/src/test/redraw.test.ts
+new file mode 100644
+index 0000000..78b6cdd
+--- /dev/null
++++ b/packages/analyzer/src/test/redraw.test.ts
+@@ -0,0 +1,26 @@
++import assert from 'node:assert/strict';
++import test from 'node:test';
++
++import { redrawOf } from '../server/conceptChart.js';
++
++const c = (title: string, labels: string[]) =>
++  ({ version: 1, kind: 'data-flow', title, items: labels.map((label, i) => ({ id: `i${i}`, label })) }) as never;
++
++test('the same title is the same picture, whatever the case or punctuation', () => {
++  assert.equal(redrawOf([c('How an order moves', ['A'])], c('how an order moves!', ['Z'])), 0);
++});
++
++test('mostly the same boxes is the same picture, even retitled', () => {
++  const first = c('Order flow', ['Gateway', 'Orders', 'Postgres']);
++  assert.equal(redrawOf([first], c('Orders, end to end', ['gateway', 'orders', 'postgres', 'events'])), 0);
++  /* 2 shared of 5 distinct labels is 40%, and 1 of 5 is 20%: different pictures. */
++  assert.equal(redrawOf([first], c('Storage', ['Postgres', 'Orders', 'Tables', 'Migrations'])), undefined);
++  assert.equal(redrawOf([first], c('Storage', ['Postgres', 'Tables', 'Migrations'])), undefined);
++});
++
++test('the latest matching chart is the one replaced, and nothing drawn yet means nothing to replace', () => {
++  const a = c('Order flow', ['Gateway', 'Orders']);
++  const b = c('Order flow', ['Gateway', 'Orders', 'Postgres']);
++  assert.equal(redrawOf([a, c('Other', ['X']), b], c('Order flow', ['Gateway'])), 2);
++  assert.equal(redrawOf([], a), undefined);
++});
+diff --git a/packages/api-types/src/ask.ts b/packages/api-types/src/ask.ts
+index fa399a0..0920576 100644
+--- a/packages/api-types/src/ask.ts
++++ b/packages/api-types/src/ask.ts
+@@ -677,6 +677,15 @@ export type AskStreamEvent =
+        */
+       type: 'chart:proposal';
+       chart: SeqChart;
++      /**
++       * SET WHEN THIS CHART IS A REDRAW of one this same turn already drew: the
++       * 0-based position of that chart among this turn's charts. The client
++       * swaps it in place instead of adding a frame. One request drew three
++       * frames in the owner's run 3; a model that redraws after a bounce means
++       * to correct its picture, not to add a second one. Absent on every first
++       * drawing, so a client that ignores it appends exactly as before.
++       */
++      replacesTurnChart?: number;
+     }
+   | {
+       /**
+diff --git a/packages/web2/src/state/canvasDoc.test.ts b/packages/web2/src/state/canvasDoc.test.ts
+index 621650e..1c3ba95 100644
+--- a/packages/web2/src/state/canvasDoc.test.ts
++++ b/packages/web2/src/state/canvasDoc.test.ts
+@@ -179,6 +179,37 @@ describe('chart:proposal stream', () => {
+     expect(charts.map((c) => c.title)).toEqual(['First', 'Second']);
+     expect(charts[0]!.kind).toBe('system-architecture');
+   });
++
++  it('a redraw replaces its original in place: one request, one frame', () => {
++    /* The owner's run 3 put three frames on the canvas for one request. */
++    const store = turnWithChart('system-architecture', 'How orders flow');
++    const chart = (title: string, id: string) =>
++      ({ version: 1, kind: 'user-flow', title, items: [{ id, label: id.toUpperCase() }] }) as never;
++    store.dispatch({ type: 'turn/event', event: { type: 'chart:proposal', chart: chart('Something else', 'x') } as never, at: 4 });
++    store.dispatch({
++      type: 'turn/event',
++      event: { type: 'chart:proposal', chart: chart('How orders flow, fixed', 'y'), replacesTurnChart: 0 } as never,
++      at: 5,
++    });
++    const charts = store.getState().session.canvasDoc.charts ?? [];
++    expect(charts.map((c) => c.title)).toEqual(['How orders flow, fixed', 'Something else']);
++    const rows = store.getState().session.inFlight!.work.filter((r) => r.from === 'chart:proposal');
++    expect(rows).toHaveLength(2);
++  });
++
++  it('a replace mark that does not line up with this turn appends as before', () => {
++    const store = turnWithChart('system-architecture', 'Only one');
++    store.dispatch({
++      type: 'turn/event',
++      event: {
++        type: 'chart:proposal',
++        chart: { version: 1, kind: 'user-flow', title: 'Stray', items: [{ id: 'z', label: 'Z' }] },
++        replacesTurnChart: 3,
++      } as never,
++      at: 4,
++    });
++    expect((store.getState().session.canvasDoc.charts ?? []).map((c) => c.title)).toEqual(['Only one', 'Stray']);
++  });
+ });
+ 
+ describe('teach:step stream', () => {
+diff --git a/packages/web2/src/state/store.ts b/packages/web2/src/state/store.ts
+index 54c56c2..06b8872 100644
+--- a/packages/web2/src/state/store.ts
++++ b/packages/web2/src/state/store.ts
+@@ -1954,7 +1954,32 @@ function streamEventCore(state: AppState, event: AskEvent, at: number): AppState
+       };
+     }
+ 
+-    case 'chart:proposal':
++    case 'chart:proposal': {
++      /*
++       * A REDRAW REPLACES ITS ORIGINAL. The server marks a chart that redraws
++       * one this same turn already drew (`replacesTurnChart`, its position
++       * among this turn's charts). This turn's charts are the last ones on the
++       * doc, one per 'chart:proposal' work row, so the original is found from
++       * the end. It is swapped in place and no second row is added: one
++       * request, one frame. Anything that does not line up appends as before.
++       */
++      const drawn = state.session.canvasDoc.charts ?? [];
++      const rowsThisTurn = inFlight.work.filter((row) => row.from === 'chart:proposal').length;
++      const k = event.replacesTurnChart;
++      if (k !== undefined && Number.isInteger(k) && k >= 0 && k < rowsThisTurn && rowsThisTurn <= drawn.length) {
++        const at = drawn.length - rowsThisTurn + k;
++        return {
++          ...state,
++          session: {
++            ...state.session,
++            canvasDoc: {
++              ...state.session.canvasDoc,
++              forSession: state.session.activeId,
++              charts: drawn.map((chart, i) => (i === at ? event.chart : chart)),
++            },
++          },
++        };
++      }
+       /*
+        * A drawn chart lands on the canvas doc and opens a work row. The spec is
+        * already validated server-side (every nodeId real), so the client stores
+@@ -1994,6 +2019,7 @@ function streamEventCore(state: AppState, event: AskEvent, at: number): AppState
+           },
+         },
+       };
++    }
+ 
+     case 'todo:list':
+       /*

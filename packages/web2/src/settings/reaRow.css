@@ -1,0 +1,68 @@
+/* The REA component row (ReaComponentRow.tsx). Tokens only; sits in the MCP servers card beside the kit's own rows. */
+.settings-scope .rea-row {
+  border-bottom: var(--w-hair) solid var(--edge);
+  margin-bottom: var(--sp-12);
+  padding-bottom: var(--sp-12);
+}
+.settings-scope .rea-plan {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-10) 0 0;
+  min-width: 0;
+}
+.settings-scope .rea-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--sp-4) var(--sp-12);
+  margin: 0;
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.settings-scope .rea-facts dt { color: var(--ink-3); }
+.settings-scope .rea-facts dd { margin: 0; color: var(--ink-1); min-width: 0; overflow-wrap: anywhere; }
+.settings-scope .rea-facts .mono { font-family: var(--font-mono); }
+.settings-scope .rea-steps {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+}
+.settings-scope .rea-steps li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-10);
+  color: var(--ink-2);
+}
+.settings-scope .rea-step-t { flex: 1 1 14rem; min-width: 0; }
+.settings-scope .rea-step-c { flex: 0 1 auto; max-width: 100%; overflow-wrap: anywhere; color: var(--ink-3); }
+.settings-scope .rea-step-s { flex: none; color: var(--ink-3); }
+.settings-scope .rea-steps li[data-state='running'] .rea-step-s { color: var(--ink-1); }
+.settings-scope .rea-steps li[data-state='failed'] .rea-step-s { color: var(--spills); }
+.settings-scope .rea-err { color: var(--spills); }
+.settings-scope .rea-acts { flex: 1 1 100%; padding-top: var(--sp-8); }
+.settings-scope .rea-row .sb-pill[data-armed='true'] { color: var(--spills); border-color: var(--spills); }
+.settings-scope .rea-choice { align-self: flex-start; margin: var(--sp-4) 0; }
+.settings-scope .rea-choice button:disabled { cursor: default; opacity: 1; }
+.settings-scope .rea-caps { flex: 1 1 100%; display: flex; flex-direction: column; gap: var(--sp-8); min-width: 0; }
+.settings-scope .rea-caplist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  color: var(--ink-2);
+}
+.settings-scope .rea-caplist li[data-ok='true'] { color: var(--ink-1); }
+.settings-scope .rea-caplist li[data-ok='false'] { color: var(--ink-3); }
+.settings-scope .rea-step-d { color: var(--ink-3); }

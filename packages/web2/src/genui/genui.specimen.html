@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>generative UI: specimen</title>
+    <!--
+      NEVER BUILT INTO THE APP (vite.config.ts sets no rollupOptions.input).
+      Served by `vite` (dev) at /src/genui/genui.specimen.html.
+      ?agent=mock (default) runs the scripted agent (mockAgent.ts), no key.
+      ?agent=http talks to /api/genui (a real agent behind the analyzer).
+      ?speed=2 runs the script faster; ?theme=dark; ?log=0 hides the protocol log.
+      ?auto=1 clicks the generated buttons itself (for the screen recording).
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./genuiSpecimen.tsx"></script>
+  </body>
+</html>

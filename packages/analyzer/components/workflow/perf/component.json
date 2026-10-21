@@ -1,0 +1,21 @@
+{
+  "id": "workflow/perf",
+  "group": "workflow",
+  "label": "Perf",
+  "summary": "Measure before you repair: a fix destroys the evidence.",
+  "triggers": [
+    "app speed and latency",
+    "measure before repair",
+    "startup and delete latency",
+    "web vitals",
+    "performance ratchet"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/perf"
+  },
+  "url": null
+}

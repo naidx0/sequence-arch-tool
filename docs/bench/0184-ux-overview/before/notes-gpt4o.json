@@ -1,0 +1,102 @@
+[
+  {
+    "shot": "overview-dark-1440-live.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n4 files\nArtifacts\n2 cards\nGateway flow\nUI\nRequest path\nVisual"
+  },
+  {
+    "shot": "overview-dark-1440.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n4 files\nArtifacts\n2 cards\nGateway flow\nUI\nRequest path\nVisual"
+  },
+  {
+    "shot": "overview-dark-1440.png",
+    "box": {
+      "x": 1160,
+      "y": 66,
+      "width": 272,
+      "height": 438
+    }
+  },
+  {
+    "window": "27.6k of 128k",
+    "project": "shopfront / master",
+    "model": "GPT-4o"
+  },
+  {
+    "rows": [],
+    "todos": [
+      {
+        "status": "done",
+        "text": "✓\nRead the compose file\ndone"
+      },
+      {
+        "status": "active",
+        "text": "◆\nRead the gateway entrypoint\nactive"
+      },
+      {
+        "status": "pending",
+        "text": "○\nDraw the card for the reader\npending"
+      }
+    ]
+  },
+  {
+    "shot": "overview-dark-1440-pill.png",
+    "pill": "Overview\n6"
+  },
+  {
+    "shot": "overview-dark-420.png",
+    "panel": 0
+  },
+  {
+    "errors": []
+  },
+  {
+    "shot": "overview-light-1440-live.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n4 files\nArtifacts\n4 cards"
+  },
+  {
+    "shot": "overview-light-1440.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nshopfront / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n4 files\nArtifacts\n4 cards"
+  },
+  {
+    "shot": "overview-light-1440.png",
+    "box": {
+      "x": 1160,
+      "y": 66,
+      "width": 272,
+      "height": 364
+    }
+  },
+  {
+    "window": "27.6k of 128k",
+    "project": "shopfront / master",
+    "model": "GPT-4o"
+  },
+  {
+    "rows": [],
+    "todos": [
+      {
+        "status": "done",
+        "text": "✓\nRead the compose file\ndone"
+      },
+      {
+        "status": "active",
+        "text": "◆\nRead the gateway entrypoint\nactive"
+      },
+      {
+        "status": "pending",
+        "text": "○\nDraw the card for the reader\npending"
+      }
+    ]
+  },
+  {
+    "shot": "overview-light-1440-pill.png",
+    "pill": "Overview\n8"
+  },
+  {
+    "shot": "overview-light-420.png",
+    "panel": 0
+  },
+  {
+    "errors": []
+  }
+]

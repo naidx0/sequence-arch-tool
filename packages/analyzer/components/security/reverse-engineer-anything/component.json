@@ -1,0 +1,26 @@
+{
+  "id": "security/reverse-engineer-anything",
+  "group": "security",
+  "label": "Reverse Engineer Anything",
+  "summary": "Reverse engineer native, managed, Electron/JavaScript, packaged, firmware, and browser targets with REA.",
+  "triggers": [
+    "reverse engineer",
+    "decompile",
+    "disassemble",
+    "how does this binary",
+    "inspect the app bundle",
+    "how an application works",
+    "how this app works",
+    "learn how the app works"
+  ],
+  "status": "review",
+  "license": "MIT",
+  "source": {
+    "repo": "morluto/rea",
+    "commit": "8cbd57cafaf1cfacbe832bae593589cf211442ef",
+    "path": ".agents/skills/reverse-engineer-anything"
+  },
+  "url": "https://github.com/morluto/rea/tree/8cbd57cafaf1cfacbe832bae593589cf211442ef/.agents/skills/reverse-engineer-anything",
+  "preamble": "SEQUENCE.md",
+  "setup": "npx rea-agents@6.4.0 setup (user runs it; never automatic)"
+}

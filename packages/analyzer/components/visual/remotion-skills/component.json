@@ -1,0 +1,20 @@
+{
+  "id": "visual/remotion-skills",
+  "group": "visual",
+  "label": "Remotion Skills",
+  "summary": "Agent skills for Remotion, the React video framework. Link only: no license is published, so install it from its source repo.",
+  "triggers": [
+    "remotion",
+    "react video",
+    "remotion composition",
+    "render a video in react"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "remotion-dev/skills",
+    "commit": "7ba4dcf8ebe1626b00baa41e1f2478113719b60b",
+    "path": null
+  },
+  "url": "https://github.com/remotion-dev/skills"
+}

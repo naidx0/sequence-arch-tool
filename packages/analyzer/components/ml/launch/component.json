@@ -1,0 +1,30 @@
+{
+  "id": "ml/launch",
+  "group": "ml",
+  "label": "Launch",
+  "summary": "Assemble and run a Halo training or test job inside the prebuilt Docker image.",
+  "triggers": [
+    "launch training job",
+    "run halo job",
+    "docker training image",
+    "start a training run",
+    "test job"
+  ],
+  "status": "ready",
+  "license": "Apache-2.0 + Halo supplemental terms",
+  "source": {
+    "repo": "whitecircle/halo",
+    "commit": "41da0838499a2459b236252ba1200a31957d3606",
+    "path": "skills/launch"
+  },
+  "url": "https://github.com/whitecircle/halo/tree/41da0838499a2459b236252ba1200a31957d3606/skills/launch",
+  "externalRefs": [
+    "examples/sft/qwen3/qwen3-4b-ultrachat.yaml",
+    "examples/sft/gptoss/gptoss-20b-multinode-ep.yaml",
+    "agent-docs/reference/debugging.md",
+    "launcher-configs/accelerate/fsdp2_gradop_config.yaml",
+    "tests/gpu/test_suite.py",
+    "agent-docs/infrastructure/docker.md"
+  ],
+  "preamble": "SEQUENCE.md"
+}

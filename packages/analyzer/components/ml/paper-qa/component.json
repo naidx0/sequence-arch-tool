@@ -1,0 +1,20 @@
+{
+  "id": "ml/paper-qa",
+  "group": "ml",
+  "label": "paper-qa",
+  "summary": "paper-qa, retrieval QA over papers. Link only: Apache-2.0; install it from its source repo.",
+  "triggers": [
+    "paper-qa",
+    "paper qa",
+    "future house paperqa",
+    "papers with citations qa"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "Future-House/paper-qa",
+    "commit": "57e89f7223b0960d5ee5ea048c69e3c47e088572",
+    "path": null
+  },
+  "url": "https://github.com/Future-House/paper-qa"
+}

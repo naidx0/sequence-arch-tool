@@ -1,0 +1,298 @@
+diff --git a/packages/web2/src/sessions/SessionsPanel.test.tsx b/packages/web2/src/sessions/SessionsPanel.test.tsx
+index b18144b..39ec45b 100644
+--- a/packages/web2/src/sessions/SessionsPanel.test.tsx
++++ b/packages/web2/src/sessions/SessionsPanel.test.tsx
+@@ -355,7 +355,7 @@ describe('SessionsPanel', () => {
+         surface: null,
+         at: 1,
+       },
+-    ]);
++    ], 'session-old');
+     const realFetch = globalThis.fetch;
+     vi.stubGlobal(
+       'fetch',
+@@ -371,8 +371,8 @@ describe('SessionsPanel', () => {
+       await waitFor(() => expect(rows().length).toBe(4));
+       fireEvent.click(screen.getByTestId('sessions-new'));
+       await waitFor(() => expect(switched).toEqual(['session-new']));
+-      expect(flushCalls.some((c) => c.includes('/api/chat-memory'))).toBe(true);
+-      const flushAt = flushCalls.findIndex((c) => c.includes('/api/chat-memory'));
++      expect(flushCalls.some((c) => c === 'PUT /api/sessions/session-old')).toBe(true);
++      const flushAt = flushCalls.findIndex((c) => c === 'PUT /api/sessions/session-old');
+       const createAt = calls.findIndex((c) => c.method === 'POST' && c.url.includes('/api/sessions'));
+       expect(flushAt).toBeGreaterThanOrEqual(0);
+       expect(createAt).toBeGreaterThanOrEqual(0);
+diff --git a/packages/web2/src/sessions/sessionPersist.test.ts b/packages/web2/src/sessions/sessionPersist.test.ts
+index eaf42a6..2ee9fe1 100644
+--- a/packages/web2/src/sessions/sessionPersist.test.ts
++++ b/packages/web2/src/sessions/sessionPersist.test.ts
+@@ -46,7 +46,7 @@ describe('sessionPersist flush', () => {
+       }),
+     );
+ 
+-    rememberChatForFlush(turns);
++    rememberChatForFlush(turns, 'session-a');
+     rememberCanvasForFlush(
+       {
+         blocks: [{ id: 'b1', type: 'markdown', payload: '# x', status: 'landed' }],
+@@ -66,13 +66,13 @@ describe('sessionPersist flush', () => {
+       1,
+     );
+     expect(peekSessionFlush().chat).toContain('hello');
++    expect(peekSessionFlush().chatSessionId).toBe('session-a');
+     expect(peekSessionFlush().canvas).toContain('# x');
+     expect(peekSessionFlush().board).toContain('boardSeqd');
+ 
+     await flushSessionMemory();
+     expect(calls).toEqual(
+       expect.arrayContaining([
+-        expect.objectContaining({ url: '/api/chat-memory', method: 'PUT', keepalive: true }),
+         /* The canvas rides on the session route WITH its id, like the board —
+            never the anonymous `/api/canvas-doc` that lands wherever "active"
+            points by the time the server reads it (the New Chat race). */
+@@ -88,7 +88,7 @@ describe('sessionPersist flush', () => {
+   it('skips empty / not-worth payloads', async () => {
+     const fetchMock = vi.fn();
+     vi.stubGlobal('fetch', fetchMock);
+-    rememberChatForFlush([]);
++    rememberChatForFlush([], 'session-a');
+     rememberCanvasForFlush({ blocks: [] }, 'session-a');
+     await flushSessionMemory();
+     expect(fetchMock).not.toHaveBeenCalled();
+@@ -97,7 +97,7 @@ describe('sessionPersist flush', () => {
+   it('reloadAfterSessionChange reloads without a second flush', () => {
+     const reload = vi.fn();
+     vi.stubGlobal('location', { ...window.location, reload });
+-    rememberChatForFlush(turns);
++    rememberChatForFlush(turns, 'session-a');
+     reloadAfterSessionChange();
+     expect(reload).toHaveBeenCalledTimes(1);
+     expect(peekSessionFlush().chat).toContain('hello');
+@@ -110,9 +110,36 @@ describe('sessionPersist flush', () => {
+     );
+     const reload = vi.fn();
+     vi.stubGlobal('location', { ...window.location, reload });
+-    rememberChatForFlush(turns);
++    rememberChatForFlush(turns, 'session-a');
+     await flushAndReload();
+     expect(peekSessionFlush().chat).toBeNull();
+     expect(reload).toHaveBeenCalledTimes(1);
+   });
++
++  it('the chat flush names its session in the URL and the body, and never uses /api/chat-memory', async () => {
++    const calls: { url: string; body: string }[] = [];
++    vi.stubGlobal(
++      'fetch',
++      vi.fn(async (url: string, init?: RequestInit) => {
++        calls.push({ url: String(url), body: String(init?.body ?? '') });
++        return { ok: true } as Response;
++      }),
++    );
++    rememberChatForFlush(turns, 'session-a');
++    await flushSessionMemory();
++    expect(calls.map((c) => c.url)).toEqual(['/api/sessions/session-a']);
++    const body = JSON.parse(calls[0]!.body) as { chat: { sessionId: string; turns: { text: string }[] } };
++    /* The route refuses a chat whose sessionId is not the path id, so the two must agree. */
++    expect(body.chat.sessionId).toBe('session-a');
++    expect(body.chat.turns.map((t) => t.text)).toEqual(['hello']);
++  });
++
++  it('a chat with no session id is not flushed anywhere', async () => {
++    const fetchMock = vi.fn();
++    vi.stubGlobal('fetch', fetchMock);
++    rememberChatForFlush(turns, null);
++    expect(peekSessionFlush().chat).toBeNull();
++    await flushSessionMemory();
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
+ });
+diff --git a/packages/web2/src/sessions/sessionPersist.ts b/packages/web2/src/sessions/sessionPersist.ts
+index 5409c27..21e1d78 100644
+--- a/packages/web2/src/sessions/sessionPersist.ts
++++ b/packages/web2/src/sessions/sessionPersist.ts
+@@ -14,17 +14,32 @@ import { toCanvasMemory, worthPersistingCanvas } from './canvasMemory';
+ import { toChatMemory, worthPersisting } from './chatMemory';
+ 
+ let chatBody: string | null = null;
++let chatSessionId: string | null = null;
+ let canvasBody: string | null = null;
+ let canvasSessionId: string | null = null;
+ let boardBody: string | null = null;
+ let boardSessionId: string | null = null;
+ 
+-export function rememberChatForFlush(turns: readonly Turn[]): void {
+-  if (!worthPersisting(turns)) {
++/**
++ * THE CHAT WRITE NAMES ITS SESSION TOO — the last of the three to do so.
++ *
++ * `/api/chat-memory` resolves "the active session" on the server after it has
++ * read the body, exactly the race the canvas write had: a flush issued as a
++ * workspace switch or New Chat moves `activeId` writes this thread's turns
++ * into another thread, or 404s when that thread is not in the new root. The
++ * owner's switch logged a 404 and two 409s on this route. `PUT
++ * /api/sessions/<id> {chat}` already exists and refuses a body whose
++ * `sessionId` is not the path id, so the chat now goes there, like the board
++ * and the canvas. With no id there is nothing to flush.
++ */
++export function rememberChatForFlush(turns: readonly Turn[], sessionId: string | null): void {
++  if (!sessionId || !worthPersisting(turns)) {
+     chatBody = null;
++    chatSessionId = null;
+     return;
+   }
+-  chatBody = JSON.stringify(toChatMemory('active', turns));
++  chatSessionId = sessionId;
++  chatBody = JSON.stringify({ chat: toChatMemory(sessionId, turns) });
+ }
+ 
+ export function rememberBoardForFlush(sessionId: string, doc: SeqDiagramV1 | null, edits: number): void {
+@@ -60,6 +75,7 @@ export function rememberCanvasForFlush(doc: CanvasDoc, sessionId: string | null)
+ 
+ export function clearSessionFlush(): void {
+   chatBody = null;
++  chatSessionId = null;
+   canvasBody = null;
+   canvasSessionId = null;
+   boardBody = null;
+@@ -69,12 +85,13 @@ export function clearSessionFlush(): void {
+ /** Snapshot of pending bodies — for tests. */
+ export function peekSessionFlush(): {
+   chat: string | null;
++  chatSessionId: string | null;
+   canvas: string | null;
+   canvasSessionId: string | null;
+   board: string | null;
+   boardSessionId: string | null;
+ } {
+-  return { chat: chatBody, canvas: canvasBody, canvasSessionId, board: boardBody, boardSessionId };
++  return { chat: chatBody, chatSessionId, canvas: canvasBody, canvasSessionId, board: boardBody, boardSessionId };
+ }
+ 
+ /**
+@@ -84,10 +101,11 @@ export function peekSessionFlush(): {
+  */
+ export async function flushSessionMemory(timeoutMs = 1500): Promise<void> {
+   const ops: Promise<unknown>[] = [];
+-  if (chatBody) {
++  if (chatBody && chatSessionId) {
+     const body = chatBody;
++    const id = chatSessionId;
+     ops.push(
+-      fetch('/api/chat-memory', {
++      fetch(`/api/sessions/${encodeURIComponent(id)}`, {
+         method: 'PUT',
+         headers: { 'content-type': 'application/json' },
+         body,
+diff --git a/packages/web2/src/state/connect.tsx b/packages/web2/src/state/connect.tsx
+index 83562a2..7ffa920 100644
+--- a/packages/web2/src/state/connect.tsx
++++ b/packages/web2/src/state/connect.tsx
+@@ -1401,18 +1401,26 @@ export function ConnectedChatColumn() {
+     /* Soft-browsing a catalog chat must not PUT into the home workspace root —
+        that is how foreign threads leaked under Workspace (owner 2026-09-16). */
+     if (browsingForeign) return;
+-    rememberChatForFlush(settledTurns);
+-    void fetch('/api/chat-memory', {
++    /*
++     * THE THREAD THESE TURNS BELONG TO, read when they settle — not a
++     * dependency. `session/browse` swaps turns and `activeId` in one action, so
++     * the id read here is the id of these turns. `session/index` can move
++     * `activeId` without touching turns; listing the id would re-run this
++     * effect then and write the old thread's turns into the new one, which is
++     * the bug this write used to have through `/api/chat-memory`.
++     */
++    const sessionId = store.getState().session.activeId ?? null;
++    rememberChatForFlush(settledTurns, sessionId);
++    if (!sessionId) return;
++    void fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+       method: 'PUT',
+       headers: { 'content-type': 'application/json' },
+-      /* The server overwrites `sessionId` with whichever session is active, so
+-         the value sent here is a placeholder the route replaces rather than a
+-         claim this client is in a position to make. */
+-      body: JSON.stringify(toChatMemory('active', settledTurns)),
++      body: JSON.stringify({ chat: toChatMemory(sessionId, settledTurns) }),
+     }).catch(() => {
+       /* Best effort. Losing the persisted copy is recoverable; failing the
+          turn the reader just had is not. */
+     });
++    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeId on purpose, see above
+   }, [settledCount, settledTurns, browsingForeign]);
+ 
+   /*
+@@ -1428,7 +1436,7 @@ export function ConnectedChatColumn() {
+       return;
+     }
+     if (state.session.turns.length === 0) return;
+-    rememberChatForFlush(state.session.turns);
++    rememberChatForFlush(state.session.turns, store.getState().session.activeId ?? null);
+   }, [state.session.turns, browsingForeign]);
+ 
+   const settledCanvas =
+diff --git a/packages/web2/src/state/transcriptRestore.test.tsx b/packages/web2/src/state/transcriptRestore.test.tsx
+index 5870e48..886cf0b 100644
+--- a/packages/web2/src/state/transcriptRestore.test.tsx
++++ b/packages/web2/src/state/transcriptRestore.test.tsx
+@@ -56,6 +56,10 @@ function attachedStore() {
+   return store;
+ }
+ 
++function thread(id: string) {
++  return { id, title: id, createdAt: '2026-09-23T00:00:00Z', updatedAt: '2026-09-23T00:00:00Z' };
++}
++
+ function stubFetch(handler: (url: string, init?: RequestInit) => unknown) {
+   const calls: { url: string; method: string; body: unknown }[] = [];
+   vi.stubGlobal(
+@@ -161,19 +165,49 @@ describe('leaving a thread', () => {
+       </StoreProvider>,
+     );
+ 
++    store.dispatch({ type: 'session/index', sessions: [thread('s1')], activeId: 's1' } as never);
+     store.dispatch({ type: 'composer/draft', text: 'what does scan.ts do' });
+     store.dispatch({ type: 'turn/send', at: 1 });
+     store.dispatch({ type: 'turn/event', event: { type: 'result', text: 'It walks it.' }, at: 2 });
+     store.dispatch({ type: 'turn/stopped', at: 3 });
+ 
+     await waitFor(() => {
+-      const put = calls.find((c) => c.url.startsWith('/api/chat-memory') && c.method === 'PUT');
++      /* Named by id, like the canvas and the board: never the id-less
++         `/api/chat-memory`, which lands wherever "active" points by the time
++         the server reads the body. */
++      const put = calls.find((c) => c.url === '/api/sessions/s1' && c.method === 'PUT');
+       expect(put).toBeTruthy();
+-      const body = put!.body as { version: number; turns: { text: string }[] };
++      const body = (put!.body as { chat: { version: number; sessionId: string; turns: { text: string }[] } }).chat;
+       expect(body.version).toBe(2);
++      expect(body.sessionId).toBe('s1');
+       expect(body.turns.map((t) => t.text)).toContain('what does scan.ts do');
+       expect(body.turns.map((t) => t.text)).toContain('It walks it.');
+     });
++    expect(calls.some((c) => c.url.startsWith('/api/chat-memory') && c.method === 'PUT')).toBe(false);
++  });
++
++  it('a switch that moves the active thread does not write these turns into the new one', async () => {
++    /* The owner's workspace switch logged a 404 and two 409s on the chat write:
++       a write resolved against "active" while active was moving. */
++    const calls = stubFetch((url) =>
++      url.startsWith('/api/chat-memory') ? { version: 1, sessionId: 's1', turns: [] } : null,
++    );
++    const store = attachedStore();
++    render(
++      <StoreProvider store={store}>
++        <ConnectedChatColumn />
++      </StoreProvider>,
++    );
++    store.dispatch({ type: 'session/index', sessions: [thread('s1')], activeId: 's1' } as never);
++    store.dispatch({ type: 'composer/draft', text: 'what does scan.ts do' });
++    store.dispatch({ type: 'turn/send', at: 1 });
++    store.dispatch({ type: 'turn/event', event: { type: 'result', text: 'It walks it.' }, at: 2 });
++    store.dispatch({ type: 'turn/stopped', at: 3 });
++    await waitFor(() => expect(calls.some((c) => c.url === '/api/sessions/s1' && c.method === 'PUT')).toBe(true));
++
++    store.dispatch({ type: 'session/index', sessions: [thread('s1'), thread('s2')], activeId: 's2' } as never);
++    await new Promise((r) => setTimeout(r, 50));
++    expect(calls.some((c) => c.url === '/api/sessions/s2' && c.method === 'PUT')).toBe(false);
+   });
+ 
+   it('does not write a thread that is not worth persisting', async () => {

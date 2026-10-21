@@ -1,0 +1,23 @@
+{
+  "id": "t19-stack-peek",
+  "prompt": "Stack.peek() should return the top item without removing it, and undefined when empty; it currently pops. Fix src/mod.js. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "Stack"
+    ]
+  }
+}

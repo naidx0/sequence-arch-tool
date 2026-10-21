@@ -1,0 +1,22 @@
+{
+  "id": "design/state-machine",
+  "group": "design",
+  "label": "State Machine",
+  "summary": "Renders every state of a component you choose on a throwaway page, with mock data and a switcher, so you can work on each state.",
+  "triggers": [
+    "state machine",
+    "every state of a component",
+    "loading and error states",
+    "mock states for a component",
+    "ui state transitions"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/state-machine"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/state-machine"
+}

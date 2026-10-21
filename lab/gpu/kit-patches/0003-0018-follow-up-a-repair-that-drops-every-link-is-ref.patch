@@ -1,0 +1,92 @@
+From bdf62c6f31d614a2fc9bec9c74b9e2f1505b18e5 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 14:31:07 -0400
+Subject: [PATCH] 0018 follow-up: a repair that drops every link is refused
+ (bridgeChart.emptied)
+
+MiniCPM5 hard set, same 210 answers: 25 repaired charts ended as boxes joined to nothing
+(json 17). Schema 482/482, tools/ci/draw-lang-ab 6/6.
+---
+ packages/schema/src/bridgeChart.test.ts | 10 ++++++++++
+ packages/schema/src/chart.ts            | 10 +++++++++-
+ tools/measure/draw-lang-ab.mjs          |  8 +++++---
+ 3 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/packages/schema/src/bridgeChart.test.ts b/packages/schema/src/bridgeChart.test.ts
+index e0e64e7c..744bb93d 100644
+--- a/packages/schema/src/bridgeChart.test.ts
++++ b/packages/schema/src/bridgeChart.test.ts
+@@ -65,3 +65,13 @@ test('real links are kept as drawn; a part the scan lacks goes with its links',
+   assert.equal(validateChart(chart(['gateway', 'routes', 'ghost'], [['gateway', 'routes']]), NODES, KEYS).ok, false);
+   assert.equal(validateChart(r.chart, NODES, KEYS).ok, true);
+ });
++
++test('a chart whose every link is dropped is marked emptied, so a caller can refuse it', () => {
++  const r = bridgeChart(chart(['invoice', 'client'], [['invoice', 'client']]), NODES, KEYS, label);
++  assert.equal(r.chart.links?.length, 0);
++  assert.equal(r.emptied, true);
++  const kept = bridgeChart(chart(['gateway', 'routes', 'invoice'], [['gateway', 'routes'], ['invoice', 'client']]), NODES, KEYS, label);
++  assert.equal(kept.emptied, false);
++  const noLinks = bridgeChart(chart(['gateway'], []), NODES, KEYS, label);
++  assert.equal(noLinks.emptied, false, 'a chart drawn with no links was not emptied by the repair');
++});
+diff --git a/packages/schema/src/chart.ts b/packages/schema/src/chart.ts
+index 4a47f42b..dddde935 100644
+--- a/packages/schema/src/chart.ts
++++ b/packages/schema/src/chart.ts
+@@ -575,6 +575,13 @@ export interface BridgeResult {
+   dropped: number;
+   /** Parts that name nothing in the scan, removed with their links. */
+   droppedParts: number;
++  /**
++   * The chart was drawn with links and the repair dropped every one: boxes
++   * joined to nothing. It passes validateChart, but it no longer draws what was
++   * asked, so a caller refuses it rather than showing it. On the MiniCPM5 hard
++   * set this was 16 of the 42 JSON charts the repair touched.
++   */
++  emptied: boolean;
+ }
+ 
+ /**
+@@ -657,7 +664,8 @@ export function bridgeChart(
+   }
+   const next: SeqChart = { ...chart, items, links };
+   if (next.focusItemId !== undefined && !ids.has(next.focusItemId)) delete next.focusItemId;
+-  return { chart: next, bridged, dropped, droppedParts };
++  const emptied = (chart.links ?? []).length > 0 && links.length === 0;
++  return { chart: next, bridged, dropped, droppedParts, emptied };
+ }
+ 
+ /** The route from a to z when it is the only shortest one within maxHops (and longer than one hop). */
+diff --git a/tools/measure/draw-lang-ab.mjs b/tools/measure/draw-lang-ab.mjs
+index d565e0f1..2d0b86a3 100644
+--- a/tools/measure/draw-lang-ab.mjs
++++ b/tools/measure/draw-lang-ab.mjs
+@@ -385,19 +385,21 @@ function scoreOne(q, lang, content) {
+     const byId = new Map(scan.nodes.map((n) => [n.id, n]));
+     const r = C.bridgeChart(g.chart, known, knownEdges, (id) => D.displayOf(byId.get(id)));
+     const v = C.validateChart(r.chart, known, knownEdges);
++    /* A repair that drops every link leaves boxes joined to nothing: refused, not drawn. */
++    const ok = v.ok && !r.emptied;
+     const nodeOf = new Map(r.chart.items.map((it) => [it.id, it.nodeId]));
+     const nodePairs = (r.chart.links ?? []).map((l) => [nodeOf.get(l.from), nodeOf.get(l.to)]);
+     g = {
+       ...g,
+-      grounded: v.ok,
+-      problems: v.ok ? [] : v.problems.map((x) => x.message ?? String(x)),
++      grounded: ok,
++      problems: r.emptied ? ['the repair dropped every link'] : v.ok ? [] : v.problems.map((x) => x.message ?? String(x)),
+       nodes: r.chart.items.length,
+       nodesGrounded: r.chart.items.length,
+       edges: nodePairs.length,
+       edgesGrounded: nodePairs.filter(([a, z]) => knownEdges.has(`${a}>${z}`)).length,
+       nodePairs,
+     };
+-    repair = { bridged: r.bridged, dropped: r.dropped, droppedParts: r.droppedParts };
++    repair = { bridged: r.bridged, dropped: r.dropped, droppedParts: r.droppedParts, emptied: r.emptied };
+   }
+   const cov = hopCoverageOf(g.nodePairs, q);
+   return {
+-- 
+2.51.1.windows.1
+

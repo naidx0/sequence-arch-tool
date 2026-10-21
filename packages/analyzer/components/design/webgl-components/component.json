@@ -1,0 +1,21 @@
+{
+  "id": "design/webgl-components",
+  "group": "design",
+  "label": "Webgl Components",
+  "summary": "Build small, always-on WebGL visuals (identity avatars, ambient orbs, glass and iridescent surfaces, animated textures) that ship inside...",
+  "triggers": [
+    "webgl component",
+    "shader visual",
+    "animated gradient background",
+    "glass or iridescent surface",
+    "webgl avatar"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "flornkm/skills",
+    "commit": "cf1c0094e1826230623ecdb6e7b3c44bdfc593c3",
+    "path": "skills/webgl-components"
+  },
+  "url": "https://github.com/flornkm/skills/tree/cf1c0094e1826230623ecdb6e7b3c44bdfc593c3/skills/webgl-components"
+}

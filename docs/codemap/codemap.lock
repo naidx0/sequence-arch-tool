@@ -1,0 +1,40 @@
+{
+  "current_commit": "bb6deb96d50ddee65fcaf4e77d2077853a80fded",
+  "working_tree_dirty": false,
+  "generated_at": "2026-08-05T13:40:19Z",
+  "scanned_scope": [
+    "packages/schema",
+    "packages/export",
+    "packages/analyzer",
+    "packages/web",
+    "packages/acp",
+    "packages/ink",
+    "packages/gateway",
+    "packages/mcp",
+    "packages/desktop"
+  ],
+  "excluded_dirs": [
+    "node_modules",
+    "dist",
+    "build",
+    "cache",
+    ".git",
+    "tmp-shots",
+    "coverage",
+    ".sequence",
+    "release",
+    "server-bundle"
+  ],
+  "fingerprint_algorithm": "sha256(sorted git-tracked paths under module, each path:sha256(content)[0:16], joined by newline, then sha256 of join)",
+  "module_fingerprints": {
+    "packages/schema": "3399d0abbfc1a68e69494bcc52af9520775e0d1edaa763e732e50f295c68e088",
+    "packages/export": "d346b53e546ac082ac5d0a8a72de0bfb0ac77dfebd2e5c4a2febc54133b7bfe1",
+    "packages/analyzer": "ef823c03f311aef6a9837cad4a8b9a920dc875ee87a2a8794f7a6c37c180b730",
+    "packages/web": "ecd3bcc1b569fcbd7ed4428d25f0ae0ad2069b8e0a9b3917f45dac414cabe550",
+    "packages/acp": "f87ab9e0569f547fe119786f4296de13f60ef282568149d52bbd3b9dda3468cf",
+    "packages/ink": "32830165b819efd0292808c3ccb93319f52504d5d979b51095fa62f2004945e6",
+    "packages/gateway": "fd85497abb9977feee65a4c7453ef3f016e34fb888d1a7a29095c4a75c498645",
+    "packages/mcp": "53cc737f49903473258bcf27b08afb765634811ff60d2d2e8962efbbfb08dcae",
+    "packages/desktop": "e3151acf81710195044b4c44fe2d197f744751ef781f009e185e08f985a2d093"
+  }
+}

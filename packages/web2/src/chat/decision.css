@@ -1,0 +1,127 @@
+/* The decision card (DecisionCard.tsx): a plan checklist and chip answers under a finished turn.
+   Glass tint like the .bdock but no backdrop blur (one compositing layer per card in a transcript; the style ratchet caps them), kit chips and buttons inside; no new button type. */
+.s2-dec {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 4px;
+  padding: 10px 12px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--b-glassedge);
+  background: var(--b-glass);
+  min-width: 0;
+  outline: none;
+}
+.s2-dec:focus-visible {
+  border-color: var(--accent-edge);
+}
+.s2-dec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+}
+.s2-dec-title {
+  font-size: var(--t-11-5);
+  font-weight: var(--fw-label);
+  color: var(--b-ink3);
+}
+.s2-dec-plan {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.s2-dec-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--t-12-5);
+  line-height: 18px;
+  color: var(--b-ink2);
+  min-width: 0;
+}
+.s2-dec-step[data-status='done'] {
+  color: var(--b-ink3);
+}
+.s2-dec-step[data-status='active'] {
+  color: var(--b-ink1);
+}
+.s2-dec-mark {
+  flex: none;
+  width: 14px;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+.s2-dec-step[data-status='active'] .s2-dec-mark {
+  color: var(--b-acc);
+}
+.s2-dec-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.s2-dec-qs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s2-dec-q {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s2-dec-qtext {
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--t-13-5);
+  font-weight: var(--fw-head);
+  line-height: 20px;
+  color: var(--b-ink1);
+  overflow-wrap: anywhere;
+}
+.s2-dec-n {
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 6px;
+  border: 1px solid var(--b-edge2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-11);
+  color: var(--b-ink2);
+}
+.s2-dec-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.s2-dec-opt {
+  height: auto;
+  min-height: 24px;
+  max-width: 100%;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.s2-dec-opt.is-on {
+  background: var(--b-accw);
+  color: var(--b-acc);
+  border-color: color-mix(in srgb, var(--b-acc) 55%, transparent);
+}
+.s2-dec-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

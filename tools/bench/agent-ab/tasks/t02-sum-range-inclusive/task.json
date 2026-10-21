@@ -1,0 +1,23 @@
+{
+  "id": "t02-sum-range-inclusive",
+  "prompt": "sumRange(a, b) should add every integer from a to b inclusive. Fix src/mod.js so the tests pass. Do not edit the test files. When done, run the tests with run_command (node --test) and report the result.",
+  "test": {
+    "cmd": "node",
+    "args": [
+      "--test",
+      "test/mod.test.js"
+    ]
+  },
+  "protect": [
+    "test/"
+  ],
+  "editable": [
+    "src/"
+  ],
+  "expect": {
+    "pass": 1,
+    "tests": [
+      "sumRange"
+    ]
+  }
+}

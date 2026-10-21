@@ -1,0 +1,6 @@
+{
+  "name": "t32-rename-money-fn",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

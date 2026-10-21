@@ -1,0 +1,74 @@
+/* The queue above the composer (composer/PromptQueueList.tsx). Layout only,
+   existing tokens only; the views lane owns the look. */
+.pq {
+  margin: 0 0 var(--sp-6);
+  padding: var(--sp-6) var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--surface-1);
+  font-family: var(--font-ui);
+}
+.pq-head {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--t-12);
+  line-height: var(--lh-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+}
+.pq-sub { font-weight: var(--fw-body); color: var(--ink-3); }
+.pq-list { margin: 0; padding: 0; list-style: none; }
+.pq-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-height: var(--row-h-tool);
+  border-top: var(--w-hair) solid var(--edge-faint);
+}
+.pq-row:first-child { border-top: 0; }
+.pq-n {
+  flex: none;
+  width: var(--sp-16);
+  font-size: var(--t-11);
+  color: var(--ink-4);
+  font-variant-numeric: var(--num);
+}
+.pq-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+  color: var(--ink-body);
+}
+.pq-edit {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+  font: inherit;
+  font-size: var(--t-13);
+  color: var(--ink-1);
+  background: var(--surface-2);
+  border: var(--w-hair) solid var(--edge-strong);
+  border-radius: var(--r-4);
+  padding: var(--sp-4) var(--sp-6);
+}
+.pq-actions { flex: none; display: flex; gap: var(--sp-2); }
+.pq-btn {
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  padding: 0 var(--sp-6);
+  border: 0;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+}
+.pq-btn:hover:not(:disabled) { background: var(--state-hover); color: var(--ink-1); }
+.pq-btn:disabled { opacity: 0.4; cursor: default; }
+/* Deny with a reason (composer/DenyWithReason.tsx): the field and its button on one line. */
+.dwr { display: inline-flex; align-items: center; gap: var(--sp-4); min-width: 0; }
+.dwr .pq-edit { width: 16rem; max-width: 100%; resize: none; }

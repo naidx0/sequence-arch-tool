@@ -1,0 +1,218 @@
+[
+  {
+    "shot": "overview-dark-1440-live.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nsequence-release-0184-wip-0184-ux-overview / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n2 files\ndocker-compose.yml\nRead\ngateway/src/\nindex.ts\nRead\nArtifacts\n2 cards\nGateway flow\nUI\nRequest path\nVisual"
+  },
+  {
+    "shot": "overview-dark-1440.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nsequence-release-0184-wip-0184-ux-overview / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n2 files\ndocker-compose.yml\nRead\ngateway/src/\nindex.ts\nRead\nArtifacts\n2 cards\nGateway flow\nUI\nRequest path\nVisual"
+  },
+  {
+    "shot": "overview-dark-1440.png",
+    "box": {
+      "x": 1160,
+      "y": 66,
+      "width": 272,
+      "height": 440
+    }
+  },
+  {
+    "window": "27.6k of 128k",
+    "project": "sequence-release-0184-wip-0184-ux-overview / master",
+    "model": "GPT-4o"
+  },
+  {
+    "rows": [
+      {
+        "path": "docker-compose.yml",
+        "title": "docker-compose.yml",
+        "state": "read",
+        "text": "docker-compose.yml\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "gateway/src/index.ts",
+        "title": "gateway/src/index.ts",
+        "state": "read",
+        "text": "gateway/src/\nindex.ts\nRead",
+        "tag": "BUTTON"
+      }
+    ],
+    "todos": [
+      {
+        "status": "done",
+        "text": "✓\nRead the compose file\ndone"
+      },
+      {
+        "status": "active",
+        "text": "◆\nRead the gateway entrypoint\nactive"
+      },
+      {
+        "status": "pending",
+        "text": "○\nDraw the card for the reader\npending"
+      }
+    ]
+  },
+  {
+    "cuts": [
+      {
+        "id": "ov-project",
+        "text": "sequence-release-0184-wip-0184-ux-overview / master",
+        "cut": true,
+        "title": "sequence-release-0184-wip-0184-ux-overview / master",
+        "parentTitle": "sequence-release-0184-wip-0184-ux-overview / master"
+      },
+      {
+        "id": "ov-model",
+        "text": "GPT-4o",
+        "cut": false,
+        "title": "GPT-4o",
+        "parentTitle": "GPT-4o"
+      },
+      {
+        "id": "ov-file-name",
+        "text": "docker-compose.yml",
+        "cut": false,
+        "title": null,
+        "parentTitle": "docker-compose.yml"
+      },
+      {
+        "id": "ov-file-dir",
+        "text": "gateway/src/",
+        "cut": false,
+        "title": null,
+        "parentTitle": "gateway/src/index.ts"
+      },
+      {
+        "id": "ov-file-name",
+        "text": "index.ts",
+        "cut": false,
+        "title": null,
+        "parentTitle": "gateway/src/index.ts"
+      }
+    ]
+  },
+  {
+    "shot": "panel-dark-1440-files.png",
+    "rows": []
+  },
+  {
+    "shot": "overview-dark-1440-pill.png",
+    "pill": "Overview\n4"
+  },
+  {
+    "shot": "overview-dark-420.png",
+    "panel": 0
+  },
+  {
+    "errors": []
+  },
+  {
+    "shot": "overview-light-1440-live.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nsequence-release-0184-wip-0184-ux-overview / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n2 files\ndocker-compose.yml\nRead\ngateway/src/\nindex.ts\nRead\nArtifacts\n4 cards"
+  },
+  {
+    "shot": "overview-light-1440.png",
+    "panel": "Overview\nProgress\n1 of 3 done\n✓\nRead the compose file\ndone\n◆\nRead the gateway entrypoint\nactive\n○\nDraw the card for the reader\npending\nContext\nProject\nsequence-release-0184-wip-0184-ux-overview / master\nModel\nGPT-4o\nWindow\n27.6k of 128k\nFiles\n2 files\ndocker-compose.yml\nRead\ngateway/src/\nindex.ts\nRead\nArtifacts\n4 cards"
+  },
+  {
+    "shot": "overview-light-1440.png",
+    "box": {
+      "x": 1160,
+      "y": 66,
+      "width": 272,
+      "height": 438
+    }
+  },
+  {
+    "window": "27.6k of 128k",
+    "project": "sequence-release-0184-wip-0184-ux-overview / master",
+    "model": "GPT-4o"
+  },
+  {
+    "rows": [
+      {
+        "path": "docker-compose.yml",
+        "title": "docker-compose.yml",
+        "state": "read",
+        "text": "docker-compose.yml\nRead",
+        "tag": "BUTTON"
+      },
+      {
+        "path": "gateway/src/index.ts",
+        "title": "gateway/src/index.ts",
+        "state": "read",
+        "text": "gateway/src/\nindex.ts\nRead",
+        "tag": "BUTTON"
+      }
+    ],
+    "todos": [
+      {
+        "status": "done",
+        "text": "✓\nRead the compose file\ndone"
+      },
+      {
+        "status": "active",
+        "text": "◆\nRead the gateway entrypoint\nactive"
+      },
+      {
+        "status": "pending",
+        "text": "○\nDraw the card for the reader\npending"
+      }
+    ]
+  },
+  {
+    "cuts": [
+      {
+        "id": "ov-project",
+        "text": "sequence-release-0184-wip-0184-ux-overview / master",
+        "cut": true,
+        "title": "sequence-release-0184-wip-0184-ux-overview / master",
+        "parentTitle": "sequence-release-0184-wip-0184-ux-overview / master"
+      },
+      {
+        "id": "ov-model",
+        "text": "GPT-4o",
+        "cut": false,
+        "title": "GPT-4o",
+        "parentTitle": "GPT-4o"
+      },
+      {
+        "id": "ov-file-name",
+        "text": "docker-compose.yml",
+        "cut": false,
+        "title": null,
+        "parentTitle": "docker-compose.yml"
+      },
+      {
+        "id": "ov-file-dir",
+        "text": "gateway/src/",
+        "cut": false,
+        "title": null,
+        "parentTitle": "gateway/src/index.ts"
+      },
+      {
+        "id": "ov-file-name",
+        "text": "index.ts",
+        "cut": false,
+        "title": null,
+        "parentTitle": "gateway/src/index.ts"
+      }
+    ]
+  },
+  {
+    "shot": "panel-light-1440-files.png",
+    "rows": []
+  },
+  {
+    "shot": "overview-light-1440-pill.png",
+    "pill": "Overview\n6"
+  },
+  {
+    "shot": "overview-light-420.png",
+    "panel": 0
+  },
+  {
+    "errors": []
+  }
+]

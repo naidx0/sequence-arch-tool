@@ -1,0 +1,20 @@
+{
+  "name": "@sequence/genui",
+  "version": "0.1.8",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "description": "Generative UI core: the component catalog (zod), the spec, the streaming patch compiler, the validator and the repair loop. No React, no DOM: the app, the MCP server and tests share it.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --import ../../tools/test-guard/no-real-binaries.mjs --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

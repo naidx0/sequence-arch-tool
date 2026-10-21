@@ -1,0 +1,14 @@
+.s2-switch-rule {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 12px 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--b-edge);
+  border-radius: var(--r-8);
+  color: var(--b-ink2);
+  font-size: var(--t-12);
+}
+.s2-switch-rule span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.s2-switch-rule button { flex-shrink: 0; color: inherit; font: inherit; background: transparent; border: 0; cursor: pointer; text-decoration: underline; }

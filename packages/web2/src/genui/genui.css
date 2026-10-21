@@ -1,0 +1,226 @@
+/* Generative UI surfaces (GenUISurface.tsx), skinned to the app's own chat cards.
+   Tokens only, from tokens/graphite.css (genui.css.test.ts locks that: no colour literal, no
+   undefined var). The card is the agent thread's card (shell2/chat2.css .s2-agcard): a 16px radius,
+   one --edge hairline, rows with a hairline between them, in the glass medium
+   (MACOS-GRAPHITE-MEDIUM.md): --glass-pane-fill over the ground and the --glass-inset edge light, with
+   no backdrop blur (a blur over the scrolling transcript flickers on Windows).
+   Inside the card there are ROWS, not boxes: the only borders are the card's frame, the hairlines
+   between rows and the app's own chip (genui.css.test.ts keeps that list).
+   Sizes are the --sp-* and --t-* scales. Mono and tabular figures for paths, diffs, counts and
+   durations, as the tool rows have them. Motion is HANDOFF-UX 8.6.
+
+   TONE is one meaning per colour (HANDOFF-UX 8.3): info and accent = --accent (action and
+   the app's own notes), success = --fits (done), warning = --spills, danger = --wont. "merged"
+   has no colour of its own in the app (purple is the Teach mode), so it reads as done: --fits.
+   Each tone sets its ink, wash and edge once; every part below reads those three.
+
+   Animation: nothing here loops. The busy label is the shared .shimmer-text, the busy mark is
+   the app's AsciiSpinner, a skeleton is still (the style ratchet counts loops, and reduced
+   motion wants a still skeleton anyway). */
+
+/* The tone aliases live on :root so graphite.test.ts' resolver (every custom property declared in
+   any sheet must resolve on bare :root) sees them; the [data-tone] rules below override per part. */
+:root {
+  --gu-tone: var(--ink-3);
+  --gu-ink: var(--ink-3);
+  --gu-wash: var(--edge-faint);
+  --gu-edge: var(--edge);
+}
+
+.gu-surface {
+  font-family: var(--font-ui);
+  color: var(--ink-1);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-size: var(--t-13);
+  line-height: var(--lh-13);
+}
+
+.gu-surface [data-tone='info'],
+.gu-surface [data-tone='accent'] { --gu-tone: var(--accent); --gu-ink: var(--accent-ink); --gu-wash: var(--accent-wash); --gu-edge: var(--accent-edge); }
+.gu-surface [data-tone='success'],
+.gu-surface [data-tone='merged'] { --gu-tone: var(--fits); --gu-ink: var(--fits); --gu-wash: var(--fits-wash); --gu-edge: var(--fits-edge); }
+.gu-surface [data-tone='warning'] { --gu-tone: var(--spills); --gu-ink: var(--spills); --gu-wash: var(--spills-wash); --gu-edge: var(--spills-edge); }
+.gu-surface [data-tone='danger'] { --gu-tone: var(--wont); --gu-ink: var(--wont); --gu-wash: var(--wont-wash); --gu-edge: var(--wont-edge); }
+
+/* A turn's card sits in the transcript column; min-width 0 lets a wide table or diff scroll inside the card instead of widening the column. */
+.gu-turn-surface { min-width: 0; max-width: 100%; }
+
+.gu-autoh { position: relative; }
+.gu-node { position: relative; border-radius: var(--r-8); }
+.gu-glyph { flex: none; }
+
+/* card: the agent thread's card, in glass. Rows inside; a row is a node of the body. */
+.gu-card {
+  background: var(--glass-pane-fill);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: 16px;
+  box-shadow: var(--glass-inset);
+  overflow: clip;
+}
+.gu-card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-12); min-height: 32px; padding: 9px var(--sp-12); border-bottom: var(--w-hair) solid var(--edge-faint); }
+.gu-card-titles { min-width: 0; }
+.gu-card-title { margin: 0; font-size: var(--t-12-5); line-height: var(--lh-13); font-weight: var(--fw-body); color: var(--ink-1); }
+.gu-card-sub { margin: var(--sp-2) 0 0; color: var(--ink-3); font-size: var(--t-11); line-height: var(--lh-11); }
+.gu-card-body { display: flex; flex-direction: column; }
+.gu-card-body > .gu-node { padding: 9px var(--sp-12); }
+.gu-card-body > .gu-node + .gu-node { border-top: var(--w-hair) solid var(--edge-faint); }
+/* prose runs on without a rule between its lines; a timeline is rows of its own, edge to edge */
+.gu-card-body > .gu-node[data-kind='Text'] + .gu-node[data-kind='Text'],
+.gu-card-body > .gu-node[data-kind='Heading'] + .gu-node[data-kind='Text'] { border-top: 0; padding-top: 0; }
+.gu-card-body > .gu-node[data-kind='Timeline'] { padding: 0; }
+
+/* layout */
+.gu-stack { display: flex; flex-direction: column; }
+.gu-row { flex-direction: row; align-items: center; }
+.gu-wrap { flex-wrap: wrap; }
+.gu-gap-0 { gap: 0; } .gu-gap-1 { gap: var(--sp-4); } .gu-gap-2 { gap: var(--sp-8); } .gu-gap-3 { gap: var(--sp-12); } .gu-gap-4 { gap: var(--sp-16); } .gu-gap-5 { gap: var(--sp-20); } .gu-gap-6 { gap: var(--sp-24); }
+.gu-align-start { align-items: flex-start; } .gu-align-center { align-items: center; } .gu-align-end { align-items: flex-end; } .gu-align-stretch { align-items: stretch; }
+
+/* text: prose is never accent-coloured; only done, warning and danger tint it */
+.gu-heading { font-weight: var(--fw-label); color: var(--ink-1); }
+.gu-heading[data-level='1'] { font-size: var(--t-14); line-height: var(--lh-14); }
+.gu-heading[data-level='2'] { font-size: var(--t-13); line-height: var(--lh-13); }
+.gu-heading[data-level='3'] { font-size: var(--t-10); line-height: var(--lh-10); color: var(--ink-4); text-transform: uppercase; letter-spacing: .04em; }
+.gu-text { margin: 0; color: var(--ink-2); font-size: var(--t-12-5); }
+.gu-text[data-tone='success'], .gu-text[data-tone='merged'], .gu-text[data-tone='warning'], .gu-text[data-tone='danger'] { color: var(--gu-ink); }
+.gu-muted { color: var(--ink-3); }
+.gu-mono { font-family: var(--font-mono); font-size: var(--t-11-5); }
+
+/* badge: the status word of the tool rows (.s2-meta) with a glyph from the app's set, in the tone's ink.
+   No pill and no border: it is a word in a row. */
+.gu-badge {
+  display: inline-flex; align-items: center; gap: var(--sp-4); flex: none;
+  font-size: var(--t-11); line-height: var(--lh-11); color: var(--gu-ink);
+  transition: color var(--dur-2) var(--ease);
+}
+.gu-badge[data-tone='neutral'] { color: var(--ink-3); }
+
+/* status line */
+.gu-status { display: flex; align-items: center; gap: var(--sp-8); color: var(--ink-3); font-size: var(--t-12-5); line-height: var(--lh-12); }
+.gu-status[data-busy='true'] { color: var(--ink-2); }
+.gu-status-text { display: inline-block; }
+
+/* timeline: the plan rows (.s2-plan-step). A bare glyph, the title, the duration at the far end,
+   a hairline between rows, edge to edge. */
+.gu-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.gu-timeline > .gu-node + .gu-node { border-top: var(--w-hair) solid var(--edge-faint); }
+.gu-step { display: grid; grid-template-columns: var(--sp-16) 1fr; gap: var(--sp-10); padding: 9px var(--sp-12); }
+.gu-step[data-status='running'] { --gu-ink: var(--accent-ink); }
+.gu-step[data-status='done'] { --gu-ink: var(--fits); }
+.gu-step[data-status='warning'] { --gu-ink: var(--spills); }
+.gu-step[data-status='error'] { --gu-ink: var(--wont); }
+.gu-step-node { width: var(--sp-16); height: var(--sp-16); display: grid; place-items: center; color: var(--ink-3); }
+.gu-step[data-status='running'] .gu-step-node,
+.gu-step[data-status='done'] .gu-step-node,
+.gu-step[data-status='warning'] .gu-step-node,
+.gu-step[data-status='error'] .gu-step-node,
+.gu-step[data-tone] .gu-step-node { color: var(--gu-ink); }
+.gu-step-main { min-width: 0; }
+.gu-step-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-8); }
+.gu-step-title { font-size: var(--t-12-5); color: var(--ink-1); }
+.gu-step[data-status='pending'] .gu-step-title,
+.gu-step[data-status='skipped'] .gu-step-title { color: var(--ink-3); }
+.gu-step-meta { flex: none; color: var(--ink-3); font-size: var(--t-11); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.gu-step-detail { margin: var(--sp-2) 0 0; color: var(--ink-3); font-size: var(--t-12); line-height: var(--lh-12); }
+.gu-step-kids { display: flex; flex-direction: column; gap: var(--sp-8); padding-top: var(--sp-8); }
+
+/* progress: a chart bar, neutral until it has a verdict */
+.gu-progress { display: flex; flex-direction: column; gap: var(--sp-6); }
+.gu-progress-row { display: flex; justify-content: space-between; font-size: var(--t-12-5); color: var(--ink-3); }
+.gu-progress-label { color: var(--ink-2); }
+.gu-progress-count { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--t-11); }
+.gu-progress-track { height: var(--sp-4); border-radius: var(--r-full); background: var(--edge-faint); overflow: hidden; }
+.gu-progress-fill { height: 100%; border-radius: inherit; background: var(--ink-3); transition: width var(--dur-3) var(--ease), background-color var(--dur-2) var(--ease); }
+.gu-progress[data-tone] .gu-progress-fill { background: var(--gu-tone); }
+
+/* metric: a row, the label at the start and the figure at the end (the shape of a tool row's duration) */
+.gu-metric { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-12); }
+.gu-metric-label { font-size: var(--t-12-5); color: var(--ink-2); }
+.gu-metric-value { font-family: var(--font-mono); font-size: var(--t-13); line-height: var(--lh-13); font-variant-numeric: tabular-nums; color: var(--ink-1); display: flex; align-items: baseline; gap: var(--sp-6); }
+.gu-metric-delta { font-size: var(--t-11); color: var(--gu-ink); }
+
+/* checks: the chip shape of the app's .s2-chipbtn, read-only */
+.gu-checks { display: flex; flex-wrap: wrap; gap: var(--sp-6); }
+.gu-check {
+  position: relative; display: inline-flex; align-items: center; gap: var(--sp-6); height: 24px; padding: 0 var(--sp-8);
+  border-radius: var(--r-full); border: var(--w-hair) solid var(--edge); background: var(--glass-ctl); font-size: var(--t-11-5); color: var(--ink-2);
+  transition: color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+.gu-check[data-status='pending'] { color: var(--ink-3); }
+.gu-check[data-status='pass'] { color: var(--fits); border-color: var(--fits-edge); background: var(--fits-wash); }
+.gu-check[data-status='fail'] { color: var(--wont); border-color: var(--wont-edge); background: var(--wont-wash); }
+.gu-check[data-status='running'] { color: var(--accent-ink); border-color: var(--accent-edge); background: var(--accent-wash); }
+.gu-tip {
+  position: absolute; left: 0; bottom: calc(100% + var(--sp-6)); z-index: 5; width: max-content; max-width: calc(var(--sp-56) * 6);
+  padding: var(--sp-6) var(--sp-8); border-radius: var(--r-8); background: var(--surface-4); color: var(--ink-1);
+  border: var(--w-hair) solid var(--edge-strong); box-shadow: var(--e2);
+  font-size: var(--t-11); line-height: var(--lh-11); white-space: pre-wrap; pointer-events: none;
+  opacity: 0; transition: opacity var(--dur-1) var(--ease);
+}
+.gu-check:hover .gu-tip, .gu-check:focus-visible .gu-tip { opacity: 1; }
+
+/* files: rows, paths are mono, a hairline between rows and no box around them */
+.gu-files { list-style: none; margin: 0; padding: 0; }
+.gu-file { display: flex; justify-content: space-between; gap: var(--sp-12); padding: var(--sp-4) 0; font-family: var(--font-mono); font-size: var(--t-11-5); font-variant-numeric: tabular-nums; }
+.gu-file + .gu-file { border-top: var(--w-hair) solid var(--edge-faint); }
+.gu-file-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.gu-file-stat { display: flex; gap: var(--sp-8); align-items: center; flex: none; }
+.gu-add { color: var(--fits); } .gu-del { color: var(--wont); }
+
+/* diff: the path is a quiet label and the lines carry the app's diff tokens, on one soft field with no frame */
+.gu-diff { margin: 0; border-radius: var(--r-8); overflow: hidden; background: var(--glass-fill-2); }
+.gu-diff-path { padding: var(--sp-6) var(--sp-10) var(--sp-2); font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); }
+.gu-diff-body { margin: 0; padding: var(--sp-4) 0; font-family: var(--font-mono); font-size: var(--t-11-5); line-height: var(--lh-12); font-variant-numeric: tabular-nums; overflow-x: auto; }
+.gu-diff-line { display: grid; grid-template-columns: var(--sp-32) var(--sp-16) 1fr; padding: 0 var(--sp-10) 0 0; white-space: pre; }
+.gu-diff-n { color: var(--ink-4); text-align: right; padding-right: var(--sp-6); }
+.gu-diff-sign { color: var(--ink-3); }
+.gu-diff-text { color: var(--ink-2); }
+.gu-diff-line[data-kind='add'] { background: var(--diff-add-bg); } .gu-diff-line[data-kind='add'] .gu-diff-sign { color: var(--fits); }
+.gu-diff-line[data-kind='del'] { background: var(--diff-del-bg); } .gu-diff-line[data-kind='del'] .gu-diff-sign { color: var(--wont); }
+.gu-diff-line[data-kind='ours'] { background: var(--accent-wash); }
+.gu-diff-line[data-kind='theirs'] { background: var(--spills-wash); }
+.gu-diff-line[data-kind='hunk'] { color: var(--diffx-hunk-ink); background: var(--diffx-hunk-bg); }
+
+/* key value: rows of a label and its figure */
+.gu-kv { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-4) var(--sp-16); font-size: var(--t-12-5); line-height: var(--lh-12); }
+.gu-kv-row { display: contents; }
+.gu-kv dt { color: var(--ink-3); }
+.gu-kv dd { margin: 0; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+
+/* callout: the tone's wash on the row and no frame (a refusal in the app is the wash and the word, chat.css) */
+.gu-callout { padding: var(--sp-8) var(--sp-12); border-radius: var(--r-8); background: var(--gu-wash); }
+.gu-callout-title { font-size: var(--t-12-5); font-weight: var(--fw-label); color: var(--ink-1); margin-bottom: var(--sp-2); }
+.gu-callout-text { margin: 0; color: var(--ink-2); font-size: var(--t-12-5); }
+.gu-callout-kids { display: flex; flex-direction: column; gap: var(--sp-8); margin-top: var(--sp-8); }
+
+/* actions: the buttons are the app's kit (see BUTTON_CLASS in GenUISurface.tsx); only the pending state is added */
+.gu-actions { display: flex; gap: var(--sp-8); flex-wrap: wrap; }
+.gu-actions-end { justify-content: flex-end; }
+.gu-btn[data-pending='true'] { opacity: 0.85; }
+
+/* streaming and repair states: still, in the tone roles (fixer = accent, agent = done) */
+.gu-skel { height: var(--sp-16); border-radius: var(--r-4); display: flex; align-items: center; padding: 0 var(--sp-8); background: var(--edge-faint); }
+.gu-skel-label { font-size: var(--t-11); color: var(--ink-3); }
+.gu-node[data-repairing='true'] { box-shadow: 0 0 0 var(--w-hair) var(--accent-edge); background: var(--accent-wash); }
+.gu-fixing {
+  position: absolute; top: calc(-1 * var(--sp-8)); right: var(--sp-6); z-index: 2; padding: 0 var(--sp-6); border-radius: var(--r-full);
+  font-size: var(--t-10); font-weight: var(--fw-label); color: var(--accent-ink); background: var(--surface-2); box-shadow: 0 0 0 var(--w-hair) var(--accent-edge);
+}
+
+.gu-repair { display: flex; align-items: center; gap: var(--sp-8); flex-wrap: wrap; margin-top: var(--sp-8); font-size: var(--t-11); color: var(--ink-3); }
+.gu-repair-chip[data-phase='repairing'] { color: var(--accent-ink); }
+.gu-repair-n { padding: 0 var(--sp-6); border-radius: var(--r-full); background: var(--accent-wash); color: var(--accent-ink); }
+.gu-repair-n[data-by='agent'] { background: var(--fits-wash); color: var(--fits); }
+.gu-repair-n[data-by='lossy'] { background: var(--spills-wash); color: var(--spills); }
+.gu-repair-last { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.gu-repair-log { flex-basis: 100%; margin: var(--sp-4) 0 0; padding: var(--sp-8) var(--sp-10) var(--sp-8) var(--sp-24); border-radius: var(--r-8); background: var(--glass-fill-2); font-size: var(--t-11); line-height: var(--lh-11); max-height: calc(var(--lh-11) * 12); overflow: auto; }
+.gu-repair-log li[data-by='agent'] { color: var(--fits); }
+.gu-repair-log li[data-by='lossy'] { color: var(--spills); }
+.gu-repair-by { display: inline-block; min-width: var(--sp-56); color: var(--ink-4); font-family: var(--font-mono); }
+
+/* reduced motion (8.6): opacity only, no more than 100ms, nothing moves */
+@media (prefers-reduced-motion: reduce) {
+  .gu-surface *, .gu-surface *::before, .gu-surface *::after { animation: none !important; transition-duration: 0.001ms !important; }
+}

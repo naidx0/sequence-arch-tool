@@ -1,0 +1,528 @@
+/* ══ THE LANDING: DARK, PRODUCT-WINDOW-FORWARD (variant A, 2026-10-10) ═══════
+   Owner: "a cursor style SOTA website … real media and scores and
+   comparisons". Built only from the tokens in globals.css: the page sits on
+   the brand dark (--dark), panels are --dark-elevated, text is --on-dark and
+   --on-dark-muted, and the one hue is the app's blue cut for dark grounds
+   (--accent-dark-rgb). The recorded app is shown in a window frame on a
+   dotted stage that echoes the whiteboard's own grid. Imported by the
+   landing page only, so benchmarks.html keeps the light page.
+
+   These rules are unlayered, so they beat Tailwind's layered utilities. The
+   text classes therefore set no margin (preflight already zeroes it), or an
+   `mx-auto` or `mt-4` beside them would silently do nothing. */
+
+/* NO FONT-SWAP JUMP. Inter arrives a beat after first paint (font-display:
+   swap); until then the text is set in a local face sized to Inter's metrics,
+   so lines do not rewrap and nothing below them moves when Inter lands.
+   Overrides are the widely used Inter-on-Arial values. */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial'), local('Helvetica Neue'), local('Helvetica');
+  size-adjust: 107.12%;
+  ascent-override: 90.44%;
+  descent-override: 22.52%;
+  line-gap-override: 0%;
+}
+
+html.cx {
+  color-scheme: dark;
+  background: var(--dark);
+}
+html.cx body {
+  background: var(--dark);
+  color: var(--on-dark);
+}
+
+.cx-page {
+  --cx-bg: var(--dark);
+  --cx-panel: var(--dark-elevated);
+  --cx-deep: color-mix(in srgb, var(--dark) 72%, black);
+  --cx-fg: var(--on-dark);
+  --cx-muted: var(--on-dark-muted);
+  --cx-line: var(--hairline-dark);
+  --cx-blue: rgb(var(--accent-dark-rgb));
+  background: var(--cx-bg);
+  color: var(--cx-fg);
+  font-family: 'Inter', 'Inter Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  overflow-x: clip;
+}
+.cx-page ::selection {
+  background: rgba(var(--accent-dark-rgb), 0.4);
+}
+.cx-wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+.cx-wrap-wide {
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+.cx-section {
+  padding-block: clamp(4.5rem, 9vw, 8rem);
+  scroll-margin-top: 56px;
+}
+.cx-rule {
+  border-top: 1px solid var(--cx-line);
+}
+
+.cx-h1 {
+  font-family: inherit;
+  font-size: clamp(2.5rem, 6.2vw, 4.75rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.cx-h2 {
+  font-family: inherit;
+  font-size: clamp(1.9rem, 3.8vw, 3.1rem);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.cx-h3 {
+  font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.cx-lede {
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+  line-height: 1.5;
+  color: var(--cx-muted);
+  text-wrap: pretty;
+}
+.cx-body {
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--cx-muted);
+  text-wrap: pretty;
+}
+.cx-kicker {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--cx-blue);
+  margin: 0 0 0.9rem;
+}
+.cx-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--cx-muted);
+}
+.cx-note code {
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--cx-fg);
+}
+
+.cx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0 1.3rem;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition:
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease);
+}
+.cx-btn-primary {
+  background: var(--on-dark);
+  color: var(--dark);
+}
+.cx-btn-primary:hover {
+  background: color-mix(in srgb, var(--on-dark) 86%, var(--dark));
+}
+.cx-btn-ghost {
+  color: var(--cx-fg);
+  border: 1px solid var(--cx-line);
+  background: rgba(255, 255, 255, 0.03);
+}
+.cx-btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+}
+.cx-link {
+  color: var(--cx-fg);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  text-underline-offset: 4px;
+}
+.cx-link:hover {
+  text-decoration-color: var(--cx-fg);
+}
+.cx-page a:focus-visible,
+.cx-page button:focus-visible,
+.cx-page summary:focus-visible {
+  outline: 2px solid var(--cx-blue);
+  outline-offset: 2px;
+}
+
+/* The nav: one quiet bar over the page. */
+.cx-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--cx-line);
+  background: color-mix(in srgb, var(--dark) 88%, transparent);
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+}
+.cx-navlink {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  color: var(--cx-muted);
+  transition: color 0.15s var(--ease);
+}
+.cx-navlink:hover {
+  color: var(--cx-fg);
+}
+
+/* The stage: the whiteboard's dot grid, the ground every recording sits on. */
+.cx-stage {
+  position: relative;
+  border-radius: 22px;
+  border: 1px solid var(--cx-line);
+  background-color: var(--cx-deep);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1.3px);
+  background-size: 22px 22px;
+  background-position: 11px 11px;
+  padding: clamp(10px, 2.4vw, 28px);
+}
+.cx-stage-hero {
+  border-radius: 26px;
+  padding: clamp(10px, 3.6vw, 56px);
+}
+
+/* The product window: the recording with a title bar. */
+.cx-window {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--cx-deep);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.cx-window-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--cx-line);
+  background: var(--cx-panel);
+}
+.cx-window-dots {
+  display: inline-flex;
+  gap: 7px;
+}
+.cx-window-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.cx-window-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cx-muted);
+}
+.cx-window-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--cx-deep);
+}
+.cx-window-media > img,
+.cx-window-media > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cx-window-media > video {
+  opacity: 0;
+  transition: opacity 320ms var(--ease);
+}
+.cx-window-media > video.is-ready {
+  opacity: 1;
+}
+.cx-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(20, 20, 19, 0.86);
+  color: var(--on-dark);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+@media (max-width: 560px) {
+  .cx-window {
+    border-radius: 10px;
+  }
+  .cx-window-bar {
+    height: 26px;
+    padding: 0 9px;
+  }
+  .cx-window-dots {
+    gap: 5px;
+  }
+  .cx-window-dots span {
+    width: 7px;
+    height: 7px;
+  }
+  .cx-window-title {
+    font-size: 10.5px;
+  }
+}
+
+/* A feature: words on one side, the recording on the other, alternating. */
+.cx-feature {
+  display: grid;
+  gap: clamp(1.75rem, 3vw, 3.25rem);
+  align-items: center;
+}
+@media (min-width: 1000px) {
+  .cx-feature {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  }
+  .cx-feature.is-flipped {
+    grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  }
+  .cx-feature.is-flipped > .cx-feature-text {
+    order: 2;
+  }
+}
+.cx-feature-text {
+  max-width: 30rem;
+}
+.cx-points {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.cx-points li {
+  position: relative;
+  padding-left: 1.15rem;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--cx-fg);
+}
+.cx-points li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--cx-blue);
+}
+
+/* The grid of smaller recordings. */
+.cx-grid {
+  display: grid;
+  gap: clamp(1rem, 2.2vw, 1.75rem);
+}
+@media (min-width: 640px) {
+  .cx-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1000px) {
+  .cx-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem 1.75rem;
+  }
+}
+.cx-card {
+  border-radius: 18px;
+  border: 1px solid var(--cx-line);
+  background: var(--cx-panel);
+  padding: 8px 8px 20px;
+}
+.cx-card .cx-window {
+  border-radius: 11px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* The measured band. */
+.cx-stat {
+  font-family: inherit;
+  font-size: clamp(2.6rem, 5.4vw, 4.25rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.cx-panel {
+  border-radius: 18px;
+  border: 1px solid var(--cx-line);
+  background: var(--cx-panel);
+}
+.cx-bars {
+  display: grid;
+  gap: 16px;
+}
+.cx-bar-row {
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr);
+  gap: 5px 12px;
+  align-items: center;
+}
+.cx-bar-label {
+  grid-row: span 2;
+  font-size: 12.5px;
+  color: var(--cx-muted);
+  font-variant-numeric: tabular-nums;
+}
+.cx-bar-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cx-bar {
+  height: 12px;
+  min-width: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.cx-bar.is-seq {
+  background: var(--cx-blue);
+}
+.cx-bar-val {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--cx-fg);
+  font-variant-numeric: tabular-nums;
+}
+.cx-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 12px;
+  color: var(--cx-muted);
+}
+.cx-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: -1px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.cx-legend i.is-seq {
+  background: var(--cx-blue);
+}
+
+/* The comparison table. */
+.cx-tabs {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--cx-line);
+  background: var(--cx-deep);
+}
+.cx-tabs button {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cx-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.cx-tabs button[aria-selected='true'] {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--cx-fg);
+}
+.cx-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.cx-table th,
+.cx-table td {
+  border-bottom: 1px solid var(--cx-line);
+}
+.cx-table tbody tr:last-child th,
+.cx-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.cx-table .is-seq {
+  background: rgba(var(--accent-dark-rgb), 0.09);
+}
+.cx-plate {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* Logo row. */
+.cx-logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px clamp(1.5rem, 4vw, 3rem);
+}
+.cx-logos li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--cx-muted);
+}
+.cx-logos svg {
+  width: 20px;
+  height: 20px;
+  color: var(--cx-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-nav {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--dark);
+  }
+}

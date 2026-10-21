@@ -1,0 +1,30 @@
+{
+  "id": "ml/parallelism",
+  "group": "ml",
+  "label": "Parallelism",
+  "summary": "Recommend a VALID ParallelismConfig and REJECT unsupported EP/CP/TP/ETP/PP combos BEFORE a GPU run.",
+  "triggers": [
+    "parallelism config",
+    "expert parallel",
+    "tensor parallel setup",
+    "pipeline parallel combos",
+    "valid parallel config"
+  ],
+  "status": "ready",
+  "license": "Apache-2.0 + Halo supplemental terms",
+  "source": {
+    "repo": "whitecircle/halo",
+    "commit": "41da0838499a2459b236252ba1200a31957d3606",
+    "path": "skills/parallelism"
+  },
+  "url": "https://github.com/whitecircle/halo/tree/41da0838499a2459b236252ba1200a31957d3606/skills/parallelism",
+  "externalRefs": [
+    "src/distributed/parallelism_config.py",
+    "src/training/parallelism_args.py",
+    "agent-docs/parallelism/pipeline-parallelism.md",
+    "src/args/distributed_args.py",
+    "src/trainers/mixins/validation.py",
+    "src/trainers/mixins/ep_introspection.py"
+  ],
+  "preamble": "SEQUENCE.md"
+}

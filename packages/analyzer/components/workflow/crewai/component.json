@@ -1,0 +1,20 @@
+{
+  "id": "workflow/crewai",
+  "group": "workflow",
+  "label": "CrewAI",
+  "summary": "CrewAI multi-agent orchestration. Link only: MIT; install it from its source repo.",
+  "triggers": [
+    "crewai",
+    "crew ai agents",
+    "multi agent crew",
+    "crewai orchestration"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "crewAIInc/crewAI",
+    "commit": "a8877f0cdfbca4fc4b95e3ce54aaa69aafca7688",
+    "path": null
+  },
+  "url": "https://github.com/crewAIInc/crewAI"
+}

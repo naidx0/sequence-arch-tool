@@ -1,0 +1,42 @@
+[
+  {"id": "ml-harness-1", "repo": "ml-harness", "questions": [
+    "what even is this thing? like whats the product and who is it for",
+    "ok but i still dont get it. is it a training tool or not?? explain like im new",
+    "sorry still confused, in one or two sentences what does it do for me and why would i use it instead of just fine tuning"
+  ]},
+  {"id": "ml-harness-2", "repo": "ml-harness", "questions": [
+    "can u walk me thru what happens when a user shows up with a problem and asks if they should train a model",
+    "show that flow on the canvas pls, like a flow chart from question to answer",
+    "zoom in on the part where it decides yes train vs dont train. how does it actually decide"
+  ]},
+  {"id": "shopfront-1", "repo": "shopfront", "questions": [
+    "whats shopfront? is it a real store or a demo or what",
+    "who would use this and what does it do for them",
+    "i mean what's the point of it existing lol, what problem does it solve"
+  ]},
+  {"id": "shopfront-2", "repo": "shopfront", "questions": [
+    "how does an order go thru this system from when a customer clicks buy",
+    "can you draw that as a flowchart on the canvas",
+    "what happens with the payment part specifically, and when do they get notified"
+  ]},
+  {"id": "makemore-1", "repo": "makemore", "questions": [
+    "what is makemore and what does it make more of",
+    "ok so who is this for? is it a product or like a learning thing",
+    "still not clear to me.. what does a user actually get out of running it, like whats the output"
+  ]},
+  {"id": "makemore-2", "repo": "makemore", "questions": [
+    "explain how it goes from a list of names to making up new names",
+    "put it on the canvas as steps pls",
+    "whats the diff between the counting way and the neural net way, which one is better"
+  ]},
+  {"id": "sequence-1", "repo": "sequence", "questions": [
+    "hey what is sequence and why would i want it",
+    "whats the advantage over just asking chatgpt about my repo",
+    "ok but like whats actually different, i still dont see why id use this over a normal ai chat"
+  ]},
+  {"id": "sequence-2", "repo": "sequence", "questions": [
+    "what does a new user do first when they open the app, whats the flow",
+    "show me that on the canvas as a flow chart",
+    "what do the solid vs dashed lines on the board mean for me as a user"
+  ]}
+]

@@ -1,0 +1,22 @@
+{
+  "id": "design/better-writing",
+  "group": "design",
+  "label": "Better Writing",
+  "summary": "Writes and reviews your interface copy, from labels and errors to empty states and confirmations, so it matches your product's voice and...",
+  "triggers": [
+    "ui copy",
+    "error messages",
+    "empty state copy",
+    "button labels",
+    "microcopy review"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/better-writing"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/better-writing"
+}

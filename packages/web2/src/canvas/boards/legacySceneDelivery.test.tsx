@@ -1,0 +1,32 @@
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import { StoreProvider, createStore } from '../../state';
+import { readShellPersisted, readShellTokens } from '../../shell';
+import { ConnectedWhiteboard } from '../../whiteboard/ConnectedWhiteboard';
+import { readScenes, writeScenes } from '../../whiteboard/sceneStore';
+import { resetBoardsStreamForTests } from './boardsClient';
+import { fakeBoardsServer, FakeEventSource } from './fakeBoardsServer';
+import { installResizeObserver } from '../testResizeObserver';
+
+installResizeObserver();
+afterEach(() => { cleanup(); resetBoardsStreamForTests(); localStorage.clear(); vi.unstubAllGlobals(); });
+it('imports an unscoped legacy scene only when assigned to this board, without replacing saved objects or deleting the legacy source', async () => {
+  localStorage.clear();
+  const server = fakeBoardsServer();
+  server.agentDraw('whiteboard', [{ op: 'put', item: { kind: 'shape', id: 'saved', shape: 'rect', from: { x: 100, y: 100 }, to: { x: 300, y: 200 } } }]);
+  writeScenes('whiteboard', [{ kind: 'scene', id: 'old-scene', at: { x: 100, y: 300 }, w: 480, h: 260, duration: 4000, keyframes: [] }]);
+  const raw = localStorage.getItem('sequence.scenes.whiteboard');
+  vi.stubGlobal('fetch', server.fetch);
+  vi.stubGlobal('EventSource', FakeEventSource);
+  const store = createStore({ project: () => ({ nodes: [], edges: [] }) as never, tokens: readShellTokens(document.documentElement), persisted: readShellPersisted() });
+  const view = render(<StoreProvider store={store}><ConnectedWhiteboard /></StoreProvider>);
+  await waitFor(() => expect(view.container.querySelector('[data-item-id="saved"]')).toBeTruthy());
+  expect(view.container.querySelectorAll('[data-item-id="old-scene"]').length).toBe(0);
+  fireEvent.click(await screen.findByRole('button', { name: 'Import into this board' }));
+  await waitFor(() => expect(view.container.querySelector('[data-item-id="old-scene"]')).toBeTruthy());
+  expect(view.container.querySelector('[data-item-id="saved"]')).toBeTruthy();
+  expect(readScenes('whiteboard', 'workspace').map((s) => s.id)).toEqual(['old-scene']);
+  expect(localStorage.getItem('sequence.scenes.whiteboard')).toBe(raw);
+  expect(server.items('whiteboard').map((i) => i.id)).toEqual(['saved']);
+  expect(server.calls.filter((c) => c.startsWith('POST'))).toEqual([]);
+});

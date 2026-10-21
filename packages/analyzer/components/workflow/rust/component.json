@@ -1,0 +1,21 @@
+{
+  "id": "workflow/rust",
+  "group": "workflow",
+  "label": "Rust",
+  "summary": "Change a Rust crate with cargo fmt, clippy, and test on the crate you are changing.",
+  "triggers": [
+    "rust agent crate",
+    "cargo clippy rustfmt",
+    "build with rig",
+    "rust library for agents",
+    "cargo test locking"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components/originals/rust"
+  },
+  "url": null
+}

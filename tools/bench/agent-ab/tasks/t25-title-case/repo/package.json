@@ -1,0 +1,6 @@
+{
+  "name": "t25-title-case",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

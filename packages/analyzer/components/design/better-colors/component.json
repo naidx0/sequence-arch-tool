@@ -1,0 +1,22 @@
+{
+  "id": "design/better-colors",
+  "group": "design",
+  "label": "Better Colors",
+  "summary": "Helps you build and check a color system for your project.",
+  "triggers": [
+    "color system",
+    "build a color palette",
+    "check color contrast",
+    "design tokens for color",
+    "color naming"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/better-colors"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/better-colors"
+}

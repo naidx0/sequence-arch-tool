@@ -1,0 +1,2638 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE BOARD — field, camera furniture, node card, legend
+   packages/web2/src/canvas/board.css        items 3.3, 3.6, 3.7, 3.8
+
+   Transcribed from the frozen book:
+     docs/brand/graphite/_core.html                       the substrate
+     docs/brand/graphite/pages/02-the-architecture-node.html
+     docs/brand/graphite/pages/03-node-kinds-without-hue.html
+     docs/brand/graphite/pages/05-the-canvas.html
+     docs/brand/graphite/pages/06-selection-focus-and-dimming.html
+     docs/brand/graphite/pages/08-board-density-and-overflow.html
+
+   HUE BUDGET FOR THIS SHEET: FOUR TOKENS, and every one of them is a CLAIM.
+
+     --accent           through --board-select-edge and --board-marquee-edge:
+                        selection and the drag rectangle. The product's own
+                        voice, and Law 2 says it can never be mistaken for a
+                        verdict.
+     --fits             the Traced provenance tag, and only that
+     --unknown          the Declared provenance tag, and only that
+     --viz-baseline     a connector's resting stroke — an edge is DATA, a chart
+                        series with two endpoints, so the viz namespace governs
+                        it and Law 1 does not
+
+   NOTHING ELSE ON THIS SHEET IS COLOURED. Not a divider, not a card border, not
+   a kind, not a legend chip, not the zoom cluster. THE WHOLE --arch-* NAMESPACE
+   CARRIES ZERO CHROMA — that is Owner Decision 2 and it is the invariant
+   `boardRendered.test.ts` measures against the RENDERED value rather than
+   against this comment.
+
+   NO HEX AND NO px FONT-SIZE: tokens/graphite.css is the only file allowed to
+   declare either, and test/firewall.test.ts fails the build if this sheet grows
+   one. Font weight is a token too, for the same reason.
+
+   SCOPING. Every selector is under `.board-scope`, which the exported root
+   carries. The class names are the BOOK'S names (.node, .nd-t,
+   .zoomcluster, .silswatch) because the book is the source of truth for this
+   surface — namespaced so this lane cannot collide with the shell sheet or the
+   chat sheet over a name the substrate also uses.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* THE RENDERER'S OWN NECESSARY STYLES, and nothing more.
+   `base.css` is what @xyflow/react calls "the necessary styles"; `style.css` is
+   that plus a default node theme in the library's own greys. Taking the theme
+   would mean fighting it back off every element, and the first rule that lost
+   would be a colour this sheet is not allowed to spend. Everything the library
+   paints — the handle, the attribution, the selection rect — is overridden
+   below, deliberately and in one place. */
+@import '@xyflow/react/dist/base.css';
+
+/* ── the icon rung ────────────────────────────────────────────────────────
+   _core.html:619-623. Three sizes, ONE stroke weight, currentColor. Lives here
+   only until the shared components/Icon.tsx of the plan's §5 skeleton exists;
+   chat.css carries the identical block for the same reason and with the same
+   handback. */
+.board-scope .i {
+  width: 16px; height: 16px; flex: 0 0 auto;
+  stroke: currentColor; fill: none;
+  stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+.board-scope .i-14 { width: 14px; height: 14px; }
+.board-scope .i-12 { width: 12px; height: 12px; }
+
+.board-scope .mono { font-family: var(--font-mono); font-variant-numeric: var(--num); }
+
+/* A value the ENGINE computes, standing in for itself. Graphite law 4: never
+   invent a number. _core.html:630. */
+.board-scope .ph {
+  color: var(--ink-2);
+  border-bottom: var(--w-hair) dotted var(--edge-strong);
+  padding-bottom: 1px; white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   05.1 / 05.2 — THE FIELD, AND IT LIVES INSIDE THE TRANSFORM
+   ══════════════════════════════════════════════════════════════════════════
+
+   THE TEST FOR A BOARD IS NOT A FEATURE LIST. It is whether the ground moves
+   with the content. A field nailed down while the content slides across it is
+   the single biggest tell that a board is not a real board, and it is what v1
+   ships: the grid layer is a SIBLING of the transformed layer and nothing ever
+   writes its position or its size.
+
+   So the dots are drawn in the camera's coordinate space. `Board.tsx` writes
+   the content layer's own translate as the root's inline background-position
+   (a plain property: a pan restyles the root alone; a custom property would be
+   inherited by every card and restyle the whole board each frame) and one
+   custom property, the zoom:
+
+       --board-cam-z   the zoom
+
+   `--board-cam-x/y` below are only the fallback when no inline position is
+   written (the whiteboard mirrors this rule and does write them).
+
+   pan writes background-position, zoom writes background-size, and both are
+   read off the same numbers React Flow puts on `.react-flow__viewport`, so they
+   cannot drift apart.
+
+   EXACTLY ONE background-image AND ONE PITCH. v1 draws two — a 24px dot grid
+   and a 26px line grid, one static and one tracking. Two pitches two pixels
+   apart do not add detail; they beat, and the beat crawls when the camera
+   moves. React Flow's own <Background> is deliberately NOT mounted: it would be
+   the second field, which is the defect rather than the fix.
+
+   THIS DECLARATION IS THE ONLY background-image IN THE BOARD SUBTREE and
+   `boardRendered.test.ts` asserts exactly that, by walking every element. */
+/* ── THE BOARD'S TWO SURFACES FOLLOW THE THEME (round 8) ─────────────────
+   The ground and the card are named once here and every board part reads
+   them. Dark keeps the Graphite pair (cards --surface-2 on --surface-1).
+   Light takes the shell's card pair instead (cards --bg-base on
+   --bg-ground), so the board's cards are the same paper as the sidebar and
+   the chat rather than a pure white the theme never reaches. */
+.board-scope, .board-tabs, .wb-scope, .annot-layer, .annot-palette, .annot-editor {
+  --board-card: var(--surface-2);
+  --board-ground: var(--surface-1);
+}
+:root[data-theme='light'] .board-scope,
+:root[data-theme='light'] .board-tabs,
+:root[data-theme='light'] .wb-scope,
+:root[data-theme='light'] .annot-layer,
+:root[data-theme='light'] .annot-palette,
+:root[data-theme='light'] .annot-editor {
+  --board-card: var(--bg-base);
+  --board-ground: var(--bg-ground);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE DOCK, ONE LOOK FOR BOTH BOARDS (owner, round 2: "a copy and paste of the
+   architecture board, just made to be a whiteboard")
+   The architecture dock (.bdock) and the whiteboard's tool pill (.wb-tools)
+   read these four values and nothing else for their shape and colour, so they
+   cannot drift: one fill (the panel glass, a notch more transparent than
+   before: 72%), one padding, one separator, one button size. No backdrop blur
+   (the style ratchet caps them, and a blurred ancestor would blind the menus).
+   graphite.css gives a solid fallback for prefers-reduced-transparency; the
+   translucent fill below is applied only when that is not asked for, and the
+   extra class names out-rank graphite's own `.bdock.bdock`.
+   ══════════════════════════════════════════════════════════════════════════ */
+.board-scope, .wb-scope {
+  --dock-fill: color-mix(in srgb, var(--surface-1) 72%, transparent);
+  --dock-pad: 5px;
+  --dock-sep-h: 18px;
+  --dock-btn: 32px;
+}
+.wb-scope .wb-tools.wb-tools {
+  background: var(--surface-1);
+}
+@media not (prefers-reduced-transparency: reduce) {
+  .board-scope .bdock.bdock.bdock,
+  .wb-scope .wb-tools.wb-tools.wb-tools {
+    background: var(--dock-fill);
+  }
+}
+
+/* THE BOARD IS ITS OWN COMPOSITED LAYER (perf board, 0.1.9). Every zoom or pan step repaints the board, and
+   Chromium then re-layerizes the WHOLE page's paint chunks: with the sessions rail open at 203 rows that was 885 ms of
+   Layerize over 25 zoom steps (35 ms a frame), 36 fps with ~1 s of long tasks; with the board on its own layer the
+   same 25 steps spend 303 ms and run at 51 fps (drag-pan 41 -> 55 fps). `will-change: opacity` rather than
+   `transform`: it promotes the layer without making the board a containing block for the fixed-position menus inside it.
+   `.react-flow` is already a stacking context (position: relative; z-index: 0), so nothing is re-ordered. */
+.board-scope .react-flow { will-change: opacity; }
+
+/* ConnectedBoard stack — positioned host for furniture siblings of <Board/>. */
+.board-scope.board-stack {
+  position: relative;
+  /* The toolbar and its menu size themselves to the board, not the window. */
+  container-type: inline-size;
+  container-name: boardstack;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.board-scope.board {
+  position: relative;
+  width: 100%; height: 100%;
+  min-width: 0; min-height: 0;
+  overflow: hidden;
+  /* DECISION 49: the picked mix's whiteboard (`.board`): the first surface
+     with a dot of the strong hairline every --sp-20. */
+  --board-field-ink: var(--edge-strong);
+  --board-field-pitch: var(--sp-20);
+  background-color: var(--board-ground);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--board-field-ink) calc(var(--board-field-fade, 1) * 100%), transparent) var(--board-field-dot),
+    transparent var(--board-field-dot)
+  );
+  /* Round 13 (A7): the pitch doubles as the board zooms out (fieldDots.ts), so the dots thin out instead of turning to grain. */
+  background-size:
+    calc(var(--board-field-pitch) * var(--board-cam-z, 1) * var(--board-field-step, 1))
+    calc(var(--board-field-pitch) * var(--board-cam-z, 1) * var(--board-field-step, 1));
+  background-position: calc(var(--board-cam-x, 0px)) calc(var(--board-cam-y, 0px));
+}
+
+/* C4.1 — camera ease on hop fit only (`data-cam-animating` from Board.tsx).
+   Sheet 11.6 / 06.7: --seq-dur-cam · --ease. Freehand pan stays immediate. */
+.board-scope.board[data-cam-animating] {
+  transition:
+    background-position var(--seq-dur-cam) var(--ease),
+    background-size var(--seq-dur-cam) var(--ease);
+}
+.board-scope.board[data-cam-animating] .react-flow__viewport {
+  transition: transform var(--seq-dur-cam) var(--ease);
+}
+/* Round 7 C.4: the eased fit respects reduced motion — the camera jumps. */
+@media (prefers-reduced-motion: reduce) {
+  .board-scope.board[data-cam-animating],
+  .board-scope.board[data-cam-animating] .react-flow__viewport {
+    transition: none;
+  }
+}
+
+/* Round 7 C.5 — HOLD SPACE TO PAN. While Space is held the whole board says
+   grab (cards and the draw layer included) and grabbing while it moves. */
+.board-scope.board[data-space-pan] .react-flow__pane,
+.board-scope.board[data-space-pan] .react-flow__node,
+.board-scope.board[data-space-pan] .react-flow__node.draggable,
+.board-scope.board[data-space-pan] .node {
+  cursor: grab;
+}
+.board-scope.board[data-space-pan] .react-flow__pane.dragging { cursor: grabbing; }
+
+/* Round 7 C.2 — THE EMPTY BOARD'S ASCII RAMP (AsciiRamp.tsx). One glyph per
+   field cell: the cell is --board-field-pitch square, the glyph is centred on
+   the cell's dot by padding half of what tracking adds after it, and it is
+   painted in the field's own ink, so the ramp reads as the dot field growing
+   denser toward the bottom edge in both themes. Static: no animation. */
+.board-scope .board-ascii {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  margin: 0;
+  padding-left: calc((var(--board-field-pitch) - 1ch) / 2);
+  white-space: pre;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-weight: var(--fw-body);
+  line-height: var(--board-field-pitch);
+  letter-spacing: calc(var(--board-field-pitch) - 1ch);
+  color: var(--board-field-ink);
+  /* The band covers the field's dots and draws them itself (EMPTY_CELL). */
+  background-color: var(--surface-1);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The renderer's root is transparent so the field above shows through it. The
+   library already defaults --xy-background-color to transparent; this says so
+   at our own specificity rather than depending on a default we do not own. */
+.board-scope .react-flow { background: transparent; }
+
+/* 05.7 — THE POINTER SAYS WHAT THE NEXT CLICK WILL DO.
+   grab on empty ground, grabbing while panning, default over an object. v1
+   applies its draw class unconditionally and it wins on source order over
+   `cursor: grab`, so the pointer promises a mark and delivers a deselect.
+   There is no crosshair here and that is honest: draw does not exist in this
+   build, and a cursor for a mode the product cannot enter is the same lie as a
+   connection handle on an unconnectable card. */
+.board-scope .react-flow__pane { cursor: grab; }
+.board-scope .react-flow__pane.dragging { cursor: grabbing; }
+.board-scope .react-flow__node { cursor: default; }
+.board-scope .react-flow__node.draggable { cursor: grab; }
+.board-scope .react-flow__node.draggable.dragging { cursor: grabbing; }
+/* Live drag preview — the card follows the pointer until drop commits. It stays opaque (at 0.72 the card behind it and
+   its text showed through) and is lifted by a deeper shadow; no transition, so the lift is there from the first frame. */
+.board-scope .react-flow__node.dragging .node {
+  opacity: 1;
+  box-shadow: var(--e3);
+  transition: none;
+}
+
+/* 06.4 — the marquee. A gesture in progress, not yet a claim, so it is soft:
+   --accent-wash filled, --accent-edge hairline, --r-4 corners. It lives for the
+   drag and not one frame longer; a marquee that lingers after the lift reads as
+   a second selection. */
+.board-scope .react-flow__selection,
+.board-scope .react-flow__nodesselection-rect {
+  background: var(--board-marquee-fill);
+  border: var(--w-hair) solid var(--board-marquee-edge);
+  border-radius: var(--r-4);
+}
+
+/* The renderer's attribution is HIDDEN, and the licence question the previous
+   version of this comment deferred has an answer: @xyflow/react is MIT, its one
+   condition is about what ships rather than what is painted, and the package
+   provides `proOptions.hideAttribution` for exactly this. The notice MIT does
+   require is in docs/THIRD-PARTY-NOTICES.md, gated by CI. See Board.tsx.
+
+   The rule below stays as a belt-and-braces fallback: if a future version
+   renders the badge despite the flag, it lands in the corner neither the
+   control cluster (bottom-right, sheet 05.6) nor the legend (bottom-left) wants
+   — rather than on top of one of them. */
+.board-scope .react-flow__attribution {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   02 / 03 — THE NODE CARD
+   ══════════════════════════════════════════════════════════════════════════
+
+   ONE CHASSIS, SIX SILHOUETTES, AND THE SENTENCE THAT GOVERNS ALL OF IT: tone
+   and elevation buy the separation, so the border never has to. The card sits
+   three rungs of the surface ramp above the field — --bg-ground is the board,
+   --surface-2 is the card — and carries --e1 on top of that. Three weak signals
+   in agreement read as one solid object; one strong coloured line reads as an
+   alarm.
+
+   Kind sets FOUR custom properties and nothing else. Everything below the six
+   kind rules is identical for all of them. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DECISION 49 — THE CARD, REDRAWN FROM THE PICKED MIX
+   ══════════════════════════════════════════════════════════════════════════
+
+   The target is the mix Jaden picked (lab/specs/reskin-mix.md; the session's
+   Mix.dc.html `.n`, `.ic`, `.tx`), and the components are uiarc.dev's (B):
+   "icons, small definitions... centering". One card for every kind:
+
+     a rounded box (--r-18), a hairline, the surface one step above the board;
+     a 30px icon chip (`.nd-ic`) holding the kind's glyph at 16px;
+     beside it the words (`.nd-tx`): the bold title, then one muted line of
+     what the thing is (`.nd-s`), centred in two reserved title lines.
+
+   THE KIND IS THE ICON. The six silhouettes (pill, cylinder, chamfer, folder
+   tab) are gone with the old chassis: Decision 2 still holds (a kind never
+   spends a hue), and the glyph in the chip is the one channel that says it.
+
+   SHADOWS ARE LIGHT (Jaden: "we shouldn't go too hard on all of the
+   shadows"): a hairline and the surface tone separate the card; only floating
+   menus lift. */
+.board-scope {
+  /* Every card reserves two title lines (Decision 48) and the definition
+     line under them (Decision 49): the chassis plus `.nd-tx` (cardBox.ts
+     CARD_FLOOR is the same sum). */
+  --board-text-h: calc(var(--lh-14) * 2 + var(--sp-2) + var(--lh-11));
+  --board-card-floor: calc(
+    var(--sp-10) * 2 + var(--lh-14) * 2 + var(--sp-2) + var(--lh-11) + var(--w-hair) * 2
+  );
+  /* The chip's ground: one step of ink over the card, in both rooms. */
+  --board-chip: color-mix(in srgb, var(--ink-1) 7%, var(--board-card));
+}
+
+.board-scope .node {
+  --arch-line: var(--edge-strong);
+  --arch-weight: var(--w-hair);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--sp-4);
+  width: var(--arch-card-w);
+  min-height: var(--board-card-floor);
+  padding: var(--sp-10);
+  background: var(--board-card);
+  border: var(--w-hair) solid var(--arch-line);
+  border-width: var(--arch-weight);
+  border-radius: var(--r-18);
+  color: var(--ink-1);
+  text-align: left;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease),
+    opacity var(--seq-dur-panel) var(--ease);
+}
+/* Hover lifts two units with the soft --e2 under it (owner seat P2.6: a lift
+   must read; Decision 49: never a heavy shadow) and rises over neighbours. */
+.board-scope .node:hover:not(.dim) {
+  --arch-line: var(--box-edge);
+  background: color-mix(in srgb, var(--ink-1) 3%, var(--board-card));
+  transform: translateY(-2px);
+  box-shadow: var(--e2);
+  z-index: 6;
+}
+
+/* The box is the room the layout reserved (cardBox.ts), and the card fills it
+   at every rung, the words centred in it. */
+.board-scope .react-flow__node > .node {
+  height: 100%;
+}
+
+/* ── THE ROW: CHIP, THEN WORDS ─────────────────────────────────────────── */
+/* The chip and the words, centred together in the card, the chip centred on
+   the words' column. */
+.board-scope .node .nd-in {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-10);
+  width: 100%;
+  min-width: 0;
+}
+.board-scope .node .nd-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: var(--row-h);
+  border-radius: var(--r-10);
+  background: var(--board-chip);
+  color: var(--ink-2);
+  line-height: 0;
+}
+.board-scope .node .nd-ic .i {
+  width: 16px;
+  height: 16px;
+}
+/* THE GLYPH CARRIES A QUIET KIND TINT (owner seat 2026-08-26, kept: Jaden,
+   "I love the icons you use in the actual architecture board"). Never a
+   verdict: the way in takes the accent, a datastore the info blue, an agent a
+   mix of the two, and the rest the inks. */
+.board-scope .n-entry .nd-ic { color: var(--accent); }
+.board-scope .n-service .nd-ic,
+.board-scope .n-module .nd-ic { color: var(--ink-1); }
+.board-scope .n-store .nd-ic { color: var(--info); }
+.board-scope .n-topic .nd-ic { color: var(--ink-2); }
+.board-scope .n-agent .nd-ic { color: color-mix(in srgb, var(--ink-1) 30%, var(--accent) 70%); }
+.board-scope .node .nd-tx {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-2);
+  height: var(--board-text-h);
+}
+.board-scope .node .nd-t {
+  font-size: var(--t-14);
+  line-height: var(--lh-14);
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.board-scope .node .nd-s {
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── THE FAR RUNGS: THE WORDS KEEP THEIR SCREEN SIZE ────────────────────
+   Below the full-title rung the camera would shrink the words under the type
+   floor, so the title and definition are counter-scaled to hold their size:
+   never past what fits the card (--far-fit, the board's smallest two-line fit
+   beside the chip, set per card by Board.tsx; cardBox.ts reserves the box at
+   that scale) and never under 9px of title on screen. */
+.board-scope .node { --far-fit: 99; }
+.board-scope .node[data-rung='4'],
+.board-scope .node[data-rung='5'] {
+  --far-z: max(var(--board-cam-z), 0.25);
+  --far-s: min(max(min(calc(1 / var(--far-z)), var(--far-fit)), calc(9 / (14 * var(--far-z)))), var(--far-fit));
+}
+/* THE WORDS ARE COUNTER-SCALED, THE CHIP IS NOT (it is a glyph, not type,
+   and holding it at size cost the words their room: measured, the far title
+   rose from 11.6px to the target at shopfront's fit). The column takes the
+   card's width less its pads and the chip, as cardBox.ts measures it, NOT
+   100%, which the far rims (3.4px and 4px, below) would narrow, so the name
+   wrapped to a third line the layout never measured. */
+.board-scope .node[data-rung='4'] .nd-in,
+.board-scope .node[data-rung='5'] .nd-in {
+  justify-content: flex-start;
+}
+.board-scope .node[data-rung='4'] .nd-tx,
+.board-scope .node[data-rung='5'] .nd-tx {
+  flex: none;
+  width: calc((var(--arch-card-w) - 22px - 40px) / var(--far-s));
+  transform: scale(var(--far-s));
+  transform-origin: left center;
+}
+/* A far label that collides with a more-connected neighbour's yields
+   (farLabels.ts). Transparent rather than removed, so the card keeps its
+   size and hovering or focusing it brings the name back. */
+.board-scope .node.label-yields .nd-t-short {
+  opacity: 0;
+  transition: opacity var(--dur-1) ease;
+}
+.board-scope .node.label-yields:hover .nd-t-short,
+.board-scope .node.label-yields:focus-within .nd-t-short {
+  opacity: 1;
+}
+
+/* FAR ZOOM KEEPS THE BOX (Decision 46). Under 0.5 a hairline scales under a
+   device pixel, so the rim holds about one device pixel down to the tier's
+   lowest zoom (farLod.ts sets the two classes when the zoom crosses 0.5 and
+   0.3, never per frame). */
+.board-scope.lod-far .node { --arch-weight: 3.4px; }
+.board-scope.lod-farther .node { --arch-weight: 4px; }
+
+/* ── EXPAND IN PLACE: B's small round icon button in the top-right corner ──
+   It shows on hover, focus or selection (at rest it sat on long names), and
+   double-click expands either way. */
+.board-scope .node .nd-expand {
+  position: absolute;
+  top: var(--sp-6);
+  right: var(--sp-6);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-2);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
+}
+.board-scope .node:hover .nd-expand,
+.board-scope .node:focus-within .nd-expand,
+.board-scope .node[data-selected='true'] .nd-expand { opacity: 1; }
+@media (hover: none) { .board-scope .node .nd-expand { opacity: 1; } }
+.board-scope .node .nd-expand:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.board-scope .node .nd-expand:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+/* THE GRAB AREA COUNTER-SCALES; THE GLYPH DOES NOT. The reader clicks in
+   screen pixels and the board zooms, so an invisible box behind the button
+   grows as the board shrinks, to WCAG 2.2's 24px floor (plus one hairline of
+   rounding headroom), anchored at the button's bottom-left so it grows into
+   the corner and never over the title. Clamped at --sp-56, past which it
+   would reach the card above. */
+.board-scope .node .nd-expand::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: clamp(24px, calc((var(--target-min) + var(--w-hair)) / max(var(--board-cam-z, 1), 0.05)), var(--sp-56));
+  height: clamp(24px, calc((var(--target-min) + var(--w-hair)) / max(var(--board-cam-z, 1), 0.05)), var(--sp-56));
+}
+
+/* ── THE FOOTER (provenance and the count), on a selected card only ──── */
+.board-scope .node .nd-ft {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+}
+.board-scope .node .right { margin-left: auto; }
+.board-scope .node .nd-ft .mono { font-size: var(--t-10); color: var(--ink-3); }
+
+/* ── VISUAL MODE — THE META STRIP AND THE PARTS LINE ──────────────────────
+   docs/decisions/visual-board-mode-madr.md §0 amendment A2, Max 2026-09-02:
+   "they can showcase more than just a simple JSON sequence diagram" — bounded
+   by the same amendment's hard limit, "structure the spec already carries but
+   the plain view collapses … It may not invent."
+
+   THIS IS `.nd-ft` DRAWN AT REST, plus the kind word. Same row anatomy, same
+   --t-10 ink, same provenance chip, so a reader who selects a card in plain
+   mode and a reader who turns Visual on are looking at the same vocabulary
+   rather than at two designs. Every measurement is the footer's own — see
+   `visualMeta.ts`, which derives the 25px this row costs from sheet 02.3's
+   arithmetic so ELK and the router reserve exactly what gets painted.
+
+   THE HAIRLINE IS THE ONLY NEW MARK, and it is structure: Graphite law 1 —
+   "dividers, headings, section rules, borders and chrome are NEVER coloured" —
+   so it is var(--edge) at var(--w-hair), the same rule every other border on
+   this board is drawn with. NO HUE IS SPENT HERE AT ALL. The kind is already
+   carried by four non-chromatic channels (Decision 2); this adds a fifth, the
+   WORD, which is the one channel the card never had. */
+/* THE ROW HAS TO GIVE WAY, AND THIS SAYS WHICH ITEM GIVES WAY FIRST.
+
+   MEASURED IN THE SHIPPED BUNDLE ON THIS MONOREPO, at rung 1 with Visual on
+   (A1 — the default): `svc:web` drew SERVICE · ENTRY · TRACED · 13 in a row
+   whose content wanted 149px inside a content box of 118px, and `svc:gateway`
+   wanted 143px. Entry and Topic cards take --sp-20 side padding instead of
+   --sp-10 (the flag and stadium silhouettes curve into the corners), so their
+   content box is 160 - 40 - 2 hairlines = 118 while every other kind gets 138
+   — and 138 is already exactly what the three-item row needs. Every node the
+   entry heuristic matches therefore overflowed, and `.node` computes
+   `overflow: visible`, so the count numeral painted on the dot grid OUTSIDE
+   the card's own border. That is the legibility gate's first rule ("nothing
+   overflows its box") failing on the repository the gate is run against.
+
+   WHY THE WORDS SHRINK AND THE CHIPS DO NOT. Decision 2 gives kind four
+   non-chromatic carriers — icon, silhouette, border treatment, tone — and the
+   WORD is the fifth this strip adds; Entry is likewise already carried by the
+   flag silhouette and the accent icon. So both words are the redundant items
+   on this row and they are the ones that may be cut. The provenance chip and
+   the count are carried by NOTHING else on a resting card, so they keep their
+   full width (`flex: none`) and are never the thing that disappears.
+
+   ELLIPSIS, NOT A CLIP, AND THE FULL WORD ON HOVER. The gate's other rule is
+   "nothing is clipped silently"; `VisualMetaStrip` puts the whole word on
+   `title`, the same idiom `.nd-parts` and `edgeTag`/`labelFull` already use.
+   `overflow: hidden` on the row itself is the backstop for a future item that
+   forgets to shrink.
+
+   WHAT IT COSTS, MEASURED AFTER THE FIX rather than assumed — `e2e/visual-mode
+   .mjs` prints it every run. Ten of eleven cards sit at 138/138: the row is
+   EXACTLY at capacity with three items and cuts nothing. `svc:gateway`, the one
+   entry card, sits at 118/118 with SERVICE cut by 14px and ENTRY by 10px. That
+   cut is deliberate and it is the least-bad of the four options, all of which
+   were measured: reclaiming the entry card's right padding buys 10px but the
+   right edge is the only square one, so the card's centred title goes 5px
+   off-axis; tightening the row's gap to --sp-4 buys 6px off every card's rhythm
+   for one card's benefit; dropping ENTRY entirely would fit but is information
+   A2 asked for. Spreading the loss beats concentrating it — ENTRY is 31px wide,
+   so making it absorb all 24 would render it as a bare ellipsis. */
+.board-scope .node .nd-meta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  padding-top: var(--sp-4);
+  /* Longhands: jsdom drops a `border-top` shorthand written with var(), and
+     cardPainted.test.tsx rebuilds this row from the cascade. */
+  border-top-width: var(--w-hair);
+  border-top-style: solid;
+  border-top-color: var(--edge);
+  min-width: 0;
+  overflow: hidden;
+}
+.board-scope .node .nd-meta .prov,
+.board-scope .node .nd-meta .mono { flex: none; }
+/* Small-caps mono, the same treatment `.prov` takes, because the kind and the
+   proof are peers on this row: one says what the node is, one says how we know
+   it is there. --ink-3 keeps both quieter than the title and the glance line —
+   sheet 02.4's reading order, unchanged. */
+.board-scope .node .nd-meta-kind,
+.board-scope .node .nd-meta-pos {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: 1;
+  font-weight: var(--fw-label);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  /* Round 7: a word on this row is never cut (no mid-word ellipsis in mono
+     caps). `metaRowItems` (visualMeta.ts) decides what fits; the kind alone
+     always does, and the row's own overflow is the backstop. */
+  flex: none;
+  color: var(--ink-3);
+}
+/* Sheet 03.7 — entry is a POSITION, not a sixth kind, so it reads as a
+   qualifier ON the kind rather than as a peer beside it: one step quieter. */
+.board-scope .node .nd-meta-pos { color: var(--ink-4); }
+
+/* THE COUNT, AND A DEFECT CAUGHT BY LOOKING RATHER THAN BY A TEST.
+   `.nd-ft .mono` sets the footer's count to --t-10 / --ink-3, and that selector
+   does not reach inside `.nd-meta`. So the strip's count inherited the card's
+   own type and painted at 13px in --ink-1 — the ink `NodeCard` reserves for
+   "the node's own name — the only thing on the card in --ink-1", spent on a
+   numeral, louder than the title beside it. Measured in the shipped bundle
+   against the real scan: `244` at 13px, box 18px tall, which also made every
+   card two pixels taller than the box ELK and the router were handed.
+   Same size, same ink, same line box as its two neighbours on the row. */
+.board-scope .node .nd-meta .mono {
+  font-size: var(--t-10);
+  line-height: 1;
+  color: var(--ink-3);
+}
+
+/* THE NAMES BEHIND THE COUNT. One line, ellipsised, the whole list on the
+   title attribute — the `edgeTag` / `labelFull` idiom two sections down, and
+   for the identical reason: a card that wrapped this line would change height
+   with the scan and re-pack the whole board. --ink-4 because these are the
+   quietest fact on the card; the count chip above states how many there are,
+   so the line is never mistaken for the complete list. */
+.board-scope .node .nd-parts {
+  width: 100%;
+  min-width: 0;
+  font-size: var(--t-10);
+  line-height: var(--lh-11);
+  color: var(--ink-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* Legacy row layout — only used in tests/specimens that still mount .nd-row */
+.board-scope .node .nd-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+/* ── 02.6 / §4.5 — THE EIGHT CONNECTION HANDLES ───────────────────────────
+   THE BOOK'S RULE IS ABSOLUTE and Sequence cannot obey the letter of it. Sheet
+   02.6: "the card renders zero connection handles — not transparent ones, not
+   zero-opacity ones, not ones behind a hover rule. None in the markup at all."
+
+   The evidence, not a preference — @xyflow/react 12.11.2 derives every edge
+   endpoint from handle bounds MEASURED OFF THE DOM and drops any edge it
+   cannot place:
+
+       getHandleBounds   nodeElement.querySelectorAll('.source'|'.target') → null
+       getEdgePosition   !sourceHandle || !targetHandle → onError('008') → null
+       EdgeWrapper       sourceX === null → return null   ← never rendered
+
+   Delete the eight elements and EVERY EDGE ON THE BOARD DISAPPEARS. That is not
+   a routing wobble: the custom edge computes its own polyline from node boxes
+   and never reads sourceX/sourceY, but it is never reached, because EdgeWrapper
+   bails before it mounts. So the handles stay and are made INERT, in two layers
+   that do not depend on each other.
+
+   PAINT — `visibility: hidden`: every pixel gone, LAYOUT BOX PRESERVED.
+   `display: none` would zero all eight rects and collapse every edge onto the
+   node's top-left corner, which is the same defect by another route.
+
+   BEHAVIOUR — `isConnectable` / `isConnectableStart` / `isConnectableEnd`, all
+   three, on the element. <Handle> defaults ALL THREE to true and never reads
+   the store's `nodesConnectable`, so the nubs were live connection starters and
+   were inert only because a hidden element takes no pointer events. One
+   `visibility` regression away from a board that drags connection lines it will
+   never accept. `NodeCard.test.tsx` asserts the class list, not the prop.
+
+   THE ESCAPE ROUTE, if a later wave wants clean markup: move handle geometry
+   onto `node.handles`, which `parseHandles` reads without touching the DOM.
+   Unstarted. */
+.board-scope .react-flow__handle {
+  visibility: hidden;
+  pointer-events: none;
+  background: transparent;
+  border: 0;
+}
+
+/* ── 06.1 THE FIVE STATES ─────────────────────────────────────────────────
+   Read left to right and each state is louder than the one before it, except
+   the last, which is quieter on purpose. That monotonic order is the whole
+   rule: a state meaning "you picked this" that renders fainter than the resting
+   card has inverted the signal, and v1 did exactly that — selecting a node
+   DROPPED its border to 1.54:1.
+
+   SELECTION ADDS. IT NEVER SWAPS. Fill, border, ring and elevation all move at
+   once — three carriers, so losing any one still leaves the state readable —
+   and nothing the resting card had is taken away. `--arch-line` is repainted
+   rather than `border-color`, so the module's tab, the cylinder's seam and the
+   agent's plates all follow the same instruction the border does. */
+.board-scope .node.sel {
+  /* Selection adds: the accent rim and a hairline ring outside it, and the
+     chip takes the accent (the picked mix's `.n.hot`). */
+  --arch-line: var(--accent);
+  background: var(--board-card);
+  box-shadow: 0 0 0 var(--w-hair) var(--accent-edge);
+}
+.board-scope .node.sel .nd-ic {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+/* ACTIVE OR EDITED (the picked mix's `.n.hot`): a card an agent is working
+   in, a program step running on, or one the branch changed or added takes
+   the accent rim and an accent glyph. The Diff badge keeps its own +/~ mark. */
+.board-scope .node[data-agent-here='live'],
+.board-scope .node.run-running,
+.board-scope .node[data-change='changed'],
+.board-scope .node[data-change='added'] {
+  --arch-line: var(--accent-edge);
+}
+.board-scope .node[data-agent-here='live'] .nd-ic,
+.board-scope .node.run-running .nd-ic,
+.board-scope .node[data-change='changed'] .nd-ic,
+.board-scope .node[data-change='added'] .nd-ic {
+  color: var(--accent);
+}
+
+.board-scope .node.sel .nd-title {
+  color: var(--ink-1);
+}
+
+.board-scope .node.sel .nd-meta,
+.board-scope .node.sel .nd-meta .mono {
+  color: var(--ink-3);
+}
+
+/* 06.6 — DIMMING IS NOT A SELECTION EFFECT. It belongs to playback and to
+   explicit path-focus and — by Decision 6 — to explicit selection; it is
+   opacity, never a colour, so the kind channels survive it, and the floor
+   is legibility: --board-dim-opacity resolves to --st-archived-opacity, the
+   value Graphite already settled for "receded and still readable". The board
+   does not get a second, deeper answer to a question already answered. */
+.board-scope .node.dim { opacity: var(--board-dim-opacity); }
+
+/* ── DECISION 6 TOKENS, ALIASES ONLY (sheet 06.7) ─────────────────────────
+   "every one an alias · no new hue." The state dot spends the two hues the
+   sheet names — --accent for selected, --info for on-path — and greys the
+   third on purpose. The connectors point at the BLUE FLOW ACCENT per the
+   ledger's amended rows (--flow-traced / --flow-declared → "the blue flow
+   accent — Decision 6"): one continuous --info route, with weight and dash
+   still saying which claim is which, so the distinction survives greyscale.
+   Declared here rather than in _core.html because this is the board's own
+   spend of tokens the substrate already owns. */
+.board-scope {
+  --board-dot-selected: var(--accent);
+  /* NOT `--info` ANY MORE — Decision 16.
+     Decision 16's widened surface ladder lifted the card under this dot, and
+     `--info` composited at the dim's own opacity landed at
+     2.91:1, under `boardRendered.test.ts`'s 3:1 floor. Measured, then solved
+     for: the same blue, brightened until a DIMMED card still clears it (3.27:1).
+
+     THE DIM IS NOT WEAKENED to rescue it. Dim means "not on your path" and its
+     strength is Graphite's (`--st-archived-opacity`); softening that to save
+     one child would change every dimmed thing in the product. The dot is the
+     one mark on a dimmed card that still has to be READ — it is *why* the card
+     is dim or not — so the dot pays, and nothing else moves. */
+  --board-dot-onpath: var(--info-bright);
+  --board-dot-offpath: var(--st-neutral);
+  --flow-traced: var(--info);
+  --flow-declared: var(--info);
+}
+
+/* THE STATUS DOT — sheet 06.1: small, left of the title, in the title row,
+   6px. Selected and on-path are filled; off-path is HOLLOW grey, which is the
+   ledger's own word. A kind has no dot, ever: nothing here reads data-kind. */
+.board-scope .nd-trow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.board-scope .nd-dot {
+  width: var(--dot); height: var(--dot); flex: none;
+  border-radius: var(--r-full);
+}
+.board-scope .nd-dot.dot-selected { background: var(--board-dot-selected); }
+.board-scope .nd-dot.dot-onpath   { background: var(--board-dot-onpath); }
+.board-scope .nd-dot.dot-offpath  {
+  background: transparent;
+  border: var(--w-hair) solid var(--board-dot-offpath);
+}
+
+/* THE ANNOTATION rides the subtitle's rung and its type ramp: one line of
+   plain English from /api/annotate, clamped like .nd-s, quieter than the
+   title, never a second kind of text block on the card. */
+.board-scope .node .nd-note { color: var(--ink-2); }
+
+/* ── WHO WROTE THE GLANCE LINE ────────────────────────────────────────────
+   `--unknown` is the ink this product already spends on a claim it could not
+   verify — `.p-declared` takes it and nothing else does. The AI tag borrows it
+   rather than introducing a hue, and it is a WORD as well as an ink, so the
+   distinction survives greyscale and a reader who cannot receive the colour.
+   The scan-derived line is unmarked: on this surface "measured" is the default,
+   and marking the default would hide the exception again. */
+.board-scope .node .nd-s-ai {
+  font-size: var(--t-10);
+  color: var(--unknown);
+  letter-spacing: .07em;
+  margin-right: var(--sp-6);
+}
+
+/* 06.5 — FOCUS IS NOT SELECTION. Selection says "this is what I chose"; focus
+   says "this is where the next keystroke lands". They coexist constantly, so
+   they are told apart by GEOMETRY: selection is flush and filled, focus is a
+   double ring with a visible gap and no fill.
+
+   THE HANDBACK SHEET 06.5 RAISES, APPLIED HERE. A ring delivered as box-shadow
+   cannot be layered onto a card that already owns its box-shadow — the later
+   declaration simply replaces it. So the shadow is written as ONE COMPOSED LIST
+   (elevation, then selection ring, then focus ring) rather than three rules
+   competing for one property. And the gap band is --nest-0, the board's own
+   ground, not --bg-base: the app-wide focus rule is right everywhere except
+   here, where the ground is different. */
+/* THE CARD IS NOT THE FOCUSABLE THING ANY MORE — `.nd-hit` is (see NodeCard:
+   a control may not contain a control). It is a transparent button laid
+   exactly over the card's border box, so its ring IS the card's ring, drawn
+   in the same geometry as before: a gap band, then the accent. It takes no
+   pointer events, so every mouse gesture still lands on the card below it.
+   The selected variant repeats the flush selection edge first, because the
+   gap band would otherwise paint over it. */
+.board-scope .node .nd-hit {
+  position: absolute;
+  inset: calc(var(--arch-weight) * -1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  pointer-events: none;
+}
+.board-scope .node .nd-hit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--nest-0), 0 0 0 4px var(--accent);
+}
+.board-scope .node.sel .nd-hit:focus-visible {
+  box-shadow:
+    0 0 0 var(--w-rule) var(--board-select-edge),
+    0 0 0 4px var(--nest-0),
+    0 0 0 6px var(--accent);
+}
+
+/* The card is a <button>: it is the one thing on the board a click acts on, and
+   a click target that is not a control is a keyboard trap. Reset the UA's
+   button chrome without touching anything the chassis declares. */
+.board-scope button.node {
+  appearance: none; font: inherit; color: inherit; cursor: pointer;
+}
+
+/* ── 02.5 EVIDENCE AND COUNTS ─────────────────────────────────────────────
+   Evidence is how the analyzer knows this node exists, and it is a .prov tag on
+   the LEFT of the footer. Traced means the analyzer followed it in the source.
+   Declared means a manifest said so and the source could not confirm it.
+
+   Seat walk (within Decision 6): the loud --fits / --fits-wash pill competed
+   with English on every card. Provenance stays the two edge words, but as
+   quiet meta ink — no wash, no pill — so title + subtitle/annotate + state
+   dot + blue flow read first. Declared keeps a quiet --unknown ink so the
+   two proofs still disagree without a second claim wash. Kind still never
+   earns a hue (Decision 2). AT MOST ONE PROVENANCE TAG PER CARD. */
+.board-scope .prov {
+  display: inline-flex; align-items: center;
+  height: 16px;
+  font-family: var(--font-mono); font-size: var(--t-10); line-height: 1;
+  font-weight: var(--fw-label); letter-spacing: .06em;
+  text-transform: uppercase; white-space: nowrap;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+.board-scope .p-measured { color: var(--ink-4); background: transparent; }
+.board-scope .p-declared { color: var(--unknown); background: transparent; }
+
+/* The specimen page's silhouette swatch (specimen.tsx). */
+.board-scope .silswatch {
+  --arch-line: var(--edge-strong);
+  position: relative; display: inline-block; flex: 0 0 auto;
+  width: calc(var(--arch-card-w) / 2);
+  height: calc(var(--arch-card-min-h) / 2);
+  /* Decision 49: one card shape for every kind, so the swatch is that card. */
+  background: var(--board-card);
+  border: var(--w-hair) solid var(--arch-line);
+  border-radius: var(--r-18);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DECISION 49 — THE BOARD'S CONTROLS: B's PILLS, B's DOCK, B's MENU
+   ══════════════════════════════════════════════════════════════════════════
+
+   From uiarc.dev (BArc.dc.html, "very soft, very glass, very
+   straightforward"), with "more transparency on top of their soft pill
+   buttons": a 4.5% fill, an 11% rim, the label and the glyph carrying the
+   control. Every button is at least a 32px target, shows a hover and a focus
+   ring, and names itself (aria-label, and a title for the tooltip). Icons are
+   B's, 16px at the 1.7 stroke, centred in their button by grid. */
+.board-scope .i { stroke-width: 1.7; display: block; }
+
+/* ── THE ROUND ICON BUTTON (B .ibtn) ───────────────────────────────────── */
+.board-scope .bbtn {
+  appearance: none;
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  place-items: center;
+  gap: var(--sp-4);
+  min-width: var(--dock-btn);
+  height: var(--dock-btn);
+  padding: 0;
+  border: var(--w-hair) solid transparent;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+.board-scope .bbtn:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+  border-color: var(--glass-ctl-edge);
+  color: var(--ink-1);
+}
+.board-scope .bbtn:active:not(:disabled) { background: var(--state-press); }
+.board-scope .bbtn:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+/* On is the picked mix's `.ibtn.on`: the accent wash and an accent glyph,
+   no ring. */
+.board-scope .bbtn[data-on='true'] {
+  background: var(--accent-wash);
+  border-color: transparent;
+  color: var(--accent);
+}
+.board-scope .bbtn:disabled { color: var(--ink-4); cursor: not-allowed; }
+/* A button that carries a count beside its glyph is a pill, not a circle. */
+.board-scope .bbtn:has(.bbtn-n) { padding: 0 var(--sp-10) 0 var(--sp-8); }
+.board-scope .bbtn-n {
+  font-size: var(--t-11);
+  line-height: 1;
+  color: inherit;
+  font-variant-numeric: var(--num);
+}
+
+/* ── THE FURNITURE: THE DOCK, CENTRED ────────────────────────────────────
+   One flex row whose only child is the dock, centred on the pane's centre line at
+   every width (the kind key and the spacers that once balanced it are gone, so
+   nothing sits at the board's bottom-left). The container spans the pane; only
+   its children take pointer events. Above the stroke capture (z 20) so the dock
+   stays reachable while drawing. */
+.board-scope .boardfurniture {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: var(--sp-12) var(--sp-12) var(--sp-16);
+}
+.board-scope .boardfurniture > * { pointer-events: auto; }
+
+/* THE BOARD'S OWN WIDTH, NOT THE WINDOW'S: the board is a pane, so the
+   narrow layout asks the container. */
+.board.board-scope {
+  container-type: inline-size;
+  container-name: board;
+}
+/* THE DOCK IS ONE ROW AT EVERY WIDTH (coordinator, 2026-10-06: at ~360px
+   it wrapped into two). Under 480px the four optional buttons fold into the
+   ⋯ menu (Board.tsx `dockMenu`): Draw and the zoom stay. */
+.board-scope .bdock-more,
+.board-scope .bdock-morewrap { display: none; }
+@container board (max-width: 720px) {
+  /* Narrow: the dock stays one row and never wraps its buttons. */
+  .board-scope .bdock {
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+}
+@container board (max-width: 480px) {
+  .board-scope .bdock .bdock-opt { display: none; }
+  .board-scope .bdock-morewrap { display: inline-flex; position: relative; }
+  .board-scope .bdock .bdock-more { display: inline-grid; }
+}
+/* The overflow menu opens upward from ⋯, B's menu rows. */
+.board-scope .bdock .bdock-menu {
+  height: auto;
+  top: auto;
+  bottom: calc(100% + var(--sp-12));
+  /* Centred on ⋯, so it stays inside a 360px board on both sides. */
+  left: 50%;
+  right: auto;
+  translate: -50% 0;
+  width: 232px;
+  gap: 2px;
+  padding: 6px;
+}
+.board-scope .bmi {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  width: 100%;
+  min-height: 34px;
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-radius: var(--r-10);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  text-align: left;
+  cursor: pointer;
+}
+.board-scope .bmi:hover:not(:disabled) { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.board-scope .bmi[aria-checked='true'] { background: var(--accent-wash); color: var(--ink-1); }
+.board-scope .bmi[aria-checked='true'] .i { color: var(--accent); }
+.board-scope .bmi:disabled { color: var(--ink-4); cursor: not-allowed; }
+.board-scope .bmi:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: -2px; }
+.board-scope .bmi-t { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── THE DOCK (B .dock): one glass pill ─────────────────────────────────── */
+.board-scope .bdock {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--dock-pad);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  /* No backdrop-filter on the dock itself. A blurred ancestor is a backdrop
+     root, so .bdock-menu (which blurs) would see nothing; the dock keeps a
+     translucent fill (graphite.css sets --panel-glass) and the menu carries the
+     blur. */
+  background: color-mix(in srgb, var(--board-card) 94%, transparent);
+  box-shadow: var(--e1);
+}
+.board-scope .bdock-sep {
+  flex: none;
+  width: var(--w-hair);
+  height: var(--dock-sep-h);
+  margin: 0 var(--sp-4);
+  background: var(--edge-strong);
+}
+.board-scope .zoomcluster {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+/* Mono with tabular figures and a fixed width, so the readout does not
+   jitter as it counts. */
+.board-scope .zoomcluster .pct {
+  min-width: 40px;
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-variant-numeric: var(--num);
+  color: var(--ink-2);
+  text-align: center;
+}
+
+@keyframes bmenu-in {
+  from { opacity: 0; transform: translateY(4px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   08.5 — EMPTY IS THREE PARTS
+   ══════════════════════════════════════════════════════════════════════════
+   What is not here, why it is not here, and one thing to do about it. The
+   SECOND part is the one that gets dropped, and dropping it turns an empty
+   board into a bug report the reader has to file themselves.
+
+   It is a .empty box sitting ON the board, at the size of what it is talking
+   about — never a lid over it. v1's scoped-empty is an opaque sheet pinned over
+   the whole canvas carrying one paragraph, with no icon, no frame, no radius
+   and no statement of why. It reads as a crash. And the icon is the KIND OF
+   ABSENCE, never a verdict: an empty state is not a failure. */
+/* S4: the Ramp Kit's plain empty state (empty/plain), in our tokens: centred,
+   the glyph in a soft round well, a title, a reason held to 46ch, one action.
+   The larger S4 rhythm (24 / 40) belongs to empty states. */
+.board-scope .empty {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 1;
+  width: min(calc(100% - var(--sp-40)), 420px);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-18);
+  padding: var(--sp-24) var(--sp-24) var(--sp-20);
+  display: flex; flex-direction: column; gap: var(--sp-8); align-items: center;
+  text-align: center;
+  background: var(--surface-1);
+}
+.board-scope .empty .gl {
+  box-sizing: content-box;
+  width: 16px; height: 16px; padding: var(--sp-12);
+  border-radius: var(--r-full);
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+.board-scope .empty .t {
+  font-size: var(--t-15); line-height: var(--lh-15);
+  font-weight: var(--fw-head); color: var(--ink-1);
+}
+.board-scope .empty .s {
+  max-width: 46ch;
+  font-size: var(--t-12); line-height: var(--lh-13); color: var(--ink-3); margin: 0;
+}
+.board-scope .empty .bpill { margin-top: var(--sp-8); }
+
+/* ── 08.5, THIRD STATE — “the connections are the thing missing” ───────────
+   A NOTE, NOT A LID. The board is full of cards and every one of them is real;
+   what is absent is the connectors between them, so this states that fact and
+   leaves the board readable underneath it. Three differences from .empty, each
+   for a reason:
+
+     it is in the CORNER, not the centre — the centre is where the cards are,
+       and 08.5’s “at the size of what it is talking about, never a lid over
+       it” is the whole rule;
+     it is INERT (pointer-events: none) — a card underneath or beside it stays
+       clickable, so an explanation can never cost the reader a node;
+     its border is SOLID --edge, not dashed --edge-strong — the dashed frame on
+       .empty says “nothing is here”, and here something is.
+
+   Law 1 holds: no hue. The icon and both lines are --ink-3/--ink-1, the same
+   two the empty state uses. */
+.board-scope .boardnote {
+  /* Under the view pills (Decision 49), which hold the top-left corner. */
+  position: absolute; left: var(--sp-12); top: calc(var(--sp-12) + 30px + var(--sp-12));
+  z-index: 3;
+  /* --pane-w, not --col-max: 08.5 says an empty state is drawn “at the size of
+     what it is talking about”, and --col-max is 720 — wider than the canvas
+     column itself in the three-pane shell, which would make the note a lid by
+     arithmetic. */
+  max-width: var(--pane-w);
+  pointer-events: none;
+  display: grid; grid-template-columns: auto 1fr auto;
+  column-gap: var(--sp-8); row-gap: var(--sp-4); align-items: center;
+  padding: var(--sp-8) var(--sp-12);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-18);
+  background: var(--board-card);
+}
+.board-scope .boardnote .gl { color: var(--ink-3); }
+.board-scope .boardnote .t {
+  font-size: var(--t-12); line-height: var(--lh-12);
+  font-weight: var(--fw-label); color: var(--ink-1);
+}
+.board-scope .boardnote .s {
+  grid-column: 2 / -1;
+  font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-3); margin: 0;
+}
+
+/* THE DISMISS CONTROL — and `pointer-events: auto` is the whole reason this
+   rule is not two lines.
+
+   `.boardnote` above sets `pointer-events: none` so the note never eats a
+   click meant for a card underneath it. A button inheriting that is VISIBLE
+   AND DEAD: it draws, it takes focus from the keyboard, and a mouse press goes
+   straight through it to the board. jsdom does not model pointer-events, so
+   `element.click()` in a unit test passes against exactly that bug — the
+   surface would have shipped with a control nobody could press.
+
+   Re-enabling it here is scoped to the button alone, so the note keeps its
+   click-through everywhere else. */
+.board-scope .boardnote-x {
+  pointer-events: auto;
+  grid-column: 3; grid-row: 1;
+  display: grid; place-items: center;
+  width: var(--control-h); height: var(--control-h);
+  margin: calc(-1 * var(--sp-4)) calc(-1 * var(--sp-4)) 0 0;
+  border: 0; border-radius: var(--r-8);
+  background-color: transparent; color: var(--ink-3);
+  cursor: pointer;
+}
+.board-scope .boardnote-x:hover { background-color: var(--state-hover); color: var(--ink-1); }
+.board-scope .boardnote-x:active { background-color: var(--state-press); }
+/* The board's own focus ring, copied from `.drawtoggle` rather than invented:
+   two rings via box-shadow with `outline: none`, so a control inside a note
+   that sits ON the canvas does not draw a hairline the surface uses for
+   structure. */
+.board-scope .boardnote-x:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   04 — EDGES. Colour is permitted here because a connector is DATA — a chart
+   series with two endpoints, governed by the viz namespace rather than by
+   Law 1. Dash carries the same distinction, so the states survive greyscale.
+   ══════════════════════════════════════════════════════════════════════════ */
+.board-scope .edgeline { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.board-scope .e-traced   { stroke: var(--flow-traced);   stroke-width: var(--w-edge); stroke-dasharray: var(--flow-dash-traced); marker-end: url(#board-arrow); }
+.board-scope .e-onflow   { stroke: var(--flow-onflow);   stroke-width: var(--w-flow); stroke-dasharray: var(--flow-dash-traced); marker-end: url(#board-arrow-accent); }
+.board-scope .e-declared { stroke: var(--flow-declared); stroke-width: var(--w-edge); stroke-dasharray: var(--flow-dash-declared); marker-end: url(#board-arrow); }
+/* Thinner as well as dotted: --w-hair against --w-edge. Three signals — hue,
+   dash and weight — all pointing the same way, because this is the one edge on
+   the board that is an inference rather than a reading. */
+.board-scope .e-derived  { stroke: var(--flow-derived);  stroke-width: var(--w-hair); stroke-dasharray: var(--flow-dash-derived); marker-end: url(#board-arrow-muted); }
+/* LIFTED IMPORTS (one line per pair of boxes, counted) are read in source, so
+   they are solid: a hairline in quiet ink, below a traced call. */
+.board-scope .e-derived.e-imports { stroke: var(--ink-3); stroke-dasharray: none; }
+.board-scope .board-row-label {
+  position: absolute;
+  pointer-events: none;
+  font-size: var(--t-12);
+  font-weight: var(--fw-head);
+  color: var(--ink-3);
+  white-space: nowrap;
+  transform-origin: bottom left;
+}
+.board-scope .board-row-label .brl-n { font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-4); }
+.board-scope .edge-hover { fill: none; stroke: transparent; stroke-width: 10px; pointer-events: stroke; }
+/* ── 04 THE EDGE TAG — what the connector SAYS ─────────────────────────────
+   docs/brand/graphite/pages/04-edge-kinds-and-proof.html puts a `.edgetag` on
+   every connector, mono at --t-10, centred on the line. The board drew none for
+   its whole life while `renderSeqDiagramSvg` drew them for the same document.
+
+   KNOCKED OUT OF THE LINE WITH `paint-order`, NOT WITH A BOX. The sheet's
+   phrase is 'knocked out of the line', and a background rectangle would need a
+   measured text width that nothing here has — a guessed box is how a label ends
+   up wider than its own text. Stroking the glyphs in the canvas ground and
+   painting the stroke FIRST cuts the connector out from behind the text and
+   costs no geometry.
+
+   `pointer-events: none` because the tag is a caption on the line, not a second
+   hit target in front of it: the connector's own hover must not die where its
+   label happens to sit. */
+.board-scope .edgetag {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-variant-numeric: var(--num);
+  fill: var(--ink-3);
+  stroke: var(--bg-base);
+  stroke-width: 3px;
+  paint-order: stroke fill;
+  pointer-events: none;
+  user-select: none;
+}
+/* THE INFERENCE'S LABEL PAINTS IN THE INFERENCE'S INK. `.e-derived` is the one
+   connector on this board that is reasoned rather than read, and its count must
+   not be able to read as loudly as a traced call's verb — three signals already
+   point that way on the line (hue, dash, weight) and the tag is the fourth. */
+.board-scope .edgetag[data-proof='derived'] { fill: var(--flow-derived); }
+.board-scope .edgetag[data-proof='onflow'] { fill: var(--flow-onflow); }
+.board-scope .edgeline:hover,
+.board-scope .edgeline[data-hovered='true'] {
+  stroke-width: var(--w-flow);
+  opacity: 1;
+}
+.board-scope .node[data-dragging='true'] ~ .react-flow__edges .edgeline,
+.board-scope .react-flow__node[data-dragging='true'] ~ .react-flow__edges .edgeline {
+  opacity: 1;
+}
+
+/* ── 08.2 RUNG 7 — THE NODE IS A MARK ─────────────────────────────────────
+   Below the box that would hold the card's own .i-14 glyph, the card stops
+   being an object. The mark says A NODE IS HERE and stops there; the kind is
+   then read off the census, never off the card. It keeps the card's own width
+   so the layout the camera is looking at does not reflow underneath the reader
+   as they zoom — a rung change is a change of DETAIL, never of position. */
+.board-scope .boardmark {
+  appearance: none; position: relative; cursor: pointer;
+  width: var(--arch-card-w); height: var(--dot);
+  padding: 0;
+  background: var(--ink-4);
+  border: 0; border-radius: var(--r-full);
+}
+.board-scope .boardmark.sel { background: var(--board-select-edge); }
+.board-scope .boardmark.dim { opacity: var(--board-dim-opacity); }
+
+/* ── THE NODE CONTEXT MENU ───────────────────────────────────────────────
+   `_core.html:1216-1228` — a menu is --e3/--r-10, and differs from a tooltip,
+   a popover and a dialog by ELEVATION and RADIUS, never by colour. These are
+   chat's `.menu`/`.menuitem` rules re-scoped to the board, not a second look
+   at the same surface.
+
+   `.menuitem` is a 30px rung control — sheet 10 lists it beside `--row-h`,
+   `.railitem`, `.folder` and `.acct`, and inset --sp-8 with a --sp-8 gap. The
+   sheet's own specimen for that rung is "Rename node".
+
+   POSITION IS FIXED, NOT ABSOLUTE. The board is a transformed, scrolling
+   surface; an absolutely-positioned menu inside it would ride the camera and
+   sit somewhere else the moment the reader panned, while the pointer position
+   it was opened at stayed where it was. */
+.board-scope.boardmenu,
+.board-scope .boardmenu {
+  position: fixed; z-index: 40;
+  min-width: var(--sp-56); width: max-content;
+  /* Room for an agent approval card under the Ask row, never past the window. */
+  max-width: min(440px, calc(100vw - var(--sp-16)));
+  max-height: calc(100vh - var(--sp-16));
+  overflow: auto;
+  padding: var(--sp-4);
+  background-color: var(--board-card);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e3);
+}
+.board-scope.boardmenu .menuitem,
+.board-scope .boardmenu .menuitem {
+  appearance: none; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: var(--sp-8);
+  height: var(--row-h); padding: 0 var(--sp-8);
+  background-color: transparent; border: 0; border-radius: var(--r-8);
+  font-family: inherit; font-size: var(--t-12); color: var(--ink-2);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.board-scope.boardmenu .menuitem:hover,
+.board-scope .boardmenu .menuitem:hover {
+  background-color: var(--state-hover); color: var(--ink-1);
+}
+/* The rename field, on the 24px compact-field rung the rail's search box uses
+   (`rail.css:135` — "written off the space ramp rather than as a literal so it
+   moves when the ramp does"). Same rung, same radius, same hairline; it is the
+   same control doing the same job in a different scope. */
+.board-scope.boardmenu .boardmenu-input,
+.board-scope .boardmenu-input {
+  width: 100%;
+  height: var(--sp-24);
+  box-sizing: border-box;
+  padding: 0 var(--sp-8);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-8);
+  background-color: var(--board-card);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  appearance: none;
+}
+/* The double ring — --bg-base then --accent — never removed. */
+.board-scope.boardmenu .boardmenu-input:focus-visible,
+.board-scope.boardmenu .menuitem:focus-visible,
+.board-scope .boardmenu-input:focus-visible,
+.board-scope .boardmenu .menuitem:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+
+/* ── S4, THE PROPOSAL GHOST ──────────────────────────────────────────────
+   "Nodes and edges the agent proposes, drawn DASHED over the grounded document
+   with one Accept/Deny bar."
+
+   DASHED IS THE WHOLE SIGNAL, and it spends no hue. A ghost tinted with
+   `--accent` would say the product endorses the proposal; a ghost at low
+   opacity would say it is unimportant. Dashed says PROVISIONAL, which is what
+   it is — and it survives a reader who cannot distinguish the colour. */
+/* ── DRAWN, NOT FOUND — AND IT STAYS SAID ────────────────────────────────
+   The ghost rule below is the right language and it lasts exactly as long as
+   the proposal does: Accept clears `addedNodeIds`, the dashed border goes, and
+   the model's invention is thereafter indistinguishable from a service the
+   scanner proved. This is the same border, driven by the document's own
+   `evidenceRef` instead of by a transient proposal, so accepting a node keeps
+   the mark rather than losing it.
+
+   NO HUE, for the reason the ghost rule gives: a tint would either endorse the
+   node or dismiss it, and neither is what "nothing on disk points at this" 
+   means. Dashed is the whole signal and it survives greyscale. */
+.board-scope [data-grounded='false'] {
+  border-style: dashed;
+}
+
+.board-scope [data-ghost='true'] {
+  border-style: dashed;
+  /* Brief pulse when a proposal lands — ink only, no accent endorsement. */
+  animation: ghostland 1.4s var(--ease) 1;
+}
+@keyframes ghostland {
+  0% { opacity: 0.35; }
+  40% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* UNSHEETED (§5.6 — sheet 12's gate is drawn for a RUN, not for a ghost
+   overlay), so it borrows the substrate rather than inventing: the elevation
+   and radius a menu uses, controls on the 28px rung. */
+.board-scope.proposalbar,
+.board-scope .proposalbar {
+  /* Top-centre so Accept/Deny stay visible in split view above crowded bottom furniture. */
+  position: absolute; left: 50%; top: var(--sp-12); bottom: auto; transform: translateX(-50%);
+  z-index: 40;
+  display: flex; align-items: center; gap: var(--sp-8);
+  max-width: calc(100% - var(--sp-32));
+  padding: var(--sp-6) var(--sp-8);
+  background-color: var(--board-card);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e3);
+  font-size: var(--t-12); color: var(--ink-1);
+}
+.board-scope.proposalbar,
+/* ══ THE ANATOMY HEADER REUSES THESE CLASS NAMES AND HAD NONE OF THEM ═════
+   Owner, 2026-09-21: "back to the system, that button is in blue, that button
+   doesn't fit our lovable system."
+
+   He is describing an UNSTYLED CONTROL, and that is exactly what it was. Every
+   `.pb-*` rule in this file was scoped `.board-scope .proposalbar .pb-*`, and
+   the repository-anatomy header (`.repoanatomy-hd`, ConnectedBoard) reuses the
+   same three class names in a different container — so its button, its title
+   and its count matched no rule at all and rendered as the user agent's own
+   controls. On Windows that is a blue-tinted default, which is what he saw and
+   why no token in our sheet would explain it.
+
+   The `fe6f644e` signature again: markup naming a class the stylesheet does
+   not answer. The repair is to let the container be either one, rather than to
+   write a second copy of the same three rules for the second container. */
+.board-scope .proposalbar .pb-title,
+.board-scope .repoanatomy-hd .pb-title { font-weight: var(--fw-label); white-space: nowrap; }
+.board-scope.proposalbar,
+.board-scope .proposalbar .pb-why {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink-3);
+}
+/* A COUNT, in mono, because it is a measurement — the same treatment every
+   other number on this board gets. */
+.board-scope.proposalbar,
+.board-scope .repoanatomy-hd .pb-count,
+.board-scope .proposalbar .pb-count {
+  flex: 0 0 auto;
+  font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-4);
+}
+.board-scope.proposalbar,
+.board-scope .proposalbar .pb-btn,
+.board-scope .repoanatomy-hd .pb-btn {
+  flex: 0 0 auto;
+  height: var(--control-h); padding: 0 var(--sp-10);
+  border: var(--w-hair) solid var(--edge); border-radius: var(--r-8);
+  background-color: var(--surface-1); color: var(--ink-1);
+  font-family: inherit; font-size: var(--t-12); cursor: pointer;
+}
+.board-scope.proposalbar,
+.board-scope .repoanatomy-hd .pb-btn:hover,
+.board-scope .proposalbar .pb-btn:hover { background-color: var(--state-hover); }
+.board-scope.proposalbar,
+.board-scope .repoanatomy-hd .pb-btn:focus-visible,
+.board-scope .proposalbar .pb-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+/* The Generate confirm arm — the second deliberate act. Same menu surface, so
+   it inherits the elevation and radius `_core.html` fixes for a menu; the input
+   is the compact-field rung the rename box already uses. */
+.board-scope.boardmenu .genconfirm,
+.board-scope .boardmenu .genconfirm {
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  min-width: var(--sp-56);
+}
+
+/* The capture surface. Mounted only while Draw is on — a transparent overlay
+   left in the tree would eat every click on the board for the rest of the
+   session, and the bug would look like the board having stopped responding. */
+/* The ink itself. Borrowed from the whiteboard's --w-flow / round joins rather
+   than invented, so a stroke looks the same on both drawing surfaces. --ink-3
+   because a draft is not a commitment: it is what the recogniser is about to
+   read, not an edge the document holds. */
+.board-scope .board-ink {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: var(--w-flow);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── WHY THE SIZE IS DECLARED AND NOT INHERITED FROM `inset` ─────────────
+   Owner, 2026-09-21: "we want to draw on the board, but it, in reality, like,
+   it doesn't let you draw. It doesn't work."
+
+   He was right, and the cause is one line of CSS. This is an <svg>, which is a
+   REPLACED element with an intrinsic size of 300x150. `inset: 0` stretches a
+   plain box; it does not stretch a replaced one — the intrinsic size wins and
+   `left`/`top` are simply honoured, so the capture surface was a 300x150 patch
+   pinned to the board's top-left corner. Measured in Chrome on a 678x887 board:
+   the layer came back `[922, 113, 300, 150]`.
+
+   So the pencil DID work — in the top-left eighth of the board, and nowhere a
+   reader would think to draw. It toggled, it changed colour, and it ignored
+   them. That is worse than a control that does nothing, because it also tells
+   them the fault is theirs.
+
+   The twelve drawing tests could not see this: jsdom performs no layout, and
+   they dispatch pointer events AT the layer, so its size never enters the
+   question they ask. `canDrawAnywhereOnTheBoard` in `strokeLayerFills.test.ts`
+   is the one that does — it reads this rule. */
+.board-scope .strokelayer {
+  position: absolute; inset: 0; z-index: 20;
+  width: 100%; height: 100%;
+  cursor: crosshair;
+  touch-action: none; /* or the browser pans instead of the reader drawing */
+  background: transparent;
+}
+/* Space held in Draw (round 7 C.5): the layer lets go so the board pans. */
+.board-scope .strokelayer.is-passive { pointer-events: none; cursor: grab; }
+
+/* What the last stroke did. One line, replaced by the next stroke. */
+.board-scope.inknote,
+.board-scope .inknote {
+  /* Below the interior bar, which owns the top edge — two overlays stacked on
+     one point is how a reader loses the one they needed. */
+  position: absolute; left: 50%; top: calc(var(--sp-12) + var(--row-h) + var(--sp-8));
+  transform: translateX(-50%);
+  z-index: 25;
+  max-width: calc(100% - var(--sp-32));
+  padding: var(--sp-4) var(--sp-10);
+  background-color: var(--board-card);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e2);
+  font-size: var(--t-11); line-height: var(--lh-11); color: var(--ink-2);
+}
+
+/* ── AN OPENED SERVICE ───────────────────────────────────────────────────
+   The owner's ruling is SYSTEMS LAYER ONLY, no nesting — "but a service must
+   still be openable". Opening REPLACES the view, so one level is on screen at a
+   time; this bar is what says which level, and how to leave it.
+
+   Bottom-left, above furniture: top-centre overlapped workspace tabs, the
+   edgeless note, and ELK's first row (owner photo 2026-08-26). */
+.board-scope.interiorbar,
+.board-scope .interiorbar {
+  /* Clears TWO furniture rows, not one — the row wraps in a narrow pane. */
+  position: absolute; left: var(--sp-12); bottom: calc(var(--sp-16) + 128px); top: auto;
+  transform: none;
+  z-index: 30;
+  display: flex; align-items: center; gap: var(--sp-8);
+  max-width: calc(100% - var(--sp-32));
+  padding: var(--sp-6) var(--sp-8);
+  background-color: var(--board-card);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e3);
+  font-size: var(--t-12); color: var(--ink-1);
+}
+
+/* ── Agent workflow launch + run overlay (mega plan Phases 2–6) ─────────── */
+.board-scope .proposalbar .pb-btn-primary {
+  border-color: var(--accent);
+  color: var(--ink-1);
+}
+.board-scope .node.run-running {
+  box-shadow: 0 0 0 var(--w-rule) var(--accent), var(--e2);
+  animation: board-run-pulse 1.4s ease-in-out 8;
+}
+.board-scope .node.run-done {
+  box-shadow: 0 0 0 var(--w-rule) var(--fits);
+}
+.board-scope .node.run-failed {
+  box-shadow: 0 0 0 var(--w-rule) var(--wont);
+}
+.board-scope .node.run-waiting_human {
+  box-shadow: 0 0 0 var(--w-rule) var(--spills);
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-scope .node.run-running { animation: none; }
+}
+@keyframes board-run-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.82; }
+}
+.board-scope .e-run-active {
+  stroke: var(--accent);
+  stroke-width: calc(var(--w-edge) + 1px);
+  stroke-dasharray: 6 4;
+  animation: board-run-edge 0.9s steps(9) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-scope .e-run-active { animation: none; }
+}
+@keyframes board-run-edge {
+  to { stroke-dashoffset: -20; }
+}
+.board-scope.agent-inspector {
+  position: absolute;
+  right: var(--sp-12);
+  top: var(--sp-12);
+  z-index: 35;
+  width: min(320px, calc(100% - var(--sp-24)));
+  padding: var(--sp-12);
+  background: var(--board-card);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  box-shadow: var(--e3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  font-size: var(--t-12);
+}
+.board-scope .agent-inspector-head { display: flex; align-items: center; gap: var(--sp-8); }
+.board-scope .agent-inspector-title { font-weight: var(--fw-label); }
+.board-scope .agent-inspector-kind {
+  color: var(--ink-3);
+  margin-left: var(--sp-6);
+}
+.board-scope .agent-inspector-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.board-scope .agent-inspector-field textarea,
+.board-scope .agent-inspector-field input,
+.board-scope .agent-inspector-field select {
+  font: inherit;
+  background: var(--surface-1);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  padding: var(--sp-6);
+  color: var(--ink-1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ANATOMY — SHEET 07's WALL, DRAWN INSIDE THE CARD IT BELONGS TO
+   docs/brand/graphite/pages/07-modules-and-containment.html
+
+   The model, the arithmetic and the reasons are src/canvas/anatomy.ts. This
+   block only paints, and it paints §07.2's specimen table verbatim:
+
+     wall surface  --nest-1     wall border  --w-struct dashed --edge
+     wall radius   --r-18       wall inset   --nest-inset
+     wall elevation --e0        header       --nest-hd-h, mono / --t-10 / --ink-3
+     member surface --nest-2    a part inside a member  --nest-3
+
+   NO HUE IS SPENT. Law 1: every hue on screen is a claim about the world, and
+   a treemap cell is not a claim — it is a measurement, and its measurement is
+   its AREA. The tones below are the substrate's nesting greys, which already
+   mean depth. Anything that wanted to mean heat here was declined in
+   anatomy.ts, with the three reasons, so that it stays declined.
+   ══════════════════════════════════════════════════════════════════════════ */
+.board-scope .node .ana {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: var(--sp-4);
+  padding: var(--nest-inset);
+  background: var(--nest-1);
+  /* Longhands, for the same jsdom reason as `.nd-meta`'s top rule. */
+  border-width: var(--w-struct);
+  border-style: dashed;
+  border-color: var(--edge);
+  border-radius: var(--r-18);
+  box-shadow: var(--e0);
+  text-align: left;
+  overflow: hidden;
+}
+
+/* §07.3 — "The disclosure control is the header itself, not a button parked on
+   it: the whole 24px strip is the hit target." So the strip IS the button, and
+   it keeps --nest-hd-h rather than the taller rung an icon button would force. */
+.board-scope .node .ana-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--nest-hd-h);
+  padding: 0 var(--sp-6);
+  border: 0;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: 0.08em;
+  font-variant-numeric: var(--num);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-scope .node .ana-hd { transition: none; }
+}
+.board-scope .node .ana-hd:hover { background: var(--state-hover); }
+/* The wall's header title takes the room the count leaves, cut with an
+   ellipsis rather than pushing the count off the header. */
+.board-scope .node .ana-hd-t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board-scope .node .ana-hd:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--accent);
+}
+.board-scope .node .ana-hd .right {
+  margin-left: auto;
+  color: var(--ink-4);
+}
+
+.board-scope .node .ana-map {
+  display: block;
+  border-radius: var(--r-4);
+  overflow: hidden;
+}
+
+/* A packed map has no gutters — the rectangles tile the container exactly, and
+   that exactness IS the claim. So members are separated by a hairline stroke
+   rather than by a gap, and carry no radius of their own; see anatomy.ts. */
+.board-scope .node .ana-cell rect {
+  stroke: var(--edge);
+  stroke-width: var(--w-hair);
+  vector-effect: non-scaling-stroke;
+}
+.board-scope .node .ana-leaf rect { fill: var(--nest-3); }
+.board-scope .node .ana-container rect { fill: var(--nest-2); }
+/* Not to scale, and it does not pretend to be: the zero band takes the wall's
+   own recessive tone so it reads as part of the frame rather than as a member
+   with an area. */
+.board-scope .node .ana-unscaled rect {
+  fill: var(--nest-1);
+  stroke-dasharray: 2 2;
+}
+.board-scope .node .ana-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  fill: var(--ink-3);
+  pointer-events: none;
+}
+
+/* §07.3 — "Each crossing edge lands on the member it actually connects to."
+   The leader carries the traced-edge ink because that is what it is: a traced
+   connector, drawn from its real origin instead of from a border. Three weights
+   off the existing ladder, no fourth — see `leaderWeightStep`.
+
+   IT RECEDES, AND THAT WAS FOUND BY LOOKING RATHER THAN BY REASONING. The board
+   re-points --flow-traced at --info (Decision 6, sheet 06.7 — "the blue flow
+   accent"), which is right for a connector on a board where a handful are
+   drawn. Opening `analyzer` draws FIFTY-THREE bundles across a 129px map, and
+   at full strength the blue won the reading from the rectangles — on a view
+   whose entire claim is that AREA is the measurement. So the hue and the claim
+   both stay and the volume comes down, using the value Graphite already settled
+   for "receded and still readable" rather than a new one. The three weights
+   still say which bundle is the trunk. */
+.board-scope .node .ana-leaders {
+  opacity: var(--board-dim-opacity);
+}
+.board-scope .node .ana-leader path {
+  fill: none;
+  stroke: var(--flow-traced);
+  vector-effect: non-scaling-stroke;
+}
+.board-scope .node .ana-leader-w1 path { stroke-width: var(--w-hair); }
+.board-scope .node .ana-leader-w2 path { stroke-width: var(--w-edge); }
+.board-scope .node .ana-leader-w3 path { stroke-width: var(--w-flow); }
+/* The fallback is the WALL, never an invented cell. It is dashed for the same
+   reason a declared edge is: nobody could place it. */
+.board-scope .node .ana-leader-border path {
+  stroke-width: var(--w-struct);
+  stroke-dasharray: var(--flow-dash-declared);
+}
+
+.board-scope .node .ana-empty,
+.board-scope .node .ana-note {
+  margin: 0;
+  padding: 0 var(--sp-6);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-4);
+  text-align: left;
+}
+
+/* ── THE WHOLE REPOSITORY, DRAWN — the root door, not a card ─────────────
+   Sheet 07's wall at root scope. It REPLACES the board for one step and
+   returns; it is not a container and adds no node, so §33's cut of
+   containment is untouched.
+
+   THE COMPOUND SELECTOR IS THE POINT, exactly as `.interiorbar` records above:
+   this panel is a SIBLING of the element carrying `.board-scope`, so a
+   descendant selector would never match it and it would paint unstyled across
+   the pane. `.board-scope.repoanatomy` is one element, two classes.
+
+   Every value is a token. The brand firewall means this sheet declares no
+   colour, radius, type or spacing of its own. */
+.board-scope.repoanatomy {
+  position: absolute; inset: 0;
+  z-index: 40;
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--sp-12);
+  padding: var(--sp-16);
+  background-color: var(--bg-base);
+  overflow: auto;
+}
+
+.board-scope.repoanatomy .repoanatomy-hd {
+  display: flex; align-items: center; gap: var(--sp-8);
+  width: 100%;
+  font-size: var(--t-12); color: var(--ink-1);
+}
+
+/* The map is 129 units by contract (`ANATOMY_MAP`). At root the reader is not
+   looking at a card in a board, so it is given room to be read — the geometry
+   is unchanged, only the size it is drawn at. */
+.board-scope.repoanatomy .repoanatomy-body {
+  width: min(640px, 100%);
+}
+
+.board-scope.repoanatomy .repoanatomy-body .ana-map {
+  width: 100%; height: auto;
+}
+
+/* Every part named, in the order the map draws them. No hue: the list is keyed
+   by SIZE ORDER, which the rectangles already encode. */
+.board-scope.repoanatomy .repoanatomy-parts {
+  width: min(640px, 100%);
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  font-size: var(--t-12); color: var(--ink-2);
+}
+
+.board-scope.repoanatomy .repoanatomy-parts li {
+  display: flex; align-items: baseline; gap: var(--sp-8);
+  /* WRAPS so the description gets its own line (owner, 2026-09-21: "anatomy
+     should have a little bit more detail"). A fourth item on the measure line
+     would fight the name for the same room and push both numbers about; a row
+     that is a heading over a sentence keeps the numbers where they were and
+     gives the sentence the width to be one. */
+  flex-wrap: wrap;
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: var(--w-hair) solid var(--edge);
+}
+
+.board-scope.repoanatomy .repoanatomy-parts .rp-name {
+  flex: 1 1 auto; color: var(--ink-1);
+  overflow-wrap: anywhere;
+}
+
+.board-scope.repoanatomy .repoanatomy-parts .rp-loc,
+.board-scope.repoanatomy .repoanatomy-parts .rp-share {
+  flex: 0 0 auto; font-variant-numeric: tabular-nums; color: var(--ink-3);
+}
+
+/* WHAT THE PART DOES — the scanner's own summary of the package, on its own
+   line under the name. Quieter than the count, because a reader scanning for
+   size should be able to skim past it, and a reader asking what something IS
+   is reading rather than scanning. */
+.board-scope.repoanatomy .repoanatomy-parts .rp-role {
+  flex: 1 0 100%;
+  margin-top: var(--sp-2);
+  color: var(--ink-3);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  overflow-wrap: anywhere;
+}
+
+/* ── THE GROUP FRAME — an expanded group on the composite board ────────────
+   GroupFrame.tsx. A quiet surface one step above the field, with the card's
+   hairline, holding its members. The header is the frame's own 32px row:
+   kind icon, name, members drawn, and the two ways out (Focus, Collapse).
+   The header height matches GROUP_PAD.top in layout.ts minus its gutter. */
+.board-scope .group-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: var(--w-hair) solid var(--box-edge);
+  border-radius: var(--r-10);
+  background: color-mix(in srgb, var(--surface-1) 72%, transparent);
+}
+.board-scope .group-frame.sel { border-color: var(--accent-edge); }
+.board-scope .group-frame.dim { opacity: var(--board-dim-opacity, 0.4); }
+.board-scope .group-frame .gf-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: 32px;
+  padding: 0 var(--sp-6) 0 var(--sp-10);
+  border-bottom: var(--w-hair) solid var(--edge-faint);
+  cursor: default;
+}
+.board-scope .group-frame .gf-ic { display: inline-flex; color: var(--ink-2); line-height: 0; }
+.board-scope .group-frame .gf-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /* Held at a readable size as the camera zooms out to fit a whole repo, the
+     same rule the far card titles follow; capped so it fits the 32px row. */
+  font-size: calc(var(--t-12) / clamp(0.6, var(--board-cam-z, 1), 1));
+  line-height: 1.2;
+  font-weight: var(--fw-head);
+  color: var(--ink-1);
+}
+.board-scope .group-frame .gf-n {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.board-scope .group-frame .gf-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--sp-6);
+  border: 0;
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-11);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.board-scope .group-frame .gf-btn:hover { background: var(--state-hover); color: var(--ink-1); }
+/* The body row of a frame with nothing drawn inside (GroupFrame.tsx). */
+.board-scope .group-frame .gf-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: 36px;
+  padding: 0 var(--sp-6) 0 var(--sp-10);
+  font-size: var(--t-11);
+  color: var(--ink-2);
+}
+.board-scope .group-frame .gf-empty-t { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* FAR ZOOM (below 60%): the header and the empty row are counter-scaled so
+   their text stays about 11px on screen, sized to the frame's on-screen
+   width; the header keeps the name and the +N only. */
+.board-scope[data-group-far='true'] .group-frame .gf-hd,
+.board-scope[data-group-far='true'] .group-frame .gf-empty {
+  width: calc(100% * max(var(--board-cam-z), 0.25));
+  transform: scale(calc(1 / max(var(--board-cam-z), 0.25)));
+  transform-origin: top left;
+  padding: 0 var(--sp-4);
+  gap: var(--sp-4);
+}
+.board-scope[data-group-far='true'] .group-frame .gf-hd {
+  /* Sits ON the frame's top edge, like a tab, rather than inside it: at far
+     zoom the frame's 40px header room is under 14px on screen, and members
+     drawn there would cover the name. translateY runs before the scale, so
+     the header's bottom lands exactly on the frame's top edge. */
+  transform: scale(calc(1 / max(var(--board-cam-z), 0.25))) translateY(-100%);
+  height: 16px;
+  border-bottom: 0;
+}
+.board-scope[data-group-far='true'] .group-frame .gf-empty {
+  position: absolute;
+  top: 40px; /* GROUP_PAD.top: where the members would start */
+  left: 0;
+  height: max(calc(36px * var(--board-cam-z)), 14px);
+}
+.board-scope[data-group-far='true'] .group-frame .gf-hd .gf-more,
+.board-scope[data-group-far='true'] .group-frame .gf-hd .gf-btn,
+.board-scope[data-group-far='true'] .group-frame .gf-hd .gf-ic,
+.board-scope[data-group-far='true'] .group-frame .gf-hd .gf-n,
+.board-scope[data-group-far='true'] .group-frame .gf-empty .gf-btn { display: none; }
+.board-scope[data-group-far='true'] .group-frame .gf-t,
+.board-scope[data-group-far='true'] .group-frame .gf-empty-t { font-size: var(--t-11); line-height: 1.15; }
+.board-scope .group-frame .gf-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--w-rule) var(--bg-base), 0 0 0 calc(var(--w-rule) * 2) var(--accent);
+}
+.board-scope .group-frame .gf-more {
+  flex: 0 0 auto;
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--state-hover);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  line-height: 18px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* THE GLIDE (useInterpolatedPositions.ts): connectors are routed for the
+   arrangement the cards are moving to, so they wait until the cards land. */
+.board-scope[data-animating='true'] .react-flow__edges { opacity: 0; }
+.board-scope .react-flow__edges { transition: opacity 120ms var(--ease); }
+.board-scope .react-flow__edge { cursor: pointer; }
+
+/* ── THE BOARD'S TOP-LEFT: B's VIEW PILLS, FIND, MORE (BoardControls.tsx) ──
+   Decision 49 (Jaden: "the map grid and so on buttons are issues"): B's
+   separate glass view pills (BArc.dc.html .vt), 30px, an icon and a
+   word in each, the chosen one raised onto the surface; then Find as a glass
+   pill; then More as a round glass icon button opening B's menu. They float
+   over the dotted ground at the top-left. The top-right corner belongs to the
+   shell's pane head, so nothing of the board's sits there.
+
+   The board is fitted under them: Board.tsx's chromeBands reads this strip's
+   bottom edge as the fit's top band, so no card is laid under a control. */
+.board-scope .board-controls {
+  position: absolute;
+  top: var(--sp-12);
+  left: var(--sp-12);
+  /* The shell's pane head floats at the top-right (full screen, close). */
+  right: 80px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  /* ONE ROW AT EVERY WIDTH (UX audit, 2026-10-06): the narrow rules below
+     fold the pills' words and Find to glyphs, so the row fits short of the
+     shell's corner instead of wrapping. */
+  flex-wrap: nowrap;
+  gap: var(--sp-6);
+  pointer-events: none;
+  font-size: var(--t-12);
+  color: var(--ink-2);
+}
+.board-scope .board-controls > * { pointer-events: auto; }
+
+.board-scope .vt {
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease);
+}
+/* A 32px target on a 30px pill: one unit above and below. */
+.board-scope .vt::after { content: ''; position: absolute; inset: -1px 0; }
+.board-scope .vt .i { width: 14px; height: 14px; }
+/* A NARROW BOARD KEEPS ONE ROW OF CONTROLS (UX audit: beside the review dock
+   they wrapped to two). Find folds to its glyph under 760px of board; the
+   views are one dropdown pill at every width and the board tags fold in
+   steps (see the last block of this sheet). */
+@container boardstack (max-width: 760px) {
+  /* Scoped through .board-controls so these outrank the base rules below
+     them in the sheet (same specificity would lose on order). */
+  /* Find folds to its glyph and opens when it holds focus (coordinator,
+     2026-10-06: the row must stop short of the shell's pane head at the
+     top-right, about 100px, at 1024 wide). */
+  .board-scope .board-controls .bfind { flex: none; justify-content: center; width: var(--row-h-tool); padding: 0; }
+  .board-scope .board-controls .bfind input { width: 0; min-width: 0; padding: 0; }
+  .board-scope .board-controls .bfind .bfind-n { display: none; }
+  .board-scope .board-controls .bfind:focus-within { width: auto; padding: 0 var(--sp-12); }
+  .board-scope .board-controls .bfind:focus-within input { width: 96px; }
+}
+.board-scope .vt:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.board-scope .vt.on,
+.board-scope .vt[data-pressed] {
+  border-color: var(--edge-strong);
+  background: var(--board-card);
+  color: var(--ink-1);
+  box-shadow: var(--e1);
+}
+.board-scope .vt:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Find, as a pill (B .vt with a field in it). */
+.board-scope .bfind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--row-h);
+  min-width: 0;
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-3);
+  cursor: text;
+  transition: border-color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
+}
+.board-scope .bfind:hover { background: var(--glass-ctl-hover); }
+.board-scope .bfind:focus-within {
+  border-color: var(--accent-edge);
+  background: var(--board-card);
+}
+.board-scope .bfind input {
+  width: 96px;
+  min-width: 40px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-12);
+  color: var(--ink-1);
+}
+.board-scope .bfind input::placeholder { color: var(--ink-3); }
+.board-scope .bfind-n {
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* More: B's glass icon button (.ibtn.g), opening B's menu under it. */
+/* The menu is anchored to the toolbar, not to ⋯, so it opens at the board's
+   left edge and is clamped to the board's width (UX audit: it ran 288px past
+   a narrow board). */
+.board-scope .bc-morewrap { position: static; display: inline-flex; }
+.board-scope .board-controls .bmenu { max-width: calc(100cqw - var(--sp-24)); }
+.board-scope .board-controls .bbtn {
+  background: var(--glass-ctl);
+  border-color: var(--glass-ctl-edge);
+}
+.board-scope .board-controls .bbtn:hover { background: var(--glass-ctl-hover); border-color: var(--glass-ctl-edge-hover); }
+.board-scope .board-controls .bbtn[data-on='true'] {
+  background: var(--board-card);
+  border-color: var(--edge-strong);
+  color: var(--ink-1);
+}
+
+/* ROUND 12 (B/14): the board's top-left strip a notch smaller. The pills and
+   Find drop from the 30px row to the 26px tool row, the words to 11.5px, and
+   the round buttons (and Find when it folds to its glyph) from 32px to the same 26px, so every control in the strip shares one height and the round ones are true circles; the 32px touch target stays through the
+   ::after on .vt. boardToolbarCss.test.ts locks the sizes. */
+.board-scope .board-controls .vt,
+.board-scope .board-controls .bfind {
+  height: var(--row-h-tool);
+  font-size: var(--t-11-5);
+}
+.board-scope .board-controls .vt { padding: 0 var(--sp-10); }
+.board-scope .board-controls .bfind input { font-size: var(--t-11-5); }
+.board-scope .board-controls .vt .i { width: var(--t-13); height: var(--t-13); }
+.board-scope .board-controls .bbtn { min-width: var(--row-h-tool); height: var(--row-h-tool); }
+
+/* B's menu: a glass sheet, 6px inside, --r-18, and the one real shadow here
+   (a floating menu). Rows of a mono micro-label and soft pills. */
+.board-scope .bmenu {
+  position: absolute;
+  top: calc(100% + var(--sp-8));
+  left: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  width: 320px;
+  max-width: calc(100vw - var(--sp-32));
+  padding: var(--sp-8);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-18);
+  background: var(--board-card);
+  box-shadow: var(--e3);
+  animation: bmenu-in 160ms var(--ease);
+}
+.board-scope .bm-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.board-scope .bm-cap {
+  min-width: 84px;
+  padding-left: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+/* Round 7 C.5: the keys hint — a two-column list of B's mono key caps. */
+.board-scope .bm-keys { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+.board-scope .bm-keylist {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: var(--sp-8);
+  row-gap: var(--sp-2);
+  margin: 0;
+  padding: 0 var(--sp-4);
+}
+.board-scope .bm-key { display: contents; }
+.board-scope .bm-key dt,
+.board-scope .bm-key dd { margin: 0; display: flex; align-items: center; min-height: 20px; }
+.board-scope .bm-key kbd {
+  padding: 0 var(--sp-6);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-4);
+  background: var(--glass-ctl);
+  font-size: var(--t-10);
+  line-height: 18px;
+  color: var(--ink-1);
+  white-space: nowrap;
+}
+.board-scope .bm-key dd { font-size: var(--t-11); color: var(--ink-2); }
+.board-scope .bm-note {
+  margin: 0;
+  padding: 0 var(--sp-4);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  color: var(--ink-3);
+}
+.board-scope .bpill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.board-scope .bpill:hover:not(:disabled) { background: var(--glass-ctl-hover); border-color: var(--glass-ctl-edge-hover); }
+.board-scope .bpill:disabled { color: var(--ink-4); cursor: default; }
+.board-scope .bpill:focus-visible,
+.board-scope .bseg-b:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+.board-scope .bseg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+}
+.board-scope .bseg-b {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 var(--sp-10);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  cursor: pointer;
+}
+.board-scope .bseg-b:hover { color: var(--ink-1); }
+.board-scope .bseg-b.on { background: var(--surface-3); color: var(--ink-1); }
+
+/* "+N groups" (ConnectedBoard, autoExpand.ts): a soft pill after Find. */
+.board-scope.board-stack .board-more-groups {
+  flex: 0 0 auto;
+  height: var(--row-h);
+  padding: 0 var(--sp-12);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  font: inherit;
+  font-size: var(--t-12);
+  font-weight: var(--fw-label);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.board-scope.board-stack .board-more-groups:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.board-scope.board-stack .board-more-groups:focus-visible {
+  outline: var(--w-rule) solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The "tests (n)" chip (GroupFrame.tsx): the +N chip's quieter sibling. */
+.board-scope .group-frame .gf-tests { color: var(--ink-3); }
+.board-scope .edge-evidence {
+  position: fixed;
+  z-index: 20;
+  width: 300px;
+  max-height: 320px;
+  overflow: auto;
+  padding: var(--sp-6);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--board-card);
+  box-shadow: var(--e3);
+  font-size: var(--t-12);
+  color: var(--ink-2);
+  animation: bc-in 160ms var(--ease);
+}
+.board-scope .edge-evidence .ee-hd { display: flex; align-items: center; gap: var(--sp-6); }
+.board-scope .edge-evidence .ee-t { flex: 1 1 auto; min-width: 0; color: var(--ink-1); font-weight: var(--fw-head); overflow-wrap: anywhere; }
+.board-scope .edge-evidence .ee-n { font-family: var(--font-mono); font-size: var(--t-10); color: var(--ink-3); }
+.board-scope .edge-evidence .ee-list { margin: var(--sp-6) 0 0; padding: 0; list-style: none; }
+.board-scope .edge-evidence .ee-row {
+  padding: var(--sp-2) var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-scope .board-controls .bc-body,
+  .board-scope .edge-evidence { animation: none; }
+}
+
+/* ── THE AGENT CHIP (AgentOverlay.tsx) ────────────────────────────────────
+   Stream 3b review: the "agent is here" badge was about 6px at fit zoom. The
+   chip names the agent and its action ("Main agent: editing accessMode.ts"),
+   counter-scaled to 11px on screen whatever the zoom, with the loader's
+   two-frame glyph, and pulses the card once per new touch. Overrides the
+   badge in agents/agents.css when the overlay has a chip for the card. */
+.board-scope .node { --agent-chip-lane: 0; }
+.board-scope .node[data-agent-here='live'][data-agent-chip]::after {
+  content: '\25D0\00a0' attr(data-agent-chip);
+  left: 0;
+  /* Round 9, ask 25: chips that would overlap stack upward by lane (set by
+     AgentOverlay from agentChipLayout.ts); a lane is a chip's height (18px) plus 2px. */
+  bottom: calc(100% + (var(--sp-4) + var(--agent-chip-lane, 0) * 20px) / max(var(--board-cam-z, 1), 0.25));
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--r-full);
+  font-size: var(--t-11);
+  line-height: var(--lh-11);
+  transform: scale(calc(1 / max(var(--board-cam-z, 1), 0.25)));
+  transform-origin: bottom left;
+  z-index: 5;
+  animation: agent-chip-frames 1.2s steps(1, end) infinite;
+}
+@keyframes agent-chip-frames {
+  0% { content: '\25D0\00a0' attr(data-agent-chip); }
+  50% { content: '\25D1\00a0' attr(data-agent-chip); }
+}
+.board-scope .node[data-agent-pulse='a'] { animation: agent-pulse-a 900ms var(--ease) 1; }
+.board-scope .node[data-agent-pulse='b'] { animation: agent-pulse-b 900ms var(--ease) 1; }
+@keyframes agent-pulse-a {
+  0% { box-shadow: 0 0 0 var(--w-rule) var(--accent), 0 0 0 0 var(--accent-wash); }
+  40% { box-shadow: 0 0 0 var(--w-rule) var(--accent), 0 0 0 var(--sp-12) var(--accent-wash); }
+  100% { box-shadow: 0 0 0 var(--w-rule) var(--accent), 0 0 0 var(--sp-6) var(--accent-wash); }
+}
+@keyframes agent-pulse-b {
+  0% { box-shadow: 0 0 0 var(--w-rule) var(--accent), 0 0 0 0 var(--accent-wash); }
+  40% { box-shadow: 0 0 0 var(--w-rule) var(--accent), 0 0 0 var(--sp-12) var(--accent-wash); }
+  100% { box-shadow: 0 0 0 var(--w-rule) var(--accent), 0 0 0 var(--sp-6) var(--accent-wash); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-scope .node[data-agent-here='live'][data-agent-chip]::after,
+  .board-scope .node[data-agent-pulse] { animation: none; }
+}
+
+/* OVER A VIEW (Grid) the Map's zoom and furniture row act on nothing the
+   reader sees, so they are not drawn (stream 3b review). Diff keeps the Map
+   beside its panel, so its furniture stays. */
+.board-scope.board-stack[data-view='grid'] .boardfurniture,
+.board-scope.board-stack[data-view='flow'] .boardfurniture,
+.board-scope.board-stack[data-view='hotspots'] .boardfurniture { display: none; }
+/* Round 7 C.6: the Grid is a glass card over the board's FIELD, so the Map's
+   cards and lines under it are not drawn (they read as smudges through the
+   glass; `visibility` would not do: the renderer writes visible on each
+   node); the field, the board root's own background, still shows. */
+.board-scope.board-stack[data-view='grid'] .react-flow__viewport,
+.board-scope.board-stack[data-view='grid'] .boardfurniture { opacity: 0; pointer-events: none; }
+/* A lit card (and the chip hanging from it) draws above the cards around it, so a
+   neighbour never covers the words (round 9, ask 25). React Flow writes z-index on
+   the wrapper inline, hence !important. */
+.board-scope .react-flow__node:has(> .node[data-agent-chip]) { z-index: 900 !important; }
+.board-scope .node[data-agent-here='live'][data-agent-chip][data-agent-chip-hidden='true']::after { display: none; }
+.board-scope .node[data-agent-here='live'][data-agent-chip][data-agent-chip-hidden='true']:hover::after { display: block; z-index: 6; }
+.board-scope .node[data-agent-here='live'][data-agent-chip][data-agent-chip-side='end']::after {
+  left: auto;
+  right: 0;
+  transform-origin: bottom right;
+}
+
+
+
+
+/* DIFF ON THE MAP (views/DiffView.tsx): the panel takes a column on the left
+   and the Map fits the rest, so the board's own fit never puts a box under
+   the panel. Each box the branch touched carries a badge; a module it
+   deleted is a dashed ghost. */
+/* Round 7 C.6: the MAP is inset, not the stack. Padding the stack shrank the
+   toolbar's container (`container-type: inline-size` measures the content
+   box), so opening Diff folded the view pills to bare icons. */
+.board-scope.board-stack[data-view='diff'] {
+  --dv-w: min(372px, 44%);
+}
+.board-scope.board-stack[data-view='diff'] > .board-scope.board {
+  margin-left: var(--dv-w);
+  width: calc(100% - var(--dv-w));
+}
+/* A NARROW BOARD (the shell's card layout at 1024 leaves about 385px): a
+   column beside the Map would leave both unreadable, so Diff takes the whole
+   board as one glass card and the Map under it is not drawn; the panel lists
+   the same boxes the Map would badge. */
+@container boardstack (max-width: 600px) {
+  .board-scope.board-stack[data-view='diff'] > .board-scope.board {
+    margin-left: 0;
+    width: 100%;
+  }
+  .board-scope.board-stack[data-view='diff'] .react-flow__viewport,
+  .board-scope.board-stack[data-view='diff'] .boardfurniture { opacity: 0; pointer-events: none; }
+  .board-scope.board-stack .board-view.diffview { width: auto; right: var(--sp-12); }
+}
+.board-scope .nd-change {
+  position: absolute;
+  top: 0;
+  right: var(--sp-10);
+  z-index: 2;
+  translate: 0 -50%;
+  scale: clamp(1, calc(0.75 / var(--board-cam-z, 1)), 4);
+  transform-origin: right center;
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 var(--w-hair) var(--edge);
+  font-family: var(--font-ui);
+  font-size: var(--t-10);
+  line-height: var(--lh-10);
+  color: var(--ink-1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* The same glyphs as the Diff panel, in the same tokens. */
+.board-scope .nd-change::before { font-family: var(--font-mono); font-weight: var(--fw-head); margin-right: var(--sp-4); }
+.board-scope .nd-change.is-added::before { content: '+'; color: var(--fits); }
+.board-scope .nd-change.is-changed::before { content: '~'; color: var(--spills); }
+.board-scope .nd-change.is-removed::before { content: '\2212'; color: var(--wont); }
+.board-scope .nd-change.is-removed { color: var(--ink-3); }
+.board-scope .group-frame .gf-hd .nd-change { position: static; translate: none; scale: none; }
+/* Full verdict ink on a changed box's border: 3:1 on its ground (Decision 42). */
+
+.board-scope .group-frame[data-change='changed'] { border-color: var(--spills); }
+.board-scope .group-frame[data-change='added'] { border-color: var(--fits); }
+.board-scope .node[data-change='removed'] { border-style: dashed; color: var(--ink-3); }
+.board-scope .boardmark[data-change='added'] { background: var(--fits); }
+.board-scope .boardmark[data-change='changed'] { background: var(--spills); }
+.board-scope .boardmark[data-change='removed'] { background: var(--wont); opacity: 0.6; }
+
+/* ROUND 13 (BOARD 2): ONE LINE, AND THE VIEWS ARE ALWAYS A DROPDOWN.
+   The top row is: board tags | the view pill | Find | More. The view pill (views/ViewMenu.tsx) shows the view on screen
+   (icon, name, chevron) at every width and opens the list of Map, Grid, Diff and the rest. Every control is on the row's
+   one 26px height. */
+.board-scope .bview-menu-wrap { position: relative; display: inline-flex; flex: none; }
+.board-scope .board-controls .bview-menu {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  height: var(--row-h-tool);
+  min-width: var(--row-h-tool);
+  padding: 0 var(--sp-8) 0 var(--sp-10);
+  border: var(--w-hair) solid var(--glass-ctl-edge);
+  border-radius: var(--r-full);
+  background: var(--glass-ctl);
+  color: var(--ink-1);
+  font: inherit;
+  font-size: var(--t-11-5);
+  font-weight: var(--fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.board-scope .board-controls .bview-menu:hover { background: var(--glass-ctl-hover); border-color: var(--glass-ctl-edge-hover); }
+.board-scope .board-controls .bview-menu[data-on='true'] { background: var(--board-card); border-color: var(--edge-strong); }
+.board-scope .board-controls .bview-menu:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: 2px; }
+.board-scope .board-controls .bview-menu > .i { display: block; flex: none; }
+.board-scope .bview-list {
+  position: absolute;
+  top: calc(100% + var(--sp-6));
+  left: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: max-content;
+  min-width: calc(var(--sp-32) * 4);
+  max-height: min(calc(var(--sp-32) * 10), calc(100vh - var(--sp-32) * 4));
+  overflow-y: auto;
+  padding: var(--sp-6);
+  border: var(--w-hair) solid var(--edge);
+  border-radius: var(--r-10);
+  background: var(--board-card);
+  box-shadow: var(--e3);
+}
+.board-scope .bview-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: var(--row-h-tool);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-8);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-11-5);
+  text-align: left;
+  cursor: pointer;
+}
+.board-scope .bview-item:hover { background: var(--glass-ctl-hover); color: var(--ink-1); }
+.board-scope .bview-item.on { color: var(--ink-1); background: var(--accent-wash); }
+.board-scope .bview-item-t { flex: 1 1 auto; }
+.board-scope .bview-item-k { color: var(--ink-3); font-size: var(--t-10); }
+.board-scope .bview-item:focus-visible { outline: var(--w-rule) solid var(--accent); outline-offset: -2px; }
+.board-scope .board-controls .bbtn { display: inline-grid; place-items: center; }
+.board-scope .board-controls .bbtn > .i,
+.board-scope .board-controls .vt > .i { display: block; flex: none; }
+/* ROUND 13 (N5): on a narrow board the dock goes a notch smaller (the kind key that once shared its row is gone). The Find glyph, folded to a bare circle, is centred: no gap beside
+   a zero-width field. */
+@container board (max-width: 480px) {
+  .board-scope .bdock { gap: var(--sp-2); padding: var(--sp-2); }
+  .board-scope .bdock .bbtn { min-width: var(--row-h-tool); height: var(--row-h-tool); }
+}
+@container boardstack (max-width: 760px) {
+  .board-scope .board-controls .bfind { gap: 0; }
+  .board-scope .board-controls .bfind:focus-within { gap: var(--sp-6); }
+}
+
+/* ROUND 13 (BOARD 2): THE TOP ROW FOLDS ON THE BOARD'S OWN WIDTH (container boardstack, never the window): three surfaces open
+   leave a small pane at 1440 as well. In steps, as the pane narrows:
+     under 640px  the tags that are not open fold to their icon (tooltip and accessible name stay);
+     under 420px  the open tag folds to its icon too;
+     under 360px  the view pill drops its word, icon and chevron stay;
+     under 320px  several boards fold into the one pill, icon and chevron only.
+   Three or more boards (data-many) take each step sooner. A lone board (data-solo) only ever folds to its icon. */
+.board-scope .board-controls .board-tabs .btag-main { min-width: 0; }
+@container boardstack (max-width: 640px) {
+  .board-scope .board-controls .board-tabs .btag[data-on='false'] .btag-t,
+  .board-scope .board-controls .board-tabs .btag[data-on='false'] .btag-x { display: none; }
+  .board-scope .board-controls .board-tabs .btag[data-on='false'] .btag-main { width: calc(var(--row-h-tool) - var(--w-hair) * 2); padding: 0; justify-content: center; }
+}
+@container boardstack (max-width: 420px) {
+  .board-scope .board-controls .board-tabs .btag .btag-t,
+  .board-scope .board-controls .board-tabs .btag .btag-x { display: none; }
+  .board-scope .board-controls .board-tabs .btag .btag-main { width: calc(var(--row-h-tool) - var(--w-hair) * 2); padding: 0; justify-content: center; }
+}
+@container boardstack (max-width: 360px) {
+  .board-scope .board-controls .bview-menu .bview-menu-t { display: none; }
+  .board-scope .board-controls .bview-menu { padding: 0 var(--sp-8); gap: var(--sp-2); }
+}
+@container boardstack (max-width: 320px) {
+  .board-scope .board-controls .board-tabs:not([data-solo='true']) { overflow: visible; }
+  .board-scope .board-controls .board-tabs:not([data-solo='true']) .btag,
+  .board-scope .board-controls .board-tabs:not([data-solo='true']) .btag-add { display: none; }
+  .board-scope .board-controls .board-tabs:not([data-solo='true']) .btag-fold { display: inline-flex; }
+}
+@container boardstack (max-width: 760px) {
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag[data-on='false'] .btag-t,
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag[data-on='false'] .btag-x { display: none; }
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag[data-on='false'] .btag-main { width: calc(var(--row-h-tool) - var(--w-hair) * 2); padding: 0; justify-content: center; }
+}
+@container boardstack (max-width: 560px) {
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag .btag-t,
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag .btag-x { display: none; }
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag .btag-main { width: calc(var(--row-h-tool) - var(--w-hair) * 2); padding: 0; justify-content: center; }
+}
+@container boardstack (max-width: 480px) {
+  .board-scope .board-controls .board-tabs[data-many='true'] ~ .bview-menu-wrap .bview-menu .bview-menu-t { display: none; }
+  .board-scope .board-controls .board-tabs[data-many='true'] ~ .bview-menu-wrap .bview-menu { padding: 0 var(--sp-8); gap: var(--sp-2); }
+  .board-scope .board-controls .board-tabs[data-many='true'] { overflow: visible; }
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag,
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag-add { display: none; }
+  .board-scope .board-controls .board-tabs[data-many='true'] .btag-fold { display: inline-flex; }
+}
+
+/* Round 0.1.5: the strip's caption leaves before any tag folds. */
+@container boardstack (max-width: 760px) {
+  .board-scope .board-controls .board-tabs .btag-cap { display: none; }
+}
+
+/* Round 0.1.5: a board folded to its one pill takes the pill's own width. At 30 px it let the glyph and chevron run over the
+   view pill beside it (a 240 px pane, three surfaces open). */
+@container boardstack (max-width: 320px) {
+  .board-scope .board-controls .board-tabs:not([data-solo='true']) { min-width: max-content; flex: none; }
+}
+@container boardstack (max-width: 480px) {
+  .board-scope .board-controls .board-tabs[data-many='true'] { min-width: max-content; flex: none; }
+}
+/* At a pane's 240 px floor the row (boards fold, view pill, More) must end before the pane's own top-right controls: the
+   find field, already folded to a bare circle, leaves the row (the search door stays in the command palette). */
+@container boardstack (max-width: 260px) {
+  .board-scope .board-controls .bfind { display: none; }
+}
+
+/* 0184 finish: before the scan has nodes the tags are not in the toolbar row but float over the board's corner (right: 80px),
+   where none of the rules above reach. In a 240 px pane that box is 146 px and the lone Architecture tag with its title (117 px)
+   plus + (30 px) ran 5 px past it, + outside the box. Same folds as the toolbar: the title goes at 420 px and under, leaving the icon. */
+@container boardstack (max-width: 420px) {
+  .board-scope.board-stack > .board-tabs .btag .btag-t,
+  .board-scope.board-stack > .board-tabs .btag .btag-x { display: none; }
+  .board-scope.board-stack > .board-tabs .btag .btag-main { width: calc(var(--row-h) - var(--w-hair) * 2); padding: 0; justify-content: center; }
+}

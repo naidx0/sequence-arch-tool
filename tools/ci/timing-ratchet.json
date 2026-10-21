@@ -1,0 +1,245 @@
+{
+  "$comment": "Wall-clock, memory and size ratchets (handoff item 24, audit L9). Checked by tools/ci/timing-ratchet.mjs on the JSON the existing benches write. Separate from tools/measure/perf-ratchet.json, which holds deterministic boot COUNTS (tools/ci/perf-ratchet.mjs). A baseline moves one way: when the check prints 'lower the baseline to X', put X in this file in the same commit. A baseline of null is unset: the check prints the first measured value and passes; record it here, do not guess it.",
+  "metrics": {
+    "scanColdMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.15,
+        "abs": 2000
+      },
+      "measuredBy": "pnpm bench:scan --no-big: repos[0].cliColdMs.median (cli.js scan --no-cache of the pinned commit)"
+    },
+    "attachColdMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.15,
+        "abs": 2000
+      },
+      "measuredBy": "pnpm bench:scan --no-big: repos[0].attachColdMs.median (app --repo spawn to /api/status attached; the cold attach the window waits for). A cached attach is not measured by any existing bench; add it to scan-bench before ratcheting it."
+    },
+    "oneFileRescanMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.2,
+        "abs": 150
+      },
+      "measuredBy": "pnpm bench:scan --no-big: repos[0].oneFileRescanMs.median (edit one file, POST /api/scan)"
+    },
+    "idleRssKb": {
+      "unit": "KiB",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.1,
+        "abs": 20480
+      },
+      "measuredBy": "pnpm bench:scan --no-big: repos[0].settledRssKb.median (engine RSS once CPU < 2 % for 5 s after the attach scan)"
+    },
+    "windowShownMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 300
+      },
+      "measuredBy": "pnpm test:release report.json, row window-shown: 'window shown N ms after launch'. The 2,000 ms budget in tools/release-smoke stays as is; this is a per-class ratchet below it."
+    },
+    "serverBytes": {
+      "unit": "bytes",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.02,
+        "abs": 262144
+      },
+      "measuredBy": "total file bytes under packages/desktop/release/*-unpacked/resources/server (--server-dir; dirSize from tools/release-smoke/lib.mjs, the same number the server-size budget reads)"
+    },
+    "installerBytes": {
+      "unit": "bytes",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.02,
+        "abs": 1048576
+      },
+      "measuredBy": "size of the installer the release workflow uploads (--installer <packages/desktop/release/*.exe>)"
+    },
+    "clientColdStartMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 300
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['coldStartMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    },
+    "clientWarmStartMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 300
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['warmStartMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    },
+    "clientSettingsOpenMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 60
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['open.settings.firstMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    },
+    "clientSearchOpenMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 60
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['open.search.firstMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    },
+    "clientHelpOpenMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 60
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['open.help.firstMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    },
+    "clientFilesOpenMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 60
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['open.files.firstMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    },
+    "clientBoardOpenMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 60
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['open.board.firstMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    },
+    "clientTerminalOpenMs": {
+      "unit": "ms",
+      "direction": "lower",
+      "tolerance": {
+        "rel": 0.25,
+        "abs": 60
+      },
+      "measuredBy": "node tools/bench/client/run.mjs --runs 10 --only a,b,c, summary['open.terminal.firstMs'].median (packaged app, shopfront, throttle 1), passed as --client <json>"
+    }
+  },
+  "classes": {
+    "local": {
+      "description": "A developer machine or the shared build container, run by hand. Noisy under load: re-measure before raising anything.",
+      "baselines": {
+        "scanColdMs": {
+          "value": 7369,
+          "source": "tools/measure/out/scan-bench-f9b623cee65c-2026-10-15T10-12-17-065Z.json (3 reps, 16 CPUs, quiet machine, build 65233262c), cliColdMs.median"
+        },
+        "attachColdMs": {
+          "value": 8570,
+          "source": "same file, attachColdMs.median"
+        },
+        "oneFileRescanMs": {
+          "value": 858,
+          "source": "same file, oneFileRescanMs.median"
+        },
+        "idleRssKb": {
+          "value": 158008,
+          "source": "same file, settledRssKb.median (154 MiB)"
+        },
+        "windowShownMs": {
+          "value": 433,
+          "source": "docs/plans/0.1.9/HANDOFF.md:116, pnpm test:release on Jaden's PC"
+        },
+        "serverBytes": {
+          "value": null,
+          "source": "no recorded number in the repo; first release build records it"
+        },
+        "installerBytes": {
+          "value": null,
+          "source": "no recorded number in the repo; first release build records it"
+        },
+        "clientColdStartMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        },
+        "clientWarmStartMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        },
+        "clientSettingsOpenMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        },
+        "clientSearchOpenMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        },
+        "clientHelpOpenMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        },
+        "clientFilesOpenMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        },
+        "clientBoardOpenMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        },
+        "clientTerminalOpenMs": {
+          "value": null,
+          "source": "unset: set from the quiet-machine BEFORE/AFTER in docs/bench/PERF-0.1.8.3.md"
+        }
+      }
+    },
+    "linux-ci": {
+      "description": "GitHub ubuntu-latest runner, job timing-ratchet in ci.yml.",
+      "baselines": {
+        "scanColdMs": {
+          "value": null,
+          "source": "unset: first CI run prints the value"
+        },
+        "attachColdMs": {
+          "value": null,
+          "source": "unset"
+        },
+        "oneFileRescanMs": {
+          "value": null,
+          "source": "unset"
+        },
+        "idleRssKb": {
+          "value": null,
+          "source": "unset"
+        }
+      }
+    },
+    "windows-ci": {
+      "description": "GitHub windows-latest runner (release smoke). Its own class: window-shown measured 3,176 ms there against 433 ms on Jaden's PC (HANDOFF.md:116).",
+      "baselines": {
+        "windowShownMs": {
+          "value": null,
+          "source": "unset: HANDOFF.md:116 records one run at 3,176 ms; record a repeated measure, not that single read"
+        },
+        "serverBytes": {
+          "value": null,
+          "source": "unset"
+        },
+        "installerBytes": {
+          "value": null,
+          "source": "unset"
+        }
+      }
+    }
+  }
+}

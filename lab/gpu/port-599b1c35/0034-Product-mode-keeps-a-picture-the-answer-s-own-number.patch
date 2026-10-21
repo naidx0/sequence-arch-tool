@@ -1,0 +1,96 @@
+From 1ecb5daafa22076629db5cc28e7712cbc180bee5 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Thu, 24 Sep 2026 05:50:46 -0400
+Subject: [PATCH 34/37] Product mode keeps a picture: the answer's own numbered
+ steps become a user-flow chart when the model drew none
+
+Blind check 2 lost 19 visual points because product mode turns off the file-chart floor and the
+model rarely draws. Concepts only (no nodeId), validated like any chart. 1 test.
+---
+ packages/analyzer/src/server/askPipeline.ts   | 35 +++++++++++++++++++
+ .../src/test/teach-product-mode.test.ts       | 19 ++++++++++
+ 2 files changed, 54 insertions(+)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index d2b8b77e..158ca8a1 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -2494,6 +2494,29 @@ export function teachProductTurn(input: { teach?: boolean; question: string; his
+   return (input.historyLines ?? []).some((l) => l.startsWith('User: ') && isProductQuestion(l.slice('User: '.length)));
+ }
+ 
++/** The answer's own numbered steps (3 to 8) as a user-flow chart; nothing else is drawn. */
++export function productStepsChart(text: string, question: string): SeqChart | undefined {
++  const steps = [...text.matchAll(/^\s*(?:\d+[.)]|step \d+[:.])\s+(.+)$/gim)]
++    .map((m) => m[1]!.replace(/\*\*|`/g, '').replace(/\s+/g, ' ').trim())
++    .filter((line) => line.length > 0);
++  if (steps.length < 3) return undefined;
++  const picked = steps.slice(0, 8);
++  const label = (line: string): string => {
++    const head = line.split(/[:.;,(]|\s[-–—]\s/)[0]!.trim();
++    const short = head.length > 0 ? head : line;
++    return short.length > 48 ? `${short.slice(0, 47).trimEnd()}…` : short;
++  };
++  const chart = {
++    version: 1,
++    kind: 'user-flow',
++    title: question.length > 60 ? 'How it works, step by step' : `How it works: ${question.replace(/[?!.]+$/, '')}`,
++    items: picked.map((line, i) => ({ id: `s${i + 1}`, label: label(line), detail: line })),
++    links: picked.slice(1).map((_, i) => ({ from: `s${i + 1}`, to: `s${i + 2}` })),
++  };
++  const checked = validateChart(chart, undefined, undefined);
++  return checked.ok ? checked.chart : undefined;
++}
++
+ export function renderProductQuestionInstructions(historyLines?: readonly string[]): string {
+   const lastAnswer = [...(historyLines ?? [])].reverse().find((l) => l.startsWith('Assistant: '));
+   const lines = [
+@@ -5570,6 +5593,18 @@ ${lastToolSectionText}`);
+       const aimedPathOnHand =
+         input.teachContext?.subjectNotInRepo !== true &&
+         traceFlowsThisTurn.some((t) => gatheredFlows.has(t) && t.to !== undefined);
++      /* A PRODUCT ANSWER KEEPS A PICTURE (blind check 2, 2026-09-24: product mode lost
++         19 visual points because the file-chart floor is off and the model rarely
++         draws). Its own numbered steps become the flow, when it drew nothing. */
++      if (input.teach === true && chartsThisTurn === 0 && teachProductTurn(input)) {
++        const stepsChart = productStepsChart(text, input.question);
++        if (stepsChart !== undefined) {
++          chartsThisTurn += 1;
++          lastChartThisTurn = stepsChart;
++          artefactsThisTurn.push({ kind: 'chart', label: stepsChart.title });
++          push({ type: 'chart:proposal', chart: stepsChart });
++        }
++      }
+       if (
+         input.teach === true &&
+         (chartsThisTurn === 0 || (aimedPathOnHand && !flowChartLanded)) &&
+diff --git a/packages/analyzer/src/test/teach-product-mode.test.ts b/packages/analyzer/src/test/teach-product-mode.test.ts
+index 33ce88cb..9d5a4a62 100644
+--- a/packages/analyzer/src/test/teach-product-mode.test.ts
++++ b/packages/analyzer/src/test/teach-product-mode.test.ts
+@@ -77,3 +77,22 @@ test('recogniser v2: wider questions count, a question naming a file does not, a
+     else process.env.SEQUENCE_TEACH_PRODUCT_MODE = before;
+   }
+ });
++
++test('a product answer with numbered steps and no chart gets those steps drawn as a user flow', async () => {
++  const { productStepsChart } = await import('../server/askPipeline.js');
++  const answer =
++    'ML Harness helps you decide whether to train a model.\n\n1. You describe your task: what data you have.\n2. It profiles the data and checks for leaks.\n3. It measures a baseline with a local model.\n4. It tries better prompts before any training.\n5. Only then does it hand training to a backend.';
++  const chart = productStepsChart(answer, 'what is ml harness?');
++  assert.ok(chart);
++  assert.equal(chart!.kind, 'user-flow');
++  assert.deepEqual(chart!.items.map((i) => i.label), [
++    'You describe your task',
++    'It profiles the data and checks for leaks',
++    'It measures a baseline with a local model',
++    'It tries better prompts before any training',
++    'Only then does it hand training to a backend',
++  ]);
++  assert.equal(chart!.links!.length, 4);
++  assert.ok(chart!.items.every((i) => i.nodeId === undefined));
++  assert.equal(productStepsChart('One sentence, no steps.', 'what is it?'), undefined);
++});
+-- 
+2.51.1.windows.1
+

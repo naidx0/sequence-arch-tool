@@ -1,0 +1,11 @@
+{
+  "about": "Held-out repos for bench:findfiles and bench:closure. All six are in tools/qa-loop/manifest.json (pinned OSS set). `sha` is the upstream HEAD on 2026-10-14; questions are sampled only from the first-parent history ending at `sha`. None is codeforge, ml-harness or premai. The ranker's training list is NOT recorded in this tree (see README.md in this directory), so 'never seen by the ranker' is an assumption this file cannot prove.",
+  "repos": [
+    { "id": "flask", "url": "https://github.com/pallets/flask.git", "sha": "d086db856be187255b8ec61ef409357393020f32", "lang": "python", "closure": "python", "why": "Python library, small tree, dense src/flask + tests/ split (exercises the test-file down-weighting)." },
+    { "id": "sqlfluff", "url": "https://github.com/sqlfluff/sqlfluff.git", "sha": "467d5927e00faeaaeb9fd73fa68e752d8ca60e7e", "lang": "python", "closure": "python", "why": "Python CLI monolith with a deep plugin/dialect tree, many same-named files (hard for path words)." },
+    { "id": "express", "url": "https://github.com/expressjs/express.git", "sha": "a419aa7350389a275ab45fde2e849ed1f02449ef", "lang": "javascript", "closure": "js", "why": "Plain CommonJS JavaScript library, small tree, long first-parent history." },
+    { "id": "gin", "url": "https://github.com/gin-gonic/gin.git", "sha": "0f09c3a9b4626d9fe9979cf4d0521d6ae32ab646", "lang": "go", "closure": null, "why": "Go library (one package per directory, so no file-level import closure: A1 only)." },
+    { "id": "vite", "url": "https://github.com/vitejs/vite.git", "sha": "c2c9ef4dcd05b3e4d88844ea3a13dc23819ca2a5", "lang": "typescript", "closure": "js", "why": "TypeScript pnpm monorepo, large, many packages and playground fixtures." },
+    { "id": "excalidraw", "url": "https://github.com/excalidraw/excalidraw.git", "sha": "4c37956ba5f04ec342a9d9d5891a38f22c5b7b4e", "lang": "typescript", "closure": "js", "why": "TypeScript/React frontend monorepo, large, path-aliased imports." }
+  ]
+}

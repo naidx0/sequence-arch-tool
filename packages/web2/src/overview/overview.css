@@ -1,0 +1,371 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   THE CHAT OVERVIEW PANEL
+   packages/web2/src/overview/overview.css
+
+   A compact glass panel floating over the background beside a chat that is alone, and a small pill when it folds.
+   It takes NO grid column and has NO height of its own: the content sizes it, a max-height (set by overviewPlace.ts
+   from the row's real bounds) bounds it, and it scrolls inside. Glass is the app's own floating material
+   (--panel-glass: the translucent fill the Agents dock wears, with no backdrop blur of its own, which the style ratchet caps), the card edge and shadow
+   tokens, radius --r-14. Text is --b-ink1..3 with no hue: the active step is the only thing that takes the accent.
+   HUE BUDGET: 1 (the active step, --b-acc).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.ov {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+  color: var(--b-ink2);
+  font-size: var(--t-12);
+}
+.ov-panel,
+.ov-pop {
+  padding: var(--sp-6);
+  border: var(--w-hair) solid var(--b-glassedge);
+  border-radius: var(--r-14);
+  background: var(--surface-1);
+  /* No heavy shadow: the panel floats on a light glass edge alone (owner, 0.1.8.4). */
+  box-shadow: none;
+  overflow-y: auto;
+}
+.ov-panel {
+  width: 272px;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  @media not (prefers-reduced-transparency: reduce) {
+    .ov-panel,
+    .ov-pop {
+      background: var(--panel-glass);
+    }
+  }
+}
+/* Floating over the row: out of the grid and out of the flex flow, so the chat keeps its centred width. */
+.ov-float {
+  position: absolute;
+  z-index: 2;
+}
+/* The chat-card shift rule lives in shell2.css (static first paint loads that sheet). */
+/* The pill, floating or in the chat header, is one control; the popover hangs from it. */
+.ov-pill,
+.ov-inline {
+  position: relative;
+  flex: none;
+  width: auto;
+}
+.ov-pop {
+  position: absolute;
+  top: calc(100% + var(--sp-4));
+  right: 0;
+  z-index: 40;
+  width: 272px;
+  max-height: min(60vh, 440px);
+}
+/* From the chat header the popover opens rightward, inside the card, not left over the sidebar. */
+.ov-inline .ov-pop {
+  right: auto;
+  left: 0;
+}
+.ov-slot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.ov-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  padding-left: var(--sp-8);
+}
+.ov-head-t {
+  color: var(--b-ink3);
+  font-weight: var(--fw-label);
+}
+.ov .ov-pillbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--control-h);
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-full);
+  box-shadow: none;
+  color: var(--b-ink2);
+  font: inherit;
+  white-space: nowrap;
+}
+.ov-pill-n {
+  color: var(--b-ink1);
+  font-variant-numeric: tabular-nums;
+}
+.ov-empty {
+  padding: var(--sp-2) var(--sp-8);
+}
+
+.ov-sec {
+  display: flex;
+  flex-direction: column;
+}
+.ov .ov-sec-h {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: 100%;
+  min-height: var(--row-h-tool);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  box-shadow: none;
+  color: var(--b-ink3);
+  font: inherit;
+  font-weight: var(--fw-label);
+  text-align: left;
+  cursor: pointer;
+}
+.ov .ov-sec-h:hover,
+.ov .ov-row:hover {
+  box-shadow: none;
+}
+.ov .ov-sec-h:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.ov-sec-t {
+  flex: 1;
+  min-width: 0;
+}
+.ov-sum {
+  flex: none;
+  max-width: 60%;
+  overflow: hidden;
+  color: var(--b-ink3);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-sec-b {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4) var(--sp-6);
+}
+
+/* The live loop: its name, then its steps as a list. */
+.ov-loop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.ov-sub {
+  margin: 0;
+  padding: 0 var(--sp-4);
+  color: var(--b-ink3);
+}
+.ov-run {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0 var(--sp-4);
+}
+.ov-run-r {
+  color: var(--b-ink3);
+  font-variant-numeric: tabular-nums;
+}
+.ov-run-s {
+  color: var(--b-ink1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ov-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ov-todo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+  padding: var(--sp-2) var(--sp-4);
+  color: var(--b-ink2);
+}
+.ov-todo[data-status='done'] {
+  color: var(--b-ink3);
+}
+/* THE ACCENT IS SPENT ON A STEP THAT IS HAPPENING NOW, AND ON NOTHING ELSE.
+   The panel's one hue says one thing, and a turn that has ended is not happening: its list
+   still carries the step the model left active, and painting that step in the accent said
+   "running" about a run that is over. A live list spends the hue; a settled one does not. */
+.ov-todos[data-live='true'] .ov-todo[data-status='active'] {
+  color: var(--b-ink1);
+}
+.ov-todos[data-live='true'] .ov-todo[data-status='active'] .ov-mark {
+  color: var(--b-acc);
+}
+.ov-todo[data-status='failed'] {
+  color: var(--spills);
+}
+.ov-mark {
+  flex: none;
+  width: var(--sp-12);
+  text-align: center;
+}
+.ov-todo-t {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ov-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ov-kv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  margin: 0;
+  padding: 0 var(--sp-4);
+}
+.ov-kv > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+}
+.ov-kv dt {
+  color: var(--b-ink3);
+}
+.ov-kv dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--b-ink1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-ring {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  font-variant-numeric: tabular-nums;
+}
+.ov-fleet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  font-variant-numeric: tabular-nums;
+}
+.ov-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.ov-mark-a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--b-ink1);
+}
+.ov-mark-a .s2-brand {
+  width: 14px;
+  height: 14px;
+}
+.ov-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0 var(--sp-4);
+  list-style: none;
+}
+.ov-chip {
+  max-width: 100%;
+  padding: var(--sp-2) var(--sp-8);
+  overflow: hidden;
+  border: var(--w-hair) solid var(--b-glassedge);
+  border-radius: var(--r-full);
+  background: var(--b-glass);
+  color: var(--b-ink2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ov .ov-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  min-height: var(--row-h-tool);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  box-shadow: none;
+  color: var(--b-ink2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ov .ov-row:hover {
+  background: var(--b-glass-hover);
+  color: var(--b-ink1);
+}
+.ov .ov-row.is-static {
+  cursor: default;
+}
+.ov .ov-row.is-static:hover {
+  background: transparent;
+  box-shadow: none;
+  color: var(--b-ink2);
+}
+.ov-row-t {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+/* THE FOLDER IN FRONT OF THE NAME, AND IT IS WHAT GIVES WAY.
+   "index.ts" alone does not say WHICH index.ts, and this repository has seventeen of them:
+   two rows reading exactly alike are two rows the reader cannot use. The folder is dimmed
+   in front of the name and is cut from its FRONT (the nearest folder is what tells two files
+   apart), so the name itself is never cut. The same rule the Files tree uses
+   (files.css, .files-name-dir). */
+.ov-row-dir {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  color: var(--b-ink3);
+}
+.ov-row-n {
+  flex: none;
+}
+.ov-row-s {
+  flex: none;
+  color: var(--b-ink3);
+}
+
+.ov-quick {
+  display: flex;
+  padding: var(--sp-2) var(--sp-4) var(--sp-2);
+}
+.ov-quick-in {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}

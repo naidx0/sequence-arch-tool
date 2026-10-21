@@ -1,0 +1,10 @@
+{
+  "title": "Agent hub",
+  "nodes": [
+    { "id": "proposal:core", "label": "Harness Core", "kind": "service" },
+    { "id": "proposal:router", "label": "Router", "kind": "service" }
+  ],
+  "edges": [
+    { "id": "e1", "from": "proposal:core", "to": "proposal:router", "family": "call" }
+  ]
+}

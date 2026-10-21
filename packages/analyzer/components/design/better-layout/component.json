@@ -1,0 +1,22 @@
+{
+  "id": "design/better-layout",
+  "group": "design",
+  "label": "Better Layout",
+  "summary": "Helps with grouping, alignment, reading order, responsive structure and room for translated text, so a layout holds up when it is...",
+  "triggers": [
+    "fix the layout",
+    "alignment and grouping",
+    "responsive structure",
+    "spacing rhythm",
+    "layout that holds for translated text"
+  ],
+  "status": "ready",
+  "parent": "design/interface",
+  "license": "MIT",
+  "source": {
+    "repo": "jakubkrehel/skills",
+    "commit": "c0588bb6d654eb725046f0bf9deec338c34891ab",
+    "path": "skills/better-layout"
+  },
+  "url": "https://github.com/jakubkrehel/skills/tree/c0588bb6d654eb725046f0bf9deec338c34891ab/skills/better-layout"
+}

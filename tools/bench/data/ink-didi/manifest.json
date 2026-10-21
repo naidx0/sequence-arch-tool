@@ -1,0 +1,34 @@
+{
+  "about": "Pins for bench:ink. The DiDi data (Google, CC BY 4.0, see docs/THIRD-PARTY-NOTICES.md) is not committed. download.mjs fetches the fresh-sealed slice (bytes 1000000000-1222429135 of diagrams_20200131.ndjson, sealed 2026-10-10, see tools/bench/ink-fresh-sealed.txt), keeps the complete lines whose split is test (530 drawings), fetches their 501 prompt xdot files, and verifies every sha256 below, failing loudly on a mismatch.",
+  "source": {
+    "base": "https://storage.googleapis.com/digital_ink_diagram_data",
+    "ndjson": "diagrams_20200131.ndjson",
+    "ndjsonBytes": 1222429136,
+    "rangeStart": 1000000000,
+    "rangeEnd": 1222429135,
+    "rawSliceSha256": "906221bd36f05e2327a7b26521096b3fdc89ba1db3c033effa044b9decfe3e46",
+    "etag": "229e0e42adb441e3a346695fae61cea6"
+  },
+  "testDrawings": {
+    "split": "test",
+    "count": 530,
+    "note": "test-split lines of the slice after dropping the partial first line, joined with LF plus a trailing LF",
+    "sha256": "bba0d85acc81a6f769fbca6d74a8634076bf5d71c6fb5558a2a85d259d45f06c"
+  },
+  "prompts": {
+    "file": "prompts.json",
+    "count": 501,
+    "note": "per distinct label_id (501 across the 530 drawings): sha256 of xdot/<label_id>.xdot and the PNG [width,height] read from png/<label_id>.png's IHDR",
+    "sha256": "974e8959f3cb432a3299abe2eb1d701b9189cc0f5c998ec32a54abfcff552693"
+  },
+  "labeller": {
+    "file": "tools/bench/ink-didi-label.mjs",
+    "sha256LF": "431bd08836257c0d7e18388ef86e35598dada6a8110cb67d61eaa31de0ee8931",
+    "note": "hash of the file with CR bytes removed (the tree may be CRLF)"
+  },
+  "strokes": {
+    "count": 22890,
+    "sha256": "920be2e22bcaae92b282f32bf31104410e75729dd368aae2f27a6999cfb70956",
+    "note": "ink-didi-label.mjs output over the test drawings, as written"
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "ask-honesty": {
+    "graph": "",
+    "facts": "",
+    "files": 0,
+    "error": "no-manifests"
+  },
+  "cli-tool": {
+    "graph": "7f6576fb7e77d7362fddc5637e13dd327770f1250134c37842ece2098cf736ce",
+    "facts": "ea0c9a4e5deb5445af0ff356f2032c1fc450eb85bac7e97436b45adfb531d971",
+    "files": 2
+  },
+  "dockerfile-env-mini": {
+    "graph": "12115b79b1cf70b00f8acc714ad49ee4ae87f95fc10ab5aeb912ef424958a1ea",
+    "facts": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "files": 0
+  },
+  "express-cjs": {
+    "graph": "5f4dca5f5409d4880d503c6b2937ca1135f97d74ab35392ffaeffd8c20253851",
+    "facts": "87357f4250d6917b9cbd9c1b3d57db5e6e495a35c18bacacc88af9661ab298a0",
+    "files": 4
+  },
+  "go-import-cross-pkg": {
+    "graph": "d1feb8227c12ff0abb38d7db74670f508bb3f8fdc4cc911356f33ea6f95d048f",
+    "facts": "ad0794c3377049f5134ec687a63204e1aedf153e099aa78739f72d3f6e0c72f1",
+    "files": 3
+  },
+  "go-package": {
+    "graph": "",
+    "facts": "",
+    "files": 0,
+    "error": "no-manifests"
+  },
+  "gomod-root": {
+    "graph": "174179ce6fb9e60ede6510933afca574a381c83762963f534bb9b6f0a4aeb4b6",
+    "facts": "deeefa3ae0cce396e6e9b6855e54bd57ad9cabb3f89cde78c8d7c104d8d93a9a",
+    "files": 2
+  },
+  "gradle-root": {
+    "graph": "320ef8dda44b4539b2b071aac2292081fb83eb46d90b122d844e35483f58ee01",
+    "facts": "a540443d87e1eaabf27e888177c93f55ad08cf937e0a296c5f6b78ffdb589c68",
+    "files": 2
+  },
+  "image-only-compose": {
+    "graph": "13f6326f4ad34686abdf7c909268d6bdc084beb2be5301d8028a10171eed0771",
+    "facts": "59a901c869270155c7559c9664625e8aea9263e980afb2df33ac06f863859c2e",
+    "files": 3
+  },
+  "java-spring-entry": {
+    "graph": "",
+    "facts": "",
+    "files": 0,
+    "error": "no-manifests"
+  },
+  "js-dynamic-nested-pkg": {
+    "graph": "5eaa745fac0915b260a5c12a7deb3422254b908510f6e46d018be1f2aadcc998",
+    "facts": "3dc8de45648f8b1bbeaccc49e5d01daa4b37a994b0c962a0c6ee0bc50bd7a040",
+    "files": 8
+  },
+  "k8s-mini": {
+    "graph": "",
+    "facts": "",
+    "files": 0,
+    "error": "no-manifests"
+  },
+  "k8s-nested-helm": {
+    "graph": "dada362745f7faf45bcfef96f1c40b6d85ab5d7e5ad5ce0e425ee4800f4e06cf",
+    "facts": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "files": 0
+  },
+  "library-dev-compose": {
+    "graph": "562e219e2072a16d280c8ecf2badc82a4d994e3871d9775d1256ff963104a8e2",
+    "facts": "104ca8601b3d6d21a69d741505f1579aa3cb511ab8b8edf2d2d750b80129294d",
+    "files": 4
+  },
+  "mcp": {
+    "graph": "",
+    "facts": "",
+    "files": 0,
+    "error": "no-manifests"
+  },
+  "mixed-lang": {
+    "graph": "32c1713eb4f45d11c08452ec1a924a7c9057226ac64a53e90525aa8bb2ea12a1",
+    "facts": "f14fa3b015b618fa55ea301130fc5a39e8fe936cfaaae599e85da74c6af00318",
+    "files": 10
+  },
+  "mobile-flutter": {
+    "graph": "4e8708237b3aa9d7310a2874c8f477dd96ad4fe9930ff9be42c93d1af47aa59e",
+    "facts": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "files": 0
+  },
+  "mobile-rn": {
+    "graph": "5bdd5172cf1f1661e9b35018fe1d92fa56d8247b14b998cd7e162805ff441393",
+    "facts": "695885577c9229d35d75ba878d4afcee172e58773ab5bd6f86903e7119045c31",
+    "files": 3
+  },
+  "model-routes-baseline": {
+    "graph": "",
+    "facts": "",
+    "files": 0,
+    "error": "no-manifests"
+  },
+  "monorepo-apps": {
+    "graph": "42be13964da311c11e133b01b156eb70a5b80cdfc0d1aa7bc86791a2d831368c",
+    "facts": "3d1242a6cbde963c7c065b4bea57dea7b49bfc73a01a56d4a13e2796c8bee974",
+    "files": 10
+  },
+  "narrow-build-context": {
+    "graph": "c3d25a6d258bba59cfbd7a6517d170cf945f286372bf43fd57f2d63866a1ad71",
+    "facts": "dc919b23df59ac9fc27f421484704dd8bb3bcafb06b62d4d903a187a96df03e8",
+    "files": 2
+  },
+  "plainapp": {
+    "graph": "43bb3ac9970cb43b67bdfc26ea3ce965866aa1593f93a64743458f059939f424",
+    "facts": "749b8366747d796b5abde330ef6c14c16d26deb2d3cc05dfcd39dc516765bbc2",
+    "files": 2
+  },
+  "prompt-injection": {
+    "graph": "3d2e9ff63555be85fc7b1e8a7d0494a1fabcf377d889c60f8adca52f72ea9648",
+    "facts": "93ff2cb106245f1939b08787e56879aa9dec326562223d4ab2e7847d0f4ca1f0",
+    "files": 3
+  },
+  "py-cross-service": {
+    "graph": "de02d4e427e67597eb30c6d1ac83a3d81308e3953644aea59c27d01a37710001",
+    "facts": "7f3e2429ee7f9f99d464cd308afd3162a4fe24f6c40dea92b8f62275a617f639",
+    "files": 3
+  },
+  "py-package-loads": {
+    "graph": "a2c766b14a874ec2294484bad4e518e241f27808c55e564c53a9bd3e198e0ed2",
+    "facts": "6d71504dc346da2d63e1db8795522e104552401fa9ec34947e37648f7161f18f",
+    "files": 6
+  },
+  "py-src-layout": {
+    "graph": "3a3e139c57cf6faa5d4344a46b348779efeb49fa1b3bd86beed79809f2b917e4",
+    "facts": "dc2801765d8cf8a1817b1e1e702bccb67e2bb98a9956722838cfc26500345495",
+    "files": 6
+  },
+  "pyproject-root": {
+    "graph": "d8fc9a2a0ea50c88fca1ef59700149aec64200b9c946f7da1d2a35be703aec7b",
+    "facts": "ed111539b16dc52244c08bbe35cbbd011db41c31baeb763aacc1c7b1489c12ac",
+    "files": 2
+  },
+  "shared-backend": {
+    "graph": "9931cc1b3fb6d7a75db13861652f0397ee42f2696631f94a24313741c659df1d",
+    "facts": "b067eb89aebe7b6ac1b61cc3748d71764430590dcef39104ce068be2eb911121",
+    "files": 10
+  },
+  "shopfront": {
+    "graph": "7c200d5b67a1ce2d7be467e68f01a88599cb5f4d1d92e54918032117d9a78574",
+    "facts": "855386098405e33df8fff7ae75314ce68e3af6e8ff5534cbb2173c126d446f17",
+    "files": 22
+  },
+  "shopfront-mutated": {
+    "graph": "eaef84cfd54f0d87f7627dddbc3d9cf8a8c9d3f54407321c34ebb96c72fbc54d",
+    "facts": "a2432c1f4af033fd1dca12ee0f55c6d593887906470605e5f31e9ccf2a25de11",
+    "files": 21
+  },
+  "spa-dashboard": {
+    "graph": "ffdd16d216dc66afd1e7145c98445b05a766b1d03ee6e273e795ec8056ab8e12",
+    "facts": "d1a9059be545a8349fc3e4b0574cfd846ca10b2436eeb09058a20aca19c67215",
+    "files": 4
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "t28-range-step",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

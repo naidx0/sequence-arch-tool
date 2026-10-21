@@ -1,0 +1,10 @@
+sealed_at: 2026-10-10T03:06:21Z
+what: fresh sealed slice, DiDi diagrams_20200131.ndjson bytes 1000000000-1222429135 (never read before 2026-10-10), split=test only, 530 drawings
+strokes_jsonl_sha256: 920be2e22bcaae92b282f32bf31104410e75729dd368aae2f27a6999cfb70956
+drawings_ndjson_sha256: bba0d85acc81a6f769fbca6d74a8634076bf5d71c6fb5558a2a85d259d45f06c
+labeller_sha256: 431bd08836257c0d7e18388ef86e35598dada6a8110cb67d61eaa31de0ee8931
+strokes: 22890; keys_sha256: f4a684565343d9080a05a476a1ed919bca5b084d7e270a22eb24d8f3adc637af
+overlap with the first 450MB (the old test/train/valid): none by construction (different byte ranges); prompts may repeat (see README)
+looked_at: 2026-10-10 once, with the final shipped model (70 rounds, threshold 0.3, group threshold 0.8); no knob changed afterwards
+fresh test lone (new model) macroF1 0.6362 wrongSnap 1.97%; grouped macroF1 0.8955 acc 0.9389 wrongSnap 1.62% recall 0.780 (13175 strokes, 530 drawings)
+fresh test, old v1 model lone: macroF1 0.6489 acc 0.8811 wrongSnap 3.64% recall 0.544

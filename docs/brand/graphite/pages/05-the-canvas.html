@@ -1,0 +1,651 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SHEET 05 — THE CANVAS: FIELD, CAMERA AND GESTURE
+     Fragment. Body content only. _core.html supplies every token and class.
+
+     NOTE ON NUMBERS. Law 4 forbids invented values. Three kinds of number
+     appear below and each is legitimate:
+       1. TOKEN ARITHMETIC — 24 x 0.25 = 6 is --board-field-pitch scaled to
+          --sp-6. The reader can check it against the token sheet.
+       2. DECLARED CONSTANTS — the zoom floor, the zoom ceiling and the fit
+          inset are decisions this sheet makes, in the same class as "thread
+          rows are 28px". Each is derived from token arithmetic in 05.4/05.5.
+       3. MEASURED DEFECTS — values quoted from the shipped Sequence board are
+          measurements of code that exists, named in prose, never re-drawn as
+          a literal in a specimen.
+     Anything the engine computes at run time is <span class="ph">.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<section class="page" data-page-num="05" data-page-title="The canvas: field, camera and gesture" id="p05">
+
+  <div class="pagehead">
+    <span class="num">Sheet 05 &middot; The board</span>
+    <h1>The canvas: field, camera and gesture</h1>
+    <p class="lede">
+      Sequence is one live canvas. Everything else &mdash; the chat on the left, the file and
+      functions rail on the right &mdash; is chrome around it. So the canvas has to behave like a
+      canvas, and the test for that is not a feature list. It is whether the ground moves with the
+      content. <b>A field that stays nailed down while the content slides across it is the single
+      biggest tell that a board is not a real board</b>, and it is what the shipped board does
+      today: the grid layer is a sibling of the transformed layer and nothing ever writes its
+      position or its size.
+    </p>
+    <p class="lede">
+      This sheet decides four things and nothing else: what the field is, what the camera does
+      when you scroll, what the one control cluster looks like and where it lives, and what the
+      pointer is allowed to say. Node kinds, edges and containment are Decision 2's territory and
+      are specified on their own sheets &mdash; but the canvas leans on Decision 2 harder than
+      anything else in the product, because <b>below a certain zoom the labels are gone and the
+      silhouette is the only thing left.</b>
+    </p>
+  </div>
+
+  <!-- ── 05.1 THE FIELD IS PART OF THE CONTENT ────────────────────────────── -->
+  <div class="sec" id="s05-field">
+    <div class="sec-head">
+      <span class="eyebrow">05.1</span>
+      <h2>The field lives inside the transform</h2>
+      <span class="tail">--board-field-pitch &middot; --board-field-dot &middot; --board-field-ink</span>
+    </div>
+
+    <p class="note">
+      The field is a dot grid at <span class="inline-code">--board-field-pitch</span>, one
+      <span class="inline-code">--board-field-dot</span> wide, inked at
+      <span class="inline-code">--board-field-ink</span>. It is not a backdrop. It is drawn in the
+      same coordinate space as the nodes, which means the camera moves it: pan writes
+      <span class="inline-code">background-position</span>, zoom writes
+      <span class="inline-code">background-size</span>, and both stay locked to the content layer's
+      own translate and scale. The dots are how a reader senses motion and distance; if they do not
+      move, the board feels like a picture being dragged behind a window.
+    </p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="height:150px;background-size:calc(var(--board-field-pitch) * .5) calc(var(--board-field-pitch) * .5);background-position:var(--sp-24) var(--sp-16)">
+          <div style="position:absolute;left:var(--sp-24);top:var(--sp-16);transform:scale(.5);transform-origin:0 0;display:flex;gap:var(--sp-12)">
+            <div class="node n-entry"><div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+            <div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="node n-store"><div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+          </div>
+        </div>
+        <p class="why">Camera at half scale, panned down and to the right. The pitch halved with the
+        cards and the dots moved with them, so the ground reads as the same ground, further away.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="boardfield" style="height:150px">
+          <div style="position:absolute;left:var(--sp-24);top:var(--sp-16);transform:scale(.5);transform-origin:0 0;display:flex;gap:var(--sp-12)">
+            <div class="node n-entry"><div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+            <div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="node n-store"><div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+          </div>
+        </div>
+        <p class="why">The same camera, the same cards &mdash; and a field still drawn at full pitch
+        at its origin. The dots are now nearly as wide apart as a card is tall. This is a still
+        frame of the shipped defect, where the grid layer is a sibling of the transform.</p>
+      </div>
+    </div>
+
+    <dl class="specs" style="margin-top:var(--sp-12)">
+      <dt>Field mark</dt><dd>radial dot, --board-field-dot radius, --board-field-ink</dd>
+      <dt>Pitch at 1:1</dt><dd>--board-field-pitch (= --sp-24)</dd>
+      <dt>Pitch under the camera</dt><dd>--board-field-pitch &times; zoom</dd>
+      <dt>Origin under the camera</dt><dd>the content layer's own translate, in device pixels</dd>
+      <dt>Ground behind it</dt><dd>--nest-0</dd>
+      <dt>Class</dt><dd>.boardfield</dd>
+    </dl>
+    <p class="caption">The ink is <span class="inline-code">--edge</span>, not
+    <span class="inline-code">--viz-grid</span>: a one-pixel dot at a 24px pitch carries far less
+    weight than a continuous hairline, and <span class="inline-code">--edge</span> is where the two
+    match perceptually.</p>
+  </div>
+
+  <!-- ── 05.2 EXACTLY ONE FIELD ───────────────────────────────────────────── -->
+  <div class="sec" id="s05-one-field">
+    <div class="sec-head">
+      <span class="eyebrow">05.2</span>
+      <h2>Exactly one field, and never two</h2>
+      <span class="tail">one background-image &middot; one pitch</span>
+    </div>
+
+    <p class="note">
+      The shipped board draws two: a 24px dot grid and a 26px line grid, on separate layers, one
+      static and one tracking. Two pitches two pixels apart do not add detail &mdash; they produce
+      a moir&eacute; that drifts as the camera moves, and the eye spends its attention resolving a
+      pattern that means nothing. There is one field. If a second grid is ever wanted, it replaces
+      the first; it does not join it.
+    </p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="height:120px"></div>
+        <p class="why">One dot field at one pitch. Flat, quiet, and it disappears the moment there
+        is a card on top of it.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="boardfield" style="height:120px;background-image:linear-gradient(to bottom, var(--board-field-ink) var(--board-field-dot), transparent var(--board-field-dot)),linear-gradient(to right, var(--board-field-ink) var(--board-field-dot), transparent var(--board-field-dot)),radial-gradient(var(--board-field-ink) var(--board-field-dot), transparent var(--board-field-dot));background-size:calc(var(--board-field-pitch) + var(--sp-2)) calc(var(--board-field-pitch) + var(--sp-2)),calc(var(--board-field-pitch) + var(--sp-2)) calc(var(--board-field-pitch) + var(--sp-2)),var(--board-field-pitch) var(--board-field-pitch)"></div>
+        <p class="why">A dot field at one pitch under a line grid two pixels off it. The beat is
+        visible standing still and crawls when the camera moves.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 05.3 THE CAMERA MODEL ────────────────────────────────────────────── -->
+  <div class="sec" id="s05-camera">
+    <div class="sec-head">
+      <span class="eyebrow">05.3</span>
+      <h2>Scroll pans. Ctrl or Cmd plus scroll zooms.</h2>
+      <span class="tail">one camera &middot; both surfaces &middot; no per-surface variants</span>
+    </div>
+
+    <p class="note">
+      This is the reversal of what the board ships. Today a plain wheel maps straight into zoom
+      with no modifier branch, and a two-finger scroll never pans at all &mdash; which means the
+      most common gesture on a trackpad is bound to the most destructive camera operation.
+      Miro and Figma both do the opposite, and so does every board a Sequence user has used before
+      this one. <b>Plain scroll pans in both axes; the modifier is what buys you zoom.</b>
+    </p>
+
+    <div class="panel">
+      <table class="tk">
+        <thead><tr><th>Gesture</th><th>Camera</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Scroll</td><td>Pan, both axes</td><td>Trackpad two-finger and wheel alike. Never zoom.</td></tr>
+          <tr><td class="k"><span class="kbd">Shift</span> + Scroll</td><td>Pan, horizontal</td><td>The platform convention for a single-axis wheel.</td></tr>
+          <tr><td class="k"><span class="kbd">Ctrl</span> / <span class="kbd">Cmd</span> + Scroll</td><td>Zoom about the pointer</td><td>Continuous. The point under the cursor does not move.</td></tr>
+          <tr><td class="k">Pinch</td><td>Zoom about the pinch centre</td><td>The same path as Ctrl + Scroll. One implementation.</td></tr>
+          <tr><td class="k"><span class="kbd">Space</span> + Drag</td><td>Pan</td><td>Temporary hand, whatever tool is armed. Releases back to the tool.</td></tr>
+          <tr><td class="k">Middle-drag</td><td>Pan</td><td>Same path as Space + Drag.</td></tr>
+          <tr><td class="k">Drag on empty ground</td><td>Marquee</td><td>Select tool only. <span class="inline-code">.marquee</span>. Not a pan.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="caption">Zoom about the pointer, not about the viewport centre, for every continuous
+    zoom. The stepped zooms in 05.6 use the viewport centre, because a button press has no pointer
+    position on the board.</p>
+
+    <div class="dev" style="margin-top:var(--sp-12)">
+      <b>This departs from the library default.</b> React Flow ships
+      <span class="inline-code">zoomOnScroll: true</span> and
+      <span class="inline-code">panOnScroll: false</span>, and the Architecture surface takes both
+      unchanged. Both are overridden here. A library default is not a design decision, and the two
+      shipped surfaces currently disagree with each other on this exact pair &mdash; which is the
+      real cost: the same gesture means two things depending on which half of the app you are in.
+    </div>
+  </div>
+
+  <!-- ── 05.4 THE RANGE ───────────────────────────────────────────────────── -->
+  <div class="sec" id="s05-range">
+    <div class="sec-head">
+      <span class="eyebrow">05.4</span>
+      <h2>The range: a quarter to four, and where both ends come from</h2>
+      <span class="tail">reciprocal about 1:1</span>
+    </div>
+
+    <p class="note">
+      A zoom range is a design constant, so it has to be derived rather than picked. Both ends fall
+      out of token arithmetic, and they are reciprocals, which means the readout is symmetric about
+      1:1 &mdash; two doublings out, two doublings in.
+    </p>
+
+    <div class="panel">
+      <table class="tk">
+        <thead><tr><th>End</th><th>Arithmetic</th><th>What it means</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Floor</td><td class="v">--board-field-pitch &times; 0.25 = --sp-6</td><td>The dot pitch has fallen to the gap between two buttons. Below this the field stops being a grid and becomes a texture.</td><td class="r">0.25</td></tr>
+          <tr><td class="k">Floor</td><td class="v">--arch-card-w &times; 0.25 = --sp-40</td><td>A node card is now as wide as the space between two major sections. Below this it is a speck, not an object.</td><td class="r">0.25</td></tr>
+          <tr><td class="k">Ceiling</td><td class="v">--board-field-pitch &times; 4 = --arch-card-min-h</td><td>One field cell is now as tall as a whole card. The grid has stopped being a field and become a layout frame.</td><td class="r">4.00</td></tr>
+          <tr><td class="k">Symmetry</td><td class="v">0.25 &times; 4 = 1</td><td>The two ends are reciprocal, so the readout reads 25% &middot; 50% &middot; 100% &middot; 200% &middot; 400%.</td><td class="r">1.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      Two frames, drawn at the two ends, with nothing between them but the camera. Every number in
+      the captions is the arithmetic above, rendered.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel tight">
+        <h3>The floor &mdash; 25%</h3>
+        <p class="sub">Pitch <span class="inline-code">--sp-6</span>. Card width
+        <span class="inline-code">--sp-40</span>. No type survives here; the silhouette does.</p>
+        <div class="boardfield" style="height:120px;background-size:calc(var(--board-field-pitch) * .25) calc(var(--board-field-pitch) * .25)">
+          <div style="position:absolute;left:var(--sp-16);top:var(--sp-16);transform:scale(.25);transform-origin:0 0;display:flex;gap:var(--sp-12)">
+            <div class="node n-entry"></div>
+            <div class="node n-service"></div>
+            <div class="node n-store"></div>
+            <div class="node n-topic"></div>
+            <div class="node n-agent"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel tight">
+        <h3>The ceiling &mdash; 400%</h3>
+        <p class="sub">Pitch <span class="inline-code">--arch-card-min-h</span>. One card no longer
+        fits the frame, which is exactly what a ceiling is for.</p>
+        <div class="boardfield" style="height:120px;background-size:calc(var(--board-field-pitch) * 4) calc(var(--board-field-pitch) * 4)">
+          <div style="position:absolute;left:var(--sp-16);top:var(--sp-16);transform:scale(4);transform-origin:0 0">
+            <div class="node n-service"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">The shipped board sets <span class="inline-code">minZoom</span> to 0.1, on both
+    surfaces &mdash; <span class="inline-code">NativeBoard.tsx:430</span> and
+    <span class="inline-code">Canvas.tsx:275</span>. At that floor an architecture card's title, 13.5px
+    from <span class="inline-code">--card-title-size</span>, paints at 1.35 device pixels, and the
+    11px sub-row paints at 1.1. Neither is a small label; both are a smear. The floor above exists so
+    that the level-of-detail ladder in 05.8, not the reader's eyesight, is what decides when a label
+    goes. <b>And the ceiling has to move the other way to adopt this range.</b> Both surfaces cap
+    <span class="inline-code">maxZoom</span> at 2.5
+    (<span class="inline-code">NativeBoard.tsx:431</span>, <span class="inline-code">Canvas.tsx:276</span>),
+    which is below the 4.00 derived above, so this sheet does not describe the shipped camera: taking
+    it means raising both caps to 4. That is a code change, said plainly here rather than left for
+    someone to find when the zoom-in button stops responding two stops early.</p>
+  </div>
+
+  <!-- ── 05.5 ONE FIT POLICY ──────────────────────────────────────────────── -->
+  <div class="sec" id="s05-fit">
+    <div class="sec-head">
+      <span class="eyebrow">05.5</span>
+      <h2>One fit policy, shared by every surface</h2>
+      <span class="tail">inset --sp-24 &middot; ceiling 1.00 &middot; --seq-dur-cam</span>
+    </div>
+
+    <p class="note">
+      Fit and zoom-to-selection are the same operation with different bounds, so they are one
+      function with one policy. Half of that is already shipped and this sheet ratifies it rather
+      than proposing it: <span class="inline-code">packages/web/src/canvas/fit.ts</span> declares
+      <span class="inline-code">FIT_PADDING = 0.2</span> and
+      <span class="inline-code">FIT_MAX_ZOOM = 1</span>, bundles them as
+      <span class="inline-code">FIT_OPTS</span>, and both surfaces spread that one bundle
+      (<span class="inline-code">NativeBoard.tsx:440</span>,
+      <span class="inline-code">Canvas.tsx:285</span>). One ceiling, one padding, two canvases.
+    </p>
+
+    <p class="note">
+      What has not converged is the other end, and it is a real divergence rather than an argument
+      for one. The same file declares <b>two auto-fit floors</b> in its own two option bundles:
+      <span class="inline-code">DESIGN_FIT_MIN_ZOOM = 0.45</span>
+      (<span class="inline-code">fit.ts:44</span>) for the design canvas and
+      <span class="inline-code">ARCH_FIT_MIN_ZOOM = 0.6</span>
+      (<span class="inline-code">fit.ts:71</span>) for the Architecture board. Each is justified in
+      place by the smallest type on its own surface &mdash; which is exactly why they should not
+      differ: under 05.8 the type floor is one number for the whole product, so the fit floor is one
+      number derived from it, not two derived from two card designs. Fit clamps to the range's own
+      floor and pans the remainder. The second divergence is the inset itself: the shipped padding
+      is a <em>fraction of the viewport</em>, so the gutter grows with the window, and this sheet
+      specifies device pixels instead, for the reason under the specimens below.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel tight">
+        <h3>Fit all</h3>
+        <p class="sub">Bounds are the union of every object. The inset is
+        <span class="inline-code">--sp-24</span> on all four sides, in device pixels, so it does not
+        grow with the graph.</p>
+        <div class="boardfield" style="height:170px">
+          <div style="position:absolute;inset:var(--sp-24);border:var(--w-hair) dashed var(--edge-strong);border-radius:var(--r-4)"></div>
+          <div style="position:absolute;left:var(--sp-24);top:var(--sp-24);right:var(--sp-24);display:flex;gap:var(--sp-10);flex-wrap:wrap">
+            <div class="node n-entry" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+            <div class="node n-service" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="node n-store" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel tight">
+        <h3>Zoom to selection</h3>
+        <p class="sub">The identical policy, with the bounds taken from the selection instead. With
+        nothing selected it is fit-all, never a no-op that leaves the reader wondering whether the
+        key registered.</p>
+        <div class="boardfield" style="height:170px">
+          <div style="position:absolute;inset:var(--sp-24);border:var(--w-hair) dashed var(--edge-strong);border-radius:var(--r-4)"></div>
+          <div style="position:absolute;left:var(--sp-24);top:var(--sp-24);right:var(--sp-24);display:flex;gap:var(--sp-10);flex-wrap:wrap">
+            <div class="node n-entry dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+            <div class="node n-service sel" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div></div>
+            <div class="node n-store dim" style="min-height:auto"><div class="nd-hd"><svg class="i i-12"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <dl class="specs" style="margin-top:var(--sp-12)">
+      <dt>Inset</dt><dd>--sp-24, all four sides, device pixels</dd>
+      <dt>Zoom floor</dt><dd>0.25 &mdash; a graph larger than the range is fitted to the floor and panned, not shrunk further</dd>
+      <dt>Zoom ceiling on fit</dt><dd>1.00 &mdash; fit never magnifies</dd>
+      <dt>Zoom range under the reader</dt><dd>0.25 &hellip; 4.00</dd>
+      <dt>Transition</dt><dd>--seq-dur-cam, --ease</dd>
+      <dt>Empty selection</dt><dd>falls back to fit all</dd>
+    </dl>
+    <p class="caption"><b>Fit never zooms past 1:1.</b> Fitting a three-node graph to a wide display
+    would render a 12px title at 40px and the board would lie about its own density. Compact is the
+    only density, and the camera is not allowed to negotiate it. Only the reader zooms in.</p>
+  </div>
+
+  <!-- ── 05.6 ONE CLUSTER, ONE CORNER, ONE LANGUAGE ───────────────────────── -->
+  <div class="sec" id="s05-cluster">
+    <div class="sec-head">
+      <span class="eyebrow">05.6</span>
+      <h2>One control cluster, in one corner, in one language</h2>
+      <span class="tail">.zoomcluster &middot; bottom right &middot; --sp-12 from both edges</span>
+    </div>
+
+    <p class="note">
+      The board ships two clusters in two corners in two languages: React Flow's own untokened
+      controls bottom-left on Architecture, overlapping the kind legend, and a hand-built
+      bottom-right cluster on Canvas. Neither shows a percentage, so the reader can pan and zoom for
+      a minute and have no idea where the camera is. There is one cluster. It is
+      <span class="inline-code">.zoomcluster</span>, it sits bottom-right at
+      <span class="inline-code">--sp-12</span> from both edges, and it always carries the readout.
+    </p>
+
+    <div class="boardfield" style="height:210px;padding:var(--sp-16)">
+      <div style="display:flex;gap:var(--sp-12);align-items:flex-start">
+        <div class="node n-entry"><div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div><div class="nd-t">public API</div></div>
+        <div class="node n-service sel"><div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div><div class="nd-t">checkout</div><div class="nd-s">Takes an order and charges it.</div></div>
+        <div class="node n-store"><div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div><div class="nd-t">orders</div></div>
+      </div>
+      <div style="position:absolute;left:var(--sp-12);bottom:var(--sp-12)">
+        <div class="kindlegend">
+          <span class="grp">Kinds</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-service"/></svg>Service</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-module"/></svg>Module</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-database"/></svg>Datastore</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-topic"/></svg>Topic</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-agent"/></svg>Agent</span>
+          <span class="grpsep"></span>
+          <span class="grp">Position</span>
+          <span class="k"><svg class="i i-12"><use href="#ic-entry"/></svg>Entry</span>
+        </div>
+      </div>
+      <div style="position:absolute;right:var(--sp-12);bottom:var(--sp-12)">
+        <div class="zoomcluster">
+          <button class="iconbtn" aria-label="Zoom out"><svg class="i i-14"><use href="#ic-minus"/></svg></button>
+          <span class="pct"><span class="ph">&#8249;zoom&#8250;</span></span>
+          <button class="iconbtn" aria-label="Zoom in"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+          <button class="btn ghost sm">Fit</button>
+        </div>
+      </div>
+    </div>
+    <p class="caption">Two corners, two jobs, and they do not collide: the legend is a key to what is
+    on the board, the cluster is a control over how you are looking at it. The readout is
+    <span class="inline-code">--font-mono</span> at <span class="inline-code">--t-10</span> with
+    <span class="inline-code">--num</span>, so the percentage does not jitter in width as it counts.
+    It is a placeholder here because it is a run-time value.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="panel tight">
+        <h3>The cluster, up close</h3>
+        <p class="sub">Four controls, left to right, and no fifth: zoom out, the readout, zoom in,
+        Fit. Two icon buttons, one readout, <b>one worded control</b> &mdash; the cluster is not all
+        glyphs, and the one that is a word is a word for a reason.</p>
+        <div class="stage pad-sm">
+          <div class="zoomcluster">
+            <button class="iconbtn" aria-label="Zoom out"><svg class="i i-14"><use href="#ic-minus"/></svg></button>
+            <span class="pct"><span class="ph">&#8249;zoom&#8250;</span></span>
+            <button class="iconbtn" aria-label="Zoom in"><svg class="i i-14"><use href="#ic-plus"/></svg></button>
+            <button class="btn ghost sm">Fit</button>
+          </div>
+        </div>
+        <p class="caption"><b>Fit ships as a word, never as
+        <span class="inline-code">ic-frame</span></b> &mdash; Sheet 09, ruling 3:
+        <span class="inline-code">ic-frame</span> means the boundary drawn <em>around</em> a
+        selection, and fitting the board to the viewport draws no boundary. The icon vocabulary has
+        no glyph for a camera move and does not borrow one. Zoom to selection is not a fifth control
+        either. It is a keystroke and a menu item &mdash;
+        <span class="inline-code">Frame selection</span> &mdash; because it is meaningless without a
+        selection, and a permanently half-dead control in a four-control cluster is worse than no
+        control.</p>
+      </div>
+      <div class="panel tight">
+        <h3>The stops</h3>
+        <p class="sub">The buttons step the doubling ladder inside the range. Continuous zoom is the
+        modifier gesture's job; the buttons are for landing on a known place.</p>
+        <div class="stage pad-sm">
+          <span class="mono num" style="font-size:var(--t-11);color:var(--ink-1)">25%&nbsp;&middot;&nbsp;50%&nbsp;&middot;&nbsp;100%&nbsp;&middot;&nbsp;200%&nbsp;&middot;&nbsp;400%</span>
+        </div>
+        <dl class="specs" style="margin-top:var(--sp-12)">
+          <dt>Cluster radius</dt><dd>--r-10</dd>
+          <dt>Cluster surface</dt><dd>--surface-1 / --e1 / --w-hair --edge</dd>
+          <dt>Icon buttons</dt><dd>--icon-btn, .iconbtn, --r-8 &mdash; zoom out and zoom in, and those two only</dd>
+          <dt>Fit</dt><dd>.btn.ghost.sm, worded &mdash; no ic-frame, no ic-fit</dd>
+          <dt>Readout</dt><dd>--font-mono / --t-10 / --num / --ink-3</dd>
+          <dt>Readout width</dt><dd>--sp-40, centred, so it does not reflow</dd>
+          <dt>Offset from the board edge</dt><dd>--sp-12, both axes</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 05.7 GESTURE AND CURSOR ──────────────────────────────────────────── -->
+  <div class="sec" id="s05-gesture">
+    <div class="sec-head">
+      <span class="eyebrow">05.7</span>
+      <h2>The pointer says what the next click will do</h2>
+      <span class="tail">grab when selecting &middot; crosshair only when drawing</span>
+    </div>
+
+    <p class="note">
+      A cursor is a promise. The shipped board applies its draw class unconditionally and it wins on
+      source order over <span class="inline-code">cursor: grab</span>, so the pointer says
+      &ldquo;you are about to draw&rdquo; while the only gesture available is a pan. There are four
+      cursors on the canvas and each one is bound to a state the reader can verify by moving the
+      mouse two pixels.
+    </p>
+
+    <div class="panel">
+      <div class="specimens">
+        <div class="specimen">
+          <div class="stage pad-sm" style="cursor:grab;width:150px;height:56px;display:grid;place-items:center">
+            <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">hover me</span>
+          </div>
+          <span class="lbl">grab &middot; select tool, empty ground</span>
+        </div>
+        <div class="specimen">
+          <div class="stage pad-sm" style="cursor:grabbing;width:150px;height:56px;display:grid;place-items:center">
+            <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">hover me</span>
+          </div>
+          <span class="lbl">grabbing &middot; while panning</span>
+        </div>
+        <div class="specimen">
+          <div class="stage pad-sm" style="cursor:default;width:150px;height:56px;display:grid;place-items:center">
+            <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">hover me</span>
+          </div>
+          <span class="lbl">default &middot; over an object</span>
+        </div>
+        <div class="specimen">
+          <div class="stage pad-sm" style="cursor:crosshair;width:150px;height:56px;display:grid;place-items:center">
+            <span class="mono" style="font-size:var(--t-10);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)">hover me</span>
+          </div>
+          <span class="lbl">crosshair &middot; draw tool only</span>
+        </div>
+      </div>
+      <p class="caption">These four tiles carry the real <span class="inline-code">cursor</span>
+      property. Move the pointer over each one; the specimen is the behaviour, not a picture of it.</p>
+    </div>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="specimens">
+          <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-cursor"/></svg>Select<span class="m">grab</span></span><span class="lbl">tool: select</span></div>
+          <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-pen"/></svg>Draw<span class="m">crosshair</span></span><span class="lbl">tool: draw</span></div>
+        </div>
+        <p class="why">One tool, one cursor, and the cursor changes at the same instant the tool
+        does. <span class="inline-code">ic-cursor</span> and <span class="inline-code">ic-pen</span>
+        are one glyph each with one meaning each.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="specimens">
+          <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-cursor"/></svg>Select<span class="m">crosshair</span></span><span class="lbl">tool: select</span></div>
+          <div class="specimen"><span class="chip"><svg class="i i-12"><use href="#ic-pen"/></svg>Draw<span class="m">crosshair</span></span><span class="lbl">tool: draw</span></div>
+        </div>
+        <p class="why">A crosshair over a board you can only pan. The reader clicks expecting a mark
+        and gets a deselect, and stops trusting the pointer for the rest of the session.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      The keymap. <span class="inline-code">D</span> for draw already exists in the board's own menu;
+      the rest is decided here, and the whole of it fits on one line because the canvas has one
+      camera and two tools.
+    </p>
+
+    <div class="panel">
+      <table class="tk">
+        <thead><tr><th>Key</th><th>Does</th><th>Bounds</th></tr></thead>
+        <tbody>
+          <tr><td class="k"><span class="kbd">V</span></td><td>Select tool</td><td>&mdash;</td></tr>
+          <tr><td class="k"><span class="kbd">D</span></td><td>Draw tool</td><td>&mdash;</td></tr>
+          <tr><td class="k"><span class="kbd">Esc</span></td><td>Back to select, and clear the selection</td><td>&mdash;</td></tr>
+          <tr><td class="k"><span class="kbd">0</span></td><td>Zoom to 1:1 about the viewport centre</td><td>&mdash;</td></tr>
+          <tr><td class="k"><span class="kbd">1</span></td><td>Fit all</td><td>every object</td></tr>
+          <tr><td class="k"><span class="kbd">2</span></td><td>Zoom to selection</td><td>the selection, or every object if there is none</td></tr>
+          <tr><td class="k"><span class="kbd">+</span> / <span class="kbd">&minus;</span></td><td>One stop on the doubling ladder, about the viewport centre</td><td>0.25 &hellip; 4.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Camera keys move the camera and nothing else. No keystroke on this sheet
+    changes the graph, so a reader who is lost can always press <span class="kbd">1</span> and get
+    the whole board back without having edited anything.</p>
+  </div>
+
+  <!-- ── 05.8 LEVEL OF DETAIL ─────────────────────────────────────────────── -->
+  <div class="sec" id="s05-lod">
+    <div class="sec-head">
+      <span class="eyebrow">05.8</span>
+      <h2>Labels are hidden at low zoom. They are never shrunk.</h2>
+      <span class="tail">the type floor is absolute, in device pixels</span>
+    </div>
+
+    <p class="note">
+      Working type is 10 / 11 / 12px and 10px is the floor. On a canvas the camera multiplies that,
+      so a rung authored at <span class="inline-code">--t-N</span> renders at
+      <span class="inline-code">N &times; zoom</span> device pixels &mdash; and the moment that
+      product drops below the floor, the rung is <b>hidden</b>. It is not scaled, not substituted
+      for a smaller size, and not replaced by an ellipsis. Every threshold below is
+      <span class="inline-code">--t-10</span> divided by the rung's own authored size; there is no
+      new number in the ladder at all.
+    </p>
+
+    <div class="panel">
+      <table class="tk">
+        <thead><tr><th>Rung</th><th>Authored</th><th>Threshold</th><th>Holds to</th></tr></thead>
+        <tbody>
+          <tr><td class="k">.edgetag &middot; .nd-k &middot; .prov &middot; .nd-ft</td><td class="v">--t-10</td><td class="v">--t-10 &divide; --t-10</td><td class="r">1.00</td></tr>
+          <tr><td class="k">.nd-s &mdash; the subtitle</td><td class="v">--t-11</td><td class="v">--t-10 &divide; --t-11</td><td class="r">0.91</td></tr>
+          <tr><td class="k">.nd-t &mdash; the title</td><td class="v">--t-12</td><td class="v">--t-10 &divide; --t-12</td><td class="r">0.83</td></tr>
+          <tr><td class="k">the kind icon</td><td class="v">1.5 stroke</td><td class="v">--w-hair &divide; 1.5</td><td class="r">0.67</td></tr>
+          <tr><td class="k">silhouette, border treatment, tone</td><td class="v">geometry</td><td class="v">none</td><td class="r">0.25</td></tr>
+        </tbody>
+      </table>
+      <p class="caption">The icon's threshold is the same rule applied to a stroke instead of a
+      glyph: at 0.67 a 1.5px stroke has fallen to <span class="inline-code">--w-hair</span>, one
+      device pixel, and below that the renderer is guessing. It goes.</p>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      The ladder, drawn. Each card is at 1:1 so the rungs are legible &mdash; what changes between
+      them is only what the camera has taken away.
+    </p>
+
+    <div class="boardfield" style="padding:var(--sp-16)">
+      <div style="display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+        <div class="specimen">
+          <div class="node n-service">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+            <div class="nd-s">Takes an order and charges it.</div>
+            <div class="nd-ft"><span class="prov p-measured">Measured</span></div>
+          </div>
+          <span class="lbl">zoom &ge; 1.00 &middot; everything</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg></div>
+            <div class="nd-t">checkout</div>
+            <div class="nd-s">Takes an order and charges it.</div>
+          </div>
+          <span class="lbl">&lt; 1.00 &middot; the --t-10 rungs go</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg></div>
+            <div class="nd-t">checkout</div>
+          </div>
+          <span class="lbl">&lt; 0.91 &middot; the subtitle goes</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg></div>
+          </div>
+          <span class="lbl">&lt; 0.83 &middot; the title goes</span>
+        </div>
+        <div class="specimen">
+          <div class="node n-service"></div>
+          <span class="lbl">&lt; 0.67 &middot; silhouette only</span>
+        </div>
+      </div>
+    </div>
+    <p class="caption">The last card carries no text, no icon and no hue, and it is still a service
+    and not a datastore. <b>That is Decision 2 paying for itself.</b> A design that spent kind on
+    colour would have nothing left at this rung &mdash; and a design that spent it on hue matching
+    the status vocabulary, as the shipped board does, would be showing the reader a wall of
+    &ldquo;passed&rdquo; and &ldquo;warning&rdquo; at the exact zoom where they can no longer read
+    the labels that would have corrected them.</p>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>This is stricter than Miro and Figma, deliberately.</b> Those boards scale their type down
+      well past 10px before hiding it, because their smallest canvas type starts far above the
+      floor and has room to fall. Graphite's working type is already <em>at</em> its floor at 1:1, so
+      it has none. The consequence is real and worth stating rather than discovering: edge tags and
+      provenance are 1:1 detail, and a reader who wants to read the labels on a large graph pans at
+      1:1 rather than zooming out to see everything at once. The alternative &mdash; the 1.35px title
+      the shipped floor of 0.1 produces, from 05.4 &mdash; is not a smaller label, and reading it is
+      not a skill.
+    </div>
+  </div>
+
+  <!-- ── 05.9 WHAT THIS SHEET BINDS ───────────────────────────────────────── -->
+  <div class="sec" id="s05-binds">
+    <div class="sec-head">
+      <span class="eyebrow">05.9</span>
+      <h2>What a board must do to be a board</h2>
+      <span class="tail">every line here is testable</span>
+    </div>
+
+    <p class="note">
+      Nine assertions. Each is checkable by driving the camera and reading a computed style, which
+      is the point: a board that is not a board fails these silently and looks fine in a screenshot.
+    </p>
+
+    <div class="panel">
+      <table class="tk">
+        <thead><tr><th>#</th><th>Assertion</th></tr></thead>
+        <tbody>
+          <tr><td class="r">1</td><td>The field's <span class="inline-code">background-position</span> changes when the camera pans, and its <span class="inline-code">background-size</span> scales with zoom.</td></tr>
+          <tr><td class="r">2</td><td>There is exactly one <span class="inline-code">background-image</span> field layer on the board, at exactly one pitch.</td></tr>
+          <tr><td class="r">3</td><td>A wheel event with no modifier changes the pan offset and does not change zoom.</td></tr>
+          <tr><td class="r">4</td><td>A wheel event with <span class="inline-code">ctrlKey</span> or <span class="inline-code">metaKey</span> changes zoom and holds the point under the pointer fixed.</td></tr>
+          <tr><td class="r">5</td><td>Zoom is clamped to 0.25 &hellip; 4.00 on every path &mdash; gesture, button, key and fit alike.</td></tr>
+          <tr><td class="r">6</td><td>Fit and zoom-to-selection call one function with one inset and one ceiling, and fit never returns a zoom above 1.00.</td></tr>
+          <tr><td class="r">7</td><td>There is one <span class="inline-code">.zoomcluster</span> in the document, it is in the bottom-right corner, and it renders a percentage.</td></tr>
+          <tr><td class="r">8</td><td>The computed cursor is <span class="inline-code">grab</span> when the tool is select and the pointer is over empty ground, and <span class="inline-code">crosshair</span> only when the draw tool is armed.</td></tr>
+          <tr><td class="r">9</td><td>No text node on the board renders below <span class="inline-code">--t-10</span> in device pixels at any zoom in the range.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="caption">Assertion 9 is the one that will be argued with. Keep it. Every other rule on
+    this sheet is a preference that a reasonable person could hold differently; that one is the
+    difference between a label and a smudge, and the ladder in 05.8 is how it is met without ever
+    hiding something the reader still needs.</p>
+  </div>
+
+</section>

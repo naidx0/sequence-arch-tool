@@ -1,0 +1,6 @@
+{
+  "name": "t10-flatten-deep",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/mod.test.js" }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "workflow/swe-agent",
+  "group": "workflow",
+  "label": "SWE-agent",
+  "summary": "SWE-agent from Princeton NLP. Link only: MIT; install it from its source repo.",
+  "triggers": [
+    "swe-agent",
+    "princeton swe agent",
+    "swe-bench agent",
+    "software engineering agent"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "SWE-agent/SWE-agent",
+    "commit": "3ea751c087f32b16e039a2233dd6eefecef325d5",
+    "path": null
+  },
+  "url": "https://github.com/SWE-agent/SWE-agent"
+}

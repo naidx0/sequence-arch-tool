@@ -1,0 +1,56 @@
+From fb19bf660daa261df902b1197fbaca1b54c89aac Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 22:45:27 -0400
+Subject: [PATCH 28/37] Product mode: answer from the code when there is no
+ README (run 1 refused instead); bench uses canonical repo paths (run 1
+ refused every read on ML Harness)
+
+---
+ packages/analyzer/src/server/askPipeline.ts |  4 ++--
+ tools/bench/product-question-ab.mjs         | 14 +++++++++-----
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 79863ded..8525f984 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -2466,9 +2466,9 @@ export function renderProductQuestionInstructions(historyLines?: readonly string
+   const lines = [
+     '--- PRODUCT QUESTION (this turn) ---',
+     'The learner asked what this product is and how it works, as a NEWCOMER. Answer the product, not the code.',
+-    '- Read README.md (and docs/ if it exists) with read_file BEFORE the topology: the product is described there.',
++    '- Read README.md (and docs/ if it exists) with read_file BEFORE the topology. If there is none, work the product out from what the code does (entry points, services, what a user sends and gets back) and answer anyway: never answer that you cannot answer.',
+     '- Answer in this order, in plain words: what it is (one sentence); who it is for; why it exists (the problem it solves); how it works, as 5 numbered steps a user goes through; its advantages (2-3).',
+-    '- No service ids, file paths or edge counts unless the learner asks for them. Claim nothing the README, docs or code do not say: no invented risks, numbers or failure points.',
++    '- No service ids, file paths or edge counts unless the learner asks for them. No invented risks, numbers or failure points.',
+     '- Draw the 5 steps with ONE propose_chart, kind user-flow: plain step labels, no nodeId, a link between consecutive steps.',
+     '- Do not end with a quiz. End on the answer.',
+   ];
+diff --git a/tools/bench/product-question-ab.mjs b/tools/bench/product-question-ab.mjs
+index 1215c544..25966530 100644
+--- a/tools/bench/product-question-ab.mjs
++++ b/tools/bench/product-question-ab.mjs
+@@ -42,11 +42,15 @@ const providerMod = await import(dist('server/provider.js'));
+ const toolsMod = await import(dist('server/askTools.js'));
+ const { scoreLesson } = await import('./lesson-quality.mjs');
+ 
+-const REPOS = {
+-  'ml-harness': arg('--ml-harness', 'C:/Users/<user>/Projects/mlh-adapter'),
+-  shopfront: path.join(root, 'packages/analyzer/test/fixtures/shopfront'),
+-  makemore: path.join(root, 'examples/makemore'),
+-};
++/* CANONICAL paths: resolveInRepo compares against the real path, so a root spelled with
++   forward slashes on Windows refused every read_file (run 1 of this bench, discarded). */
++const REPOS = Object.fromEntries(
++  Object.entries({
++    'ml-harness': arg('--ml-harness', 'C:/Users/<user>/Projects/mlh-adapter'),
++    shopfront: path.join(root, 'packages/analyzer/test/fixtures/shopfront'),
++    makemore: path.join(root, 'examples/makemore'),
++  }).map(([k, v]) => [k, fs.realpathSync(v)]),
++);
+ const GENERIC = [
+   'what is this app, what does it do, who is it for?',
+   'why does it exist and what are the advantages of it?',
+-- 
+2.51.1.windows.1
+

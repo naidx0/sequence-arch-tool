@@ -1,0 +1,359 @@
+From e6ef7d806453613c804984a670464fdeb99ff691 Mon Sep 17 00:00:00 2001
+From: maxnaid1 <maxnaid41@gmail.com>
+Date: Wed, 23 Sep 2026 22:35:51 -0400
+Subject: [PATCH 27/37] Product questions get the product behind
+ SEQUENCE_TEACH_PRODUCT_MODE=1, and a bench to A/B it
+
+A teach turn asking what the product is, why it exists, how it works or its advantages gets a
+newcomer's answer shape (read the README first; what, who, why, 5 steps, advantages), a concept
+flow chart instead of a file chart, no derived file quiz, and the start of its own last answer
+so it is not sent again. Off by default. 3 unit tests; tools/bench/product-question-ab.mjs
+replays the owner's three questions plus the same shape on shopfront and makemore.
+---
+ packages/analyzer/src/server/askPipeline.ts   |  56 ++++-
+ .../src/test/teach-product-mode.test.ts       |  39 ++++
+ tools/bench/product-question-ab.mjs           | 191 ++++++++++++++++++
+ 3 files changed, 285 insertions(+), 1 deletion(-)
+ create mode 100644 packages/analyzer/src/test/teach-product-mode.test.ts
+ create mode 100644 tools/bench/product-question-ab.mjs
+
+diff --git a/packages/analyzer/src/server/askPipeline.ts b/packages/analyzer/src/server/askPipeline.ts
+index 993c7f6f..79863ded 100644
+--- a/packages/analyzer/src/server/askPipeline.ts
++++ b/packages/analyzer/src/server/askPipeline.ts
+@@ -1376,6 +1376,8 @@ export const ASK_INSTRUCTION_HASH_HEX_LEN = 16;
+ /** Inputs that determine which instruction-belt fragments are composed for a turn. */
+ export interface AskInstructionHashInput {
+   designMode: boolean;
++  /** Prior chat lines; read only by a product-mode teach turn (SEQUENCE_TEACH_PRODUCT_MODE). */
++  historyLines?: readonly string[];
+   /**
+    * The design turn is a PROPOSAL, not a scoping round.
+    *
+@@ -1714,6 +1716,7 @@ export function renderAskInstructionBelt(input: AskInstructionHashInput): string
+     parts.push(
+       `--- TEACH MODE (binding contract) ---\n${renderTeachModeInstructions(teachCtx)}`,
+     );
++    if (teachProductTurn(input)) parts.push(renderProductQuestionInstructions(input.historyLines));
+   }
+   return parts.join('\n\n');
+ }
+@@ -2430,6 +2433,55 @@ export function mutatingToolRefusal(name: string | undefined, teach: boolean): s
+   );
+ }
+ 
++/*
++ * ══ A PRODUCT QUESTION GETS THE PRODUCT, NOT THE FILE MAP (2026-09-24) ═══════
++ *
++ * Owner's session on the ML Harness repo: "what is ml harness, what does it do,
++ * what is the product, whats the actual product flow" was asked three times and
++ * answered three times with the same services-and-files topology, twice nearly
++ * word for word, with a file-import chart and a quiz about which file hands off
++ * next. Nothing in the teach contract has a newcomer's shape for "what is this
++ * product", and nothing stopped an answer being sent again.
++ *
++ * Behind SEQUENCE_TEACH_PRODUCT_MODE=1 (off by default): a teach turn whose
++ * question asks what the product is, why it exists, how it works or what its
++ * advantages are gets the shape below, reads the README and docs before the
++ * topology, draws the product flow as concepts rather than files, and is shown
++ * the start of its own last answer so it does not send it again. The file-chart
++ * floor and the derived file check-in stay out of such a turn.
++ */
++const PRODUCT_QUESTION =
++  /\b(?:what(?:'s| is| does)\b[^?]{0,60}\b(?:product|app|do|for)\b|the (?:actual )?(?:product|app)\b|product flow|why (?:does )?(?:it|this|the app) exi\w*|adv\w{0,4}ages?|how (?:does )?(?:it|this|the app) works?|away from the (?:actual )?(?:files|code))/i;
++
++export function isProductQuestion(question: string): boolean {
++  return PRODUCT_QUESTION.test(question);
++}
++
++export function teachProductTurn(input: { teach?: boolean; question: string }): boolean {
++  return process.env.SEQUENCE_TEACH_PRODUCT_MODE === '1' && input.teach === true && isProductQuestion(input.question);
++}
++
++export function renderProductQuestionInstructions(historyLines?: readonly string[]): string {
++  const lastAnswer = [...(historyLines ?? [])].reverse().find((l) => l.startsWith('Assistant: '));
++  const lines = [
++    '--- PRODUCT QUESTION (this turn) ---',
++    'The learner asked what this product is and how it works, as a NEWCOMER. Answer the product, not the code.',
++    '- Read README.md (and docs/ if it exists) with read_file BEFORE the topology: the product is described there.',
++    '- Answer in this order, in plain words: what it is (one sentence); who it is for; why it exists (the problem it solves); how it works, as 5 numbered steps a user goes through; its advantages (2-3).',
++    '- No service ids, file paths or edge counts unless the learner asks for them. Claim nothing the README, docs or code do not say: no invented risks, numbers or failure points.',
++    '- Draw the 5 steps with ONE propose_chart, kind user-flow: plain step labels, no nodeId, a link between consecutive steps.',
++    '- Do not end with a quiz. End on the answer.',
++  ];
++  if (lastAnswer !== undefined) {
++    lines.push(
++      `- Your last answer did not land. Do NOT send it again or reword it; say something new. It began: "${lastAnswer
++        .slice(11, 311)
++        .replace(/\s+/g, ' ')}"`,
++    );
++  }
++  return lines.join('\n');
++}
++
+ export function renderTeachModeInstructions(ctx?: TeachTurnContext): string {
+   const slots: string[] = [];
+ 
+@@ -5419,6 +5471,8 @@ ${lastToolSectionText}`);
+       if (
+         input.teach === true &&
+         (chartsThisTurn === 0 || (aimedPathOnHand && !flowChartLanded)) &&
++        /* A product question is answered with the product's flow, not a file chart. */
++        !teachProductTurn(input) &&
+         !topologySucceededThisTurn &&
+         !teachCanvasDrawingThisTurn
+       ) {
+@@ -5857,7 +5911,7 @@ Last turn you were asked which would break. It is **${openArrow.expect}**, and t
+            about instead (2026-09-23, `deriveFlowCheckIn`). */
+         const derivedCheck =
+           nextPicture?.question ?? deriveCheckIn(lastChartThisTurn) ?? deriveFlowCheckIn(lastChartThisTurn);
+-        if (derivedCheck !== undefined) {
++        if (derivedCheck !== undefined && !teachProductTurn(input)) {
+           /* No new stream event: the question is in the answer, which is where
+              the learner reads it, and a derived check is countable by its
+              opening ("Looking at the picture:") without widening the event
+diff --git a/packages/analyzer/src/test/teach-product-mode.test.ts b/packages/analyzer/src/test/teach-product-mode.test.ts
+new file mode 100644
+index 00000000..ada81a16
+--- /dev/null
++++ b/packages/analyzer/src/test/teach-product-mode.test.ts
+@@ -0,0 +1,39 @@
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++import { isProductQuestion, renderProductQuestionInstructions, teachProductTurn } from '../server/askPipeline.js';
++
++/* The owner's three questions from 2026-09-24, verbatim, and two that are about code. */
++const OWNER = [
++  'tell me about the app how it works and the advtanges on the ai canvas please',
++  'move away from the actual files and code and show me flow charts of the advtnage of the actual app and why it exits the conext behind it',
++  'i dont get what is ml harness, what does it do, what is the product, whats the actual product flow',
++];
++
++test('the owner product questions are product questions; a code question is not', () => {
++  for (const q of OWNER) assert.ok(isProductQuestion(q), q);
++  assert.ok(!isProductQuestion('Teach me how routes.py calls the inventory client'));
++  assert.ok(!isProductQuestion('Explain the softmax gradient in nn_bigram.py'));
++});
++
++test('product mode needs the flag and a teach turn', () => {
++  const before = process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++  try {
++    delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++    assert.equal(teachProductTurn({ teach: true, question: OWNER[2]! }), false);
++    process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
++    assert.equal(teachProductTurn({ teach: true, question: OWNER[2]! }), true);
++    assert.equal(teachProductTurn({ teach: false, question: OWNER[2]! }), false);
++  } finally {
++    if (before === undefined) delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++    else process.env.SEQUENCE_TEACH_PRODUCT_MODE = before;
++  }
++});
++
++test('the product section shows the start of the last answer so it is not sent again', () => {
++  const none = renderProductQuestionInstructions(undefined);
++  assert.match(none, /README\.md/);
++  assert.match(none, /5 numbered steps/);
++  assert.doesNotMatch(none, /did not land/);
++  const withLast = renderProductQuestionInstructions(['User: what is it?', 'Assistant: The app is a multi-service harness: svc:ml-harness']);
++  assert.match(withLast, /did not land.*The app is a multi-service harness/);
++});
+diff --git a/tools/bench/product-question-ab.mjs b/tools/bench/product-question-ab.mjs
+new file mode 100644
+index 00000000..1215c544
+--- /dev/null
++++ b/tools/bench/product-question-ab.mjs
+@@ -0,0 +1,191 @@
++#!/usr/bin/env node
++/**
++ * PRODUCT QUESTIONS, A/B: does SEQUENCE_TEACH_PRODUCT_MODE answer "what is this
++ * product" instead of re-sending the file map?
++ *
++ * The owner's session of 2026-09-24 asked three product questions of the ML
++ * Harness repo and got the same services-and-files answer three times. This
++ * bench replays those three questions as one conversation, plus the same shape
++ * of conversation on the shopfront and makemore fixtures, through the real
++ * teach pipeline, with the prior turns as history, once per arm.
++ *
++ *   SEQUENCE_AI_MODEL=minicpm5-hermes SEQUENCE_AI_BASE_URL=http://127.0.0.1:11434/v1 \
++ *   SEQUENCE_AI_API_KEY=ollama node tools/bench/product-question-ab.mjs --arm on --runs 2 --out <file>
++ *
++ * The arm is the flag, set here for the process. Scored deterministically per turn
++ * (see score()): repeat of the previous answer, code tokens, product shape, a
++ * concept flow chart, unsupported risk claims. Calls no judge model.
++ */
++import fs from 'node:fs';
++import path from 'node:path';
++import url from 'node:url';
++
++const here = path.dirname(url.fileURLToPath(import.meta.url));
++const root = path.resolve(here, '..', '..');
++const dist = (p) => url.pathToFileURL(path.join(root, 'packages/analyzer/dist', p)).href;
++const arg = (k, d) => {
++  const i = process.argv.indexOf(k);
++  return i >= 0 ? process.argv[i + 1] : d;
++};
++const ARM = arg('--arm', 'off');
++const RUNS = Number(arg('--runs', '1'));
++const OUT = arg('--out', path.join(root, 'tools/bench/out', `product-question-${ARM}.json`));
++if (ARM === 'on') process.env.SEQUENCE_TEACH_PRODUCT_MODE = '1';
++else delete process.env.SEQUENCE_TEACH_PRODUCT_MODE;
++
++const { runAskPipeline } = await import(dist('server/askPipeline.js'));
++const { scanRepoCached } = await import(dist('index.js'));
++const { buildDigest, renderAskHistorySection } = await import(dist('explain/explain.js'));
++const { resolveInRepo } = await import(dist('server/jail.js'));
++const { newLesson, buildTeachContext } = await import(dist('server/lessonState.js'));
++const providerMod = await import(dist('server/provider.js'));
++const toolsMod = await import(dist('server/askTools.js'));
++const { scoreLesson } = await import('./lesson-quality.mjs');
++
++const REPOS = {
++  'ml-harness': arg('--ml-harness', 'C:/Users/<user>/Projects/mlh-adapter'),
++  shopfront: path.join(root, 'packages/analyzer/test/fixtures/shopfront'),
++  makemore: path.join(root, 'examples/makemore'),
++};
++const GENERIC = [
++  'what is this app, what does it do, who is it for?',
++  'why does it exist and what are the advantages of it?',
++  'i still dont get it, whats the actual product flow, show me on the canvas',
++];
++const CONVOS = [
++  {
++    id: 'owner-ml-harness',
++    repo: 'ml-harness',
++    questions: [
++      'tell me about the app how it works and the advtanges on the ai canvas please',
++      'move away from the actual files and code and show me flow charts of the advtnage of the actual app and why it exits the conext behind it, and everything around that and move that way please go dive deep show me how this works internally with a rpoert on the canvas',
++      'i dont get what is ml harness, what does it do, what is the product, whats the actual product flow',
++    ],
++  },
++  { id: 'generic-shopfront', repo: 'shopfront', questions: GENERIC },
++  { id: 'generic-makemore', repo: 'makemore', questions: GENERIC },
++];
++
++const cfg = {
++  provider: 'openai-compat',
++  model: process.env.SEQUENCE_AI_MODEL || 'minicpm5-hermes',
++  apiKey: process.env.SEQUENCE_AI_API_KEY || 'ollama',
++  baseUrl: process.env.SEQUENCE_AI_BASE_URL || 'http://127.0.0.1:11434/v1',
++  params: { maxRetries: 2, reasoningEffort: 'none', timeoutMs: 180000 },
++};
++const TOOLS = toolsMod.openaiAskToolDefinitions(toolsMod.askToolsForJobMode('code', 'full'));
++const callProvider = async (c, prompt, _onDelta, opts) => {
++  const { text, providerUsage, toolRequests } = await providerMod.generateTextWithUsage(c, prompt, {
++    tools: TOOLS,
++    ...(opts?.cacheBreakpointChars !== undefined ? { cacheBreakpointChars: opts.cacheBreakpointChars } : {}),
++  });
++  return {
++    text,
++    ...(toolRequests?.length ? { toolRequests } : {}),
++    usage: providerUsage
++      ? { inputTokens: providerUsage.inputTokens, outputTokens: providerUsage.outputTokens, estimated: false }
++      : { inputTokens: Math.round(prompt.length / 4), outputTokens: Math.round(text.length / 4), estimated: true },
++  };
++};
++
++/* ---------------------------------------------------------------- score -- */
++
++const grams = (t) => {
++  const s = t.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
++  const g = new Set();
++  for (let i = 0; i + 5 <= s.length; i += 1) g.add(s.slice(i, i + 5));
++  return g;
++};
++export const similarity = (a, b) => {
++  const A = grams(a);
++  const B = grams(b);
++  if (A.size === 0 || B.size === 0) return 0;
++  let n = 0;
++  for (const x of A) if (B.has(x)) n += 1;
++  return n / (A.size + B.size - n);
++};
++const CODE_TOKEN = /`[^`]+`|\b(?:svc|ds|mod|file|topic):[\w./-]+|\b[\w-]+\.(?:py|ts|tsx|js|go|java|rs|json|toml|md)\b|\b\d+ (?:HTTP )?edges\b/g;
++const RISK_CLAIM = /\b(?:single points? of failure|circular dependency|failure points?|risk)\b/i;
++
++function score(text, prev, charts) {
++  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
++  const code = (text.match(CODE_TOKEN) ?? []).length;
++  const steps = (text.match(/^\s*(?:\d+[.)]|step \d)/gim) ?? []).length;
++  return {
++    words,
++    repeat: prev ? Number(similarity(text, prev).toFixed(3)) : null,
++    codePer100: words ? Number(((100 * code) / words).toFixed(2)) : 0,
++    productShape: steps >= 3 && /\b(?:for|who)\b/i.test(text) && /\badvantage|benefit|why\b/i.test(text),
++    conceptFlowChart: charts.some((c) => (c.items ?? []).length >= 3 && (c.items ?? []).every((i) => !i.nodeId)),
++    fileChart: charts.some((c) => (c.items ?? []).some((i) => i.nodeId)),
++    riskClaim: RISK_CLAIM.test(text),
++    quality: scoreLesson(text, { chart: charts[0] ?? null, drew: charts.length > 0 })?.overall ?? null,
++  };
++}
++
++/* ------------------------------------------------------------------ run -- */
++
++const graphs = {};
++for (const [name, repoPath] of Object.entries(REPOS)) {
++  const graph = await scanRepoCached(repoPath, { cluster: true });
++  graphs[name] = { graph, digest: buildDigest(graph) };
++}
++const results = [];
++for (let run = 1; run <= RUNS; run += 1) {
++  for (const c of CONVOS) {
++    const repoPath = REPOS[c.repo];
++    const { graph, digest } = graphs[c.repo];
++    const lesson = newLesson(c.id, c.questions[0], graph);
++    const history = [];
++    let prev = null;
++    for (let t = 0; t < c.questions.length; t += 1) {
++      const events = [];
++      const started = Date.now();
++      let text = '';
++      let error = null;
++      try {
++        const r = await runAskPipeline(
++          {
++            question: c.questions[t],
++            intents: [],
++            scopeLines: [],
++            surface: undefined,
++            deictic: false,
++            design: undefined,
++            designMode: false,
++            askMode: 'implementation',
++            graph,
++            digest,
++            cfg,
++            resolveReadable: (rel) => resolveInRepo(repoPath, rel),
++            repoRoot: repoPath,
++            permission: 'full',
++            teach: true,
++            teachContext: buildTeachContext({ lesson, graph }),
++            historyLines: renderAskHistorySection(history, 20),
++            callProvider,
++            turnDeadlineMs: 0,
++          },
++          (e) => events.push(e),
++        );
++        text = r.text ?? '';
++      } catch (e) {
++        error = String(e?.message ?? e);
++      }
++      const charts = events.filter((e) => e.type === 'chart:proposal').map((e) => e.chart);
++      const modelCharts = events.filter((e) => e.type === 'tool:start' && e.name === 'propose_chart').length;
++      const reads = events.filter((e) => e.type === 'file:read').map((e) => e.path);
++      const s = score(text, prev, charts);
++      results.push({ arm: ARM, run, convo: c.id, turn: t, ms: Date.now() - started, error, modelCharts, reads, ...s, text });
++      console.log(
++        `[${ARM}] r${run} ${c.id} t${t}: ${s.words}w repeat=${s.repeat} code/100=${s.codePer100} shape=${s.productShape} ` +
++          `flowChart=${s.conceptFlowChart} fileChart=${s.fileChart} risk=${s.riskClaim} q=${s.quality} ${Date.now() - started}ms`,
++      );
++      history.push({ role: 'user', text: c.questions[t] }, { role: 'assistant', text: text.slice(0, 2000) });
++      prev = text;
++      fs.mkdirSync(path.dirname(OUT), { recursive: true });
++      fs.writeFileSync(OUT, `${JSON.stringify({ arm: ARM, model: cfg.model, results }, null, 1)}\n`);
++    }
++  }
++}
++console.log(`wrote ${OUT}`);
+-- 
+2.51.1.windows.1
+

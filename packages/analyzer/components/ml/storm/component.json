@@ -1,0 +1,20 @@
+{
+  "id": "ml/storm",
+  "group": "ml",
+  "label": "STORM",
+  "summary": "STORM, Stanford knowledge-curation and article writing. Link only: MIT; install it from its source repo.",
+  "triggers": [
+    "stanford storm",
+    "storm article writing",
+    "storm research",
+    "knowledge curation storm"
+  ],
+  "status": "link-only",
+  "license": "none",
+  "source": {
+    "repo": "stanford-oval/storm",
+    "commit": "fb951af7744dab086e34962e9bc6fe878e145f83",
+    "path": null
+  },
+  "url": "https://github.com/stanford-oval/storm"
+}

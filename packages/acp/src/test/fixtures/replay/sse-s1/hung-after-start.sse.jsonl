@@ -1,0 +1,6 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:session","resumed":false,"threadId":"thread-hung-1"}
+{"type":"acp:model","model":"gpt-5-codex"}
+{"type":"acp:update","update":{"sessionId":"thread-hung-1","update":{"sessionUpdate":"tool_call","toolCallId":"cmd-hung-1","title":"Run npm test","kind":"execute","status":"in_progress","locations":[],"rawInput":{"type":"commandExecution","id":"cmd-hung-1","command":"npm test","cwd":"<CWD>","status":"inProgress"}}}}
+{"type":"acp:turn","state":"hung","idleMs":60000}
+{"type":"acp:error","error":"The agent made no progress for 60 s and was stopped.","recovery":{"kind":"retry","cause":"timeout"}}

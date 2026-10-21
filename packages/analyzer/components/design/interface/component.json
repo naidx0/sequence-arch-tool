@@ -1,0 +1,21 @@
+{
+  "id": "design/interface",
+  "group": "design",
+  "label": "Interface design",
+  "summary": "Design skills for interfaces covering layout, type, colour, motion, accessibility, state and review. Pick one sub-component.",
+  "triggers": [
+    "interface design",
+    "improve the ui",
+    "make it look better",
+    "design review",
+    "polish this screen"
+  ],
+  "status": "ready",
+  "license": "MIT",
+  "source": {
+    "repo": "sequence",
+    "commit": null,
+    "path": "tools/components"
+  },
+  "url": null
+}

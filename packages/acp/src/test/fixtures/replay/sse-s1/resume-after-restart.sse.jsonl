@@ -1,0 +1,7 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:session","resumed":true,"threadId":"01a10ef2-aded-75f1-8e23-92169c4fcf7b"}
+{"type":"acp:model","model":"gpt-5-codex"}
+{"type":"acp:update","update":{"sessionId":"01a10ef2-aded-75f1-8e23-92169c4fcf7b","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"It printed \"done waiting\"."}}}}
+{"type":"acp:turn","state":"ended","stopReason":"end_turn"}
+{"type":"acp:result","stopReason":"end_turn","text":"It printed \"done waiting\"."}
+{"type":"acp:turn","state":"settled"}

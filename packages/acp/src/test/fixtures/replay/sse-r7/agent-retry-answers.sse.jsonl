@@ -1,0 +1,6 @@
+{"type":"acp:turn-id","turnId":"<TURN>"}
+{"type":"acp:session","resumed":false,"threadId":"mock-session-1"}
+{"type":"acp:update","update":{"sessionId":"mock-session-1","update":{"content":{"text":"sid=mock-session-1;echo: hello","type":"text"},"sessionUpdate":"agent_message_chunk"}}}
+{"type":"acp:turn","state":"ended","stopReason":"end_turn"}
+{"type":"acp:result","stopReason":"end_turn","text":"sid=mock-session-1;echo: hello"}
+{"type":"acp:turn","state":"settled"}

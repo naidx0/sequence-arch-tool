@@ -1,0 +1,4 @@
+/* The in-app sign-in terminal under a Connect an agent row (ConnectAgents.tsx). */
+.s2-agent-term {
+  display: block;
+}

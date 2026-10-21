@@ -1,0 +1,8 @@
+{
+  "$reads": 3,
+  "bootJsBytes": 2663972,
+  "bootModules": 5,
+  "bootRequests": 34,
+  "commitsPerKeystroke": 1,
+  "commitsPerStreamChunk": 1
+}

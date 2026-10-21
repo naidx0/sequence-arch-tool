@@ -1,0 +1,538 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SHEET 02 — THE ARCHITECTURE NODE CARD
+     Fragment. Body content only. _core.html supplies every token and class.
+
+     This sheet specifies the CHASSIS: the one card body every kind shares.
+     Kind — icon, silhouette, border treatment, neutral tone — is Decision 2
+     and belongs to the kinds sheet. Nothing here assigns a hue to a category.
+
+     Two inline conventions are used, both with precedent in this book:
+       · style="min-height:auto" to show a card at its NATURAL height (sheet 00
+         does the same inside .nest). It is used only where the sheet is
+         explicitly measuring height.
+       · a hue inline on a .dont specimen, so the defect can be seen rather
+         than described. Sheet 02 of the source book does the same.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<section class="page" data-page-num="02" data-page-title="The architecture node card" id="p02">
+
+  <div class="pagehead">
+    <span class="num">Sheet 02 &middot; The board</span>
+    <h1>The architecture node card</h1>
+    <p class="lede">
+      One chassis, six kinds, and a single sentence that governs the whole of it: <b>tone and
+      elevation buy the separation, so the border never has to.</b> A card that is the same colour
+      as the ground it lies on has only its outline left to argue with, and an outline loud enough
+      to win that argument has stopped being chrome and become a claim.
+    </p>
+    <p class="lede">
+      Everything below is the body. The icon, the silhouette, the border treatment and the tone
+      step that say <em>which kind of thing this is</em> are Decision 2 and are specified on the
+      kinds sheet. This sheet specifies what is identical for all six: the surface, the elevation,
+      the resting border, the radius and padding, the type ramp, where evidence and counts sit,
+      and how tall the card is allowed to be.
+    </p>
+  </div>
+
+  <!-- ── 02.1 THE CHASSIS ─────────────────────────────────────────────── -->
+  <div class="sec" id="s02-chassis">
+    <div class="sec-head">
+      <span class="eyebrow">02.1</span>
+      <h2>The chassis</h2>
+      <span class="tail">--surface-2 &middot; --e1 &middot; --edge &middot; --sp-10</span>
+    </div>
+
+    <p class="note">
+      A node card is a filled object lying on a plane. It carries a surface
+      (<span class="inline-code">--surface-2</span>, reached through
+      <span class="inline-code">--arch-tone</span>), an elevation
+      (<span class="inline-code">--e1</span>, the card rung), and a border that is
+      <span class="inline-code">--edge</span> in <em>every</em> resting state. Its width is fixed at
+      <span class="inline-code">--arch-card-w</span> because a board reads as a board when its
+      columns line up; its height is not fixed, and 02.3 is about why.
+    </p>
+
+    <div class="boardfield" style="padding:var(--sp-16);display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+      <div class="specimen">
+        <div class="node n-service">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">checkout</div>
+          <div class="nd-s">Charges an order.</div>
+          <div class="nd-ft"><span class="prov p-measured">Traced</span>
+            <span class="right mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;out&#8250;</span></span></div>
+        </div>
+        <span class="lbl">.node.n-service</span>
+      </div>
+      <div class="specimen">
+        <div class="node n-store">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+          <div class="nd-t">orders</div>
+          <div class="nd-ft"><span class="prov p-declared">Declared</span></div>
+        </div>
+        <span class="lbl">.node.n-store</span>
+      </div>
+      <div class="specimen">
+        <div class="node n-entry">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div>
+          <div class="nd-t">public API</div>
+        </div>
+        <span class="lbl">.node.n-entry</span>
+      </div>
+    </div>
+    <p class="caption">Three kinds, three silhouettes, three border treatments, and not one hue
+    between them. The body is identical in all three.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <dl class="specs">
+        <dt>Width</dt><dd>--arch-card-w &middot; fixed</dd>
+        <dt>Height</dt><dd>content &middot; --arch-card-min-h is a floor</dd>
+        <dt>Surface</dt><dd>--surface-2, via --arch-tone</dd>
+        <dt>Elevation</dt><dd>--e1 &middot; on the agent, --e1-drop on the plate</dd>
+        <dt>Border</dt><dd>--arch-weight --arch-style --edge</dd>
+        <dt>Radius</dt><dd>--arch-sil &middot; per kind, from the six-step ramp</dd>
+        <dt>Padding</dt><dd>--sp-10, all four sides</dd>
+        <dt>Row gap</dt><dd>--sp-4</dd>
+      </dl>
+      <dl class="specs">
+        <dt>Header gap</dt><dd>--sp-6</dd>
+        <dt>Icon</dt><dd>.i-14 &middot; stroke 1.5 &middot; --ink-3</dd>
+        <dt>Kind tag</dt><dd>--font-mono / --t-10 / --lh-10 / .08em / upper / --ink-3</dd>
+        <dt>Title</dt><dd>--t-12 / --lh-12 / 550 / --ink-1</dd>
+        <dt>Subtitle</dt><dd>--t-11 / --lh-11 / --ink-3</dd>
+        <dt>Footer</dt><dd>margin-top auto &middot; padding-top --sp-4 &middot; gap --sp-6</dd>
+        <dt>Transition</dt><dd>--dur-1 --ease &middot; opacity --seq-dur-panel</dd>
+        <dt>Text align</dt><dd>left, in every kind and every state</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- ── 02.2 WHAT BUYS THE SEPARATION ────────────────────────────────── -->
+  <div class="sec" id="s02-separation">
+    <div class="sec-head">
+      <span class="eyebrow">02.2</span>
+      <h2>Tone and elevation buy the separation</h2>
+      <span class="tail">the border is never asked to carry it</span>
+    </div>
+
+    <p class="note">
+      The card sits <b>three rungs of the surface ramp above the field</b> &mdash;
+      <span class="inline-code">--bg-ground</span> is the board,
+      <span class="inline-code">--bg-base</span>, <span class="inline-code">--surface-1</span> and
+      <span class="inline-code">--surface-2</span> is the card &mdash; and it carries
+      <span class="inline-code">--e1</span> on top of that. Three signals agree: a lighter plane, a
+      shadow under it, a hairline around it. Three weak signals in agreement read as one solid
+      object. One strong coloured line reads as an alarm.
+    </p>
+    <p class="note">
+      <b>One kind reaches that height by a different route, and it is worth knowing why.</b> A
+      <span class="inline-code">box-shadow</span> is painted on the border box, so on the agent
+      &mdash; whose chamfered top-right corner is a <span class="inline-code">clip-path</span>, not
+      a radius &mdash; it would lay a square shadow under a cut corner and undo the silhouette.
+      <span class="inline-code">.node.n-agent</span> therefore computes
+      <span class="inline-code">box-shadow: none</span> and its outer plate carries
+      <span class="inline-code">--e1-drop</span> instead, a
+      <span class="inline-code">drop-shadow()</span> of the same offset and blur, which follows what
+      is actually painted. <b>The height is identical; only the mechanism differs.</b> The agent may
+      not sit flat while the other five are lifted, because that would make elevation a sixth
+      carrier of kind and Decision 2 spends exactly four.
+    </p>
+    <p class="note">
+      This is the whole argument for Decision 2. A card with no tone step and no elevation has only
+      its outline left, the outline has to be found against a near-black field, and the only way to
+      make an outline that findable is to give it a hue &mdash; at which point the board is spending
+      the verdict budget on categories, and a datastore is drawn in the same green that means
+      <em>passed</em>.
+    </p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="padding:var(--sp-16);display:flex;justify-content:center">
+          <div class="node n-store" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+            <div class="nd-t">orders</div>
+          </div>
+        </div>
+        <p class="why">Tone plus <span class="inline-code">--e1</span>. The border can stay at
+        <span class="inline-code">--edge</span> and the hue budget is untouched.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="boardfield" style="padding:var(--sp-16);display:flex;justify-content:center">
+          <div class="node n-store" style="min-height:auto;background:var(--nest-0);box-shadow:none;border-color:var(--fits)">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+            <div class="nd-t">orders</div>
+          </div>
+        </div>
+        <p class="why">No tone, no elevation, so the border had to become a hue &mdash; and the hue
+        it became is the one that means <em>passed</em>. This datastore has not passed anything.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      What the card must hold, stated as requirements rather than as taste. Text is read, so text
+      takes the text floor. A ring the reader is asked to <em>find</em> takes the non-text floor.
+      The resting border is asked only to be <em>seen</em>, against a plane that is already three
+      rungs lighter than the ground, and it is deliberately not held to a boundary threshold: a
+      hairline strong enough to clear one on its own has become a claim.
+    </p>
+
+    <div class="grid g2">
+      <dl class="specs">
+        <dt>Title on the card</dt><dd>--ink-1 on --surface-2 &middot; clears 4.5:1</dd>
+        <dt>Kind tag, subtitle</dt><dd>--ink-3 on --surface-2 &middot; clears 4.5:1</dd>
+        <dt>Selection ring</dt><dd>--accent on --nest-0 &middot; clears 3:1</dd>
+        <dt>Focus ring</dt><dd>--accent, double ring &middot; clears 3:1</dd>
+      </dl>
+      <dl class="specs">
+        <dt>Card on the field</dt><dd>three rungs of tone, plus --e1</dd>
+        <dt>Resting border</dt><dd>--edge &middot; seen, not found</dd>
+        <dt>Hover border</dt><dd>--edge-strong &middot; still neutral</dd>
+        <dt>Dimmed card</dt><dd>--board-dim-opacity &middot; receded, still readable</dd>
+      </dl>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      Four states, and exactly one of them carries a hue. Rest and hover are neutral because
+      pointing at a thing is not a claim about it. Dimming is opacity, not a colour, so the kind
+      channels survive it. Selection is the product's own voice and takes
+      <span class="inline-code">--accent</span> at <span class="inline-code">--w-rule</span> plus a
+      fill &mdash; <b>selection outranks every other carrier and must be louder than the state it
+      replaces, never quieter.</b>
+    </p>
+
+    <div class="boardfield" style="padding:var(--sp-16);display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+      <div class="specimen">
+        <div class="node n-service" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">billing</div></div>
+        <span class="lbl">rest &middot; --edge</span></div>
+      <div class="specimen">
+        <div class="node n-service hover" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">billing</div></div>
+        <span class="lbl">.hover &middot; --edge-strong</span></div>
+      <div class="specimen">
+        <div class="node n-service sel" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">billing</div></div>
+        <span class="lbl">.sel &middot; --accent</span></div>
+      <div class="specimen">
+        <div class="node n-service dim" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">billing</div></div>
+        <span class="lbl">.dim &middot; opacity only</span></div>
+    </div>
+    <p class="caption">The selected card gains fill, ring and elevation together. Its unselected
+    neighbours recede to <span class="inline-code">--board-dim-opacity</span> and stay readable
+    &mdash; a graph you cannot read while one node is selected is a graph you cannot reason about.</p>
+  </div>
+
+  <!-- ── 02.3 HEIGHT IS CONTENT ───────────────────────────────────────── -->
+  <div class="sec" id="s02-height">
+    <div class="sec-head">
+      <span class="eyebrow">02.3</span>
+      <h2>Height is content; the floor is only a floor</h2>
+      <span class="tail">width is fixed &middot; height is not</span>
+    </div>
+
+    <p class="note">
+      A board needs uniform <em>width</em>, and <span class="inline-code">--arch-card-w</span>
+      already fixes it. It does not need uniform height, and it must not have one: a card with a
+      summary is taller than a card without, a card with evidence is taller again, and that
+      difference is a reading of the graph rather than noise in it. <b>A one-line card must be a
+      one-line card.</b>
+    </p>
+    <p class="note">
+      The three heights below are derivable from the specs in 02.1, so they are literals rather
+      than placeholders. Minimum card: <span class="inline-code">--sp-10</span> + a 14px header row
+      + <span class="inline-code">--sp-4</span> + <span class="inline-code">--lh-12</span> +
+      <span class="inline-code">--sp-10</span>, plus two hairline borders = 56px. Add one line of
+      subtitle and it is 56 + <span class="inline-code">--sp-4</span> +
+      <span class="inline-code">--lh-11</span> = 75px. Add the footer and it is 75 +
+      <span class="inline-code">--sp-4</span> + <span class="inline-code">--sp-4</span> + a 16px
+      <span class="inline-code">.prov</span> = 99px.
+    </p>
+
+    <div class="boardfield" style="padding:var(--sp-16);display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+      <div class="specimen">
+        <div class="node n-service" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">checkout</div>
+        </div>
+        <span class="lbl">title only &middot; 56px</span></div>
+      <div class="specimen">
+        <div class="node n-service" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">checkout</div>
+          <div class="nd-s">Charges an order.</div>
+        </div>
+        <span class="lbl">+ subtitle &middot; 75px</span></div>
+      <div class="specimen">
+        <div class="node n-service" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">checkout</div>
+          <div class="nd-s">Charges an order.</div>
+          <div class="nd-ft"><span class="prov p-measured">Traced</span></div>
+        </div>
+        <span class="lbl">+ evidence &middot; 99px</span></div>
+    </div>
+    <p class="caption">Three cards, three heights, one chassis. The card with no subtitle is
+    visibly shorter than the card with one &mdash; that is the specification, and it is testable by
+    measuring two boxes.</p>
+
+    <div class="grid g2" style="margin-top:var(--sp-16)">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm" style="align-items:flex-start">
+          <div class="node n-topic" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div>
+            <div class="nd-t">order.placed</div></div>
+          <div class="node n-agent" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div>
+            <div class="nd-t">refund worker</div>
+            <div class="nd-s">Reverses a charge.</div></div>
+        </div>
+        <p class="why">Each card is as tall as what is in it. The taller card is taller because it
+        says more.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm" style="align-items:flex-start">
+          <div class="node n-topic" style="min-height:var(--arch-card-min-h)">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-topic"/></svg><span class="nd-k">Topic</span></div>
+            <div class="nd-t">order.placed</div></div>
+          <div class="node n-agent" style="min-height:var(--arch-card-min-h)">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div>
+            <div class="nd-t">refund worker</div>
+            <div class="nd-s">Reverses a charge.</div></div>
+        </div>
+        <p class="why">A floor set to the height of the fullest card. Both boxes are now the same
+        size, the difference between them has been erased, and the shorter one is 56px of card and
+        40px of dead ground.</p>
+      </div>
+    </div>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>Handback &mdash; the floor's value.</b> The rule this sheet specifies is that
+      <span class="inline-code">--arch-card-min-h</span> may never exceed the natural height of the
+      smallest legitimate card, or it is a fixed height wearing a floor's name. That smallest card
+      measures 56px by the arithmetic above; the substrate declares the floor at 96px, which is
+      within a hair of the <em>fullest</em> card and therefore flattens every shorter one. Every
+      specimen on this sheet is drawn at its natural height so the specification can be seen. The
+      token wants its value corrected to the minimum card, not the maximum one.
+    </div>
+  </div>
+
+  <!-- ── 02.4 THE FOUR SLOTS ──────────────────────────────────────────── -->
+  <div class="sec" id="s02-slots">
+    <div class="sec-head">
+      <span class="eyebrow">02.4</span>
+      <h2>The four slots and the type ramp</h2>
+      <span class="tail">12 / 11 / 10 &middot; and nothing above 12</span>
+    </div>
+
+    <p class="note">
+      Four slots, in one order, on every kind. <span class="inline-code">.nd-hd</span> is the icon
+      and the kind tag. <span class="inline-code">.nd-t</span> is the node's own name and is the
+      only thing on the card set in <span class="inline-code">--ink-1</span>.
+      <span class="inline-code">.nd-s</span> is one line of summary and is optional.
+      <span class="inline-code">.nd-ft</span> is evidence and counts, and is pushed to the bottom of
+      the card by <span class="inline-code">margin-top:auto</span> so it lands on the card's floor
+      however tall the card grew.
+    </p>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>The slots, labelled</h3>
+        <p class="sub">Nothing here is centred and nothing here is bold above 550. A node name is a
+        value, not a headline.</p>
+        <div class="stage pad-sm" style="align-items:flex-start;gap:var(--sp-16)">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div>
+            <div class="nd-s">Charges an order.</div>
+            <div class="nd-ft"><span class="prov p-measured">Traced</span>
+              <span class="right mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;n&#8250;</span></span></div>
+          </div>
+          <div class="mono" style="display:flex;flex-direction:column;gap:var(--sp-6);font-size:var(--t-10);color:var(--ink-3);letter-spacing:.07em;text-transform:uppercase">
+            <span>.nd-hd</span><span>.nd-t</span><span>.nd-s</span><span>.nd-ft</span>
+          </div>
+        </div>
+      </div>
+      <dl class="specs">
+        <dt>.nd-hd</dt><dd>icon .i-14 + tag &middot; gap --sp-6 &middot; --ink-3</dd>
+        <dt>.nd-k</dt><dd>--font-mono / --t-10 / .08em / uppercase / --ink-3</dd>
+        <dt>.nd-t</dt><dd>--t-12 / --lh-12 / 550 / --ink-1 / wrap anywhere</dd>
+        <dt>.nd-s</dt><dd>--t-11 / --lh-11 / --ink-3 / one line of summary</dd>
+        <dt>.nd-ft</dt><dd>margin-top auto &middot; pinned to the card's floor</dd>
+        <dt>.right</dt><dd>margin-left auto &middot; the count, inside the footer</dd>
+        <dt>Icon inside a wall</dt><dd>.i-12, so it does not out-measure --nest-hd-h</dd>
+        <dt>Icons per kind</dt><dd>one, and one meaning per icon</dd>
+      </dl>
+    </div>
+
+    <p class="note" style="margin-top:var(--sp-16)">
+      The kind tag is a <em>category</em>, so it is neutral mono text at
+      <span class="inline-code">--ink-3</span> and it is never a badge. A
+      <span class="inline-code">.verdict</span> pill on a node card says the node passed something.
+      Kind and state are two different sentences and only the second one earns a hue.
+    </p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="stage pad-sm">
+          <div class="node n-agent" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-agent"/></svg><span class="nd-k">Agent</span></div>
+            <div class="nd-t">refund worker</div></div>
+        </div>
+        <p class="why">One icon, one neutral tag. The kind is legible and it has cost nothing.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="stage pad-sm">
+          <div class="node n-agent" style="min-height:auto">
+            <div class="nd-hd"><span class="verdict v-info">Agent</span></div>
+            <div class="nd-t">refund worker</div></div>
+        </div>
+        <p class="why">A category dressed as a verdict. Blue means <em>running</em>; this agent is
+        not running, it is simply an agent.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 02.5 EVIDENCE AND COUNTS ─────────────────────────────────────── -->
+  <div class="sec" id="s02-evidence">
+    <div class="sec-head">
+      <span class="eyebrow">02.5</span>
+      <h2>Where evidence and counts sit</h2>
+      <span class="tail">evidence left &middot; counts right &middot; both in the footer</span>
+    </div>
+
+    <p class="note">
+      Evidence is how the analyzer knows this node exists, and it is a
+      <span class="inline-code">.prov</span> tag on the left of the footer. <b>Traced</b> means the
+      analyzer followed it in the source. <b>Declared</b> means a manifest or a config said so and
+      the source could not confirm it &mdash; that is <span class="inline-code">--unknown</span>,
+      never <span class="inline-code">--wont</span>, because a claim nobody could check has not
+      failed at anything. The two words match the edge proof vocabulary exactly, so a node and the
+      connectors leaving it never disagree about what proof means.
+    </p>
+    <p class="note">
+      A count goes on the right of the same footer, through
+      <span class="inline-code">.right</span>, in mono at <span class="inline-code">--t-10</span> and
+      <span class="inline-code">--ink-3</span>. <b>Every count on a node card is a placeholder.</b>
+      Members, callers, callees, functions, lines &mdash; the engine computes all of them, and a
+      plausible number in a specimen is the exact failure Law&nbsp;4 exists to prevent.
+    </p>
+
+    <div class="boardfield" style="padding:var(--sp-16);display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-start">
+      <div class="specimen">
+        <div class="node n-service" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+          <div class="nd-t">checkout</div>
+          <div class="nd-ft"><span class="prov p-measured">Traced</span></div>
+        </div>
+        <span class="lbl">evidence only</span></div>
+      <div class="specimen">
+        <div class="node n-store" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-database"/></svg><span class="nd-k">Datastore</span></div>
+          <div class="nd-t">orders</div>
+          <div class="nd-ft"><span class="prov p-declared">Declared</span>
+            <span class="right mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;writers&#8250;</span></span></div>
+        </div>
+        <span class="lbl">evidence + count</span></div>
+      <div class="specimen">
+        <div class="node n-module" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-module"/></svg><span class="nd-k">Module</span></div>
+          <div class="nd-t">billing</div>
+          <div class="nd-ft"><svg class="i i-12" style="color:var(--ink-3)"><use href="#ic-fn"/></svg>
+            <span class="mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;fns&#8250;</span></span>
+            <span class="right mono" style="font-size:var(--t-10);color:var(--ink-3)"><span class="ph">&#8249;members&#8250;</span></span></div>
+        </div>
+        <span class="lbl">count + count</span></div>
+      <div class="specimen">
+        <div class="node n-entry" style="min-height:auto">
+          <div class="nd-hd"><svg class="i i-14"><use href="#ic-entry"/></svg><span class="nd-k">Entry</span></div>
+          <div class="nd-t">public API</div>
+        </div>
+        <span class="lbl">no footer at all</span></div>
+    </div>
+    <p class="caption">The footer is optional. A node the analyzer has nothing further to say about
+    gets no footer, and is shorter for it.</p>
+
+    <div class="dev" style="margin-top:var(--sp-16)">
+      <b>Evidence is not a verdict.</b> <span class="inline-code">.p-measured</span> and
+      <span class="inline-code">.p-declared</span> carry <span class="inline-code">--fits</span> and
+      <span class="inline-code">--unknown</span>, which are hues &mdash; and they are permitted here
+      for the same reason the edge states are: proof is a claim about the world, which is precisely
+      what Law&nbsp;1 reserves hue for. <b>At most one provenance tag per card.</b> Two of them and
+      the card has become a legend.
+    </div>
+  </div>
+
+  <!-- ── 02.6 HANDLES ARE NOT PAINTED ─────────────────────────────────── -->
+  <div class="sec" id="s02-handles">
+    <div class="sec-head">
+      <span class="eyebrow">02.6</span>
+      <h2>Connection handles are not painted</h2>
+      <span class="tail">not connectable &middot; not drawn</span>
+    </div>
+
+    <p class="note">
+      When the graph is not connectable, the card renders <b>zero</b> connection handles &mdash; not
+      transparent ones, not zero-opacity ones, not ones behind a hover rule. None in the markup at
+      all. A nub is an affordance, and an affordance for something the reader cannot do is a lie
+      told eight times per node.
+    </p>
+    <p class="note">
+      Where the card <em>is</em> connectable &mdash; draw mode, and only draw mode &mdash; the
+      handles appear on entering that mode and leave with it. They are painted at
+      <span class="inline-code">--accent</span>, because offering to make a connection is the
+      product's own voice, and they are the only thing on the card that changes when the mode does.
+    </p>
+
+    <div class="grid g2">
+      <div class="do">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-check"/></svg>Do</span>
+        <div class="boardfield" style="padding:var(--sp-16);display:flex;justify-content:center">
+          <div class="node n-service" style="min-height:auto">
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div></div>
+        </div>
+        <p class="why">Not connectable, so nothing is drawn. The card's outline is unbroken and its
+        silhouette still reads at a distance.</p>
+      </div>
+      <div class="dont">
+        <span class="lbl"><svg class="i i-14"><use href="#ic-x"/></svg>Don't</span>
+        <div class="boardfield" style="padding:var(--sp-16);display:flex;justify-content:center">
+          <div class="node n-service" style="min-height:auto;color:var(--ink-3)">
+            <span class="dot" style="position:absolute;top:calc(-1 * var(--sp-2));left:calc(50% - var(--sp-8))"></span>
+            <span class="dot" style="position:absolute;top:calc(-1 * var(--sp-2));left:calc(50% + var(--sp-2))"></span>
+            <span class="dot" style="position:absolute;bottom:calc(-1 * var(--sp-2));left:calc(50% - var(--sp-8))"></span>
+            <span class="dot" style="position:absolute;bottom:calc(-1 * var(--sp-2));left:calc(50% + var(--sp-2))"></span>
+            <span class="dot" style="position:absolute;left:calc(-1 * var(--sp-2));top:calc(50% - var(--sp-8))"></span>
+            <span class="dot" style="position:absolute;left:calc(-1 * var(--sp-2));top:calc(50% + var(--sp-2))"></span>
+            <span class="dot" style="position:absolute;right:calc(-1 * var(--sp-2));top:calc(50% - var(--sp-8))"></span>
+            <span class="dot" style="position:absolute;right:calc(-1 * var(--sp-2));top:calc(50% + var(--sp-2))"></span>
+            <div class="nd-hd"><svg class="i i-14"><use href="#ic-service"/></svg><span class="nd-k">Service</span></div>
+            <div class="nd-t">checkout</div></div>
+        </div>
+        <p class="why">Eight nubs offering a connection the graph will not accept. They break the
+        silhouette, they are the loudest thing on the card, and they do nothing.</p>
+      </div>
+    </div>
+
+    <dl class="specs" style="margin-top:var(--sp-16)">
+      <dt>Not connectable</dt><dd>no handle element rendered &middot; none</dd>
+      <dt>Connectable</dt><dd>handles enter with draw mode and leave with it</dd>
+      <dt>Handle colour</dt><dd>--accent &middot; the offer, not a verdict</dd>
+      <dt>Handle size</dt><dd>--dot &middot; --r-full</dd>
+      <dt>Everything else</dt><dd>unchanged between the two modes</dd>
+    </dl>
+    <p class="caption">The card body does not know what mode the board is in. That is the point of
+    keeping the chassis identical: one card, and the mode paints on top of it.</p>
+  </div>
+
+</section>
